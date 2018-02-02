@@ -1,0 +1,156 @@
+# ===================================================================
+# Spring Boot configuration for the "prod" profile.
+#
+# This configuration overrides the application.yml file.
+#
+# More information on profiles: http://www.jhipster.tech/profiles/
+# More information on configuration properties: http://www.jhipster.tech/common-application-properties/
+# ===================================================================
+
+# ===================================================================
+# Standard Spring Boot properties.
+# Full reference is available at:
+# http://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
+# ===================================================================
+
+spring:
+    devtools:
+        restart:
+            enabled: false
+        livereload:
+            enabled: false
+    datasource:
+        type: com.zaxxer.hikari.HikariDataSource
+        url: jdbc:mysql://${DBHOST:localhost}:${DBPORT:3306}/${DBNAME:genericupload}?useUnicode=true&characterEncoding=utf8&useSSL=${USE_SSL:false}
+        username: ${DBUSER:root}
+        password: ${DBPASSWORD:}
+        hikari:
+            data-source-properties:
+                cachePrepStmts: true
+                prepStmtCacheSize: 250
+                prepStmtCacheSqlLimit: 2048
+                useServerPrepStmts: true
+    jpa:
+        database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+        database: MYSQL
+        show-sql: false
+        format-sql: false
+        properties:
+            hibernate.id.new_generator_mappings: true
+            hibernate.cache.use_second_level_cache: false
+            hibernate.cache.use_query_cache: false
+            hibernate.generate_statistics: false
+    mail:
+        host: ${DBHOST:localhost}
+        port: 25
+        username:
+        password:
+    http:
+      multipart:
+        max-file-size: 10MB
+        max-request-size: 100MB
+
+# ===================================================================
+# To enable SSL, generate a certificate using:
+# keytool -genkey -alias generic-upload -storetype PKCS12 -keyalg RSA -keysize 2048 -keystore keystore.p12 -validity 3650
+#
+# You can also use Let's Encrypt:
+# https://maximilian-boehm.com/hp2121/Create-a-Java-Keystore-JKS-from-Let-s-Encrypt-Certificates.htm
+#
+# Then, modify the server.ssl properties so your "server" configuration looks like:
+#
+# server:
+#    port: 443
+#    ssl:
+#        key-store: keystore.p12
+#        key-store-password: <your-password>
+#        keyStoreType: PKCS12
+#        keyAlias: generic-upload
+# ===================================================================
+server:
+    port: 8097
+    compression:
+        enabled: true
+        mime-types: text/html,text/xml,text/plain,text/css, application/javascript, application/json
+        min-response-size: 1024
+
+# ===================================================================
+# keycloak client config properties
+# ===================================================================
+
+kc:
+    realm: ${KC_REALM:lin}
+    master.realm: ${KC_MASTER_REALM:master}
+    client.id: ${KC_CLIENT_ID:admin-cli}
+    server.url: ${KC_SERVER_URL:https://apps.tis.nhs.uk/auth}
+    username: ${KC_USERNAME:admin}
+    password: ${KC_PASSWORD:5VIgYF16dv4ujIFxq0Lyd8r1c}
+    timeout: ${KC_TIMEOUT:10000}
+
+# ===================================================================
+# Azure block blob storage properties
+# ===================================================================
+azure:
+  accountName: ${CLOUD_BLOB_ACCOUNT_NAME:heetisshare}
+  accountKey: ${CLOUD_BLOB_ACCOUNT_KEY:EiuyeB22bm2lgQQpBz68VKwui4Mcp0HQslF1sVaM1aL9hGSFxp9dL6+QpVSJZFdvLrRyo6CYFjwfb3ac2/399g==}
+  containerName: ${CLOUD_BLOB_CONTAINER_NAME:dev}
+  servicebus:
+    connection-string: ${SERVICE_BUS_CONNECTION_STRING:Endpoint=sb://heetisdevsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=USyHBoGzI0Q+dS0rchjGYFurWlJBe5C7omLSxo6KYeY=}
+    queue-name: ${SERVICE_BUS_QUEUE_NAME:heetisdevq}
+    queue-receive-mode: ${SERVICE_BUS_Q_RECEIVE_MODE:peeklock}
+    topic-name: ${SERVICE_BUS_TOPIC_NAME:heetisdevt}
+    subscription-name: ${SERVICE_BUS_SUBSCRIPTION_NAME:heetisdevs}
+    subscription-receive-mode: ${SERVICE_BUS_S_RECEIVE_MODE:peeklock}
+
+
+deadletterDirectory: ${DEADLETER_DIR:/tmp/deadletter}
+
+# ===================================================================
+# JHipster specific properties
+#
+# Full reference is available at: http://www.jhipster.tech/common-application-properties/
+# ===================================================================
+
+jhipster:
+    http:
+        version: V_1_1 # To use HTTP/2 you will need SSL support (see above the "server.ssl" configuration)
+        cache: # Used by the CachingHttpHeadersFilter
+            timeToLiveInDays: 1461
+    security:
+        authentication:
+            jwt:
+                secret: bf146229e219404ac8f09cde58ec1ac65ba9e1b7
+                # Token is valid 24 hours
+                token-validity-in-seconds: 86400
+                token-validity-in-seconds-for-remember-me: 2592000
+    metrics: # DropWizard Metrics configuration, used by MetricsConfiguration
+        jmx.enabled: true
+        graphite:
+            enabled: false
+            host: localhost
+            port: 2003
+            prefix: assessments
+        prometheus:
+            enabled: false
+            endpoint: /prometheusMetrics
+        logs: # Reports Dropwizard metrics in the logs
+            enabled: false
+            report-frequency: 60 # in seconds
+    logging:
+        logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
+            enabled: false
+            host: localhost
+            port: 5000
+            queue-size: 512
+
+
+# ===================================================================
+# Application specific properties
+# Add your own application properties here, see the ApplicationProperties class
+# to have type-safe configuration, like in the JHipsterProperties above
+#
+# More documentation is available at:
+# http://www.jhipster.tech/common-application-properties/
+# ===================================================================
+
+application:

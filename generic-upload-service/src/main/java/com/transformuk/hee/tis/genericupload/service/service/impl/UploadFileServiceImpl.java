@@ -1,0 +1,79 @@
+package com.transformuk.hee.tis.genericupload.service.service.impl;
+
+import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
+import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
+import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
+import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
+import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
+import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@Transactional
+public class UploadFileServiceImpl implements UploadFileService {
+
+  private final Logger LOG = LoggerFactory.getLogger(UploadFileServiceImpl.class);
+
+  private final FileStorageRepository fileStorageRepository;
+  private final ApplicationTypeRepository applicationTypeRepository;
+
+  @Autowired
+  public UploadFileServiceImpl(FileStorageRepository fileStorageRepository,
+                               ApplicationTypeRepository applicationTypeRepository) {
+    this.fileStorageRepository = fileStorageRepository;
+    this.applicationTypeRepository = applicationTypeRepository;
+    //this.personRepository = personRepository;
+  }
+
+  public ApplicationType save(String fileName) {
+    LOG.debug("Request to save ApplicationType based on fileName : {}", fileName);
+    List<ApplicationType> applicationTypes = applicationTypeRepository.findByFileName(fileName);
+    ApplicationType applicationType = new ApplicationType();
+    if (CollectionUtils.isEmpty(applicationTypes)) {
+      applicationType.setFileName(fileName);
+      applicationType.setStartDate(LocalDateTime.now());
+      applicationType.setFileType(FileType.RECRUITMENT);
+      applicationType.setFileStatus(FileStatus.PENDING);
+    } else {
+      applicationType = applicationTypes.get(0);
+      applicationType.setFileName(fileName);
+    }
+    ApplicationType result = applicationTypeRepository.save(applicationType);
+    return result;
+  }
+
+  @Override
+  public String upload(List<MultipartFile> files) throws Exception {
+    String success = "SUCCESS";
+    if (!ObjectUtils.isEmpty(files)) {
+      success = fileStorageRepository.store(100000L, "dev", files);
+      for (MultipartFile file : files) {
+        if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
+          ApplicationType applicationType = save(file.getName());
+          /*ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
+          List<PersonXLS> result = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap());
+          if(!CollectionUtils.isEmpty(result)) {
+            Set<String> gmcNumbers = Sets.newHashSet();
+            result.forEach(p -> gmcNumbers.add(p.getGMCNumber()));
+            //List<Person> existingPersons = personRepository.findByGmcDetails_GmcNumber(gmcNumbers);
+            //LOG.debug("Result -> {}", existingPersons);
+          }*/
+
+        }
+      }
+    }
+    return success;
+  }
+
+}
