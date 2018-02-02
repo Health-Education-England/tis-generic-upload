@@ -26,7 +26,6 @@ public class AzureQueueServiceBusPublish implements ServiceBusPublish {
       String messageBody = eventMessage(fileRecordEvent);
       final Message message = new Message(messageBody.getBytes(StandardCharsets.UTF_8));
       message.setSessionId(SESSION_ID);
-      message.setProperties();
       queueClient.send(message);
     } catch (ServiceBusException | InterruptedException e) {
       throw new FileRecordStorageException("DeadLetter queue write error" + e);
