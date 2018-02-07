@@ -25,65 +25,67 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class FileValidator {
 
-  private final Logger LOG = LoggerFactory.getLogger(UploadFileResource.class);
-  /**
-   * Custom validator used during file upload checks for mandatory fields
-   *
-   * @param files The provided files to validate
-   * @throws MethodArgumentNotValidException
-   */
-  public void validate(List<MultipartFile> files, FileType fileType) throws Exception {
-    List<FieldError> fieldErrors = new ArrayList<>();
-    if (!ObjectUtils.isEmpty(files)) {
-      for (MultipartFile file : files) {
-        if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
-          ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
-          if(fileType.equals(FileType.RECRUITMENT)) {
-            validateMandatoryFields(fieldErrors, excelToObjectMapper,PersonXLS.class,new PersonHeaderMapper());
-          }
-        }
-      }
-    }
+	private final Logger LOG = LoggerFactory.getLogger(UploadFileResource.class);
 
-    if (!fieldErrors.isEmpty()) {
-      BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult("Bulk-Upload", files.get(0).getName());
-      fieldErrors.forEach(bindingResult::addError);
-      throw new MethodArgumentNotValidException(null, bindingResult);
-    }
-  }
+	/**
+	 * Custom validator used during file upload checks for mandatory fields
+	 *
+	 * @param files
+	 *            The provided files to validate
+	 * @throws MethodArgumentNotValidException
+	 */
+	public void validate(List<MultipartFile> files, FileType fileType) throws Exception {
+		List<FieldError> fieldErrors = new ArrayList<>();
+		if (!ObjectUtils.isEmpty(files)) {
+			for (MultipartFile file : files) {
+				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
+					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
+					if (fileType.equals(FileType.RECRUITMENT)) {
+						validateMandatoryFields(fieldErrors, excelToObjectMapper, PersonXLS.class, new PersonHeaderMapper());
+					}
+				}
+			}
+		}
 
-  /**
-   * Validate mandatory fields
-   * @param fieldErrors
-   * @param excelToObjectMapper
-   * @param dtoClass
-   * @param columnMapper
-   * @throws Exception
-   */
-  private void validateMandatoryFields(List<FieldError> fieldErrors,
-                                       ExcelToObjectMapper excelToObjectMapper,
-                                       Class dtoClass, ColumnMapper columnMapper) throws Exception {
-    Map<String, String> columnMapperMap = columnMapper.getMandatoryFieldMap();
-    List<PersonXLS> result = excelToObjectMapper.map(dtoClass, columnMapperMap);
-    AtomicInteger i = new AtomicInteger(0);
-    result.forEach(p -> {
-      i.incrementAndGet();
-      columnMapperMap.entrySet().stream().forEach(map -> {
-        try {
-          Field currentField = p.getClass().getDeclaredField(map.getKey());
-          if (currentField != null) {
-            currentField.setAccessible(true);
-            String value = (String) currentField.get(p);
-            if (StringUtils.isEmpty(value)) {
-              fieldErrors.add(new FieldError("Bulk-Upload", map.getKey(),
-                      String.format("%s Field is required at line no %d ", map.getKey(), i.get())));
-            }
-          }
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-          LOG.debug("Field doesn't exists");
-        }
-      });
-    });
-  }
+		if (!fieldErrors.isEmpty()) {
+			BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult("Bulk-Upload", files.get(0).getName());
+			fieldErrors.forEach(bindingResult::addError);
+			throw new MethodArgumentNotValidException(null, bindingResult);
+		}
+	}
+
+	/**
+	 * Validate mandatory fields
+	 * 
+	 * @param fieldErrors
+	 * @param excelToObjectMapper
+	 * @param dtoClass
+	 * @param columnMapper
+	 * @throws Exception
+	 */
+	private void validateMandatoryFields(List<FieldError> fieldErrors, ExcelToObjectMapper excelToObjectMapper,
+			Class dtoClass, ColumnMapper columnMapper) throws Exception {
+		Map<String, String> columnMapperMap = columnMapper.getMandatoryFieldMap();
+		List<PersonXLS> result = excelToObjectMapper.map(dtoClass, columnMapperMap);
+		AtomicInteger i = new AtomicInteger(0);
+		result.forEach(p -> {
+			i.incrementAndGet();
+			columnMapperMap.entrySet().stream().forEach(map -> {
+				try {
+					Field currentField = p.getClass().getDeclaredField(map.getKey());
+					if (currentField != null) {
+						currentField.setAccessible(true);
+						String value = (String) currentField.get(p);
+						if (StringUtils.isEmpty(value)) {
+							fieldErrors.add(new FieldError("Bulk-Upload", map.getKey(),
+									String.format("%s Field is required at line no %d ", map.getKey(), i.get())));
+						}
+					}
+				} catch (NoSuchFieldException | IllegalAccessException e) {
+					LOG.debug("Field doesn't exists");
+				}
+			});
+		});
+	}
 
 }

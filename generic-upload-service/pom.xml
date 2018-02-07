@@ -142,27 +142,17 @@
 		<dependency>
 			<groupId>com.transformuk.hee</groupId>
 			<artifactId>profile-client</artifactId>
-			<version>2.6.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.transformuk.hee</groupId>
-			<artifactId>tis-parent-client</artifactId>
-			<version>4.0.1</version>
+			<version>2.6.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>tcs-api</artifactId>
-			<version>2.0.4</version>
+			<version>3.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>tcs-client</artifactId>
-			<version>3.0.4</version>
-		</dependency>
-		<dependency>
-			<groupId>com.transformuk.hee.tis</groupId>
-			<artifactId>generic-upload-api</artifactId>
-			<version>1.0.0</version>
+			<version>3.0.11</version>
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>

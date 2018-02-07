@@ -1,5 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -71,21 +73,21 @@ public class PersonHeaderMapper implements ColumnMapper {
       "qualificationType",
       "publicHealthNumber"
   };
-  private static final String[] fieldNameTarget = {"Title" ,"Surname *" ,
-      "Forenames *", "Initials", "Gender", "Date of Birth", "GMC Number" ,"GMC Start date",
-      "GMC Expiry date", "NI number", "GDC Number", "Payroll Assignment No" ,"EEA Resident",
-      "Nationality" ,"Ethnic Origin" ,"Address 1", "Address 2" ,"Address 3" ,"Address 4",
+  private static final String[] fieldNameTarget = {"Title", "Surname *", 
+      "Forenames *", "Initials", "Gender", "Date of Birth", "GMC Number", "GMC Start date",
+      "GMC Expiry date", "NI number", "GDC Number", "Payroll Assignment No", "EEA Resident",
+      "Nationality", "Ethnic Origin", "Address 1", "Address 2", "Address 3", "Address 4",
       "Post Code", "Telephone", "Mobile", "Email Address", "Medical School",
-      "Qualification", "Date Attained" ,"Country of Qualification" ,"Disability",
-      "Disability Details", "Sexual Orientation" ,"Religious Belief",
-      "Description", "Programme Name" ,"Programme Number", "Programme Membership", "NTN (Programme)",
+      "Qualification", "Date Attained", "Country of Qualification", "Disability",
+      "Disability Details", "Sexual Orientation", "Religious Belief",
+      "Description", "Programme Name", "Programme Number", "Programme Membership", "NTN (Programme)",
       "Curriculum #1", "Curriculum #1 Start Date", "Curriculum #1 End Date",
       "Curriculum #2", "Curriculum #2 Start Date", "Curriculum #2 End Date",
       "Curriculum #3", "Curriculum #3 Start Date", "Curriculum #3 End Date",
-      "Programme End Date", "NTN (Legacy)", "Role *", "Legal Surname", "Legal Forenames",
-      "Known As", "Maiden Name", "GMC Status", "Permit to Work", "Settled" ,"Visa Issued" ,
+      "Programme End Date", "NTN (Legacy)", "Role", "Legal Surname", "Legal Forenames",
+      "Known As", "Maiden Name", "GMC Status", "Permit to Work", "Settled", "Visa Issued", 
       "Visa Valid To", "Visa Details/Number", "Marital Status", "Dual Nationality",
-      "Record Type *", "Record Status *", "Inactive Date", "Destination", "(Qualification) Type",
+      "Record Type", "Record Status", "Inactive Date", "Destination", "(Qualification) Type",
       "Public Health Number"};
 
   @Override
