@@ -65,20 +65,20 @@ public class FileValidator {
 	 */
 	private void validateMandatoryFields(List<FieldError> fieldErrors, ExcelToObjectMapper excelToObjectMapper,
 			Class dtoClass, ColumnMapper columnMapper) throws Exception {
-		Map<String, String> columnMapperMap = columnMapper.getMandatoryFieldMap();
-		List<PersonXLS> result = excelToObjectMapper.map(dtoClass, columnMapperMap);
-		AtomicInteger i = new AtomicInteger(0);
-		result.forEach(p -> {
-			i.incrementAndGet();
-			columnMapperMap.entrySet().stream().forEach(map -> {
+		Map<String, String> columnNameToMandatoryColumnsMap = columnMapper.getMandatoryFieldMap();
+		List<PersonXLS> result = excelToObjectMapper.map(dtoClass, columnNameToMandatoryColumnsMap);
+		AtomicInteger rowIndex = new AtomicInteger(0);
+		result.forEach(row -> {
+			rowIndex.incrementAndGet();
+			columnNameToMandatoryColumnsMap.entrySet().stream().forEach(columnNameToMandatoryColumnsMapEntry -> {
 				try {
-					Field currentField = p.getClass().getDeclaredField(map.getKey());
+					Field currentField = row.getClass().getDeclaredField(columnNameToMandatoryColumnsMapEntry.getKey());
 					if (currentField != null) {
 						currentField.setAccessible(true);
-						String value = (String) currentField.get(p);
+						String value = (String) currentField.get(row);
 						if (StringUtils.isEmpty(value)) {
-							fieldErrors.add(new FieldError("Bulk-Upload", map.getKey(),
-									String.format("%s Field is required at line no %d ", map.getKey(), i.get())));
+							fieldErrors.add(new FieldError("Bulk-Upload", columnNameToMandatoryColumnsMapEntry.getKey(),
+									String.format("%s Field is required at line no %d ", columnNameToMandatoryColumnsMapEntry.getKey(), rowIndex.get())));
 						}
 					}
 				} catch (NoSuchFieldException | IllegalAccessException e) {
