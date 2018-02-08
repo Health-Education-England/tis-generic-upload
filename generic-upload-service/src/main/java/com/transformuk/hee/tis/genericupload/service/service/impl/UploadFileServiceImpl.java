@@ -32,67 +32,64 @@ import java.util.stream.Collectors;
 @Transactional
 public class UploadFileServiceImpl implements UploadFileService {
 
-	private final Logger LOG = LoggerFactory.getLogger(UploadFileServiceImpl.class);
+    private final Logger LOG = LoggerFactory.getLogger(UploadFileServiceImpl.class);
 
-	@Autowired
-	private TcsServiceImpl tcsServiceImpl;
-	private final FileStorageRepository fileStorageRepository;
-	private final ApplicationTypeRepository applicationTypeRepository;
+    @Autowired
+    private TcsServiceImpl tcsServiceImpl;
+    private final FileStorageRepository fileStorageRepository;
+    private final ApplicationTypeRepository applicationTypeRepository;
 
-	@Autowired
-	public UploadFileServiceImpl(FileStorageRepository fileStorageRepository,
-			ApplicationTypeRepository applicationTypeRepository) {
-		this.fileStorageRepository = fileStorageRepository;
-		this.applicationTypeRepository = applicationTypeRepository;
-		// this.personRepository = personRepository;
-	}
+    @Autowired
+    public UploadFileServiceImpl(FileStorageRepository fileStorageRepository,
+                                 ApplicationTypeRepository applicationTypeRepository) {
+        this.fileStorageRepository = fileStorageRepository;
+        this.applicationTypeRepository = applicationTypeRepository;
+        // this.personRepository = personRepository;
+    }
 
-	public ApplicationType save(String fileName) {
-		LOG.debug("Request to save ApplicationType based on fileName : {}", fileName);
-		List<ApplicationType> applicationTypes = applicationTypeRepository.findByFileName(fileName);
-		ApplicationType applicationType = new ApplicationType();
-		if (CollectionUtils.isEmpty(applicationTypes)) {
-			applicationType.setFileName(fileName);
-			applicationType.setStartDate(LocalDateTime.now());
-			applicationType.setFileType(FileType.RECRUITMENT);
-			applicationType.setFileStatus(FileStatus.PENDING);
-		} else {
-			applicationType = applicationTypes.get(0);
-			applicationType.setFileName(fileName);
-		}
-		ApplicationType result = applicationTypeRepository.save(applicationType);
-		return result;
-	}
+    public ApplicationType save(String fileName, long logId, String userId) {
+        LOG.debug("Request to save ApplicationType based on fileName : {}", fileName);
 
-	@Override
-	public String upload(List<MultipartFile> files) throws Exception {
-		String success = "SUCCESS";
-		if (!ObjectUtils.isEmpty(files)) {
-			success = fileStorageRepository.store(100000L, "dev", files);
-			for (MultipartFile file : files) {
-				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
-					ApplicationType applicationType = save(file.getName());
-					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
-					List<PersonXLS> result = excelToObjectMapper.map(PersonXLS.class,
-							new PersonHeaderMapper().getFieldMap());
+        ApplicationType applicationType = new ApplicationType();
+        applicationType.setFileName(fileName);
+        applicationType.setStartDate(LocalDateTime.now());
+        applicationType.setFileType(FileType.RECRUITMENT);
+        applicationType.setFileStatus(FileStatus.PENDING);
+        applicationType.setLogId(logId);
+        applicationType.setUserId(userId);
+        return applicationTypeRepository.save(applicationType);
+    }
 
-					Set<String> gmcNumbers = Sets.newHashSet();
-					if (!CollectionUtils.isEmpty(result)) {
-						result.forEach(p -> gmcNumbers.add(p.getGMCNumber()));
-						// List<Person> existingPersons =
-						// personRepository.findByGmcDetails_GmcNumber(gmcNumbers);
-						// LOG.debug("Result -> {}", existingPersons);
-					}
+    @Override
+    public long upload(List<MultipartFile> files, String username) throws Exception {
+        long logId = System.currentTimeMillis();
 
-					// TODO optimise to batch requests for huge upload files
-					List<GmcDetailsDTO> gmcDetailsDTOs = tcsServiceImpl.findGmcDetailsIn(gmcNumbers);
-					Map<String, GmcDetailsDTO> gmcDetailsDTOsMap = gmcDetailsDTOs.stream()
-							.collect(Collectors.toMap(GmcDetailsDTO::getGmcNumber, gmcDetailsDTO -> gmcDetailsDTO));
+        if (!ObjectUtils.isEmpty(files)) {
+            String storageResult = fileStorageRepository.store(logId, "dev", files);
+            for (MultipartFile file : files) {
+                if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
+                    ApplicationType applicationType = save(file.getOriginalFilename(), logId, username);
+//					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
+//					List<PersonXLS> result = excelToObjectMapper.map(PersonXLS.class,
+//							new PersonHeaderMapper().getFieldMap());
+//
+//					Set<String> gmcNumbers = Sets.newHashSet();
+//					if (!CollectionUtils.isEmpty(result)) {
+//						result.forEach(p -> gmcNumbers.add(p.getGMCNumber()));
+//						// List<Person> existingPersons =
+//						// personRepository.findByGmcDetails_GmcNumber(gmcNumbers);
+//						// LOG.debug("Result -> {}", existingPersons);
+//					}
+//
+//					// TODO optimise to batch requests for huge upload files
+//					List<GmcDetailsDTO> gmcDetailsDTOs = tcsServiceImpl.findGmcDetailsIn(gmcNumbers);
+//					Map<String, GmcDetailsDTO> gmcDetailsDTOsMap = gmcDetailsDTOs.stream()
+//							.collect(Collectors.toMap(GmcDetailsDTO::getGmcNumber, gmcDetailsDTO -> gmcDetailsDTO));
 
-				}
-			}
-		}
-		return success;
-	}
+                }
+            }
+        }
+        return logId;
+    }
 
 }

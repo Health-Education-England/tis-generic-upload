@@ -5,10 +5,15 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.transformuk.hee.tis.security.model.UserProfile;
+import com.transformuk.hee.tis.security.util.TisSecurityHelper;
+import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,12 +55,15 @@ public class UploadFileResource {
 
 	@ApiOperation(value = "bulk upload file", notes = "bulk upload file", response = String.class, responseContainer = "Accepted")
 	@ApiResponses(value = {
-			@ApiResponse(code = 201, message = "Uploaded given file successfully", response = String.class) })
+			@ApiResponse(code = 202, message = "Uploaded given files successfully with logId", response = Long.class) })
 	@PostMapping("/generic-upload/file")
 	@Timed
 	@PreAuthorize("hasPermission('tis:people::person:', 'Create')")
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void handleFileUpload(HttpServletRequest request) throws Exception { // URISyntaxException
+	public ResponseEntity<Long> handleFileUpload(HttpServletRequest request) throws Exception { // URISyntaxException
+        UserProfile userProfile = TisSecurityHelper.getProfileFromContext();
+        String userId = userProfile.getUserName();
+
 		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
 
         // extract files from MIME body
@@ -77,10 +85,13 @@ public class UploadFileResource {
         //TODO is this necessary 
         // Validate file
         // for other type of file, please pass path variable and pass to validator
-        fileValidator.validate(fileList, FileType.RECRUITMENT);
+        fileValidator.validate(fileList, FileType.RECRUITMENT); //TODO allow validation exceptions to bubble up to REST response
         
         // if validation is success then store the file into azure and db
-        uploadFileService.upload(fileList);
+        long logId = uploadFileService.upload(fileList, userId);
+
+        return ResponseEntity.accepted()
+                .body(logId);
 	}
 
 	@ApiOperation(value = "bulk upload file response", notes = "bulk upload file response", responseContainer = "Completed")

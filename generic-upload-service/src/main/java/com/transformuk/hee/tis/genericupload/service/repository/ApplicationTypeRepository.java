@@ -10,8 +10,8 @@ import java.util.List;
 @Repository
 public interface ApplicationTypeRepository extends JpaRepository<ApplicationType, Long> {
 
-  List<ApplicationType> findByFileStatusOrderByStartDate(FileStatus status);
+    List<ApplicationType> findByFileStatusOrderByStartDate(FileStatus status);
 
-  List<ApplicationType> findByFileName(String fileName);
+    List<ApplicationType> findByFileName(String fileName);
 
 }

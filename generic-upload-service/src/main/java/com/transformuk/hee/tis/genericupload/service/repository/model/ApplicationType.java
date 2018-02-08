@@ -10,97 +10,118 @@ import java.util.Objects;
 
 @Entity
 public class ApplicationType implements Serializable {
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  private String fileName;
+    private String fileName;
 
-  @Column(name = "fileType")
-  @Enumerated(EnumType.STRING)
-  private FileType fileType;
+    @Column(name = "fileType")
+    @Enumerated(EnumType.STRING)
+    private FileType fileType;
 
-  private LocalDateTime startDate;
+    private LocalDateTime startDate;
 
-  private LocalDateTime endDate;
+    private LocalDateTime endDate;
 
-  @Column(name = "status")
-  @Enumerated(EnumType.STRING)
-  private FileStatus fileStatus;
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private FileStatus fileStatus;
 
-  public Long getId() {
-    return id;
-  }
+    private Long logId;
+    private String userId;
 
-  public void setId(Long id) {
-    this.id = id;
-  }
+    public Long getId() {
+        return id;
+    }
 
-  public String getFileName() {
-    return fileName;
-  }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-  public void setFileName(String fileName) {
-    this.fileName = fileName;
-  }
+    public String getFileName() {
+        return fileName;
+    }
 
-  public FileType getFileType() {
-    return fileType;
-  }
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
 
-  public void setFileType(FileType fileType) {
-    this.fileType = fileType;
-  }
+    public FileType getFileType() {
+        return fileType;
+    }
 
-  public LocalDateTime getStartDate() {
-    return startDate;
-  }
+    public void setFileType(FileType fileType) {
+        this.fileType = fileType;
+    }
 
-  public void setStartDate(LocalDateTime startDate) {
-    this.startDate = startDate;
-  }
+    public LocalDateTime getStartDate() {
+        return startDate;
+    }
 
-  public LocalDateTime getEndDate() {
-    return endDate;
-  }
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
+    }
 
-  public void setEndDate(LocalDateTime endDate) {
-    this.endDate = endDate;
-  }
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
 
-  public FileStatus getFileStatus() {
-    return fileStatus;
-  }
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+    }
 
-  public void setFileStatus(FileStatus fileStatus) {
-    this.fileStatus = fileStatus;
-  }
+    public FileStatus getFileStatus() {
+        return fileStatus;
+    }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    ApplicationType that = (ApplicationType) o;
-    return Objects.equals(id, that.id);
-  }
+    public void setFileStatus(FileStatus fileStatus) {
+        this.fileStatus = fileStatus;
+    }
 
-  @Override
-  public int hashCode() {
+    public Long getLogId() {
+        return logId;
+    }
 
-    return Objects.hash(id);
-  }
+    public void setLogId(Long logId) {
+        this.logId = logId;
+    }
 
-  @Override
-  public String toString() {
-    return "ApplicationType{" +
-            "id=" + id +
-            ", fileName='" + fileName + '\'' +
-            ", fileType='" + fileType + '\'' +
-            ", startDate=" + startDate +
-            ", endDate=" + endDate +
-            ", fileStatus='" + fileStatus + '\'' +
-            '}';
-  }
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ApplicationType that = (ApplicationType) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("ApplicationType{");
+        sb.append("id=").append(id);
+        sb.append(", fileName='").append(fileName).append('\'');
+        sb.append(", fileType=").append(fileType);
+        sb.append(", startDate=").append(startDate);
+        sb.append(", endDate=").append(endDate);
+        sb.append(", fileStatus=").append(fileStatus);
+        sb.append(", logId=").append(logId);
+        sb.append(", userId=").append(userId);
+        sb.append('}');
+        return sb.toString();
+    }
 }

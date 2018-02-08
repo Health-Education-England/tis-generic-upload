@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 
+import com.transformuk.hee.tis.genericupload.service.TestUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -46,6 +47,8 @@ import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 public class UploadFileResourceTest {
 
 	private static final String FILE_NAME = "Intrepid Recruitment Import Template v9.xls";
+    public static final String DBC = "DBCs";
+    public static final String USER_ID = "James H";
 
 	@Autowired
 	private ApplicationTypeRepository applicationTypeRepository;
@@ -75,6 +78,7 @@ public class UploadFileResourceTest {
 	@Before
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
+        TestUtils.mockUserprofile(USER_ID, DBC);
 
 		UploadFileResource uploadFileResource = new UploadFileResource(uploadFileService, fileProcessService, fileValidator);
 		this.restContactDetailsMockMvc = MockMvcBuilders.standaloneSetup(uploadFileResource)

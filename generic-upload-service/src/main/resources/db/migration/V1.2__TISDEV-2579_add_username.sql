@@ -1,0 +1,1 @@
+ALTER TABLE `ApplicationType` ADD COLUMN `userId` varchar(255);

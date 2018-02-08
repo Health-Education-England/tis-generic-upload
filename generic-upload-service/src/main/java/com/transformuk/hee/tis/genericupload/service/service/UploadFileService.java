@@ -14,5 +14,5 @@ public interface UploadFileService {
    * @return
    * @throws Exception
    */
-  String upload(List<MultipartFile> files) throws Exception;
+  long upload(List<MultipartFile> files, String username) throws Exception;
 }

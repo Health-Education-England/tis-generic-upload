@@ -1,0 +1,1 @@
+ALTER TABLE `ApplicationType` ADD COLUMN `logId` varchar(255);
