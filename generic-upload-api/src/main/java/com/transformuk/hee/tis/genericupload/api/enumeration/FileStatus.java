@@ -1,5 +1,5 @@
 package com.transformuk.hee.tis.genericupload.api.enumeration;
 
 public enum FileStatus {
-  PENDING,IN_PROCESS,COMPLETED
+    PENDING, IN_PROGRESS, COMPLETED
 }

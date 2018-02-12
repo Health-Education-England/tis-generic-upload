@@ -5,7 +5,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface UploadFileService {
-
+    //TODO externalise to environment variable
+    public static final String CONTAINER_NAME = "dev";
 
   /**
    * Files to upload on Azure blob account

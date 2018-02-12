@@ -82,7 +82,7 @@ public class FileProcessServiceImpl implements FileProcessService {
         //Download file
         fileStorageRepository.download("dev", "100000/" + at.getFileName(), outputStream);
         // update status and save
-        at.setFileStatus(FileStatus.IN_PROCESS);
+        at.setFileStatus(FileStatus.IN_PROGRESS);
         applicationTypeRepository.save(at);
         // process the file
         ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(Files.newInputStream(tempFilePath));
