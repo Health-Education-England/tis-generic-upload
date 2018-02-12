@@ -1,14 +1,15 @@
 package com.transformuk.hee.tis.genericupload.service.api;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.transformuk.hee.tis.security.model.UserProfile;
+import com.codahale.metrics.annotation.Timed;
+import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
+import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
+import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
+import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
+import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import com.transformuk.hee.tis.security.util.TisSecurityHelper;
-import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
-import org.apache.commons.lang3.StringUtils;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,16 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import com.codahale.metrics.annotation.Timed;
-import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
-import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
-import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
-import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
-import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
-
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -61,8 +55,7 @@ public class UploadFileResource {
 	@PreAuthorize("hasPermission('tis:people::person:', 'Create')")
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity<Long> handleFileUpload(HttpServletRequest request) throws Exception { // URISyntaxException
-        UserProfile userProfile = TisSecurityHelper.getProfileFromContext();
-        String userId = userProfile.getUserName();
+        String userName = TisSecurityHelper.getProfileFromContext().getUserName();
 
 		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
 
@@ -82,13 +75,13 @@ public class UploadFileResource {
             }
         }
 
-        //TODO is this necessary 
+        //TODO is this necessary
         // Validate file
         // for other type of file, please pass path variable and pass to validator
         fileValidator.validate(fileList, FileType.RECRUITMENT); //TODO allow validation exceptions to bubble up to REST response
-        
+
         // if validation is success then store the file into azure and db
-        long logId = uploadFileService.upload(fileList, userId);
+        long logId = uploadFileService.upload(fileList, userName);
 
         return ResponseEntity.accepted()
                 .body(logId);

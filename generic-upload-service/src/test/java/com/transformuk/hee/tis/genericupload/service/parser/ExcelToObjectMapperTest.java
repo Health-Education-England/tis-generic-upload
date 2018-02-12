@@ -16,7 +16,7 @@ public class ExcelToObjectMapperTest {
 
   private ExcelToObjectMapper excelToObjectMapper;
 
-  private static final String FILE_NAME = "Intrepid Recruitment Import Template v9.xls";
+  private static final String FILE_NAME = "TIS Recruiment Import Template - test.xlsx";
 
   @Before
   public void setUp() throws Exception {

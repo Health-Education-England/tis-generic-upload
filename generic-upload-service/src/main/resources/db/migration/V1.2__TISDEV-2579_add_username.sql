@@ -1,1 +1,1 @@
-ALTER TABLE `ApplicationType` ADD COLUMN `userId` varchar(255);
+ALTER TABLE `ApplicationType` ADD COLUMN `username` varchar(255);

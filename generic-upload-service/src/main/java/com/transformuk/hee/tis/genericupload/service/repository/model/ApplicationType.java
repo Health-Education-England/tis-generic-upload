@@ -31,7 +31,7 @@ public class ApplicationType implements Serializable {
     private FileStatus fileStatus;
 
     private Long logId;
-    private String userId;
+    private String username;
 
     public Long getId() {
         return id;
@@ -89,12 +89,12 @@ public class ApplicationType implements Serializable {
         this.logId = logId;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     @Override
@@ -120,7 +120,7 @@ public class ApplicationType implements Serializable {
         sb.append(", endDate=").append(endDate);
         sb.append(", fileStatus=").append(fileStatus);
         sb.append(", logId=").append(logId);
-        sb.append(", userId=").append(userId);
+        sb.append(", username=").append(username);
         sb.append('}');
         return sb.toString();
     }

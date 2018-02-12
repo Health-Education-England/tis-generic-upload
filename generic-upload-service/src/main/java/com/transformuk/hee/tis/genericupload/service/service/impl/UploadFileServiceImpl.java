@@ -35,7 +35,7 @@ public class UploadFileServiceImpl implements UploadFileService {
         // this.personRepository = personRepository;
     }
 
-    public ApplicationType save(String fileName, long logId, String userId) {
+    public ApplicationType save(String fileName, long logId, String username) {
         LOG.debug("Request to save ApplicationType based on fileName : {}", fileName);
 
         ApplicationType applicationType = new ApplicationType();
@@ -44,7 +44,7 @@ public class UploadFileServiceImpl implements UploadFileService {
         applicationType.setFileType(FileType.RECRUITMENT);
         applicationType.setFileStatus(FileStatus.PENDING);
         applicationType.setLogId(logId);
-        applicationType.setUserId(userId);
+        applicationType.setUsername(username);
         return applicationTypeRepository.save(applicationType);
     }
 
