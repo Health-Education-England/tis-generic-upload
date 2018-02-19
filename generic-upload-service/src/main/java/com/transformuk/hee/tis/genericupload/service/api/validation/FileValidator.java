@@ -17,9 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
@@ -56,7 +54,7 @@ public class FileValidator {
 
 	/**
 	 * Validate mandatory fields
-	 * 
+	 *
 	 * @param fieldErrors
 	 * @param excelToObjectMapper
 	 * @param dtoClass
@@ -76,7 +74,7 @@ public class FileValidator {
 					if (currentField != null) {
 						currentField.setAccessible(true);
 						String value = (String) currentField.get(row);
-						if (StringUtils.isEmpty(value)) {
+						if (StringUtils.isBlank(value)) {
 							fieldErrors.add(new FieldError("Bulk-Upload", columnNameToMandatoryColumnsMapEntry.getKey(),
 									String.format("%s Field is required at line no %d ", columnNameToMandatoryColumnsMapEntry.getKey(), rowIndex.get())));
 						}

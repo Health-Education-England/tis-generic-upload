@@ -61,9 +61,19 @@ public class ExcelToObjectMapper {
         Field classField = obj.getClass().getDeclaredField(fieldName);
         setObjectFieldValueFromCell(obj, classField, cell);
       }
-      list.add((T) obj);
+      if(!isAllBlanks(obj))
+        list.add((T) obj);
     }
     return list;
+  }
+
+  private boolean isAllBlanks(Object obj) throws IllegalAccessException {
+    boolean allBlanks = true;
+    for (Field f : obj.getClass().getDeclaredFields()) {
+        f.setAccessible(true);
+        allBlanks = allBlanks && org.springframework.util.StringUtils.isEmpty(f.get(obj));
+    }
+    return allBlanks;
   }
 
   /**
@@ -160,7 +170,7 @@ public class ExcelToObjectMapper {
     int index = -1;
     for (index = 0; index < totalColumns; index++) {
       Cell cell = sheet.getRow(0).getCell(index);
-      if (cell.getStringCellValue().toLowerCase().equals(headerName.toLowerCase())) {
+      if (cell.getStringCellValue().toLowerCase().trim().equals(headerName.toLowerCase())) {
         break;
       }
     }

@@ -86,7 +86,7 @@ public class PersonHeaderMapper implements ColumnMapper {
       "Religious Belief",
       "Programme Name",
       "Programme Number",
-      "Programme Membership",
+      "Programme Membership Type",
       "NTN (Programme)",
       "Curriculum #1",
       "Curriculum #1 Start Date",

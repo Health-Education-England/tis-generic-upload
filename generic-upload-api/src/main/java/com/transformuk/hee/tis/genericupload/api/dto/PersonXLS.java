@@ -1,5 +1,8 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
+import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Field;
 import java.util.Date;
 
 public class PersonXLS {
@@ -42,7 +45,7 @@ public class PersonXLS {
     private String curriculum3;
     private Date curriculum3StartDate;
     private Date curriculum3EndDate;
-    private String programmeEndDate;
+    private Date programmeEndDate;
     private String role;
     private String knownAs;
     private String permitToWork;
@@ -367,11 +370,11 @@ public class PersonXLS {
         this.curriculum3EndDate = curriculum3EndDate;
     }
 
-    public String getProgrammeEndDate() {
+    public Date getProgrammeEndDate() {
         return programmeEndDate;
     }
 
-    public void setProgrammeEndDate(String programmeEndDate) {
+    public void setProgrammeEndDate(Date programmeEndDate) {
         this.programmeEndDate = programmeEndDate;
     }
 
