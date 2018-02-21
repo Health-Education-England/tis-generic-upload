@@ -10,6 +10,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -61,6 +63,11 @@ public class UploadFileServiceImpl implements UploadFileService {
             }
         }
         return logId;
+    }
+
+    @Override
+    public Page<ApplicationType> getUploadStatus(Pageable pageable) {
+        return applicationTypeRepository.findAll(pageable);
     }
 
 }

@@ -1,18 +1,13 @@
 package com.transformuk.hee.tis.genericupload.service.api;
 
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-
+import com.transformuk.hee.tis.genericupload.service.Application;
 import com.transformuk.hee.tis.genericupload.service.TestUtils;
+import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
+import com.transformuk.hee.tis.genericupload.service.exception.ExceptionTranslator;
+import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
+import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
+import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
@@ -32,15 +27,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
-import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
-import com.transformuk.hee.tis.genericupload.service.Application;
-import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
-import com.transformuk.hee.tis.genericupload.service.exception.ExceptionTranslator;
-import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
-import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
-import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
-import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -101,7 +95,7 @@ public class UploadFileResourceTest {
 		request.addFile(multipartFile);
 
 		// when & then
-		restContactDetailsMockMvc.perform(fileUpload("/api/generic-upload/file").file(multipartFile))
+		restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
 				.andExpect(status().isAccepted());
 		mockServer.reset();
 	}
@@ -115,7 +109,7 @@ public class UploadFileResourceTest {
 		request.addFile(multipartFile);
 
 		// when & then
-		restContactDetailsMockMvc.perform(fileUpload("/api/generic-upload/file").file(multipartFile))
+		restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
 				.andExpect(status().isUnsupportedMediaType());
 
 	}
@@ -129,25 +123,8 @@ public class UploadFileResourceTest {
 		request.addFile(multipartFile);
 
 		// when & then
-		restContactDetailsMockMvc.perform(fileUpload("/api/generic-upload/file").file(multipartFile))
+		restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
 				.andExpect(status().isUnsupportedMediaType());
 
-	}
-
-	@Ignore //flaky test that either runs by itself with an exception and passes, works when TCS is running or fails
-	@Test
-	@Transactional
-	public void processFile() throws Exception {
-		// insert records
-		ApplicationType applicationType = new ApplicationType();
-		applicationType.setFileName(FILE_NAME);
-		applicationType.setFileType(FileType.RECRUITMENT);
-		applicationType.setFileStatus(FileStatus.PENDING);
-		applicationType.setStartDate(LocalDateTime.now());
-
-		applicationTypeRepository.saveAndFlush(applicationType);
-		// when & then
-		restContactDetailsMockMvc.perform(fileUpload("/api/generic-upload/process"))
-				.andExpect(status().is2xxSuccessful());
 	}
 }

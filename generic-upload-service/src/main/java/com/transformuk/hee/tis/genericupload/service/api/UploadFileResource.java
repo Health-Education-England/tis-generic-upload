@@ -1,25 +1,26 @@
 package com.transformuk.hee.tis.genericupload.service.api;
 
 import com.codahale.metrics.annotation.Timed;
-import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
+import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import com.transformuk.hee.tis.security.util.TisSecurityHelper;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -50,7 +51,7 @@ public class UploadFileResource {
 	@ApiOperation(value = "bulk upload file", notes = "bulk upload file", response = String.class, responseContainer = "Accepted")
 	@ApiResponses(value = {
 			@ApiResponse(code = 202, message = "Uploaded given files successfully with logId", response = Long.class) })
-	@PostMapping("/generic-upload/file")
+	@PostMapping("/file")
 	@Timed
 	@PreAuthorize("hasPermission('tis:people::person:', 'Create')")
 	@ResponseStatus(HttpStatus.ACCEPTED)
@@ -87,13 +88,16 @@ public class UploadFileResource {
                 .body(logId);
 	}
 
-	@ApiOperation(value = "bulk upload file response", notes = "bulk upload file response", responseContainer = "Completed")
+	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "Completed")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "File process successfully", response = String.class) })
-	@PostMapping("/generic-upload/process")
+	@GetMapping("/status")
 	@Timed
-	@PreAuthorize("hasPermission('tis:people::person:', 'Update')")
+	@PreAuthorize("hasPermission('tis:people::person:', 'View')")
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void processFile() throws Exception { // URISyntaxException
-		fileProcessService.loadFilesByStatus(FileStatus.PENDING);
+	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable) throws Exception { // URISyntaxException
+		Page<ApplicationType> page = uploadFileService.getUploadStatus(pageable);
+		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/generic-upload/status");
+
+		return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
 	}
 }

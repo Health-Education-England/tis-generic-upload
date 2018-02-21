@@ -1,5 +1,8 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -16,4 +19,6 @@ public interface UploadFileService {
    * @throws Exception
    */
   long upload(List<MultipartFile> files, String username) throws Exception;
+
+  Page<ApplicationType> getUploadStatus(Pageable pageable);
 }

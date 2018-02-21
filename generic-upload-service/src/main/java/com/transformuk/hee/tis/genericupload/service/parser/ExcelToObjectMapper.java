@@ -70,6 +70,7 @@ public class ExcelToObjectMapper {
   private boolean isAllBlanks(Object obj) throws IllegalAccessException {
     boolean allBlanks = true;
     for (Field f : obj.getClass().getDeclaredFields()) {
+    	  if(f.getName().startsWith("$")) continue; //skip surefire jacoco fields
         f.setAccessible(true);
         allBlanks = allBlanks && org.springframework.util.StringUtils.isEmpty(f.get(obj));
     }
