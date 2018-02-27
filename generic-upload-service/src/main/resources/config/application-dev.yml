@@ -94,8 +94,8 @@ kc:
     master.realm: ${KC_MASTER_REALM:master}
     client.id: ${KC_CLIENT_ID:admin-cli}
     server.url: ${KC_SERVER_URL:https://dev-apps.tis.nhs.uk/auth/}
-    username: ${KC_USERNAME:admin}
-    password: ${KC_PASSWORD:vp689ygIM563Tb67971L02FZU}
+    username: ${KC_USERNAME:bulk_upload}
+    password: ${KC_PASSWORD:bulk_upload}
     timeout: ${KC_TIMEOUT:10000}
 
 # ===================================================================

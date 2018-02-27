@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
 import java.io.ByteArrayInputStream;
@@ -108,7 +109,7 @@ public class ScheduledUploadTask {
 			} catch (InvalidFormatException e) {
 				logger.error("Error while reading excel file : " + e.getMessage());
 				applicationType.setFileStatus(FileStatus.INVALID_FILE_FORMAT);
-			} catch (HttpServerErrorException e) {
+			} catch (HttpServerErrorException | HttpClientErrorException e) {
 				logger.error("Error while processing excel file : " + e.getMessage());
 				applicationType.setFileStatus(FileStatus.PENDING);
 			} catch (Exception e) {

@@ -53,46 +53,44 @@ public class UploadFileResource {
 			@ApiResponse(code = 202, message = "Uploaded given files successfully with logId", response = Long.class) })
 	@PostMapping("/file")
 	@Timed
-	@PreAuthorize("hasPermission('tis:people::person:', 'Create')")
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity<Long> handleFileUpload(HttpServletRequest request) throws Exception { // URISyntaxException
         String userName = TisSecurityHelper.getProfileFromContext().getUserName();
 
 		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
 
-        // extract files from MIME body
-        List<MultipartFile> fileList = mRequest.getFileMap()
-                .entrySet()
-                .stream()
-                .map(file -> file.getValue())
-                .collect(Collectors.toList());
+    // extract files from MIME body
+    List<MultipartFile> fileList = mRequest.getFileMap()
+            .entrySet()
+            .stream()
+            .map(file -> file.getValue())
+            .collect(Collectors.toList());
 
-        // Validate file formats
-        for (MultipartFile file : fileList) {
-            // TODO support multiple file types here - xlsx, xls for now; CSV perhaps
-            String contentType = file.getContentType();
-            if (!(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType))) {
-                throw new InvalidFormatException(String.format("Content type %s not supported", file.getContentType()));
-            }
+    // Validate file formats
+    for (MultipartFile file : fileList) {
+        // TODO support multiple file types here - xlsx, xls for now; CSV perhaps
+        String contentType = file.getContentType();
+        if (!(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType))) {
+            throw new InvalidFormatException(String.format("Content type %s not supported", file.getContentType()));
         }
+    }
 
-        //TODO is this necessary
-        // Validate file
-        // for other type of file, please pass path variable and pass to validator
-        fileValidator.validate(fileList, FileType.RECRUITMENT); //TODO allow validation exceptions to bubble up to REST response
+    //TODO is this necessary
+    // Validate file
+    // for other type of file, please pass path variable and pass to validator
+    fileValidator.validate(fileList, FileType.RECRUITMENT); //TODO allow validation exceptions to bubble up to REST response
 
-        // if validation is success then store the file into azure and db
-        long logId = uploadFileService.upload(fileList, userName);
+    // if validation is success then store the file into azure and db
+    long logId = uploadFileService.upload(fileList, userName);
 
-        return ResponseEntity.accepted()
-                .body(logId);
+    return ResponseEntity.accepted()
+            .body(logId);
 	}
 
 	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "Completed")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "File process successfully", response = String.class) })
 	@GetMapping("/status")
 	@Timed
-	@PreAuthorize("hasPermission('tis:people::person:', 'View')")
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable) throws Exception { // URISyntaxException
 		Page<ApplicationType> page = uploadFileService.getUploadStatus(pageable);
