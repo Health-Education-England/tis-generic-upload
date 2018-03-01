@@ -87,8 +87,8 @@ public class UploadFileResource {
             .body(logId);
 	}
 
-	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "Completed")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "File process successfully", response = String.class) })
+	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "File process successfully") })
 	@GetMapping("/status")
 	@Timed
 	@ResponseStatus(HttpStatus.ACCEPTED)
