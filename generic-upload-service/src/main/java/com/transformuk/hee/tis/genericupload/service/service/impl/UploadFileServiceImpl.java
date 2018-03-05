@@ -38,7 +38,7 @@ public class UploadFileServiceImpl implements UploadFileService {
     }
 
     public ApplicationType save(String fileName, long logId, String username) {
-        LOG.debug("Request to save ApplicationType based on fileName : {}", fileName);
+        LOG.info("Request to save ApplicationType based on fileName : {}", fileName);
 
         ApplicationType applicationType = new ApplicationType();
         applicationType.setFileName(fileName);

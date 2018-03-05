@@ -38,12 +38,6 @@ spring:
                 prepStmtCacheSize: 250
                 prepStmtCacheSqlLimit: 2048
                 useServerPrepStmts: true
-        tcs:
-            url: jdbc:mysql://${TCS_DBHOST:localhost}:${TCS_DBPORT:3306}/tcs?useUnicode=true&characterEncoding=utf8&useSSL=false
-            username: ${TCS_DBUSER:root}
-            password: ${TCS_DBPASSWORD:}
-            driverClassName: com.mysql.jdbc.Driver
-            max-total: 30
     jpa:
         database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
         database: MYSQL
