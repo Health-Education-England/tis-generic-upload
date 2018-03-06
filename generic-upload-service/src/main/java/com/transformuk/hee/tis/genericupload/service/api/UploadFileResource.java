@@ -55,6 +55,7 @@ public class UploadFileResource {
 	@Timed
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity<Long> handleFileUpload(HttpServletRequest request) throws Exception { // URISyntaxException
+		log.info("Received request to upload files.");
         String userName = TisSecurityHelper.getProfileFromContext().getUserName();
 
 		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
@@ -65,6 +66,11 @@ public class UploadFileResource {
             .stream()
             .map(file -> file.getValue())
             .collect(Collectors.toList());
+
+    if(fileList.isEmpty()) {
+    	log.error("Expected to receive file(s) as part of the upload");
+    	return ResponseEntity.badRequest().body(0L);
+    }
 
     // Validate file formats
     for (MultipartFile file : fileList) {
@@ -93,6 +99,7 @@ public class UploadFileResource {
 	@Timed
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable) throws Exception { // URISyntaxException
+		log.info("request for bulk upload status received.");
 		Page<ApplicationType> page = uploadFileService.getUploadStatus(pageable);
 		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/generic-upload/status");
 
