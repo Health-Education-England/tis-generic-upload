@@ -39,7 +39,7 @@ public class UploadFileResource {
 	private final FileValidator fileValidator;
 
 	private final String XLS_MIME_TYPE = "application/vnd.ms-excel";
-    private final String XLX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+	private final String XLX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 	public UploadFileResource(UploadFileService uploadFileService, FileProcessService fileProcessService,
 			FileValidator fileValidator) {
@@ -54,9 +54,11 @@ public class UploadFileResource {
 	@PostMapping("/file")
 	@Timed
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	public ResponseEntity<Long> handleFileUpload(HttpServletRequest request) throws Exception { // URISyntaxException
+	public ResponseEntity<String> handleFileUpload(HttpServletRequest request) throws Exception { // URISyntaxException
 		log.info("Received request to upload files.");
-        String userName = TisSecurityHelper.getProfileFromContext().getUserName();
+
+		//TODO : also get full name
+		String userName = TisSecurityHelper.getProfileFromContext().getUserName();
 
 		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
 
@@ -69,7 +71,7 @@ public class UploadFileResource {
 
     if(fileList.isEmpty()) {
     	log.error("Expected to receive file(s) as part of the upload");
-    	return ResponseEntity.badRequest().body(0L);
+    	return ResponseEntity.badRequest().body("Expected a file in the multipart file request");
     }
 
     // Validate file formats
@@ -90,7 +92,7 @@ public class UploadFileResource {
     long logId = uploadFileService.upload(fileList, userName);
 
     return ResponseEntity.accepted()
-            .body(logId);
+            .body(Long.toString(logId));
 	}
 
 	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)

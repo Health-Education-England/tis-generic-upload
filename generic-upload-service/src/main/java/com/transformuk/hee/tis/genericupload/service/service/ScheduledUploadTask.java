@@ -9,6 +9,9 @@ import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
 import com.transformuk.hee.tis.tcs.api.dto.*;
 import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
@@ -19,9 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
+import javax.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -29,10 +34,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDateTime;
@@ -50,10 +54,15 @@ public class ScheduledUploadTask {
 	@Autowired
 	private FileProcessService fileProcessService;
 
+	GMCDTOFetcher gmcDtoFetcher;
+	GDCDTOFetcher gdcDtoFetcher;
+	PersonBasicDetailsDTOFetcher pbdDtoFetcher;
+
 	private final ApplicationTypeRepository applicationTypeRepository;
 	private ApplicationConfiguration applicationConfiguration;
 
-
+	//TODO externalise
+	private final int QUERYSTRING_LENGTH_LIMITING_BATCH_SIZE = 50;
 
 	@Autowired
 	public ScheduledUploadTask(FileStorageRepository fileStorageRepository,
@@ -61,6 +70,14 @@ public class ScheduledUploadTask {
 		this.fileStorageRepository = fileStorageRepository;
 		this.applicationTypeRepository = applicationTypeRepository;
 	}
+
+	@PostConstruct
+	public void initialiseFetchers() {
+		this.gmcDtoFetcher = new GMCDTOFetcher(tcsServiceImpl);
+		this.gdcDtoFetcher = new GDCDTOFetcher(tcsServiceImpl);
+		this.pbdDtoFetcher = new PersonBasicDetailsDTOFetcher(tcsServiceImpl);
+	}
+
 
 	//waits fixedDelay milliseconds after the last run task
 	@Scheduled(fixedDelay = 5000, initialDelay = 2000) //TODO externalise this wait interval,
@@ -79,37 +96,23 @@ public class ScheduledUploadTask {
 				excelToObjectMapper = new ExcelToObjectMapper(bis);
 				personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap()); // TODO : this is being done twice, once while doing first level validation, consider optimising
 
-				if (!CollectionUtils.isEmpty(personXLSS)) {
-					for (PersonXLS personXLS : personXLSS) {
-						Set<CurriculumDTO> curricula = new HashSet<>();
+				//deal with unknowns - add all unknown as a new record - ignore duplicates
+				Set<PersonXLS> unknownRegNumbers = personXLSS.stream()
+						.filter(personXLS ->
+								"unknown".equalsIgnoreCase(personXLS.getGmcNumber()) ||
+								"unknown".equalsIgnoreCase(personXLS.getGdcNumber()) ||
+								"unknown".equalsIgnoreCase(personXLS.getPublicHealthNumber()))
+						.collect(Collectors.toSet());
+				logger.info("Found {} unknown reg numbers in xml file uploaded. Adding to TIS", unknownRegNumbers.size());
+				addPersons(unknownRegNumbers);
 
-						CurriculumDTO curriculumDTO1 = personXLS.getCurriculum1() == null ? null : tcsServiceImpl.getCurriculaByName(personXLS.getCurriculum1()).get(0);
-						CurriculumDTO curriculumDTO2 = personXLS.getCurriculum2() == null ? null : tcsServiceImpl.getCurriculaByName(personXLS.getCurriculum2()).get(0);
-						CurriculumDTO curriculumDTO3 = personXLS.getCurriculum3() == null ? null : tcsServiceImpl.getCurriculaByName(personXLS.getCurriculum3()).get(0);
+				addOrUpdateGMCRecords(personXLSS); //TODO repeat for GDC and Public Health Number
 
-						ProgrammeDTO programmeDTO = null;
-						if (personXLS.getProgrammeName() != null && personXLS.getProgrammeNumber() != null) {
-							programmeDTO = tcsServiceImpl.getProgrammeByNameAndNumber(personXLS.getProgrammeName(), personXLS.getProgrammeNumber()).get(0);
-							programmeDTO.setCurricula(curricula);       //links the programme to the curricula
-						} else {
-							//TODO consider throwing an exception instead
-						}
-
-						PersonDTO personDTO = getPersonDTO(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3, programmeDTO);
-						if (personDTO != null) { //currently can only be null if programme isn't found
-							PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
-							for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
-								programmeMembershipDTO.setPerson(savedPersonDTO);
-								tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
-							}
-						}
-					}
-				}
 				applicationType.setFileStatus(FileStatus.COMPLETED);
 			} catch (InvalidFormatException e) {
 				logger.error("Error while reading excel file : " + e.getMessage());
 				applicationType.setFileStatus(FileStatus.INVALID_FILE_FORMAT);
-			} catch (HttpServerErrorException | HttpClientErrorException e) {
+			} catch (HttpServerErrorException | HttpClientErrorException e) { //thrown when connecting to TCS
 				logger.error("Error while processing excel file : " + e.getMessage());
 				applicationType.setFileStatus(FileStatus.PENDING);
 			} catch (Exception e) {
@@ -122,6 +125,125 @@ public class ScheduledUploadTask {
 		}
 	}
 
+	public void addOrUpdateGMCRecords(List<PersonXLS> personXLSS) {
+		//check whether a GMC record exists in TIS
+		Function<PersonXLS, String> getGmcNumber = PersonXLS::getGmcNumber;
+		Set<PersonXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumber(personXLSS, getGmcNumber);
+
+		//check whether a GMC record exists in TCS
+		Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
+		Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithIds(gmcNumbers);
+
+		if (!gmcDetailsMap.isEmpty()) {
+			Set<String> personIdsFromGMCDetailsTable = gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
+			Map<String, PersonBasicDetailsDTO> pbdMapByGMC = pbdDtoFetcher.findWithIds(personIdsFromGMCDetailsTable);
+
+			Set<PersonXLS> knownGMCsInTIS = rowsWithGMCNumbers.stream()
+					.filter(personXLS -> {
+						String gmcNumber = getGmcNumber.apply(personXLS);
+						return gmcDetailsMap.containsKey(gmcNumber) && pbdMapByGMC.get(gmcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname());
+					})
+					.collect(Collectors.toSet());
+			Set<PersonXLS> unknownGMCsInTIS = rowsWithGMCNumbers.stream()
+					.filter(personXLS -> {
+						String gmcNumber = getGmcNumber.apply(personXLS);
+						return gmcDetailsMap.containsKey(gmcNumber) && !pbdMapByGMC.get(gmcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname());
+					})
+					.collect(Collectors.toSet());
+			if (unknownGMCsInTIS.size() > 0) {
+				logger.error("GMC's found without matching surnames (no. of records) :  {}", unknownGMCsInTIS.size());
+				//TODO add to error sheet
+			}
+
+			//deep compare and update if necessary
+			Function<PersonDTO, String> personDTOToGmcID = personDTO -> String.valueOf(personDTO.getGmcDetails().getGmcNumber());
+			Map<String, PersonDTO> gmcNumberToPersonDTOMap = knownGMCsInTIS.stream()
+					.map(this::getPersonDTO)
+					.collect(Collectors.toMap(personDTOToGmcID, Function.identity()));
+			Map<String, PersonDTO> personDTOMapFromTCS = knownGMCsInTIS.stream()
+					.map(personXLS -> tcsServiceImpl.getPerson(String.valueOf(gmcDetailsMap.get(personXLS.getGmcNumber()).getId()))) //TODO optimise to a fetcher
+					.collect(Collectors.toMap(personDTOToGmcID, Function.identity()));
+
+			//now that we have both lets set the ids from the DB DTO to the excel DTO
+			for(String key : gmcNumberToPersonDTOMap.keySet()) {
+				copyIdsFromDB(personDTOMapFromTCS.get(key), gmcNumberToPersonDTOMap.get(key));
+
+				//TODO save the whole object - this does not exist in TCS yet! should be similar to the 'create' person
+			}
+		} else {
+			addPersons(rowsWithGMCNumbers);
+		}
+	}
+
+	private Set<String> collectRegNumbers(Set<PersonXLS> personXLSS, Function<PersonXLS, String> function) {
+		return personXLSS.stream()
+				.map(function::apply)
+				.collect(Collectors.toSet());
+	}
+
+	private Set<PersonXLS> getRowsWithRegistrationNumber(List<PersonXLS> personXLSS, Function<PersonXLS, String> function) {
+		return personXLSS.stream()
+				.filter(personXLS -> {
+					String regNumber = function.apply(personXLS);
+					return !"unknown".equalsIgnoreCase(regNumber) && !StringUtils.isEmpty(regNumber);
+				})
+				.collect(Collectors.toSet());
+	}
+
+	private void copyIdsFromDB(PersonDTO personDTOFromDB, PersonDTO personDTOFromXLS) {
+		//set ids first
+		personDTOFromXLS.setId(personDTOFromDB.getId());
+		if (personDTOFromXLS.getQualifications().size() > 0) { //TODO qualifications do not persist on person
+			personDTOFromXLS.getQualifications().iterator().next().setId(personDTOFromDB.getQualifications().iterator().next().getId());
+		}
+		personDTOFromXLS.getContactDetails().setId(personDTOFromDB.getContactDetails().getId());
+		personDTOFromXLS.getPersonalDetails().setId(personDTOFromDB.getPersonalDetails().getId());
+		personDTOFromXLS.getGmcDetails().setId(personDTOFromDB.getGmcDetails().getId());
+		personDTOFromXLS.getGdcDetails().setId(personDTOFromDB.getGdcDetails().getId());
+		personDTOFromXLS.getRightToWork().setId(personDTOFromDB.getRightToWork().getId());
+	}
+
+	private void addPersons(Set<PersonXLS> personsInXLS) {
+		if (!CollectionUtils.isEmpty(personsInXLS)) {
+			for (PersonXLS personXLS : personsInXLS) {
+				PersonDTO personDTO = getPersonDTO(personXLS);
+
+				if (personDTO != null) { //currently can only be null if programme isn't found
+					PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
+					//qualifications do not persist on person save; but are retrievable from a personDTO! Saving
+					QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
+					qualificationDTO.setPerson(personDTO);
+					tcsServiceImpl.createQualification(qualificationDTO);
+
+
+					for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
+						programmeMembershipDTO.setPerson(savedPersonDTO);
+						// this is being done here as
+						tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
+					}
+				}
+			}
+		}
+	}
+
+	private PersonDTO getPersonDTO(PersonXLS personXLS) {
+		Set<CurriculumDTO> curricula = new HashSet<>();
+
+		CurriculumDTO curriculumDTO1 = personXLS.getCurriculum1() == null ? null : tcsServiceImpl.getCurriculaByName(personXLS.getCurriculum1()).get(0);
+		CurriculumDTO curriculumDTO2 = personXLS.getCurriculum2() == null ? null : tcsServiceImpl.getCurriculaByName(personXLS.getCurriculum2()).get(0);
+		CurriculumDTO curriculumDTO3 = personXLS.getCurriculum3() == null ? null : tcsServiceImpl.getCurriculaByName(personXLS.getCurriculum3()).get(0);
+
+		ProgrammeDTO programmeDTO = null;
+		if (personXLS.getProgrammeName() != null && personXLS.getProgrammeNumber() != null) {
+			programmeDTO = tcsServiceImpl.getProgrammeByNameAndNumber(personXLS.getProgrammeName(), personXLS.getProgrammeNumber()).get(0);
+			programmeDTO.setCurricula(curricula);       //links the programme to the curricula
+		} else {
+			//TODO consider throwing an exception instead
+		}
+
+		return getPersonDTO(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3, programmeDTO);
+	}
+
 	public PersonDTO getPersonDTO(PersonXLS personXLS, CurriculumDTO curriculumDTO1, CurriculumDTO curriculumDTO2, CurriculumDTO curriculumDTO3, ProgrammeDTO programmeDTO) {
 		PersonDTO personDTO = new PersonDTO();
 		LocalDateTime addedDate = LocalDateTime.now();
@@ -132,20 +254,8 @@ public class ScheduledUploadTask {
 		personDTO.setRole(personXLS.getRole());
 		//TODO NI Number - waiting for CIO update
 
-		QualificationDTO qualificationDTO = new QualificationDTO();
-		qualificationDTO.setCountryOfQualification(personXLS.getCountryOfQualification());
-		qualificationDTO.setQualification(personXLS.getQualification());
-		qualificationDTO.setMedicalSchool(personXLS.getMedicalSchool());
-		qualificationDTO.setQualificationAttainedDate(convertDate(personXLS.getDateAttained()));
-		personDTO.setQualifications(new HashSet<QualificationDTO>() {{
-			add(qualificationDTO);
-		}});
-
-		ContactDetailsDTO contactDetailsDTO = getContactDetailsDTO(personXLS);
-		personDTO.setContactDetails(contactDetailsDTO);
-
-		PersonalDetailsDTO personalDetailsDTO = getPersonalDetailsDTO(personXLS);
-		personDTO.setPersonalDetails(personalDetailsDTO);
+		personDTO.setContactDetails(getContactDetailsDTO(personXLS));
+		personDTO.setPersonalDetails(getPersonalDetailsDTO(personXLS));
 
 		GmcDetailsDTO gmcDetailsDTO = new GmcDetailsDTO();
 		gmcDetailsDTO.setGmcNumber(personXLS.getGmcNumber());
@@ -155,8 +265,7 @@ public class ScheduledUploadTask {
 		gdcDetailsDTO.setGdcNumber(personXLS.getGdcNumber());
 		personDTO.setGdcDetails(gdcDetailsDTO);
 
-		RightToWorkDTO rightToWorkDTO = getRightToWorkDTO(personXLS);
-		personDTO.setRightToWork(rightToWorkDTO);
+		personDTO.setRightToWork(getRightToWorkDTO(personXLS));
 
 		LocalDate programmeEndDate = convertDate(personXLS.getProgrammeEndDate());
 		ProgrammeMembershipType programmeMembershipType = ProgrammeMembershipType.fromString(personXLS.getProgrammeMembership());
@@ -180,6 +289,15 @@ public class ScheduledUploadTask {
 		personDTO.setProgrammeMemberships(programmeMembershipDTOS);
 
 		return personDTO;
+	}
+
+	public QualificationDTO getQualificationDTO(PersonXLS personXLS) {
+		QualificationDTO qualificationDTO = new QualificationDTO();
+		qualificationDTO.setCountryOfQualification(personXLS.getCountryOfQualification());
+		qualificationDTO.setQualification(personXLS.getQualification());
+		qualificationDTO.setMedicalSchool(personXLS.getMedicalSchool());
+		qualificationDTO.setQualificationAttainedDate(convertDate(personXLS.getDateAttained()));
+		return qualificationDTO;
 	}
 
 	private RightToWorkDTO getRightToWorkDTO(PersonXLS personXLS) {

@@ -152,7 +152,7 @@
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>tcs-client</artifactId>
-			<version>3.0.23</version>
+			<version>3.0.28</version>
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>

@@ -1,11 +1,10 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
+import com.transformuk.hee.tis.genericupload.service.service.ScheduledUploadTask;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.*;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,7 +13,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 public class ExcelToObjectMapper {
+  private static final Logger logger = getLogger(ExcelToObjectMapper.class);
+
   private Workbook workbook;
 
   public ExcelToObjectMapper(InputStream excelFile) throws IOException, InvalidFormatException {
@@ -46,7 +49,7 @@ public class ExcelToObjectMapper {
     Sheet sheet = workbook.getSheetAt(0);
     int lastRow = sheet.getLastRowNum();
     for (int i = 1; i <= lastRow; i++) {
-      Object obj = cls.newInstance();
+    	Object obj = cls.newInstance();
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
@@ -85,62 +88,20 @@ public class ExcelToObjectMapper {
    * @param field Field which value need to be set.
    * @param cell  Apache POI cell from which value needs to be retrived.
    */
-  private void setObjectFieldValueFromCell(Object obj, Field field, Cell cell) {
+  private void setObjectFieldValueFromCell(Object obj, Field field, Cell cell) throws IllegalAccessException {
     Class<?> cls = field.getType();
     field.setAccessible(true);
-    if (cls == String.class) {
-      try {
-        field.set(obj, cell.getStringCellValue());
-      } catch (Exception e) {
-        setNullValueToObject(obj, field);
-      }
-    } else if (cls == Date.class) {
-      try {
-        Date date = cell.getDateCellValue();
-        field.set(obj, date);
-      } catch (Exception e) {
-        setNullValueToObject(obj, field);
-      }
-    } else if (cls == int.class || cls == long.class || cls == float.class || cls == double.class) {
-      double value = cell.getNumericCellValue();
-      try {
-        if (cls == int.class) {
-          field.set(obj, (int) value);
-        } else if (cls == long.class) {
-          field.set(obj, (long) value);
-        } else if (cls == float.class) {
-          field.set(obj, (float) value);
-        } else {
-          //Double value
-          field.set(obj, value);
-        }
-      } catch (Exception e) {
-        setNullValueToObject(obj, field);
-      }
-    } else if (cls == boolean.class) {
-      boolean value = cell.getBooleanCellValue();
-      try {
-        field.set(obj, value);
-      } catch (Exception e) {
-        setNullValueToObject(obj, field);
-      }
-    }
-        /*else if(cls == Collection.class) {
-            double value = cell.getNumericCellValue();
-            try {
-                field.set(obj, value);
-            }catch (Exception e) {
-                try {
-                    field.set(obj, null);
-                } catch (IllegalAccessException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        }*/
-    else {
-      // Unsupported data type.
-    }
 
+    if(cell == null) {
+      setNullValueToObject(obj, field);
+    } else if (cls == Date.class) {
+	    cell.setCellType(CellType.NUMERIC);
+	    Date date = cell.getDateCellValue();
+      field.set(obj, date);
+    } else {
+      cell.setCellType(CellType.STRING);
+      field.set(obj, cell.getStringCellValue());
+    }
   }
 
   /**

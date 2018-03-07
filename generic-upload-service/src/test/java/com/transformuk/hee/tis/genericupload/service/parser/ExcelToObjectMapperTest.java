@@ -51,4 +51,12 @@ public class ExcelToObjectMapperTest {
             new PersonHeaderMapper().getFieldMap());
     Assert.assertEquals(186, actual.size());
   }
+
+  @Test
+  public void shouldHaveGMCNumberAndNoNI() throws Exception {
+    List<PersonXLS> actual = excelToObjectMapper.map(PersonXLS.class,
+        new PersonHeaderMapper().getFieldMap());
+    Assert.assertEquals("7463954", actual.get(13).getGmcNumber());
+    Assert.assertEquals(null, actual.get(13).getNiNumber());
+  }
 }
