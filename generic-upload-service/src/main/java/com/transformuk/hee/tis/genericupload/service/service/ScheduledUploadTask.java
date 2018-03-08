@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDateTime;
+import static com.transformuk.hee.tis.genericupload.service.util.ReflectionUtil.copyIfNotNullOrEmpty;
 import static org.slf4j.LoggerFactory.getLogger;
 
 @Component
@@ -83,6 +84,7 @@ public class ScheduledUploadTask {
 	@Scheduled(fixedDelay = 5000, initialDelay = 2000) //TODO externalise this wait interval,
 	public void scheduleTaskWithFixedDelay() {
 		logger.info("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
+		//TODO circuit-break on tcs/profile/reference/mysql connectivity
 		for (ApplicationType applicationType : applicationTypeRepository.findByFileStatusOrderByStartDate(FileStatus.PENDING)) {
 			//set to in progress
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
@@ -130,7 +132,6 @@ public class ScheduledUploadTask {
 		Function<PersonXLS, String> getGmcNumber = PersonXLS::getGmcNumber;
 		Set<PersonXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumber(personXLSS, getGmcNumber);
 
-		//check whether a GMC record exists in TCS
 		Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
 		Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithIds(gmcNumbers);
 
@@ -164,15 +165,21 @@ public class ScheduledUploadTask {
 					.map(personXLS -> tcsServiceImpl.getPerson(String.valueOf(gmcDetailsMap.get(personXLS.getGmcNumber()).getId()))) //TODO optimise to a fetcher
 					.collect(Collectors.toMap(personDTOToGmcID, Function.identity()));
 
-			//now that we have both lets set the ids from the DB DTO to the excel DTO
+			//now that we have both lets copy updated data
 			for(String key : gmcNumberToPersonDTOMap.keySet()) {
-				copyIdsFromDB(personDTOMapFromTCS.get(key), gmcNumberToPersonDTOMap.get(key));
+				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
+				PersonDTO personDTOFromXLS = gmcNumberToPersonDTOMap.get(key);
+				overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
 
-				//TODO save the whole object - this does not exist in TCS yet! should be similar to the 'create' person
+				tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
+				//TODO add programmeMemberships and qualifications separately
 			}
-		} else {
-			addPersons(rowsWithGMCNumbers);
 		}
+
+		Set<PersonXLS> gmcsNotInTCS = rowsWithGMCNumbers.stream()
+				.filter(personXLS -> !gmcDetailsMap.containsKey(personXLS.getGmcNumber()))
+				.collect(Collectors.toSet());
+		addPersons(gmcsNotInTCS);
 	}
 
 	private Set<String> collectRegNumbers(Set<PersonXLS> personXLSS, Function<PersonXLS, String> function) {
@@ -190,18 +197,19 @@ public class ScheduledUploadTask {
 				.collect(Collectors.toSet());
 	}
 
-	private void copyIdsFromDB(PersonDTO personDTOFromDB, PersonDTO personDTOFromXLS) {
-		//set ids first
-		personDTOFromXLS.setId(personDTOFromDB.getId());
-		if (personDTOFromXLS.getQualifications().size() > 0) { //TODO qualifications do not persist on person
-			personDTOFromXLS.getQualifications().iterator().next().setId(personDTOFromDB.getQualifications().iterator().next().getId());
-		}
-		personDTOFromXLS.getContactDetails().setId(personDTOFromDB.getContactDetails().getId());
-		personDTOFromXLS.getPersonalDetails().setId(personDTOFromDB.getPersonalDetails().getId());
-		personDTOFromXLS.getGmcDetails().setId(personDTOFromDB.getGmcDetails().getId());
-		personDTOFromXLS.getGdcDetails().setId(personDTOFromDB.getGdcDetails().getId());
-		personDTOFromXLS.getRightToWork().setId(personDTOFromDB.getRightToWork().getId());
+	private void overwriteDBValuesFromNonEmptyExcelValues(PersonDTO personDTOFromDB, PersonDTO personDTOFromXLS) {
+		copyIfNotNullOrEmpty(personDTOFromXLS, personDTOFromDB,
+				"addedDate", "inactiveDate", "publicHealthNumber", "status"); //TODO confirm how to deal with role
+		copyIfNotNullOrEmpty(personDTOFromXLS.getContactDetails(), personDTOFromDB.getContactDetails(),
+				"surname", "forenames", "knownAs", "title", "telephoneNumber", "mobileNumber", "email", "address1", "address2", "address3", "postCode");
+		copyIfNotNullOrEmpty(personDTOFromXLS.getPersonalDetails(), personDTOFromDB.getPersonalDetails(),
+				"maritalStatus", "dateOfBirth", "disability", "disabilityDetails", "nationality", "gender", "ethnicOrigin", "sexualOrientation", "religiousBelief");
+		copyIfNotNullOrEmpty(personDTOFromXLS.getGmcDetails(), personDTOFromDB.getGmcDetails(), "gmcNumber");
+		copyIfNotNullOrEmpty(personDTOFromXLS.getGdcDetails(), personDTOFromDB.getGdcDetails(), "gdcNumber");
+		copyIfNotNullOrEmpty(personDTOFromXLS.getRightToWork(), personDTOFromDB.getRightToWork(),
+				"permitToWork", "settled", "visaDetails", "visaValidTo", "visaIssued", "eeaResident");
 	}
+
 
 	private void addPersons(Set<PersonXLS> personsInXLS) {
 		if (!CollectionUtils.isEmpty(personsInXLS)) {
@@ -212,9 +220,8 @@ public class ScheduledUploadTask {
 					PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
 					//qualifications do not persist on person save; but are retrievable from a personDTO! Saving
 					QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
-					qualificationDTO.setPerson(personDTO);
+					qualificationDTO.setPerson(savedPersonDTO);
 					tcsServiceImpl.createQualification(qualificationDTO);
-
 
 					for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
 						programmeMembershipDTO.setPerson(savedPersonDTO);

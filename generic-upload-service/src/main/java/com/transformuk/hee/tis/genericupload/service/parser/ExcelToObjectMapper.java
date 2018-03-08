@@ -105,7 +105,7 @@ public class ExcelToObjectMapper {
       field.set(obj, date);
     } else {
       cell.setCellType(CellType.STRING);
-      field.set(obj, cell.getStringCellValue());
+      field.set(obj, cell.getStringCellValue().trim());
     }
   }
 
