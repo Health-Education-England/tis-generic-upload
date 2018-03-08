@@ -58,5 +58,6 @@ public class ExcelToObjectMapperTest {
         new PersonHeaderMapper().getFieldMap());
     Assert.assertEquals("7463954", actual.get(13).getGmcNumber());
     Assert.assertEquals(null, actual.get(13).getNiNumber());
+    Assert.assertEquals(14, actual.get(13).getRowNumber());
   }
 }

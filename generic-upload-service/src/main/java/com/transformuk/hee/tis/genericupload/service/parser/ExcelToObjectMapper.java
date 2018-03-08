@@ -17,6 +17,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public class ExcelToObjectMapper {
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
+  public static final String ROW_NUMBER = "rowNumber";
 
   private Workbook workbook;
 
@@ -46,6 +47,8 @@ public class ExcelToObjectMapper {
   public <T> ArrayList<T> map(Class<T> cls, Map<String, String> columnMap) throws Exception {
     ArrayList<T> list = new ArrayList();
 
+    Field rowNumber = cls.getDeclaredField(ROW_NUMBER);
+    rowNumber.setAccessible(true);
     Sheet sheet = workbook.getSheetAt(0);
     int lastRow = sheet.getLastRowNum();
     for (int i = 1; i <= lastRow; i++) {
@@ -53,6 +56,7 @@ public class ExcelToObjectMapper {
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
+        if(fieldName.equalsIgnoreCase(ROW_NUMBER)) continue;
         String xlsColumnName = columnMap.get(fieldName.toLowerCase());
         int index;
         if (StringUtils.isNotEmpty(xlsColumnName)) {
@@ -64,6 +68,7 @@ public class ExcelToObjectMapper {
         Field classField = obj.getClass().getDeclaredField(fieldName);
         setObjectFieldValueFromCell(obj, classField, cell);
       }
+      rowNumber.setInt(obj, i);
       if(!isAllBlanks(obj))
         list.add((T) obj);
     }
@@ -73,7 +78,7 @@ public class ExcelToObjectMapper {
   private boolean isAllBlanks(Object obj) throws IllegalAccessException {
     boolean allBlanks = true;
     for (Field f : obj.getClass().getDeclaredFields()) {
-    	  if(f.getName().startsWith("$")) continue; //skip surefire jacoco fields
+    	  if(f.getName().startsWith("$") || f.getName().equalsIgnoreCase(ROW_NUMBER)) continue; //skip surefire jacoco fields
         f.setAccessible(true);
         allBlanks = allBlanks && org.springframework.util.StringUtils.isEmpty(f.get(obj));
     }
