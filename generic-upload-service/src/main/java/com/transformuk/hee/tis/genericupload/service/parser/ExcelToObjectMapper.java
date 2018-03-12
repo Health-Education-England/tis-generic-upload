@@ -1,6 +1,5 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
-import com.transformuk.hee.tis.genericupload.service.service.ScheduledUploadTask;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
@@ -9,7 +8,10 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 
@@ -18,7 +20,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class ExcelToObjectMapper {
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
   public static final String ROW_NUMBER = "rowNumber";
-
+  private static final SimpleDateFormat dateFormat = new SimpleDateFormat("M/d/yy");
   private Workbook workbook;
 
   public ExcelToObjectMapper(InputStream excelFile) throws IOException, InvalidFormatException {
@@ -93,20 +95,48 @@ public class ExcelToObjectMapper {
    * @param field Field which value need to be set.
    * @param cell  Apache POI cell from which value needs to be retrived.
    */
-  private void setObjectFieldValueFromCell(Object obj, Field field, Cell cell) throws IllegalAccessException {
+  private void setObjectFieldValueFromCell(Object obj, Field field, Cell cell) throws IllegalAccessException, ParseException {
     Class<?> cls = field.getType();
     field.setAccessible(true);
-
-    if(cell == null) {
+    if (cell == null) {
       setNullValueToObject(obj, field);
-    } else if (cls == Date.class) {
-	    cell.setCellType(CellType.NUMERIC);
-	    Date date = cell.getDateCellValue();
-      field.set(obj, date);
     } else {
-      cell.setCellType(CellType.STRING);
-      field.set(obj, cell.getStringCellValue().trim());
+      switch (cell.getCellTypeEnum()) {
+        case STRING:
+          String trim = cell.getStringCellValue().trim();
+          if (cls == Date.class) {
+            field.set(obj, getDate(trim));
+          } else {
+            field.set(obj, trim);
+          }
+          break;
+        case NUMERIC:
+          if (DateUtil.isCellDateFormatted(cell)) {
+            field.set(obj, cell.getDateCellValue());
+          } else {
+            cell.setCellType(CellType.STRING);
+            field.set(obj, cell.getStringCellValue());
+          }
+          break;
+        default:
+          logger.warn("Unknown data type ");
+          break;
+      }
     }
+  }
+
+  public static Date getDate(String date) throws ParseException {
+    return removeTime(dateFormat.parse(date));
+  }
+
+  public static Date removeTime(Date date) {
+    Calendar cal = Calendar.getInstance();
+    cal.setTime(date);
+    cal.set(Calendar.HOUR_OF_DAY, 0);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    return cal.getTime();
   }
 
   /**

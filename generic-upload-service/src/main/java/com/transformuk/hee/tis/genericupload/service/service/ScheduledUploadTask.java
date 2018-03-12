@@ -218,7 +218,7 @@ public class ScheduledUploadTask {
 
 				if (personDTO != null) { //currently can only be null if programme isn't found
 					PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
-					//qualifications do not persist on person save; but are retrievable from a personDTO! Saving
+
 					QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
 					qualificationDTO.setPerson(savedPersonDTO);
 					tcsServiceImpl.createQualification(qualificationDTO);
@@ -277,7 +277,7 @@ public class ScheduledUploadTask {
 		LocalDate programmeEndDate = convertDate(personXLS.getProgrammeEndDate());
 		ProgrammeMembershipType programmeMembershipType = ProgrammeMembershipType.fromString(personXLS.getProgrammeMembership());
 
-		HashSet<ProgrammeMembershipDTO> programmeMembershipDTOS = new HashSet<>();
+		Set<ProgrammeMembershipDTO> programmeMembershipDTOS = new HashSet<>();
 		LocalDate curriculum1StartDateAsProgrammeStartDate = null;
 		try {
 			curriculum1StartDateAsProgrammeStartDate = personXLS.getCurriculum1StartDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
