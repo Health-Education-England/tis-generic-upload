@@ -165,14 +165,17 @@ public class ScheduledUploadTask {
 					.map(personXLS -> tcsServiceImpl.getPerson(String.valueOf(gmcDetailsMap.get(personXLS.getGmcNumber()).getId()))) //TODO optimise to a fetcher
 					.collect(Collectors.toMap(personDTOToGmcID, Function.identity()));
 
+			Map<String, PersonXLS> gmcToPersonXLSMap = knownGMCsInTIS.stream()
+					.collect(Collectors.toMap(getGmcNumber, Function.identity()));
+
 			//now that we have both lets copy updated data
 			for(String key : gmcNumberToPersonDTOMap.keySet()) {
 				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
 				PersonDTO personDTOFromXLS = gmcNumberToPersonDTOMap.get(key);
 				overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
 
-				tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
-				//TODO add programmeMemberships and qualifications separately
+				personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
+				addQualificationsAndProgrammeMemberships(gmcToPersonXLSMap.get(key), personDTOFromXLS, personDTOFromDB);
 			}
 		}
 
@@ -218,18 +221,21 @@ public class ScheduledUploadTask {
 
 				if (personDTO != null) { //currently can only be null if programme isn't found
 					PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
-
-					QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
-					qualificationDTO.setPerson(savedPersonDTO);
-					tcsServiceImpl.createQualification(qualificationDTO);
-
-					for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
-						programmeMembershipDTO.setPerson(savedPersonDTO);
-						// this is being done here as
-						tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
-					}
+					addQualificationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
 				}
 			}
+		}
+	}
+
+	private void addQualificationsAndProgrammeMemberships(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
+		QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
+		qualificationDTO.setPerson(savedPersonDTO);
+		tcsServiceImpl.createQualification(qualificationDTO);
+
+		for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
+			programmeMembershipDTO.setPerson(savedPersonDTO);
+			// this is being done here as
+			tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
 		}
 	}
 
