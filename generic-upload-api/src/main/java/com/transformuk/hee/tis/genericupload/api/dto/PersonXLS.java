@@ -49,8 +49,8 @@ public class PersonXLS {
 	private String knownAs;
 	private String permitToWork;
 	private String settled;
-	private String visaIssued;
-	private String visaValidTo;
+	private Date visaIssued;
+	private Date visaValidTo;
 	private String visaDetails;
 	private String maritalStatus;
 	private String recordStatus;
@@ -409,19 +409,19 @@ public class PersonXLS {
 		this.settled = settled;
 	}
 
-	public String getVisaIssued() {
+	public Date getVisaIssued() {
 		return visaIssued;
 	}
 
-	public void setVisaIssued(String visaIssued) {
+	public void setVisaIssued(Date visaIssued) {
 		this.visaIssued = visaIssued;
 	}
 
-	public String getVisaValidTo() {
+	public Date getVisaValidTo() {
 		return visaValidTo;
 	}
 
-	public void setVisaValidTo(String visaValidTo) {
+	public void setVisaValidTo(Date visaValidTo) {
 		this.visaValidTo = visaValidTo;
 	}
 

@@ -11,6 +11,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,11 +77,14 @@ public class UploadFileResource {
 
     // Validate file formats
     for (MultipartFile file : fileList) {
-        // TODO support multiple file types here - xlsx, xls for now; CSV perhaps
-        String contentType = file.getContentType();
-        if (!(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType))) {
-            throw new InvalidFormatException(String.format("Content type %s not supported", file.getContentType()));
-        }
+      // TODO support multiple file types here - xlsx, xls for now; CSV perhaps
+      String contentType = file.getContentType();
+
+	    if (!(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType))) {
+		    String extension = FilenameUtils.getExtension(file.getOriginalFilename());
+		    if(extension != null && !(extension.equals("xls") || extension.equals("xlsx")))
+          throw new InvalidFormatException(String.format("Content type %s not supported", file.getContentType()));
+      }
     }
 
     //TODO is this necessary
