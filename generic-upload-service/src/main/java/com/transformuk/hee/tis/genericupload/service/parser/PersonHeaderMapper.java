@@ -101,7 +101,7 @@ public class PersonHeaderMapper implements ColumnMapper {
       "Role",
       "Known As",
       "Permit to Work",
-      "Settled",
+      "Settled, Permit to Work",
       "Visa Issued",
       "Visa Valid To",
       "Visa Details/Number",

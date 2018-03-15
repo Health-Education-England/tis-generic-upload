@@ -5,6 +5,8 @@ import java.util.Objects;
 
 public class PersonXLS {
 	private int rowNumber;
+	private String errorMessage;
+
 	private String title;
 	private String surname;
 	private String forenames;
@@ -588,4 +590,8 @@ public class PersonXLS {
 	public int getRowNumber() { return rowNumber;	}
 
 	public void setRowNumber(int rowNumber) { this.rowNumber = rowNumber; }
+
+	public String getErrorMessage() { return errorMessage; }
+
+	public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
 }

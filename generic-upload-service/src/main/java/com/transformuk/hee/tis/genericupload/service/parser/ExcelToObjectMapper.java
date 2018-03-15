@@ -20,6 +20,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class ExcelToObjectMapper {
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
   public static final String ROW_NUMBER = "rowNumber";
+  public static final String ERROR_MESSAGE = "errorMessage";
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("M/d/yy");
   private Workbook workbook;
 
@@ -80,7 +81,7 @@ public class ExcelToObjectMapper {
   private boolean isAllBlanks(Object obj) throws IllegalAccessException {
     boolean allBlanks = true;
     for (Field f : obj.getClass().getDeclaredFields()) {
-    	  if(f.getName().startsWith("$") || f.getName().equalsIgnoreCase(ROW_NUMBER)) continue; //skip surefire jacoco fields
+    	  if(f.getName().startsWith("$") || f.getName().equalsIgnoreCase(ROW_NUMBER) || f.getName().equalsIgnoreCase(ERROR_MESSAGE)) continue; //skip surefire jacoco fields
         f.setAccessible(true);
         allBlanks = allBlanks && org.springframework.util.StringUtils.isEmpty(f.get(obj));
     }

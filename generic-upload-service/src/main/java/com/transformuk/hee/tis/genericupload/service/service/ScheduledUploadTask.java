@@ -92,11 +92,9 @@ public class ScheduledUploadTask {
 
 			ByteArrayOutputStream baos = (ByteArrayOutputStream) fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName());
 			InputStream bis = new ByteArrayInputStream(baos.toByteArray());
-			ExcelToObjectMapper excelToObjectMapper = null;
-			final List<PersonXLS> personXLSS;
 			try {
-				excelToObjectMapper = new ExcelToObjectMapper(bis);
-				personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap()); // TODO : this is being done twice, once while doing first level validation, consider optimising
+				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis);
+				final List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap()); // TODO : this is being done twice, once while doing first level validation, consider optimising
 
 				//deal with unknowns - add all unknown as a new record - ignore duplicates
 				Set<PersonXLS> unknownRegNumbers = personXLSS.stream()
@@ -159,7 +157,7 @@ public class ScheduledUploadTask {
 			//deep compare and update if necessary
 			Function<PersonDTO, String> personDTOToGmcID = personDTO -> String.valueOf(personDTO.getGmcDetails().getGmcNumber());
 			Map<String, PersonDTO> gmcNumberToPersonDTOMap = knownGMCsInTIS.stream()
-					.map(this::getPersonDTO)
+					.map(this::getPersonDTO) //TODO check how the runtime IllegalArgumentException is handled
 					.collect(Collectors.toMap(personDTOToGmcID, Function.identity()));
 			Map<String, PersonDTO> personDTOMapFromTCS = knownGMCsInTIS.stream()
 					.map(personXLS -> tcsServiceImpl.getPerson(String.valueOf(gmcDetailsMap.get(personXLS.getGmcNumber()).getId()))) //TODO optimise to a fetcher
@@ -201,8 +199,9 @@ public class ScheduledUploadTask {
 	}
 
 	private void overwriteDBValuesFromNonEmptyExcelValues(PersonDTO personDTOFromDB, PersonDTO personDTOFromXLS) {
+		personDTOFromDB.setRole(mergeRoles(personDTOFromXLS, personDTOFromDB));
 		copyIfNotNullOrEmpty(personDTOFromXLS, personDTOFromDB,
-				"addedDate", "inactiveDate", "publicHealthNumber", "status"); //TODO confirm how to deal with role
+				"addedDate", "inactiveDate", "publicHealthNumber", "status");
 		copyIfNotNullOrEmpty(personDTOFromXLS.getContactDetails(), personDTOFromDB.getContactDetails(),
 				"surname", "forenames", "knownAs", "title", "telephoneNumber", "mobileNumber", "email", "address1", "address2", "address3", "postCode");
 		copyIfNotNullOrEmpty(personDTOFromXLS.getPersonalDetails(), personDTOFromDB.getPersonalDetails(),
@@ -213,15 +212,25 @@ public class ScheduledUploadTask {
 				"permitToWork", "settled", "visaDetails", "visaValidTo", "visaIssued", "eeaResident");
 	}
 
+	private String mergeRoles(PersonDTO personDTOFromXLS, PersonDTO personDTOFromDB) {
+		Set<String> personDTOFromDBRoles = new HashSet<>(Arrays.asList(personDTOFromDB.getRole().split(",")));
+		Set<String> personDTOFromXLSRoles = new HashSet<>(Arrays.asList(personDTOFromXLS.getRole().split(",")));
+		personDTOFromXLSRoles.addAll(personDTOFromDBRoles);
+		return org.apache.commons.lang3.StringUtils.join(personDTOFromXLSRoles, ',');
+	}
 
 	private void addPersons(Set<PersonXLS> personsInXLS) {
 		if (!CollectionUtils.isEmpty(personsInXLS)) {
 			for (PersonXLS personXLS : personsInXLS) {
-				PersonDTO personDTO = getPersonDTO(personXLS);
-
-				if (personDTO != null) { //currently can only be null if programme isn't found
-					PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
-					addQualificationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
+				try {
+					PersonDTO personDTO = getPersonDTO(personXLS);
+					if (personDTO != null) {
+						PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
+						addQualificationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
+					}
+				} catch (IllegalArgumentException e) {
+					personXLS.setErrorMessage(e.getMessage());
+					continue;
 				}
 			}
 		}
@@ -230,31 +239,60 @@ public class ScheduledUploadTask {
 	private void addQualificationsAndProgrammeMemberships(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
 		QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
 		qualificationDTO.setPerson(savedPersonDTO);
-		tcsServiceImpl.createQualification(qualificationDTO);
+		if(!savedPersonDTO.getQualifications().contains(qualificationDTO)) {
+			tcsServiceImpl.createQualification(qualificationDTO);
+		}
 
 		for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
 			programmeMembershipDTO.setPerson(savedPersonDTO);
-			// this is being done here as
-			tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
+
+			if(!savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
+				tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
+			}
 		}
 	}
 
-	private PersonDTO getPersonDTO(PersonXLS personXLS) {
+	private PersonDTO getPersonDTO(PersonXLS personXLS) throws IllegalArgumentException {
 		Set<CurriculumDTO> curricula = new HashSet<>();
 
-		CurriculumDTO curriculumDTO1 = personXLS.getCurriculum1() == null ? null : tcsServiceImpl.getCurriculaByName(personXLS.getCurriculum1()).get(0);
-		CurriculumDTO curriculumDTO2 = personXLS.getCurriculum2() == null ? null : tcsServiceImpl.getCurriculaByName(personXLS.getCurriculum2()).get(0);
-		CurriculumDTO curriculumDTO3 = personXLS.getCurriculum3() == null ? null : tcsServiceImpl.getCurriculaByName(personXLS.getCurriculum3()).get(0);
+		CurriculumDTO curriculumDTO1 = getCurriculumDTO(personXLS.getCurriculum1());
+		CurriculumDTO curriculumDTO2 = getCurriculumDTO(personXLS.getCurriculum2());
+		CurriculumDTO curriculumDTO3 = getCurriculumDTO(personXLS.getCurriculum3());
 
-		ProgrammeDTO programmeDTO = null;
-		if (personXLS.getProgrammeName() != null && personXLS.getProgrammeNumber() != null) {
-			programmeDTO = tcsServiceImpl.getProgrammeByNameAndNumber(personXLS.getProgrammeName(), personXLS.getProgrammeNumber()).get(0);
-			programmeDTO.setCurricula(curricula);       //links the programme to the curricula
-		} else {
-			//TODO consider throwing an exception instead
-		}
+		ProgrammeDTO programmeDTO = getProgrammeDTO(personXLS.getProgrammeName(), personXLS.getProgrammeNumber());
+		programmeDTO.setCurricula(curricula);
 
 		return getPersonDTO(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3, programmeDTO);
+	}
+
+	private ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber) throws IllegalArgumentException {
+		ProgrammeDTO programmeDTO = null;
+		if(programmeName != null && programmeNumber != null) {
+			List<ProgrammeDTO> programmeDTOs = tcsServiceImpl.getProgrammeByNameAndNumber(programmeName, programmeNumber);
+			if(programmeDTOs.size() == 1) {
+				programmeDTO = programmeDTOs.get(0);
+			} else if(programmeDTOs.isEmpty()) {
+				throw new IllegalArgumentException("Programme not found " + programmeName);
+			} else if(programmeDTOs.size() > 1) {
+				throw new IllegalArgumentException("Multiple programme found for " + programmeName);
+			}
+		}
+		return programmeDTO;
+	}
+
+	private CurriculumDTO getCurriculumDTO(String curriculumName) throws IllegalArgumentException {
+		CurriculumDTO curriculumDTO = null;
+		if(curriculumName != null) {
+			List<CurriculumDTO> curriculumDTOs = tcsServiceImpl.getCurriculaByName(curriculumName);
+			if(curriculumDTOs.size() == 1) {
+				curriculumDTO = curriculumDTOs.get(0);
+			} else if(curriculumDTOs.isEmpty()) {
+				throw new IllegalArgumentException("Curriculum not found " + curriculumName);
+			} else if(curriculumDTOs.size() > 1) {
+				throw new IllegalArgumentException("Multiple curricula found for " + curriculumName);
+			}
+		}
+		return curriculumDTO;
 	}
 
 	public PersonDTO getPersonDTO(PersonXLS personXLS, CurriculumDTO curriculumDTO1, CurriculumDTO curriculumDTO2, CurriculumDTO curriculumDTO3, ProgrammeDTO programmeDTO) {
