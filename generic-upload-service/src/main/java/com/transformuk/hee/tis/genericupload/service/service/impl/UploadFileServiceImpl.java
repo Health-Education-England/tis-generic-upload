@@ -70,4 +70,8 @@ public class UploadFileServiceImpl implements UploadFileService {
         return applicationTypeRepository.findAll(pageable);
     }
 
+    @Override
+    public Page<ApplicationType> searchUploads(String text, Pageable pageable) {
+        return applicationTypeRepository.fullTextSearch(text, pageable);
+    }
 }

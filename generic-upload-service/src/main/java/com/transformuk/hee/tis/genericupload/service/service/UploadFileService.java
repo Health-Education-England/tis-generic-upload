@@ -21,4 +21,6 @@ public interface UploadFileService {
   long upload(List<MultipartFile> files, String username) throws Exception;
 
   Page<ApplicationType> getUploadStatus(Pageable pageable);
+
+  Page<ApplicationType> searchUploads(String text, Pageable pageable);
 }

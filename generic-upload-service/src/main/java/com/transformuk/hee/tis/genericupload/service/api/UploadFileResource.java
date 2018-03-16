@@ -12,6 +12,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -43,7 +43,7 @@ public class UploadFileResource {
 	private final String XLX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 	public UploadFileResource(UploadFileService uploadFileService, FileProcessService fileProcessService,
-			FileValidator fileValidator) {
+	                          FileValidator fileValidator) {
 		this.uploadFileService = uploadFileService;
 		this.fileProcessService = fileProcessService;
 		this.fileValidator = fileValidator;
@@ -51,7 +51,7 @@ public class UploadFileResource {
 
 	@ApiOperation(value = "bulk upload file", notes = "bulk upload file", response = String.class, responseContainer = "Accepted")
 	@ApiResponses(value = {
-			@ApiResponse(code = 202, message = "Uploaded given files successfully with logId", response = Long.class) })
+			@ApiResponse(code = 202, message = "Uploaded given files successfully with logId", response = Long.class)})
 	@PostMapping("/file")
 	@Timed
 	@ResponseStatus(HttpStatus.ACCEPTED)
@@ -63,52 +63,68 @@ public class UploadFileResource {
 
 		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
 
-    // extract files from MIME body
-    List<MultipartFile> fileList = mRequest.getFileMap()
-            .entrySet()
-            .stream()
-            .map(file -> file.getValue())
-            .collect(Collectors.toList());
+		// extract files from MIME body
+		List<MultipartFile> fileList = mRequest.getFileMap()
+				.entrySet()
+				.stream()
+				.map(file -> file.getValue())
+				.collect(Collectors.toList());
 
-    if(fileList.isEmpty()) {
-    	log.error("Expected to receive file(s) as part of the upload");
-    	return ResponseEntity.badRequest().body("Expected a file in the multipart file request");
-    }
+		if (fileList.isEmpty()) {
+			log.error("Expected to receive file(s) as part of the upload");
+			return ResponseEntity.badRequest().body("Expected a file in the multipart file request");
+		}
 
-    // Validate file formats
-    for (MultipartFile file : fileList) {
-      // TODO support multiple file types here - xlsx, xls for now; CSV perhaps
-      String contentType = file.getContentType();
+		// Validate file formats
+		for (MultipartFile file : fileList) {
+			// TODO support multiple file types here - xlsx, xls for now; CSV perhaps
+			String contentType = file.getContentType();
 
-	    if (!(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType))) {
-		    String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-		    if(extension != null && !(extension.equals("xls") || extension.equals("xlsx")))
-          throw new InvalidFormatException(String.format("Content type %s not supported", file.getContentType()));
-      }
-    }
+			if (!(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType))) {
+				String extension = FilenameUtils.getExtension(file.getOriginalFilename());
+				if (extension != null && !(extension.equals("xls") || extension.equals("xlsx")))
+					throw new InvalidFormatException(String.format("Content type %s not supported", file.getContentType()));
+			}
+		}
 
-    //TODO is this necessary
-    // Validate file
-    // for other type of file, please pass path variable and pass to validator
-    fileValidator.validate(fileList, FileType.RECRUITMENT); //TODO allow validation exceptions to bubble up to REST response
+		//TODO is this necessary
+		// Validate file
+		// for other type of file, please pass path variable and pass to validator
+		fileValidator.validate(fileList, FileType.RECRUITMENT); //TODO allow validation exceptions to bubble up to REST response
 
-    // if validation is success then store the file into azure and db
-    long logId = uploadFileService.upload(fileList, userName);
+		// if validation is success then store the file into azure and db
+		long logId = uploadFileService.upload(fileList, userName);
 
-    return ResponseEntity.accepted()
-            .body(Long.toString(logId));
+		return ResponseEntity.accepted()
+				.body(Long.toString(logId));
 	}
 
 	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "File process successfully") })
+	@ApiResponses(value = {@ApiResponse(code = 200, message = "File process successfully")})
 	@GetMapping("/status")
 	@Timed
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable) throws Exception { // URISyntaxException
+	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable,
+	                                                                 @ApiParam(value = "any wildcard string to be searched") @RequestParam(value = "searchQuery", required = false) String searchQuery
+	) throws Exception { // URISyntaxException
 		log.info("request for bulk upload status received.");
-		Page<ApplicationType> page = uploadFileService.getUploadStatus(pageable);
+		Page<ApplicationType> page;
+		searchQuery = sanitize(searchQuery);
+		if(StringUtils.isBlank(searchQuery)) {
+			page = uploadFileService.getUploadStatus(pageable);
+		} else {
+			page = uploadFileService.searchUploads(searchQuery, pageable);
+		}
 		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/generic-upload/status");
 
 		return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+	}
+
+	//TODO refactor out into common library, if needed 
+	private static String sanitize(String str) {
+		if (str == null) {
+			return null;
+		}
+		return str.replaceAll("[^a-zA-Z0-9\\s,/\\-\\(\\)]", "").trim();
 	}
 }
