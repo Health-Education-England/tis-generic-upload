@@ -3,6 +3,7 @@ package com.transformuk.hee.tis.genericupload.service.parser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
+import org.bouncycastle.util.Strings;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -10,17 +11,16 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class ExcelToObjectMapper {
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
+
   public static final String ROW_NUMBER = "rowNumber";
   public static final String ERROR_MESSAGE = "errorMessage";
+  public static final String SUCCESSFULLY_IMPORTED = "successfullyImported";
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("M/d/yy");
   private Workbook workbook;
 
@@ -59,7 +59,7 @@ public class ExcelToObjectMapper {
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
-        if(fieldName.equalsIgnoreCase(ROW_NUMBER)) continue;
+        if(shouldSkipField(fieldName)) continue;
         String xlsColumnName = columnMap.get(fieldName.toLowerCase());
         int index;
         if (StringUtils.isNotEmpty(xlsColumnName)) {
@@ -81,11 +81,18 @@ public class ExcelToObjectMapper {
   private boolean isAllBlanks(Object obj) throws IllegalAccessException {
     boolean allBlanks = true;
     for (Field f : obj.getClass().getDeclaredFields()) {
-    	  if(f.getName().startsWith("$") || f.getName().equalsIgnoreCase(ROW_NUMBER) || f.getName().equalsIgnoreCase(ERROR_MESSAGE)) continue; //skip surefire jacoco fields
+    	  if(f.getName().startsWith("$") || //skip surefire jacoco fields
+            shouldSkipField(f.getName())) continue;
         f.setAccessible(true);
         allBlanks = allBlanks && org.springframework.util.StringUtils.isEmpty(f.get(obj));
     }
     return allBlanks;
+  }
+
+  private boolean shouldSkipField(String fieldName) {
+    return fieldName.equalsIgnoreCase(ROW_NUMBER) ||
+        fieldName.equalsIgnoreCase(ERROR_MESSAGE) ||
+        fieldName.equalsIgnoreCase(SUCCESSFULLY_IMPORTED);
   }
 
   /**

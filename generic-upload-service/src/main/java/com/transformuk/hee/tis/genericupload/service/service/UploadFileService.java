@@ -18,7 +18,7 @@ public interface UploadFileService {
    * @return
    * @throws Exception
    */
-  long upload(List<MultipartFile> files, String username) throws Exception;
+  long upload(List<MultipartFile> files, String userame, String firstName, String lastName) throws Exception;
 
   Page<ApplicationType> getUploadStatus(Pageable pageable);
 

@@ -32,6 +32,9 @@ public class ApplicationType implements Serializable {
 
     private Long logId;
     private String username;
+    private String firstname;
+    private String lastname;
+    private String errorJson;
 
     public Long getId() {
         return id;
@@ -97,6 +100,30 @@ public class ApplicationType implements Serializable {
         this.username = username;
     }
 
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
+    }
+
+    public String getErrorJson() {
+        return errorJson;
+    }
+
+    public void setErrorJson(String errorJson) {
+        this.errorJson = errorJson;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -112,7 +139,7 @@ public class ApplicationType implements Serializable {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("ApplicationType{");
+        final StringBuilder sb = new StringBuilder("ApplicationType{");
         sb.append("id=").append(id);
         sb.append(", fileName='").append(fileName).append('\'');
         sb.append(", fileType=").append(fileType);
@@ -120,7 +147,10 @@ public class ApplicationType implements Serializable {
         sb.append(", endDate=").append(endDate);
         sb.append(", fileStatus=").append(fileStatus);
         sb.append(", logId=").append(logId);
-        sb.append(", username=").append(username);
+        sb.append(", username='").append(username).append('\'');
+        sb.append(", firstname=").append(firstname);
+        sb.append(", lastname='").append(lastname).append('\'');
+        sb.append(", errorJson='").append(errorJson).append('\'');
         sb.append('}');
         return sb.toString();
     }

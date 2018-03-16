@@ -6,6 +6,7 @@ import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidato
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
+import com.transformuk.hee.tis.security.model.UserProfile;
 import com.transformuk.hee.tis.security.util.TisSecurityHelper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -58,8 +59,7 @@ public class UploadFileResource {
 	public ResponseEntity<String> handleFileUpload(HttpServletRequest request) throws Exception { // URISyntaxException
 		log.info("Received request to upload files.");
 
-		//TODO : also get full name
-		String userName = TisSecurityHelper.getProfileFromContext().getUserName();
+		UserProfile profileFromContext = TisSecurityHelper.getProfileFromContext();
 
 		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
 
@@ -93,7 +93,7 @@ public class UploadFileResource {
 		fileValidator.validate(fileList, FileType.RECRUITMENT); //TODO allow validation exceptions to bubble up to REST response
 
 		// if validation is success then store the file into azure and db
-		long logId = uploadFileService.upload(fileList, userName);
+		long logId = uploadFileService.upload(fileList, profileFromContext.getUserName(), profileFromContext.getFirstName(), profileFromContext.getLastName());
 
 		return ResponseEntity.accepted()
 				.body(Long.toString(logId));
@@ -120,7 +120,7 @@ public class UploadFileResource {
 		return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
 	}
 
-	//TODO refactor out into common library, if needed 
+	//TODO refactor out into common library, if needed
 	private static String sanitize(String str) {
 		if (str == null) {
 			return null;

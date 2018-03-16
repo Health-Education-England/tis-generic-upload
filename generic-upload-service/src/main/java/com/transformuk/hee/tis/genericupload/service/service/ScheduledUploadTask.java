@@ -95,19 +95,12 @@ public class ScheduledUploadTask {
 			try {
 				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis);
 				final List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap()); // TODO : this is being done twice, once while doing first level validation, consider optimising
+				personXLSS.stream().forEach(PersonXLS::initialiseSuccessfullyImported); //have to explicitly set this as class is populated by reflection
 
-				//deal with unknowns - add all unknown as a new record - ignore duplicates
-				Set<PersonXLS> unknownRegNumbers = personXLSS.stream()
-						.filter(personXLS ->
-								"unknown".equalsIgnoreCase(personXLS.getGmcNumber()) ||
-								"unknown".equalsIgnoreCase(personXLS.getGdcNumber()) ||
-								"unknown".equalsIgnoreCase(personXLS.getPublicHealthNumber()))
-						.collect(Collectors.toSet());
-				logger.info("Found {} unknown reg numbers in xml file uploaded. Adding to TIS", unknownRegNumbers.size());
-				addPersons(unknownRegNumbers);
-
+				addPersons(getPersonsWithUnknownRegNumbers(personXLSS));
 				addOrUpdateGMCRecords(personXLSS); //TODO repeat for GDC and Public Health Number
 
+				applicationType.setErrorJson(generateImportReport(personXLSS).toJson());
 				applicationType.setFileStatus(FileStatus.COMPLETED);
 			} catch (InvalidFormatException e) {
 				logger.error("Error while reading excel file : " + e.getMessage());
@@ -125,6 +118,35 @@ public class ScheduledUploadTask {
 		}
 	}
 
+	public FileImportResults generateImportReport(List<PersonXLS> personXLSS) {
+		FileImportResults fir = new FileImportResults();
+		int errorCount = 0, successCount = 0;
+		for (int i = 0; i < personXLSS.size(); i++) {
+			PersonXLS personXLS = personXLSS.get(i);
+			if (personXLS.isSuccessfullyImported()) {
+				successCount++;
+			} else if (!StringUtils.isEmpty(personXLS.getErrorMessage())) {
+				errorCount++;
+				fir.addError(i, personXLS.getErrorMessage());
+			}
+		}
+		fir.setNumberImported(successCount);
+		fir.setNumberOfErrors(errorCount);
+		return fir;
+	}
+
+	public Set<PersonXLS> getPersonsWithUnknownRegNumbers(List<PersonXLS> personXLSS) {
+		//deal with unknowns - add all unknown as a new record - ignore duplicates
+		Set<PersonXLS> unknownRegNumbers = personXLSS.stream()
+				.filter(personXLS ->
+						"unknown".equalsIgnoreCase(personXLS.getGmcNumber()) ||
+						"unknown".equalsIgnoreCase(personXLS.getGdcNumber()) ||
+						"unknown".equalsIgnoreCase(personXLS.getPublicHealthNumber()))
+				.collect(Collectors.toSet());
+		logger.info("Found {} unknown reg numbers in xml file uploaded. Adding to TIS", unknownRegNumbers.size());
+		return unknownRegNumbers;
+	}
+
 	public void addOrUpdateGMCRecords(List<PersonXLS> personXLSS) {
 		//check whether a GMC record exists in TIS
 		Function<PersonXLS, String> getGmcNumber = PersonXLS::getGmcNumber;
@@ -137,28 +159,29 @@ public class ScheduledUploadTask {
 			Set<String> personIdsFromGMCDetailsTable = gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
 			Map<String, PersonBasicDetailsDTO> pbdMapByGMC = pbdDtoFetcher.findWithIds(personIdsFromGMCDetailsTable);
 
-			Set<PersonXLS> knownGMCsInTIS = rowsWithGMCNumbers.stream()
-					.filter(personXLS -> {
-						String gmcNumber = getGmcNumber.apply(personXLS);
-						return gmcDetailsMap.containsKey(gmcNumber) && pbdMapByGMC.get(gmcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname());
-					})
-					.collect(Collectors.toSet());
-			Set<PersonXLS> unknownGMCsInTIS = rowsWithGMCNumbers.stream()
-					.filter(personXLS -> {
-						String gmcNumber = getGmcNumber.apply(personXLS);
-						return gmcDetailsMap.containsKey(gmcNumber) && !pbdMapByGMC.get(gmcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname());
-					})
-					.collect(Collectors.toSet());
-			if (unknownGMCsInTIS.size() > 0) {
-				logger.error("GMC's found without matching surnames (no. of records) :  {}", unknownGMCsInTIS.size());
-				//TODO add to error sheet
+			Set<PersonXLS> knownGMCsInTIS = new HashSet<>();
+			for(PersonXLS personXLS : rowsWithGMCNumbers) {
+				String gmcNumber = getGmcNumber.apply(personXLS);
+				if(gmcDetailsMap.containsKey(gmcNumber)) {
+					if(pbdMapByGMC.get(gmcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
+						knownGMCsInTIS.add(personXLS);
+					} else {
+						personXLS.setErrorMessage("GMC's found without matching surnames");
+					}
+				}
 			}
 
 			//deep compare and update if necessary
 			Function<PersonDTO, String> personDTOToGmcID = personDTO -> String.valueOf(personDTO.getGmcDetails().getGmcNumber());
-			Map<String, PersonDTO> gmcNumberToPersonDTOMap = knownGMCsInTIS.stream()
-					.map(this::getPersonDTO) //TODO check how the runtime IllegalArgumentException is handled
-					.collect(Collectors.toMap(personDTOToGmcID, Function.identity()));
+
+			Map<String, PersonDTO> gmcNumberToPersonDTOMap = new HashMap<>();
+			for(PersonXLS knownGMCInTIS : knownGMCsInTIS) {
+				PersonDTO personDTO = getPersonDTO(knownGMCInTIS);
+				if (personDTO != null) {
+					gmcNumberToPersonDTOMap.put(personDTOToGmcID.apply(personDTO), personDTO);
+				}
+			}
+
 			Map<String, PersonDTO> personDTOMapFromTCS = knownGMCsInTIS.stream()
 					.map(personXLS -> tcsServiceImpl.getPerson(String.valueOf(gmcDetailsMap.get(personXLS.getGmcNumber()).getId()))) //TODO optimise to a fetcher
 					.collect(Collectors.toMap(personDTOToGmcID, Function.identity()));
@@ -170,10 +193,13 @@ public class ScheduledUploadTask {
 			for(String key : gmcNumberToPersonDTOMap.keySet()) {
 				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
 				PersonDTO personDTOFromXLS = gmcNumberToPersonDTOMap.get(key);
-				overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
+				if(personDTOFromXLS != null) {
+					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
 
-				personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
-				addQualificationsAndProgrammeMemberships(gmcToPersonXLSMap.get(key), personDTOFromXLS, personDTOFromDB);
+					personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
+					addQualificationsAndProgrammeMemberships(gmcToPersonXLSMap.get(key), personDTOFromXLS, personDTOFromDB);
+					gmcToPersonXLSMap.get(key).setSuccessfullyImported(true);
+				}
 			}
 		}
 
@@ -222,15 +248,13 @@ public class ScheduledUploadTask {
 	private void addPersons(Set<PersonXLS> personsInXLS) {
 		if (!CollectionUtils.isEmpty(personsInXLS)) {
 			for (PersonXLS personXLS : personsInXLS) {
-				try {
-					PersonDTO personDTO = getPersonDTO(personXLS);
-					if (personDTO != null) {
-						PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
-						addQualificationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
-					}
-				} catch (IllegalArgumentException e) {
-					personXLS.setErrorMessage(e.getMessage());
-					continue;
+				PersonDTO personDTO = getPersonDTO(personXLS);
+				if (personDTO != null) {
+					PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
+					addQualificationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
+				}
+				if(StringUtils.isEmpty(personXLS.getErrorMessage())) {
+					personXLS.setSuccessfullyImported(true);
 				}
 			}
 		}
@@ -252,17 +276,21 @@ public class ScheduledUploadTask {
 		}
 	}
 
-	private PersonDTO getPersonDTO(PersonXLS personXLS) throws IllegalArgumentException {
+	private PersonDTO getPersonDTO(PersonXLS personXLS) {
 		Set<CurriculumDTO> curricula = new HashSet<>();
+		PersonDTO personDTO = null;
+		try{
+			CurriculumDTO curriculumDTO1 = getCurriculumDTO(personXLS.getCurriculum1());
+			CurriculumDTO curriculumDTO2 = getCurriculumDTO(personXLS.getCurriculum2());
+			CurriculumDTO curriculumDTO3 = getCurriculumDTO(personXLS.getCurriculum3());
 
-		CurriculumDTO curriculumDTO1 = getCurriculumDTO(personXLS.getCurriculum1());
-		CurriculumDTO curriculumDTO2 = getCurriculumDTO(personXLS.getCurriculum2());
-		CurriculumDTO curriculumDTO3 = getCurriculumDTO(personXLS.getCurriculum3());
-
-		ProgrammeDTO programmeDTO = getProgrammeDTO(personXLS.getProgrammeName(), personXLS.getProgrammeNumber());
-		programmeDTO.setCurricula(curricula);
-
-		return getPersonDTO(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3, programmeDTO);
+			ProgrammeDTO programmeDTO = getProgrammeDTO(personXLS.getProgrammeName(), personXLS.getProgrammeNumber());
+			programmeDTO.setCurricula(curricula);
+			personDTO = getPersonDTO(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3, programmeDTO);
+		} catch (IllegalArgumentException e) {
+			personXLS.setErrorMessage(e.getMessage());
+		}
+		return personDTO;
 	}
 
 	private ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber) throws IllegalArgumentException {

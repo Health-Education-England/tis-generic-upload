@@ -6,6 +6,7 @@ import java.util.Objects;
 public class PersonXLS {
 	private int rowNumber;
 	private String errorMessage;
+	private boolean successfullyImported;
 
 	private String title;
 	private String surname;
@@ -594,4 +595,11 @@ public class PersonXLS {
 	public String getErrorMessage() { return errorMessage; }
 
 	public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+
+	public boolean isSuccessfullyImported() { return successfullyImported; }
+
+	public void setSuccessfullyImported(boolean successfullyImported) { this.successfullyImported = successfullyImported; }
+
+	public void initialiseSuccessfullyImported() { this.successfullyImported = false; }
+
 }

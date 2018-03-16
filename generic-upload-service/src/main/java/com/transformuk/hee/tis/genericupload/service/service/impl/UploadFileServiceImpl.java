@@ -37,7 +37,7 @@ public class UploadFileServiceImpl implements UploadFileService {
         // this.personRepository = personRepository;
     }
 
-    public ApplicationType save(String fileName, long logId, String username) {
+    public ApplicationType save(String fileName, long logId, String username, String firstName, String lastName) {
         LOG.info("Request to save ApplicationType based on fileName : {}", fileName);
 
         ApplicationType applicationType = new ApplicationType();
@@ -47,18 +47,21 @@ public class UploadFileServiceImpl implements UploadFileService {
         applicationType.setFileStatus(FileStatus.PENDING);
         applicationType.setLogId(logId);
         applicationType.setUsername(username);
+        applicationType.setFirstname(firstName);
+        applicationType.setLastname(lastName);
+
         return applicationTypeRepository.save(applicationType);
     }
 
     @Override
-    public long upload(List<MultipartFile> files, String username) throws Exception {
+    public long upload(List<MultipartFile> files, String username, String firstName, String lastName) throws Exception {
         long logId = System.currentTimeMillis();
 
         if (!ObjectUtils.isEmpty(files)) {
             fileStorageRepository.store(logId, CONTAINER_NAME, files);
             for (MultipartFile file : files) {
                 if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
-                    save(file.getOriginalFilename(), logId, username);
+                    save(file.getOriginalFilename(), logId, username, firstName, lastName);
                 }
             }
         }
