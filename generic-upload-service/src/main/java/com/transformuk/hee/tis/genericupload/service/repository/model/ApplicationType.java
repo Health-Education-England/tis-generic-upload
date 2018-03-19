@@ -22,8 +22,10 @@ public class ApplicationType implements Serializable {
     @Enumerated(EnumType.STRING)
     private FileType fileType;
 
+    //the date the file was uploaded
     private LocalDateTime startDate;
 
+    //the date the file was processed
     private LocalDateTime endDate;
 
     @Column(name = "status")
@@ -32,8 +34,8 @@ public class ApplicationType implements Serializable {
 
     private Long logId;
     private String username;
-    private String firstname;
-    private String lastname;
+    private String firstName;
+    private String lastName;
     private String errorJson;
 
     public Long getId() {
@@ -100,20 +102,20 @@ public class ApplicationType implements Serializable {
         this.username = username;
     }
 
-    public String getFirstname() {
-        return firstname;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setFirstname(String firstname) {
-        this.firstname = firstname;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getLastname() {
-        return lastname;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setLastname(String lastname) {
-        this.lastname = lastname;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public String getErrorJson() {
@@ -148,8 +150,8 @@ public class ApplicationType implements Serializable {
         sb.append(", fileStatus=").append(fileStatus);
         sb.append(", logId=").append(logId);
         sb.append(", username='").append(username).append('\'');
-        sb.append(", firstname=").append(firstname);
-        sb.append(", lastname='").append(lastname).append('\'');
+        sb.append(", firstName=").append(firstName);
+        sb.append(", lastName='").append(lastName).append('\'');
         sb.append(", errorJson='").append(errorJson).append('\'');
         sb.append('}');
         return sb.toString();

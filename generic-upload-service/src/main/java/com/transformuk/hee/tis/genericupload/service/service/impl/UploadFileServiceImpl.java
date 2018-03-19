@@ -47,8 +47,8 @@ public class UploadFileServiceImpl implements UploadFileService {
         applicationType.setFileStatus(FileStatus.PENDING);
         applicationType.setLogId(logId);
         applicationType.setUsername(username);
-        applicationType.setFirstname(firstName);
-        applicationType.setLastname(lastName);
+        applicationType.setFirstName(firstName);
+        applicationType.setLastName(lastName);
 
         return applicationTypeRepository.save(applicationType);
     }

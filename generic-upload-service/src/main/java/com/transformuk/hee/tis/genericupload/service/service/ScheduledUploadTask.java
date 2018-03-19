@@ -101,6 +101,7 @@ public class ScheduledUploadTask {
 				addOrUpdateGMCRecords(personXLSS); //TODO repeat for GDC and Public Health Number
 
 				applicationType.setErrorJson(generateImportReport(personXLSS).toJson());
+				applicationType.setEndDate(LocalDateTime.now());
 				applicationType.setFileStatus(FileStatus.COMPLETED);
 			} catch (InvalidFormatException e) {
 				logger.error("Error while reading excel file : " + e.getMessage());

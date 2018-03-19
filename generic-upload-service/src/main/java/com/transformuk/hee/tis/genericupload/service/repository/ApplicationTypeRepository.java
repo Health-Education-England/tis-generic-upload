@@ -14,10 +14,17 @@ import java.util.List;
 @Repository
 public interface ApplicationTypeRepository extends JpaRepository<ApplicationType, Long> {
 
+    String SEARCH_QUERY = "select at from ApplicationType at where " +
+        "at.fileName like %:text% or " +
+        "at.fileStatus like %:text% or " +
+        "at.username like %:text% or " +
+        "at.firstName like %:text% or " +
+        "at.lastName like %:text% or " +
+        "at.startDate like %:text% or " +
+        "at.endDate like %:text%";
+
     List<ApplicationType> findByFileStatusOrderByStartDate(FileStatus status); //TODO check this is ordering by oldest upload
 
-    //TODO integrate with API
-    @Query(value = "select at from ApplicationType at where at.fileName like %:text% or at.fileStatus like %:text% or at.username like %:text% ")
+    @Query(value = SEARCH_QUERY)
     Page<ApplicationType> fullTextSearch(@Param("text") String text, Pageable pageable);
-
 }
