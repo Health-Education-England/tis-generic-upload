@@ -20,6 +20,7 @@ import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -151,7 +152,8 @@ public class ScheduledUploadTask {
 	public void addOrUpdateGMCRecords(List<PersonXLS> personXLSS) {
 		//check whether a GMC record exists in TIS
 		Function<PersonXLS, String> getGmcNumber = PersonXLS::getGmcNumber;
-		Set<PersonXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumber(personXLSS, getGmcNumber);
+		List<PersonXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumber(personXLSS, getGmcNumber);
+		flagAndEliminateDuplicates(rowsWithGMCNumbers, getGmcNumber);
 
 		Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
 		Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithIds(gmcNumbers);
@@ -167,7 +169,7 @@ public class ScheduledUploadTask {
 					if(pbdMapByGMC.get(gmcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownGMCsInTIS.add(personXLS);
 					} else {
-						personXLS.setErrorMessage("GMC's found without matching surnames");
+						personXLS.setErrorMessage("GMC number does not match surname in TIS");
 					}
 				}
 			}
@@ -197,7 +199,14 @@ public class ScheduledUploadTask {
 				if(personDTOFromXLS != null) {
 					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
 
-					personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
+					try {
+						personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
+					} catch (HttpClientErrorException e) {
+						PersonXLS personXLS = gmcToPersonXLSMap.get(key);
+						personXLS.setErrorMessage(e.getResponseBodyAsString());
+						continue;
+					}
+
 					addQualificationsAndProgrammeMemberships(gmcToPersonXLSMap.get(key), personDTOFromXLS, personDTOFromDB);
 					gmcToPersonXLSMap.get(key).setSuccessfullyImported(true);
 				}
@@ -210,19 +219,38 @@ public class ScheduledUploadTask {
 		addPersons(gmcsNotInTCS);
 	}
 
-	private Set<String> collectRegNumbers(Set<PersonXLS> personXLSS, Function<PersonXLS, String> function) {
+	private void flagAndEliminateDuplicates(List<PersonXLS> personXLSList, Function<PersonXLS, String> function) {
+		Set<String> regNumbersSet = new HashSet<>();
+		Set<String> regNumbersDuplicatesSet = new HashSet<>();
+
+		for(PersonXLS personXLS : personXLSList) {
+			if(!regNumbersSet.add(function.apply(personXLS))) {
+				regNumbersDuplicatesSet.add(function.apply(personXLS));
+			}
+		}
+
+		for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext(); ) {
+			PersonXLS personXLS = iterator.next();
+			if(regNumbersDuplicatesSet.contains(function.apply(personXLS))) {
+				personXLS.setErrorMessage("Registration number identified as duplicate in uploaded file");
+				iterator.remove();
+			}
+		}
+	}
+
+	private Set<String> collectRegNumbers(List<PersonXLS> personXLSS, Function<PersonXLS, String> function) {
 		return personXLSS.stream()
 				.map(function::apply)
 				.collect(Collectors.toSet());
 	}
 
-	private Set<PersonXLS> getRowsWithRegistrationNumber(List<PersonXLS> personXLSS, Function<PersonXLS, String> function) {
+	private List<PersonXLS> getRowsWithRegistrationNumber(List<PersonXLS> personXLSS, Function<PersonXLS, String> function) {
 		return personXLSS.stream()
 				.filter(personXLS -> {
 					String regNumber = function.apply(personXLS);
 					return !"unknown".equalsIgnoreCase(regNumber) && !StringUtils.isEmpty(regNumber);
 				})
-				.collect(Collectors.toSet());
+				.collect(Collectors.toList());
 	}
 
 	private void overwriteDBValuesFromNonEmptyExcelValues(PersonDTO personDTOFromDB, PersonDTO personDTOFromXLS) {
@@ -240,10 +268,14 @@ public class ScheduledUploadTask {
 	}
 
 	private String mergeRoles(PersonDTO personDTOFromXLS, PersonDTO personDTOFromDB) {
-		Set<String> personDTOFromDBRoles = new HashSet<>(Arrays.asList(personDTOFromDB.getRole().split(",")));
-		Set<String> personDTOFromXLSRoles = new HashSet<>(Arrays.asList(personDTOFromXLS.getRole().split(",")));
+		Set<String> personDTOFromDBRoles = getRolesSet(personDTOFromDB.getRole());
+		Set<String> personDTOFromXLSRoles = getRolesSet(personDTOFromXLS.getRole());
 		personDTOFromXLSRoles.addAll(personDTOFromDBRoles);
 		return org.apache.commons.lang3.StringUtils.join(personDTOFromXLSRoles, ',');
+	}
+
+	private Set<String> getRolesSet(String csvRoles) {
+		return new HashSet<>(Arrays.asList(StringUtils.isEmpty(csvRoles) ? new String[0] : csvRoles.split(",")));
 	}
 
 	private void addPersons(Set<PersonXLS> personsInXLS) {

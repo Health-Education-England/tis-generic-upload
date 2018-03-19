@@ -126,6 +126,8 @@ public class ExcelToObjectMapper {
             field.set(obj, cell.getStringCellValue());
           }
           break;
+        case BLANK:
+          break;
         default:
           logger.warn("Unknown data type ");
           break;
