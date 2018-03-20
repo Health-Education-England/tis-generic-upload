@@ -9,8 +9,6 @@ import java.util.Map;
 public class FileImportResults {
 	private static Gson gson;
 
-	private int numberOfErrors;
-	private int numberImported;
 	private Map<Integer, String> lineNumberError;
 
 	FileImportResults() {
@@ -24,22 +22,6 @@ public class FileImportResults {
 
 	public Map<Integer, String> getLineNumberError() {
 		return lineNumberError;
-	}
-
-	public int getNumberOfErrors() {
-		return numberOfErrors;
-	}
-
-	public void setNumberOfErrors(int numberOfErrors) {
-		this.numberOfErrors = numberOfErrors;
-	}
-
-	public int getNumberImported() {
-		return numberImported;
-	}
-
-	public void setNumberImported(int numberImported) {
-		this.numberImported = numberImported;
 	}
 
 	public String toJson() {

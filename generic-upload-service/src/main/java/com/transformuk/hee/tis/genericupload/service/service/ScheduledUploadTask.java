@@ -104,9 +104,7 @@ public class ScheduledUploadTask {
 				addPersons(getPersonsWithUnknownRegNumbers(personXLSS));
 				addOrUpdateGMCRecords(personXLSS); //TODO repeat for GDC and Public Health Number
 
-				applicationType.setErrorJson(generateImportReport(personXLSS).toJson());
-				applicationType.setEndDate(LocalDateTime.now());
-				applicationType.setFileStatus(FileStatus.COMPLETED);
+				setJobToCompleted(applicationType, personXLSS);
 			} catch (InvalidFormatException e) {
 				logger.error("Error while reading excel file : " + e.getMessage());
 				applicationType.setFileStatus(FileStatus.INVALID_FILE_FORMAT);
@@ -123,7 +121,7 @@ public class ScheduledUploadTask {
 		}
 	}
 
-	public FileImportResults generateImportReport(List<PersonXLS> personXLSS) {
+	public void setJobToCompleted(ApplicationType applicationType, List<PersonXLS> personXLSS) {
 		FileImportResults fir = new FileImportResults();
 		int errorCount = 0, successCount = 0;
 		for (int i = 0; i < personXLSS.size(); i++) {
@@ -135,9 +133,12 @@ public class ScheduledUploadTask {
 				fir.addError(i, personXLS.getErrorMessage());
 			}
 		}
-		fir.setNumberImported(successCount);
-		fir.setNumberOfErrors(errorCount);
-		return fir;
+
+		applicationType.setNumberOfErrors(errorCount);
+		applicationType.setNumberImported(successCount);
+		applicationType.setErrorJson(fir.toJson());
+		applicationType.setEndDate(LocalDateTime.now());
+		applicationType.setFileStatus(FileStatus.COMPLETED);
 	}
 
 	public Set<PersonXLS> getPersonsWithUnknownRegNumbers(List<PersonXLS> personXLSS) {

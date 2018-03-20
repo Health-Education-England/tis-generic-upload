@@ -37,6 +37,8 @@ public class ApplicationType implements Serializable {
     private String firstName;
     private String lastName;
     private String errorJson;
+    private Integer numberOfErrors;
+    private Integer numberImported;
 
     public Long getId() {
         return id;
@@ -126,6 +128,14 @@ public class ApplicationType implements Serializable {
         this.errorJson = errorJson;
     }
 
+    public Integer getNumberOfErrors() { return numberOfErrors; }
+
+    public void setNumberOfErrors(Integer numberOfErrors) { this.numberOfErrors = numberOfErrors; }
+
+    public Integer getNumberImported() { return numberImported; }
+
+    public void setNumberImported(Integer numberImported) { this.numberImported = numberImported; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -150,9 +160,11 @@ public class ApplicationType implements Serializable {
         sb.append(", fileStatus=").append(fileStatus);
         sb.append(", logId=").append(logId);
         sb.append(", username='").append(username).append('\'');
-        sb.append(", firstName=").append(firstName);
+        sb.append(", firstName='").append(firstName).append('\'');
         sb.append(", lastName='").append(lastName).append('\'');
         sb.append(", errorJson='").append(errorJson).append('\'');
+        sb.append(", numberOfErrors=").append(numberOfErrors);
+        sb.append(", numberImported=").append(numberImported);
         sb.append('}');
         return sb.toString();
     }
