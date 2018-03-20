@@ -7,6 +7,7 @@ import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,8 +17,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,13 +38,13 @@ public class FileValidator {
 	 *            The provided files to validate
 	 * @throws MethodArgumentNotValidException
 	 */
-	public void validate(List<MultipartFile> files, FileType fileType) throws Exception {
+	public void validate(List<MultipartFile> files, FileType fileType, boolean validateMandatoryFields) throws IOException, NoSuchFieldException, InstantiationException, ParseException, IllegalAccessException, InvalidFormatException, MethodArgumentNotValidException {
 		List<FieldError> fieldErrors = new ArrayList<>();
 		if (!ObjectUtils.isEmpty(files)) {
 			for (MultipartFile file : files) {
 				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
 					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
-					if (fileType.equals(FileType.RECRUITMENT)) {
+					if (validateMandatoryFields && fileType.equals(FileType.RECRUITMENT)) {
 						validateMandatoryFields(fieldErrors, excelToObjectMapper, PersonXLS.class, new PersonHeaderMapper());
 					}
 				}
@@ -65,7 +68,7 @@ public class FileValidator {
 	 * @throws Exception
 	 */
 	private void validateMandatoryFields(List<FieldError> fieldErrors, ExcelToObjectMapper excelToObjectMapper,
-			Class dtoClass, ColumnMapper columnMapper) throws Exception {
+			Class dtoClass, ColumnMapper columnMapper) throws InstantiationException, IllegalAccessException, ParseException, NoSuchFieldException {
 		Map<String, String> columnNameToMandatoryColumnsMap = columnMapper.getMandatoryFieldMap();
 		List<PersonXLS> result = excelToObjectMapper.map(dtoClass, columnNameToMandatoryColumnsMap);
 		AtomicInteger rowIndex = new AtomicInteger(0);

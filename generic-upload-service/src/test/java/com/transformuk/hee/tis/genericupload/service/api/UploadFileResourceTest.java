@@ -40,9 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = Application.class)
 public class UploadFileResourceTest {
 
-	private static final String FILE_NAME = "Intrepid Recruitment Import Template v9.xls";
-    public static final String DBC = "DBCs";
-    public static final String USER_ID = "James H";
+  public static final String DBC = "DBCs";
+  public static final String USER_ID = "James H";
 
 	@Autowired
 	private ApplicationTypeRepository applicationTypeRepository;
@@ -82,10 +81,7 @@ public class UploadFileResourceTest {
 	@Test
 	@Transactional
 	public void uploadFile() throws Exception {
-		MockRestServiceServer mockServer = MockRestServiceServer.createServer(restTemplate);
-		mockServer.expect(requestTo(serviceUrl + "/api/gmc-details/in/123456,12345699"))
-				.andExpect(method(HttpMethod.GET)).andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
-
+		String FILE_NAME = "Intrepid Recruitment Import Template v9.xls";
 		String filePath = new ClassPathResource(FILE_NAME).getURI().getPath();
 		MockMultipartFile multipartFile = new MockMultipartFile("file", FILE_NAME,
 				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -96,8 +92,7 @@ public class UploadFileResourceTest {
 
 		// when & then
 		restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
-				.andExpect(status().isAccepted());
-		mockServer.reset();
+				.andExpect(status().isOk());
 	}
 
 	@Test
@@ -111,7 +106,6 @@ public class UploadFileResourceTest {
 		// when & then
 		restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
 				.andExpect(status().isUnsupportedMediaType());
-
 	}
 
 	@Test
@@ -125,6 +119,5 @@ public class UploadFileResourceTest {
 		// when & then
 		restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
 				.andExpect(status().isUnsupportedMediaType());
-
 	}
 }

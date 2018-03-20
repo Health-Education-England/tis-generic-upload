@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
+import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.config.ApplicationConfiguration;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
@@ -55,6 +56,8 @@ public class ScheduledUploadTask {
 	private final FileStorageRepository fileStorageRepository;
 	@Autowired
 	private FileProcessService fileProcessService;
+	@Autowired
+	private FileValidator fileValidator;
 
 	GMCDTOFetcher gmcDtoFetcher;
 	GDCDTOFetcher gdcDtoFetcher;

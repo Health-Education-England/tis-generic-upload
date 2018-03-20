@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service.impl;
 
+import com.microsoft.azure.storage.StorageException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
@@ -17,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -54,18 +57,19 @@ public class UploadFileServiceImpl implements UploadFileService {
     }
 
     @Override
-    public long upload(List<MultipartFile> files, String username, String firstName, String lastName) throws Exception {
+    public ApplicationType upload(List<MultipartFile> files, String username, String firstName, String lastName) throws InvalidKeyException, StorageException, URISyntaxException {
         long logId = System.currentTimeMillis();
 
+        ApplicationType applicationType = null;
         if (!ObjectUtils.isEmpty(files)) {
             fileStorageRepository.store(logId, CONTAINER_NAME, files);
             for (MultipartFile file : files) {
                 if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
-                    save(file.getOriginalFilename(), logId, username, firstName, lastName);
+                    applicationType = save(file.getOriginalFilename(), logId, username, firstName, lastName);
                 }
             }
         }
-        return logId;
+        return applicationType;
     }
 
     @Override

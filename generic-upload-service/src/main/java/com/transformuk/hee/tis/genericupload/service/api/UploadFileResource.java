@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.api;
 
 import com.codahale.metrics.annotation.Timed;
+import com.microsoft.azure.storage.StorageException;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
@@ -22,11 +23,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
+import java.text.ParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,63 +57,74 @@ public class UploadFileResource {
 		this.fileValidator = fileValidator;
 	}
 
-	@ApiOperation(value = "bulk upload file", notes = "bulk upload file", response = String.class, responseContainer = "Accepted")
+	@ApiOperation(value = "Upload a file", notes = "Although this interface supports multiple file uploads, at the time of development the Angular client only supports a single upload")
 	@ApiResponses(value = {
-			@ApiResponse(code = 202, message = "Uploaded given files successfully with logId", response = Long.class)})
+			@ApiResponse(code = 202, message = "Uploaded given files successfully with logId", response = ApplicationType.class),
+			@ApiResponse(code = 400, message = "The error message will be in the body of the response", response = String.class),
+			@ApiResponse(code = 415, message = "Invalid file format", response = String.class),
+			@ApiResponse(code = 500, message = "Problems encountered saving the file", response = String.class)})
 	@PostMapping("/file")
 	@Timed
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	public ResponseEntity<String> handleFileUpload(HttpServletRequest request) throws Exception { // URISyntaxException
+	public ResponseEntity handleFileUpload(HttpServletRequest request) {
 		log.info("Received request to upload files.");
 
-		UserProfile profileFromContext = TisSecurityHelper.getProfileFromContext();
-
 		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
-
 		// extract files from MIME body
 		List<MultipartFile> fileList = mRequest.getFileMap()
 				.entrySet()
 				.stream()
 				.map(file -> file.getValue())
 				.collect(Collectors.toList());
-
 		if (fileList.isEmpty()) {
 			log.error("Expected to receive file(s) as part of the upload");
-			return ResponseEntity.badRequest().body("Expected a file in the multipart file request");
+			return new ResponseEntity<>("expecting a file to be uploaded", HttpStatus.BAD_REQUEST);
 		}
 
 		// Validate file formats
 		for (MultipartFile file : fileList) {
-			// TODO support multiple file types here - xlsx, xls for now; CSV perhaps
-			String contentType = file.getContentType();
-
-			if (!(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType))) {
-				String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-				if (extension != null && !(extension.equals("xls") || extension.equals("xlsx")))
-					throw new InvalidFormatException(String.format("Content type %s not supported", file.getContentType()));
+			if(isNotExcelContentType(file) || doesNotHaveAnExcelExtension(file)) {
+				log.error("Bad content type or extension");
+				return new ResponseEntity<>("Content type %s not supported", HttpStatus.UNSUPPORTED_MEDIA_TYPE);
 			}
 		}
 
-		//TODO is this necessary
-		// Validate file
-		// for other type of file, please pass path variable and pass to validator
-		fileValidator.validate(fileList, FileType.RECRUITMENT); //TODO allow validation exceptions to bubble up to REST response
+		ApplicationType applicationType;
+		try {
+			// Validate file - for other type of file, please pass path variable and pass to validator
+			fileValidator.validate(fileList, FileType.RECRUITMENT, true);
 
-		// if validation is success then store the file into azure and db
-		long logId = uploadFileService.upload(fileList, profileFromContext.getUserName(), profileFromContext.getFirstName(), profileFromContext.getLastName());
+			UserProfile profileFromContext = TisSecurityHelper.getProfileFromContext();
+			// if validation is success then store the file into azure and db
+			applicationType = uploadFileService.upload(fileList, profileFromContext.getUserName(), profileFromContext.getFirstName(), profileFromContext.getLastName());
+		} catch (InvalidKeyException | StorageException | URISyntaxException e) {
+			return new ResponseEntity<>("Application error while storing the file : " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}	catch (IOException | NoSuchFieldException | InstantiationException | IllegalAccessException | ParseException | InvalidFormatException | MethodArgumentNotValidException e) {
+			return new ResponseEntity<>("File uploaded cannot be processed " + e.getMessage(), HttpStatus.BAD_REQUEST);
+		}
 
-		return ResponseEntity.accepted()
-				.body(Long.toString(logId));
+		return new ResponseEntity<>(applicationType, HttpStatus.OK);
+	}
+
+
+
+	public boolean isNotExcelContentType(MultipartFile file) {
+		String contentType = file.getContentType();
+		return !(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType));
+	}
+
+	public boolean doesNotHaveAnExcelExtension(MultipartFile file) {
+		String extension = FilenameUtils.getExtension(file.getOriginalFilename());
+		return extension != null && !(extension.equals("xls") || extension.equals("xlsx"));
 	}
 
 	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)
-	@ApiResponses(value = {@ApiResponse(code = 200, message = "File process successfully")})
+	@ApiResponses(value = {@ApiResponse(code = 200, message = "Status list returned")})
 	@GetMapping("/status")
 	@Timed
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable,
-	                                                                 @ApiParam(value = "any wildcard string to be searched") @RequestParam(value = "searchQuery", required = false) String searchQuery
-	) throws Exception { // URISyntaxException
+	                                                                 @ApiParam(value = "any wildcard string to be searched") @RequestParam(value = "searchQuery", required = false) String searchQuery) {
 		log.info("request for bulk upload status received.");
 		Page<ApplicationType> page;
 		searchQuery = sanitize(searchQuery);

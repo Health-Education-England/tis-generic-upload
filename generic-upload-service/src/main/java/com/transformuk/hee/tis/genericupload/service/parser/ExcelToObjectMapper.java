@@ -47,7 +47,7 @@ public class ExcelToObjectMapper {
    * @return List of object of type T.
    * @throws Exception if failed to generate mapping.
    */
-  public <T> ArrayList<T> map(Class<T> cls, Map<String, String> columnMap) throws Exception {
+  public <T> ArrayList<T> map(Class<T> cls, Map<String, String> columnMap) throws NoSuchFieldException, IllegalAccessException, InstantiationException, ParseException {
     ArrayList<T> list = new ArrayList();
 
     Field rowNumber = cls.getDeclaredField(ROW_NUMBER);
@@ -171,7 +171,7 @@ public class ExcelToObjectMapper {
    * @return Index number of header name.
    * @throws Exception
    */
-  private int getHeaderIndex(String headerName, Workbook workbook) throws Exception {
+  private int getHeaderIndex(String headerName, Workbook workbook) throws NoSuchFieldException {
     Sheet sheet = workbook.getSheetAt(0);
     int totalColumns = sheet.getRow(0).getLastCellNum();
     int index = -1;
@@ -182,7 +182,7 @@ public class ExcelToObjectMapper {
       }
     }
     if (index == -1) {
-      throw new Exception("Invalid object field name provided.");
+      throw new NoSuchFieldException("Invalid object field name provided.");
     }
     return index;
   }

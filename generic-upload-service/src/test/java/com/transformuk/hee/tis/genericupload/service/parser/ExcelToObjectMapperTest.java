@@ -19,7 +19,7 @@ public class ExcelToObjectMapperTest {
 
   private ExcelToObjectMapper excelToObjectMapper;
 
-  private static final String FILE_NAME = "TIS Recruiment Import Template - test - single.xlsx";
+  private static final String FILE_NAME = "TIS Recruitment Import Template - test - single.xlsx";
 
   @Before
   public void setUp() throws Exception {
