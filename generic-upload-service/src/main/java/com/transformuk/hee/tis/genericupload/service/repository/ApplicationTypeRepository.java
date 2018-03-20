@@ -25,6 +25,9 @@ public interface ApplicationTypeRepository extends JpaRepository<ApplicationType
 
     List<ApplicationType> findByFileStatusOrderByStartDate(FileStatus status); //TODO check this is ordering by oldest upload
 
+    @Query(value = "select at from ApplicationType at where at.logId = :logId")
+    ApplicationType findByLogId(@Param("logId") Long logId);
+
     @Query(value = SEARCH_QUERY)
     Page<ApplicationType> fullTextSearch(@Param("text") String text, Pageable pageable);
 }

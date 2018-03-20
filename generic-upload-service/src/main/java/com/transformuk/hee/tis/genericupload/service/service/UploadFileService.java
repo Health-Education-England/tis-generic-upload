@@ -6,9 +6,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.util.List;
+import java.util.Map;
 
 public interface UploadFileService {
     //TODO externalise to environment variable
@@ -26,4 +29,6 @@ public interface UploadFileService {
   Page<ApplicationType> getUploadStatus(Pageable pageable);
 
   Page<ApplicationType> searchUploads(String text, Pageable pageable);
+
+  Map<String, OutputStream> findErrorsByLogId(Long logId);
 }

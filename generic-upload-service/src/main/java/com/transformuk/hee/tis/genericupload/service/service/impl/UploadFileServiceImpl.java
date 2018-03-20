@@ -18,10 +18,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -70,6 +75,14 @@ public class UploadFileServiceImpl implements UploadFileService {
             }
         }
         return applicationType;
+    }
+
+    @Override
+    public Map<String, OutputStream> findErrorsByLogId(Long logId) {
+        ApplicationType applicationType = applicationTypeRepository.findByLogId(logId);
+	    OutputStream download = fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName());
+	    
+	    return Collections.singletonMap(applicationType.getFileName(), download);
     }
 
     @Override

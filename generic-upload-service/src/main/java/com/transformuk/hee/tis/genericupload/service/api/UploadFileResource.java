@@ -29,12 +29,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -106,8 +108,6 @@ public class UploadFileResource {
 		return new ResponseEntity<>(applicationType, HttpStatus.OK);
 	}
 
-
-
 	public boolean isNotExcelContentType(MultipartFile file) {
 		String contentType = file.getContentType();
 		return !(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType));
@@ -122,7 +122,6 @@ public class UploadFileResource {
 	@ApiResponses(value = {@ApiResponse(code = 200, message = "Status list returned")})
 	@GetMapping("/status")
 	@Timed
-	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable,
 	                                                                 @ApiParam(value = "any wildcard string to be searched") @RequestParam(value = "searchQuery", required = false) String searchQuery) {
 		log.info("request for bulk upload status received.");
@@ -136,6 +135,21 @@ public class UploadFileResource {
 		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/generic-upload/status");
 
 		return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+	}
+
+	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)
+	@ApiResponses(value = {@ApiResponse(code = 200, message = "Status list returned")})
+	@GetMapping(value = "/uploadedFileErrors/{logId}")
+	public ResponseEntity<byte[]> getUploadedFileErrors(@ApiParam(value = "The stored file log id", required = true) @PathVariable(value = "logId") final Long logId) {
+		Map.Entry<String, OutputStream> byLogId = uploadFileService.findErrorsByLogId(logId).entrySet().iterator().next();
+		ByteArrayOutputStream logIdOutputStream = (ByteArrayOutputStream) byLogId.getValue();
+
+		String filename = byLogId.getKey();
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentDispositionFormData(filename, filename);
+		headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+		return new ResponseEntity<>(logIdOutputStream.toByteArray(), headers, HttpStatus.OK);
 	}
 
 	//TODO refactor out into common library, if needed
