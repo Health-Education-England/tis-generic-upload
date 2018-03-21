@@ -9,10 +9,7 @@ import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import com.transformuk.hee.tis.security.model.UserProfile;
 import com.transformuk.hee.tis.security.util.TisSecurityHelper;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.*;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -120,6 +117,17 @@ public class UploadFileResource {
 
 	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)
 	@ApiResponses(value = {@ApiResponse(code = 200, message = "Status list returned")})
+	//https://stackoverflow.com/a/35427093 document Spring Pageable
+	@ApiImplicitParams({
+			@ApiImplicitParam(name = "page", dataType = "int", paramType = "query",
+					value = "Results page you want to retrieve (0..N)"),
+			@ApiImplicitParam(name = "size", dataType = "int", paramType = "query",
+					value = "Number of records per page."),
+			@ApiImplicitParam(name = "sort", allowMultiple = true, dataType = "string", paramType = "query",
+					value = "Sorting criteria in the format: property(,asc|desc). " +
+							"Default sort order is ascending. " +
+							"Multiple sort criteria are supported.")
+	})
 	@GetMapping("/status")
 	@Timed
 	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable,
