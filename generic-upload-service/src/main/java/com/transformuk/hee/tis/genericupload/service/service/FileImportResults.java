@@ -3,25 +3,24 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import com.google.gson.Gson;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class FileImportResults {
 	private static Gson gson;
 
-	private Map<Integer, String> lineNumberError;
+	private Map<Integer, String> lineNumberErrors;
 
 	FileImportResults() {
 		gson = new Gson();
-		lineNumberError = new HashMap<>();
+		lineNumberErrors = new HashMap<>();
 	}
 
 	public void addError(int lineNumber, String errorMessage) {
-		lineNumberError.put(lineNumber, errorMessage);
+		lineNumberErrors.put(lineNumber, errorMessage);
 	}
 
-	public Map<Integer, String> getLineNumberError() {
-		return lineNumberError;
+	public Map<Integer, String> getLineNumberErrors() {
+		return lineNumberErrors;
 	}
 
 	public String toJson() {

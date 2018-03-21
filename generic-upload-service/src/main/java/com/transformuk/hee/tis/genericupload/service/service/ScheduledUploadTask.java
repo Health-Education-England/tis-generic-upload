@@ -94,9 +94,9 @@ public class ScheduledUploadTask {
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
 			applicationTypeRepository.save(applicationType);
 
-			ByteArrayOutputStream baos = (ByteArrayOutputStream) fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName());
-			InputStream bis = new ByteArrayInputStream(baos.toByteArray());
-			try {
+
+			try(ByteArrayOutputStream baos = (ByteArrayOutputStream) fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName());
+			    InputStream bis = new ByteArrayInputStream(baos.toByteArray())) {
 				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis);
 				final List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap()); // TODO : this is being done twice, once while doing first level validation, consider optimising
 				personXLSS.stream().forEach(PersonXLS::initialiseSuccessfullyImported); //have to explicitly set this as class is populated by reflection
