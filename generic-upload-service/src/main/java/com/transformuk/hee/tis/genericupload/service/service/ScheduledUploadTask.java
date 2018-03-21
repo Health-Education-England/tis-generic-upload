@@ -1,7 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.google.gson.Gson;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
@@ -19,6 +18,8 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -36,7 +37,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,6 +57,13 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class ScheduledUploadTask {
 	private static final Logger logger = getLogger(ScheduledUploadTask.class);
 	private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+	public static final String REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number identified as duplicate in uploaded file";
+	public static final String GMC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "GMC number does not match surname in TIS";
+	public static final String PROGRAMME_NOT_FOUND = "Programme not found ";
+	public static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programme found for ";
+	public static final String CURRICULUM_NOT_FOUND = "Curriculum not found ";
+	public static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for ";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -172,7 +187,7 @@ public class ScheduledUploadTask {
 					if(pbdMapByGMC.get(gmcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownGMCsInTIS.add(personXLS);
 					} else {
-						personXLS.setErrorMessage("GMC number does not match surname in TIS");
+						personXLS.setErrorMessage(GMC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS);
 					}
 				}
 			}
@@ -206,7 +221,7 @@ public class ScheduledUploadTask {
 						personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
 					} catch (HttpClientErrorException e) {
 						PersonXLS personXLS = gmcToPersonXLSMap.get(key);
-						personXLS.setErrorMessage(e.getResponseBodyAsString());
+						personXLS.setErrorMessage(getMessage(e));
 						continue;
 					}
 
@@ -222,6 +237,17 @@ public class ScheduledUploadTask {
 		addPersons(gmcsNotInTCS);
 	}
 
+	public String getMessage(HttpClientErrorException e) {
+		JSONObject jsonObject = new JSONObject(e.getResponseBodyAsString());
+		JSONArray fieldErrors = jsonObject.getJSONArray("fieldErrors");
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < fieldErrors.length(); i++) {
+			sb.append(fieldErrors.getJSONObject(i).get("message"));
+			sb.append(System.lineSeparator());
+		}
+		return sb.toString();
+	}
+
 	private void flagAndEliminateDuplicates(List<PersonXLS> personXLSList, Function<PersonXLS, String> function) {
 		Set<String> regNumbersSet = new HashSet<>();
 		Set<String> regNumbersDuplicatesSet = new HashSet<>();
@@ -235,7 +261,7 @@ public class ScheduledUploadTask {
 		for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext(); ) {
 			PersonXLS personXLS = iterator.next();
 			if(regNumbersDuplicatesSet.contains(function.apply(personXLS))) {
-				personXLS.setErrorMessage("Registration number identified as duplicate in uploaded file");
+				personXLS.setErrorMessage(REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE);
 				iterator.remove();
 			}
 		}
@@ -336,9 +362,9 @@ public class ScheduledUploadTask {
 			if(programmeDTOs.size() == 1) {
 				programmeDTO = programmeDTOs.get(0);
 			} else if(programmeDTOs.isEmpty()) {
-				throw new IllegalArgumentException("Programme not found " + programmeName);
+				throw new IllegalArgumentException(PROGRAMME_NOT_FOUND + programmeName);
 			} else if(programmeDTOs.size() > 1) {
-				throw new IllegalArgumentException("Multiple programme found for " + programmeName);
+				throw new IllegalArgumentException(MULTIPLE_PROGRAMME_FOUND_FOR + programmeName);
 			}
 		}
 		return programmeDTO;
@@ -351,9 +377,9 @@ public class ScheduledUploadTask {
 			if(curriculumDTOs.size() == 1) {
 				curriculumDTO = curriculumDTOs.get(0);
 			} else if(curriculumDTOs.isEmpty()) {
-				throw new IllegalArgumentException("Curriculum not found " + curriculumName);
+				throw new IllegalArgumentException(CURRICULUM_NOT_FOUND + curriculumName);
 			} else if(curriculumDTOs.size() > 1) {
-				throw new IllegalArgumentException("Multiple curricula found for " + curriculumName);
+				throw new IllegalArgumentException(MULTIPLE_CURRICULA_FOUND_FOR + curriculumName);
 			}
 		}
 		return curriculumDTO;
