@@ -22,11 +22,9 @@ public class ApplicationType implements Serializable {
     @Enumerated(EnumType.STRING)
     private FileType fileType;
 
-    //the date the file was uploaded
-    private LocalDateTime startDate;
+    private LocalDateTime uploadedDate;
 
-    //the date the file was processed
-    private LocalDateTime endDate;
+    private LocalDateTime processedDate;
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
@@ -64,20 +62,20 @@ public class ApplicationType implements Serializable {
         this.fileType = fileType;
     }
 
-    public LocalDateTime getStartDate() {
-        return startDate;
+    public LocalDateTime getUploadedDate() {
+        return uploadedDate;
     }
 
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
+    public void setUploadedDate(LocalDateTime uploadedDate) {
+        this.uploadedDate = uploadedDate;
     }
 
-    public LocalDateTime getEndDate() {
-        return endDate;
+    public LocalDateTime getProcessedDate() {
+        return processedDate;
     }
 
-    public void setEndDate(LocalDateTime endDate) {
-        this.endDate = endDate;
+    public void setProcessedDate(LocalDateTime processedDate) {
+        this.processedDate = processedDate;
     }
 
     public FileStatus getFileStatus() {
@@ -155,8 +153,8 @@ public class ApplicationType implements Serializable {
         sb.append("id=").append(id);
         sb.append(", fileName='").append(fileName).append('\'');
         sb.append(", fileType=").append(fileType);
-        sb.append(", startDate=").append(startDate);
-        sb.append(", endDate=").append(endDate);
+        sb.append(", uploadedDate=").append(uploadedDate);
+        sb.append(", processedDate=").append(processedDate);
         sb.append(", fileStatus=").append(fileStatus);
         sb.append(", logId=").append(logId);
         sb.append(", username='").append(username).append('\'');

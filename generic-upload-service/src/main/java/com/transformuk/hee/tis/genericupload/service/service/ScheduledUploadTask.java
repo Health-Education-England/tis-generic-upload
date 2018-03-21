@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.google.gson.Gson;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
@@ -21,7 +22,6 @@ import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -89,11 +89,10 @@ public class ScheduledUploadTask {
 	public void scheduleTaskWithFixedDelay() {
 		logger.info("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
 		//TODO circuit-break on tcs/profile/reference/mysql connectivity
-		for (ApplicationType applicationType : applicationTypeRepository.findByFileStatusOrderByStartDate(FileStatus.PENDING)) {
+		for (ApplicationType applicationType : applicationTypeRepository.findByFileStatusOrderByUploadedDate(FileStatus.PENDING)) {
 			//set to in progress
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
 			applicationTypeRepository.save(applicationType);
-
 
 			try(ByteArrayOutputStream baos = (ByteArrayOutputStream) fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName());
 			    InputStream bis = new ByteArrayInputStream(baos.toByteArray())) {
@@ -137,7 +136,7 @@ public class ScheduledUploadTask {
 		applicationType.setNumberOfErrors(errorCount);
 		applicationType.setNumberImported(successCount);
 		applicationType.setErrorJson(fir.toJson());
-		applicationType.setEndDate(LocalDateTime.now());
+		applicationType.setProcessedDate(LocalDateTime.now());
 		applicationType.setFileStatus(FileStatus.COMPLETED);
 	}
 

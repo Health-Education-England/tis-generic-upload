@@ -16,9 +16,7 @@ import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeR
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import com.transformuk.hee.tis.genericupload.service.service.EtlService;
 import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
-import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import com.transformuk.hee.tis.genericupload.service.storage.FileRecordStorage;
-import io.swagger.models.auth.In;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -69,8 +67,7 @@ public class FileProcessServiceImpl implements FileProcessService {
 
   @Override
   public List<ApplicationType> loadFilesByStatus(FileStatus status) {
-    List<ApplicationType> applicationTypes = applicationTypeRepository.
-            findByFileStatusOrderByStartDate(status);
+    List<ApplicationType> applicationTypes = applicationTypeRepository.findByFileStatusOrderByUploadedDate(status);
 
     applicationTypes.forEach(at -> {
       int lastIndexOf = at.getFileName().lastIndexOf(DOT);

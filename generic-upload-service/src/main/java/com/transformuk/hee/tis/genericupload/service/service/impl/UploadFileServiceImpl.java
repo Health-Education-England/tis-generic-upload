@@ -62,7 +62,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 
 		ApplicationType applicationType = new ApplicationType();
 		applicationType.setFileName(fileName);
-		applicationType.setStartDate(LocalDateTime.now());
+		applicationType.setUploadedDate(LocalDateTime.now());
 		applicationType.setFileType(FileType.RECRUITMENT);
 		applicationType.setFileStatus(FileStatus.PENDING);
 		applicationType.setLogId(logId);

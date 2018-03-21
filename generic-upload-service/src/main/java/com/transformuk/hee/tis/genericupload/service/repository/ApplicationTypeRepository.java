@@ -20,13 +20,12 @@ public interface ApplicationTypeRepository extends JpaRepository<ApplicationType
         "at.username like %:text% or " +
         "at.firstName like %:text% or " +
         "at.lastName like %:text% or " +
-        "at.startDate like %:text% or " +
-        "at.endDate like %:text%";
+        "at.uploadedDate like %:text% or " +
+        "at.processedDate like %:text%";
 
-    List<ApplicationType> findByFileStatusOrderByStartDate(FileStatus status); //TODO check this is ordering by oldest upload
+    List<ApplicationType> findByFileStatusOrderByUploadedDate(FileStatus status);
 
-    @Query(value = "select at from ApplicationType at where at.logId = :logId")
-    ApplicationType findByLogId(@Param("logId") Long logId);
+    ApplicationType findByLogId(Long logId);
 
     @Query(value = SEARCH_QUERY)
     Page<ApplicationType> fullTextSearch(@Param("text") String text, Pageable pageable);
