@@ -60,6 +60,7 @@ public class ScheduledUploadTask {
 
 	public static final String REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number identified as duplicate in uploaded file";
 	public static final String GMC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "GMC number does not match surname in TIS";
+	public static final String GDC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "GDC number does not match surname in TIS";
 	public static final String PROGRAMME_NOT_FOUND = "Programme not found ";
 	public static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programme found for ";
 	public static final String CURRICULUM_NOT_FOUND = "Curriculum not found ";
@@ -116,7 +117,8 @@ public class ScheduledUploadTask {
 				personXLSS.stream().forEach(PersonXLS::initialiseSuccessfullyImported); //have to explicitly set this as class is populated by reflection
 
 				addPersons(getPersonsWithUnknownRegNumbers(personXLSS));
-				addOrUpdateGMCRecords(personXLSS); //TODO repeat for GDC and Public Health Number
+				addOrUpdateGMCRecords(personXLSS);
+				addOrUpdateGDCRecords(personXLSS);
 
 				setJobToCompleted(applicationType, personXLSS);
 			} catch (InvalidFormatException e) {
@@ -165,6 +167,76 @@ public class ScheduledUploadTask {
 				.collect(Collectors.toSet());
 		logger.info("Found {} unknown reg numbers in xml file uploaded. Adding to TIS", unknownRegNumbers.size());
 		return unknownRegNumbers;
+	}
+
+	public void addOrUpdateGDCRecords(List<PersonXLS> personXLSS) {
+		//check whether a GDC record exists in TIS
+		Function<PersonXLS, String> getGdcNumber = PersonXLS::getGdcNumber;
+		List<PersonXLS> rowsWithGDCNumbers = getRowsWithRegistrationNumber(personXLSS, getGdcNumber);
+		flagAndEliminateDuplicates(rowsWithGDCNumbers, getGdcNumber);
+
+		Set<String> gdcNumbers = collectRegNumbers(rowsWithGDCNumbers, getGdcNumber);
+		Map<String, GdcDetailsDTO> gdcDetailsMap = gdcDtoFetcher.findWithIds(gdcNumbers);
+
+		if (!gdcDetailsMap.isEmpty()) {
+			Set<String> personIdsFromGDCDetailsTable = gdcDtoFetcher.extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
+			Map<String, PersonBasicDetailsDTO> pbdMapByGDC = pbdDtoFetcher.findWithIds(personIdsFromGDCDetailsTable);
+
+			Set<PersonXLS> knownGDCsInTIS = new HashSet<>();
+			for(PersonXLS personXLS : rowsWithGDCNumbers) {
+				String gdcNumber = getGdcNumber.apply(personXLS);
+				if(gdcDetailsMap.containsKey(gdcNumber)) {
+					if(pbdMapByGDC.get(gdcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
+						knownGDCsInTIS.add(personXLS);
+					} else {
+						personXLS.setErrorMessage(GDC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS);
+					}
+				}
+			}
+
+			//deep compare and update if necessary
+			Function<PersonDTO, String> personDTOToGdcID = personDTO -> String.valueOf(personDTO.getGdcDetails().getGdcNumber());
+
+			Map<String, PersonDTO> gdcNumberToPersonDTOMap = new HashMap<>();
+			for(PersonXLS knownGDCInTIS : knownGDCsInTIS) {
+				PersonDTO personDTO = getPersonDTO(knownGDCInTIS);
+				if (personDTO != null) {
+					gdcNumberToPersonDTOMap.put(personDTOToGdcID.apply(personDTO), personDTO);
+				}
+			}
+
+			Map<String, PersonDTO> personDTOMapFromTCS = knownGDCsInTIS.stream()
+					.map(personXLS -> tcsServiceImpl.getPerson(String.valueOf(gdcDetailsMap.get(personXLS.getGdcNumber()).getId()))) //TODO optimise to a fetcher
+					.collect(Collectors.toMap(personDTOToGdcID, Function.identity()));
+
+			Map<String, PersonXLS> gdcToPersonXLSMap = knownGDCsInTIS.stream()
+					.collect(Collectors.toMap(getGdcNumber, Function.identity()));
+
+			//now that we have both lets copy updated data
+			for(String key : gdcNumberToPersonDTOMap.keySet()) {
+				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
+				PersonDTO personDTOFromXLS = gdcNumberToPersonDTOMap.get(key);
+				if(personDTOFromXLS != null) {
+					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
+
+					try {
+						personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
+					} catch (HttpClientErrorException e) {
+						PersonXLS personXLS = gdcToPersonXLSMap.get(key);
+						personXLS.setErrorMessage(getMessage(e));
+						continue;
+					}
+
+					addQualificationsAndProgrammeMemberships(gdcToPersonXLSMap.get(key), personDTOFromXLS, personDTOFromDB);
+					gdcToPersonXLSMap.get(key).setSuccessfullyImported(true);
+				}
+			}
+		}
+
+		Set<PersonXLS> gdcsNotInTCS = rowsWithGDCNumbers.stream()
+				.filter(personXLS -> !gdcDetailsMap.containsKey(personXLS.getGdcNumber()))
+				.collect(Collectors.toSet());
+		addPersons(gdcsNotInTCS);
 	}
 
 	public void addOrUpdateGMCRecords(List<PersonXLS> personXLSS) {
@@ -248,35 +320,35 @@ public class ScheduledUploadTask {
 		return sb.toString();
 	}
 
-	private void flagAndEliminateDuplicates(List<PersonXLS> personXLSList, Function<PersonXLS, String> function) {
+	private void flagAndEliminateDuplicates(List<PersonXLS> personXLSList, Function<PersonXLS, String> extractRegistrationNumber) {
 		Set<String> regNumbersSet = new HashSet<>();
 		Set<String> regNumbersDuplicatesSet = new HashSet<>();
 
 		for(PersonXLS personXLS : personXLSList) {
-			if(!regNumbersSet.add(function.apply(personXLS))) {
-				regNumbersDuplicatesSet.add(function.apply(personXLS));
+			if(!regNumbersSet.add(extractRegistrationNumber.apply(personXLS))) {
+				regNumbersDuplicatesSet.add(extractRegistrationNumber.apply(personXLS));
 			}
 		}
 
 		for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext(); ) {
 			PersonXLS personXLS = iterator.next();
-			if(regNumbersDuplicatesSet.contains(function.apply(personXLS))) {
+			if(regNumbersDuplicatesSet.contains(extractRegistrationNumber.apply(personXLS))) {
 				personXLS.setErrorMessage(REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE);
 				iterator.remove();
 			}
 		}
 	}
 
-	private Set<String> collectRegNumbers(List<PersonXLS> personXLSS, Function<PersonXLS, String> function) {
+	private Set<String> collectRegNumbers(List<PersonXLS> personXLSS, Function<PersonXLS, String> extractRegistrationNumber) {
 		return personXLSS.stream()
-				.map(function::apply)
+				.map(extractRegistrationNumber::apply)
 				.collect(Collectors.toSet());
 	}
 
-	private List<PersonXLS> getRowsWithRegistrationNumber(List<PersonXLS> personXLSS, Function<PersonXLS, String> function) {
+	private List<PersonXLS> getRowsWithRegistrationNumber(List<PersonXLS> personXLSS, Function<PersonXLS, String> extractRegistrationNumber) {
 		return personXLSS.stream()
 				.filter(personXLS -> {
-					String regNumber = function.apply(personXLS);
+					String regNumber = extractRegistrationNumber.apply(personXLS);
 					return !"unknown".equalsIgnoreCase(regNumber) && !StringUtils.isEmpty(regNumber);
 				})
 				.collect(Collectors.toList());
