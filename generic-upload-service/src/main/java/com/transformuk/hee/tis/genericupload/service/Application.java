@@ -99,7 +99,7 @@ public class Application {
             log.error("You have misconfigured your application! It should not " +
                     "run with both the 'dev' and 'cloud' profiles at the same time.");
         }
-        //TODO check how to handle IN_PROGRESS jobs in the ApplicationType table - if running as a single instance
+        //TODO check how to handle IN_PROGRESS jobs in the ApplicationType table - if running as a single instance the jobs in progress should not be in progress any more
     }
 
     @Bean

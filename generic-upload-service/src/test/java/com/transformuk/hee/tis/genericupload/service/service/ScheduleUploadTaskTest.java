@@ -23,7 +23,5 @@ public class ScheduleUploadTaskTest {
                 PersonDTOHelper.createProgrammeDTO(personXLS.getProgrammeName(), personXLS.getProgrammeNumber()));
         Assert.assertEquals(personDTO.getContactDetails().getForenames(), personXLS.getForenames());
         Assert.assertEquals(personDTO.getStatus().toString(), personXLS.getRecordStatus().toLowerCase());
-
-        //TODO more asserts !
     }
 }

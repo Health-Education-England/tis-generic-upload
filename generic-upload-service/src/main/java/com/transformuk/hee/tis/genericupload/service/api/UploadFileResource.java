@@ -160,7 +160,6 @@ public class UploadFileResource {
 		return new ResponseEntity<>(logIdOutputStream.toByteArray(), headers, HttpStatus.OK);
 	}
 
-	//TODO refactor out into common library, if needed
 	private static String sanitize(String str) {
 		if (str == null) {
 			return null;

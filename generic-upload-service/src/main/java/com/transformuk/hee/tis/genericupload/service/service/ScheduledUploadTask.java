@@ -10,9 +10,7 @@ import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
-import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
-import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetcher;
-import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.*;
 import com.transformuk.hee.tis.tcs.api.dto.*;
 import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
@@ -58,13 +56,14 @@ public class ScheduledUploadTask {
 	private static final Logger logger = getLogger(ScheduledUploadTask.class);
 	private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-	public static final String REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number identified as duplicate in uploaded file";
-	public static final String GMC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "GMC number does not match surname in TIS";
-	public static final String GDC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "GDC number does not match surname in TIS";
-	public static final String PROGRAMME_NOT_FOUND = "Programme not found ";
-	public static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programme found for ";
-	public static final String CURRICULUM_NOT_FOUND = "Curriculum not found ";
-	public static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for ";
+	private static final String REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number identified as duplicate in uploaded file";
+	private static final String GMC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for GMC number does not match surname in TIS";
+	private static final String GDC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for GDC number does not match surname in TIS";
+	private static final String PH_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for Public Health number does not match surname in TIS";
+	private static final String PROGRAMME_NOT_FOUND = "Programme not found : ";
+	private static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programme found for : ";
+	private static final String CURRICULUM_NOT_FOUND = "Curriculum not found : ";
+	private static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for : ";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -75,15 +74,14 @@ public class ScheduledUploadTask {
 	@Autowired
 	private FileValidator fileValidator;
 
-	GMCDTOFetcher gmcDtoFetcher;
-	GDCDTOFetcher gdcDtoFetcher;
-	PersonBasicDetailsDTOFetcher pbdDtoFetcher;
+	private GMCDTOFetcher gmcDtoFetcher;
+	private GDCDTOFetcher gdcDtoFetcher;
+	private PersonBasicDetailsDTOFetcher pbdDtoFetcher;
+	private PeopleFetcher peopleFetcher;
+	private PeopleByPHNFetcher peopleByPHNFetcher;
 
 	private final ApplicationTypeRepository applicationTypeRepository;
 	private ApplicationConfiguration applicationConfiguration;
-
-	//TODO externalise
-	private final int QUERYSTRING_LENGTH_LIMITING_BATCH_SIZE = 50;
 
 	@Autowired
 	public ScheduledUploadTask(FileStorageRepository fileStorageRepository,
@@ -97,6 +95,8 @@ public class ScheduledUploadTask {
 		this.gmcDtoFetcher = new GMCDTOFetcher(tcsServiceImpl);
 		this.gdcDtoFetcher = new GDCDTOFetcher(tcsServiceImpl);
 		this.pbdDtoFetcher = new PersonBasicDetailsDTOFetcher(tcsServiceImpl);
+		this.peopleFetcher = new PeopleFetcher(tcsServiceImpl);
+		this.peopleByPHNFetcher = new PeopleByPHNFetcher(tcsServiceImpl);
 	}
 
 
@@ -110,15 +110,16 @@ public class ScheduledUploadTask {
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
 			applicationTypeRepository.save(applicationType);
 
-			try(ByteArrayOutputStream baos = (ByteArrayOutputStream) fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName());
-			    InputStream bis = new ByteArrayInputStream(baos.toByteArray())) {
+			try (ByteArrayOutputStream baos = (ByteArrayOutputStream) fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName());
+			     InputStream bis = new ByteArrayInputStream(baos.toByteArray())) {
 				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis);
 				final List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap()); // TODO : this is being done twice, once while doing first level validation, consider optimising
-				personXLSS.stream().forEach(PersonXLS::initialiseSuccessfullyImported); //have to explicitly set this as class is populated by reflection
+				personXLSS.forEach(PersonXLS::initialiseSuccessfullyImported); //have to explicitly set this as class is populated by reflection
 
 				addPersons(getPersonsWithUnknownRegNumbers(personXLSS));
 				addOrUpdateGMCRecords(personXLSS);
 				addOrUpdateGDCRecords(personXLSS);
+				addOrUpdatePHRecords(personXLSS);
 
 				setJobToCompleted(applicationType, personXLSS);
 			} catch (InvalidFormatException e) {
@@ -169,6 +170,70 @@ public class ScheduledUploadTask {
 		return unknownRegNumbers;
 	}
 
+	public void addOrUpdatePHRecords(List<PersonXLS> personXLSS) {
+		//check whether a PH record exists in TIS
+		Function<PersonXLS, String> getPhNumber = PersonXLS::getPublicHealthNumber;
+		List<PersonXLS> rowsWithPHNumbers = getRowsWithRegistrationNumber(personXLSS, getPhNumber);
+		flagAndEliminateDuplicates(rowsWithPHNumbers, getPhNumber);
+
+		Set<String> phNumbers = collectRegNumbers(rowsWithPHNumbers, getPhNumber);
+		Map<String, PersonDTO> phnDetailsMap = peopleByPHNFetcher.findWithKeys(phNumbers);
+
+		Function<PersonDTO, String> personDTOToPHNID = PersonDTO::getPublicHealthNumber;
+
+		if (!phnDetailsMap.isEmpty()) {
+			Set<Long> personIds = peopleByPHNFetcher.extractIds(phnDetailsMap, PersonDTO::getId);
+			Map<Long, PersonBasicDetailsDTO> pbdMapByPH = pbdDtoFetcher.findWithKeys(personIds);
+
+			Set<PersonXLS> knownPHsInTIS = new HashSet<>();
+			for(PersonXLS personXLS : rowsWithPHNumbers) {
+				String phNumber = getPhNumber.apply(personXLS);
+				if(phnDetailsMap.containsKey(phNumber)) {
+					if(pbdMapByPH.get(phnDetailsMap.get(phNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
+						knownPHsInTIS.add(personXLS);
+					} else {
+						personXLS.setErrorMessage(PH_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS);
+					}
+				}
+			}
+
+			Map<String, PersonDTO> phNumberToPersonDTOFromXLSMap = new HashMap<>();
+			for (PersonXLS knownPHInTIS : knownPHsInTIS) {
+				PersonDTO personDTO = getPersonDTO(knownPHInTIS);
+				if (personDTO != null) {
+					phNumberToPersonDTOFromXLSMap.put(personDTOToPHNID.apply(personDTO), personDTO);
+				}
+			}
+
+			Map<String, PersonXLS> phnToPersonXLSMap = knownPHsInTIS.stream()
+					.collect(Collectors.toMap(getPhNumber, Function.identity()));
+
+			for (String key : phNumberToPersonDTOFromXLSMap.keySet()) {
+				PersonDTO personDTOFromDB = phnDetailsMap.get(key);
+				PersonDTO personDTOFromXLS = phNumberToPersonDTOFromXLSMap.get(key);
+				if (personDTOFromXLS != null) {
+					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
+
+					try {
+						personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
+					} catch (HttpClientErrorException e) {
+						PersonXLS personXLS = phnToPersonXLSMap.get(key);
+						personXLS.setErrorMessage(getSingleMessageFromSpringJsonErrorMessages(e));
+						continue;
+					}
+
+					addQualificationsAndProgrammeMemberships(phnToPersonXLSMap.get(key), personDTOFromXLS, personDTOFromDB);
+					phnToPersonXLSMap.get(key).setSuccessfullyImported(true);
+				}
+			}
+		}
+
+		Set<PersonXLS> phsNotInTCS = rowsWithPHNumbers.stream()
+				.filter(personXLS -> !phnDetailsMap.containsKey(personXLS.getPublicHealthNumber()))
+				.collect(Collectors.toSet());
+		addPersons(phsNotInTCS);
+	}
+
 	public void addOrUpdateGDCRecords(List<PersonXLS> personXLSS) {
 		//check whether a GDC record exists in TIS
 		Function<PersonXLS, String> getGdcNumber = PersonXLS::getGdcNumber;
@@ -176,17 +241,17 @@ public class ScheduledUploadTask {
 		flagAndEliminateDuplicates(rowsWithGDCNumbers, getGdcNumber);
 
 		Set<String> gdcNumbers = collectRegNumbers(rowsWithGDCNumbers, getGdcNumber);
-		Map<String, GdcDetailsDTO> gdcDetailsMap = gdcDtoFetcher.findWithIds(gdcNumbers);
+		Map<String, GdcDetailsDTO> gdcDetailsMap = gdcDtoFetcher.findWithKeys(gdcNumbers);
 
 		if (!gdcDetailsMap.isEmpty()) {
-			Set<String> personIdsFromGDCDetailsTable = gdcDtoFetcher.extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
-			Map<String, PersonBasicDetailsDTO> pbdMapByGDC = pbdDtoFetcher.findWithIds(personIdsFromGDCDetailsTable);
+			Set<Long> personIdsFromGDCDetailsTable = gdcDtoFetcher.extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
+			Map<Long, PersonBasicDetailsDTO> pbdMapByGDC = pbdDtoFetcher.findWithKeys(personIdsFromGDCDetailsTable);
 
 			Set<PersonXLS> knownGDCsInTIS = new HashSet<>();
-			for(PersonXLS personXLS : rowsWithGDCNumbers) {
+			for (PersonXLS personXLS : rowsWithGDCNumbers) {
 				String gdcNumber = getGdcNumber.apply(personXLS);
-				if(gdcDetailsMap.containsKey(gdcNumber)) {
-					if(pbdMapByGDC.get(gdcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
+				if (gdcDetailsMap.containsKey(gdcNumber)) {
+					if (pbdMapByGDC.get(gdcDetailsMap.get(gdcNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownGDCsInTIS.add(personXLS);
 					} else {
 						personXLS.setErrorMessage(GDC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS);
@@ -195,35 +260,38 @@ public class ScheduledUploadTask {
 			}
 
 			//deep compare and update if necessary
-			Function<PersonDTO, String> personDTOToGdcID = personDTO -> String.valueOf(personDTO.getGdcDetails().getGdcNumber());
+			Function<PersonDTO, String> personDTOToGdcID = personDTO -> personDTO.getGdcDetails().getGdcNumber();
 
-			Map<String, PersonDTO> gdcNumberToPersonDTOMap = new HashMap<>();
-			for(PersonXLS knownGDCInTIS : knownGDCsInTIS) {
+			Map<String, PersonDTO> gdcNumberToPersonDTOFromXLSMap = new HashMap<>();
+			for (PersonXLS knownGDCInTIS : knownGDCsInTIS) {
 				PersonDTO personDTO = getPersonDTO(knownGDCInTIS);
 				if (personDTO != null) {
-					gdcNumberToPersonDTOMap.put(personDTOToGdcID.apply(personDTO), personDTO);
+					gdcNumberToPersonDTOFromXLSMap.put(personDTOToGdcID.apply(personDTO), personDTO);
 				}
 			}
 
-			Map<String, PersonDTO> personDTOMapFromTCS = knownGDCsInTIS.stream()
-					.map(personXLS -> tcsServiceImpl.getPerson(String.valueOf(gdcDetailsMap.get(personXLS.getGdcNumber()).getId()))) //TODO optimise to a fetcher
-					.collect(Collectors.toMap(personDTOToGdcID, Function.identity()));
+			Set<Long> personIds = knownGDCsInTIS.stream()
+					.map(personXLS -> gdcDetailsMap.get(personXLS.getGdcNumber()).getId())
+					.collect(Collectors.toSet());
+
+			peopleFetcher.setIdMappingFunction(personDTOToGdcID);
+			Map<Long, PersonDTO> personDTOMapFromTCS = peopleFetcher.findWithKeys(personIds);
 
 			Map<String, PersonXLS> gdcToPersonXLSMap = knownGDCsInTIS.stream()
 					.collect(Collectors.toMap(getGdcNumber, Function.identity()));
 
 			//now that we have both lets copy updated data
-			for(String key : gdcNumberToPersonDTOMap.keySet()) {
+			for (String key : gdcNumberToPersonDTOFromXLSMap.keySet()) {
 				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
-				PersonDTO personDTOFromXLS = gdcNumberToPersonDTOMap.get(key);
-				if(personDTOFromXLS != null) {
+				PersonDTO personDTOFromXLS = gdcNumberToPersonDTOFromXLSMap.get(key);
+				if (personDTOFromXLS != null) {
 					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
 
 					try {
 						personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
 					} catch (HttpClientErrorException e) {
 						PersonXLS personXLS = gdcToPersonXLSMap.get(key);
-						personXLS.setErrorMessage(getMessage(e));
+						personXLS.setErrorMessage(getSingleMessageFromSpringJsonErrorMessages(e));
 						continue;
 					}
 
@@ -246,17 +314,17 @@ public class ScheduledUploadTask {
 		flagAndEliminateDuplicates(rowsWithGMCNumbers, getGmcNumber);
 
 		Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
-		Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithIds(gmcNumbers);
+		Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithKeys(gmcNumbers);
 
 		if (!gmcDetailsMap.isEmpty()) {
-			Set<String> personIdsFromGMCDetailsTable = gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
-			Map<String, PersonBasicDetailsDTO> pbdMapByGMC = pbdDtoFetcher.findWithIds(personIdsFromGMCDetailsTable);
+			Set<Long> personIdsFromGMCDetailsTable = gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
+			Map<Long, PersonBasicDetailsDTO> pbdMapByGMC = pbdDtoFetcher.findWithKeys(personIdsFromGMCDetailsTable);
 
 			Set<PersonXLS> knownGMCsInTIS = new HashSet<>();
-			for(PersonXLS personXLS : rowsWithGMCNumbers) {
+			for (PersonXLS personXLS : rowsWithGMCNumbers) {
 				String gmcNumber = getGmcNumber.apply(personXLS);
-				if(gmcDetailsMap.containsKey(gmcNumber)) {
-					if(pbdMapByGMC.get(gmcNumber).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
+				if (gmcDetailsMap.containsKey(gmcNumber)) {
+					if (pbdMapByGMC.get(gmcDetailsMap.get(gmcNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownGMCsInTIS.add(personXLS);
 					} else {
 						personXLS.setErrorMessage(GMC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS);
@@ -265,35 +333,38 @@ public class ScheduledUploadTask {
 			}
 
 			//deep compare and update if necessary
-			Function<PersonDTO, String> personDTOToGmcID = personDTO -> String.valueOf(personDTO.getGmcDetails().getGmcNumber());
+			Function<PersonDTO, String> personDTOToGmcID = personDTO -> personDTO.getGmcDetails().getGmcNumber();
 
-			Map<String, PersonDTO> gmcNumberToPersonDTOMap = new HashMap<>();
-			for(PersonXLS knownGMCInTIS : knownGMCsInTIS) {
+			Map<String, PersonDTO> gmcNumberToPersonDTOFromXLSMap = new HashMap<>();
+			for (PersonXLS knownGMCInTIS : knownGMCsInTIS) {
 				PersonDTO personDTO = getPersonDTO(knownGMCInTIS);
 				if (personDTO != null) {
-					gmcNumberToPersonDTOMap.put(personDTOToGmcID.apply(personDTO), personDTO);
+					gmcNumberToPersonDTOFromXLSMap.put(personDTOToGmcID.apply(personDTO), personDTO);
 				}
 			}
 
-			Map<String, PersonDTO> personDTOMapFromTCS = knownGMCsInTIS.stream()
-					.map(personXLS -> tcsServiceImpl.getPerson(String.valueOf(gmcDetailsMap.get(personXLS.getGmcNumber()).getId()))) //TODO optimise to a fetcher
-					.collect(Collectors.toMap(personDTOToGmcID, Function.identity()));
+			Set<Long> personIds = knownGMCsInTIS.stream()
+					.map(personXLS -> gmcDetailsMap.get(personXLS.getGmcNumber()).getId())
+					.collect(Collectors.toSet());
+
+			peopleFetcher.setIdMappingFunction(personDTOToGmcID);
+			Map<Long, PersonDTO> personDTOMapFromTCS = peopleFetcher.findWithKeys(personIds);
 
 			Map<String, PersonXLS> gmcToPersonXLSMap = knownGMCsInTIS.stream()
 					.collect(Collectors.toMap(getGmcNumber, Function.identity()));
 
 			//now that we have both lets copy updated data
-			for(String key : gmcNumberToPersonDTOMap.keySet()) {
+			for (String key : gmcNumberToPersonDTOFromXLSMap.keySet()) {
 				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
-				PersonDTO personDTOFromXLS = gmcNumberToPersonDTOMap.get(key);
-				if(personDTOFromXLS != null) {
+				PersonDTO personDTOFromXLS = gmcNumberToPersonDTOFromXLSMap.get(key);
+				if (personDTOFromXLS != null) {
 					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
 
 					try {
 						personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
 					} catch (HttpClientErrorException e) {
 						PersonXLS personXLS = gmcToPersonXLSMap.get(key);
-						personXLS.setErrorMessage(getMessage(e));
+						personXLS.setErrorMessage(getSingleMessageFromSpringJsonErrorMessages(e));
 						continue;
 					}
 
@@ -309,7 +380,7 @@ public class ScheduledUploadTask {
 		addPersons(gmcsNotInTCS);
 	}
 
-	public String getMessage(HttpClientErrorException e) {
+	public String getSingleMessageFromSpringJsonErrorMessages(HttpClientErrorException e) {
 		JSONObject jsonObject = new JSONObject(e.getResponseBodyAsString());
 		JSONArray fieldErrors = jsonObject.getJSONArray("fieldErrors");
 		StringBuilder sb = new StringBuilder();
@@ -324,15 +395,15 @@ public class ScheduledUploadTask {
 		Set<String> regNumbersSet = new HashSet<>();
 		Set<String> regNumbersDuplicatesSet = new HashSet<>();
 
-		for(PersonXLS personXLS : personXLSList) {
-			if(!regNumbersSet.add(extractRegistrationNumber.apply(personXLS))) {
+		for (PersonXLS personXLS : personXLSList) {
+			if (!regNumbersSet.add(extractRegistrationNumber.apply(personXLS))) {
 				regNumbersDuplicatesSet.add(extractRegistrationNumber.apply(personXLS));
 			}
 		}
 
 		for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext(); ) {
 			PersonXLS personXLS = iterator.next();
-			if(regNumbersDuplicatesSet.contains(extractRegistrationNumber.apply(personXLS))) {
+			if (regNumbersDuplicatesSet.contains(extractRegistrationNumber.apply(personXLS))) {
 				personXLS.setErrorMessage(REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE);
 				iterator.remove();
 			}
@@ -387,7 +458,7 @@ public class ScheduledUploadTask {
 					PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
 					addQualificationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
 				}
-				if(StringUtils.isEmpty(personXLS.getErrorMessage())) {
+				if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
 					personXLS.setSuccessfullyImported(true);
 				}
 			}
@@ -397,14 +468,14 @@ public class ScheduledUploadTask {
 	private void addQualificationsAndProgrammeMemberships(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
 		QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
 		qualificationDTO.setPerson(savedPersonDTO);
-		if(!savedPersonDTO.getQualifications().contains(qualificationDTO)) {
+		if (!savedPersonDTO.getQualifications().contains(qualificationDTO)) {
 			tcsServiceImpl.createQualification(qualificationDTO);
 		}
 
 		for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
 			programmeMembershipDTO.setPerson(savedPersonDTO);
 
-			if(!savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
+			if (!savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
 				tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
 			}
 		}
@@ -413,7 +484,7 @@ public class ScheduledUploadTask {
 	private PersonDTO getPersonDTO(PersonXLS personXLS) {
 		Set<CurriculumDTO> curricula = new HashSet<>();
 		PersonDTO personDTO = null;
-		try{
+		try {
 			CurriculumDTO curriculumDTO1 = getCurriculumDTO(personXLS.getCurriculum1());
 			CurriculumDTO curriculumDTO2 = getCurriculumDTO(personXLS.getCurriculum2());
 			CurriculumDTO curriculumDTO3 = getCurriculumDTO(personXLS.getCurriculum3());
@@ -429,13 +500,13 @@ public class ScheduledUploadTask {
 
 	private ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber) throws IllegalArgumentException {
 		ProgrammeDTO programmeDTO = null;
-		if(programmeName != null && programmeNumber != null) {
+		if (programmeName != null && programmeNumber != null) {
 			List<ProgrammeDTO> programmeDTOs = tcsServiceImpl.getProgrammeByNameAndNumber(programmeName, programmeNumber);
-			if(programmeDTOs.size() == 1) {
+			if (programmeDTOs.size() == 1) {
 				programmeDTO = programmeDTOs.get(0);
-			} else if(programmeDTOs.isEmpty()) {
+			} else if (programmeDTOs.isEmpty()) {
 				throw new IllegalArgumentException(PROGRAMME_NOT_FOUND + programmeName);
-			} else if(programmeDTOs.size() > 1) {
+			} else if (programmeDTOs.size() > 1) {
 				throw new IllegalArgumentException(MULTIPLE_PROGRAMME_FOUND_FOR + programmeName);
 			}
 		}
@@ -444,13 +515,13 @@ public class ScheduledUploadTask {
 
 	private CurriculumDTO getCurriculumDTO(String curriculumName) throws IllegalArgumentException {
 		CurriculumDTO curriculumDTO = null;
-		if(curriculumName != null) {
+		if (curriculumName != null) {
 			List<CurriculumDTO> curriculumDTOs = tcsServiceImpl.getCurriculaByName(curriculumName);
-			if(curriculumDTOs.size() == 1) {
+			if (curriculumDTOs.size() == 1) {
 				curriculumDTO = curriculumDTOs.get(0);
-			} else if(curriculumDTOs.isEmpty()) {
+			} else if (curriculumDTOs.isEmpty()) {
 				throw new IllegalArgumentException(CURRICULUM_NOT_FOUND + curriculumName);
-			} else if(curriculumDTOs.size() > 1) {
+			} else if (curriculumDTOs.size() > 1) {
 				throw new IllegalArgumentException(MULTIPLE_CURRICULA_FOUND_FOR + curriculumName);
 			}
 		}

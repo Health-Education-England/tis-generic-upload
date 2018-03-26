@@ -6,14 +6,13 @@ import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.Map;
 import java.util.Set;
 
-public class PersonBasicDetailsDTOFetcher extends DTOFetcher<String, PersonBasicDetailsDTO> {
+public class PersonBasicDetailsDTOFetcher extends DTOFetcher<Long, PersonBasicDetailsDTO> {
 	public PersonBasicDetailsDTOFetcher(TcsServiceImpl tcsService) {
 		super.dtoFetchingServiceCall = tcsService::findPersonBasicDetailsIn;
-		super.idFunction = PersonBasicDetailsDTO::getGmcNumber;
+		super.keyFunction = PersonBasicDetailsDTO::getId;
 	}
 
-	@Override
-	public Map<String, PersonBasicDetailsDTO> findWithIds(Set<String> ids) {
-		return super.findWithIds(ids);
+	public Map<Long, PersonBasicDetailsDTO> findWithKeys(Set<Long> ids) {
+		return super.findWithKeys(ids);
 	}
 }
