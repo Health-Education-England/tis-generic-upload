@@ -144,7 +144,7 @@ public class UploadFileResource {
 
 		if(!StringUtils.isBlank(uploadedDate) || !StringUtils.isBlank(file) || !StringUtils.isBlank(user)) {
 			page = uploadFileService.searchUploads(uploadedDate, file, user, pageable);
-		} else if(StringUtils.isBlank(searchQuery)) {
+		} else if(!StringUtils.isBlank(searchQuery)) {
 			page = uploadFileService.searchUploads(searchQuery, pageable);
 		} else {
 			page = uploadFileService.getUploadStatus(pageable);

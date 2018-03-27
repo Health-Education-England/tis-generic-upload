@@ -142,4 +142,25 @@ public class UploadFileServiceImpl implements UploadFileService {
 	public Page<ApplicationType> searchUploads(String text, Pageable pageable) {
 		return applicationTypeRepository.fullTextSearch(text, pageable);
 	}
+
+	@Transactional(readOnly = true)
+	public Page<ApplicationType> searchUploads(String uploadedDate, String file, String user, Pageable pageable) {
+		if(!StringUtils.isBlank(file) && !StringUtils.isBlank(user) && !StringUtils.isBlank(uploadedDate)) {
+			return applicationTypeRepository.restrictedTextSearchAll(uploadedDate, file, user, pageable);
+		} else if(!StringUtils.isBlank(file) && !StringUtils.isBlank(user)) {
+			return applicationTypeRepository.restrictedTextSearchFileUser(file, user, pageable);
+		} else if(!StringUtils.isBlank(file) && !StringUtils.isBlank(uploadedDate)) {
+			return applicationTypeRepository.restrictedTextSearchFileDate(uploadedDate, file, pageable);
+		} else if(!StringUtils.isBlank(user) && !StringUtils.isBlank(uploadedDate)) {
+			return applicationTypeRepository.restrictedTextSearchUserDate(user, uploadedDate, pageable);
+		} else if(!StringUtils.isBlank(user)) {
+			return applicationTypeRepository.restrictedTextSearchUser(user, pageable);
+		} else if(!StringUtils.isBlank(uploadedDate)) {
+			return applicationTypeRepository.restrictedTextSearchDate(uploadedDate, pageable);
+		} else if(!StringUtils.isBlank(file)) {
+			return applicationTypeRepository.restrictedTextSearchFile(file, pageable);
+		} else {
+			return applicationTypeRepository.findAll(pageable);
+		}
+	}
 }
