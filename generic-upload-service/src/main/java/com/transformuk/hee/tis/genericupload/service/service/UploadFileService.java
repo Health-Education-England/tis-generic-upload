@@ -24,9 +24,11 @@ public interface UploadFileService {
    * @return
    * @throws Exception
    */
-  ApplicationType upload(List<MultipartFile> files, String userame, String firstName, String lastName) throws InvalidKeyException, StorageException, URISyntaxException;
+  ApplicationType upload(List<MultipartFile> files, String username, String firstName, String lastName) throws InvalidKeyException, StorageException, URISyntaxException;
 
   Page<ApplicationType> getUploadStatus(Pageable pageable);
+
+  Page<ApplicationType> searchUploads(String uploadedDate, String file, String user, Pageable pageable);
 
   Page<ApplicationType> searchUploads(String text, Pageable pageable);
 

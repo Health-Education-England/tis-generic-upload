@@ -131,15 +131,26 @@ public class UploadFileResource {
 	@GetMapping("/status")
 	@Timed
 	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable,
-	                                                                 @ApiParam(value = "any wildcard string to be searched") @RequestParam(value = "searchQuery", required = false) String searchQuery) {
+	                                                                 @ApiParam(value = "any wildcard string to be searched") @RequestParam(value = "searchQuery", required = false) String searchQuery,
+	                                                                 @ApiParam(value = "date string any substring of the format YYYY-MM-DD HH:MM:SS") @RequestParam(value = "uploadedDate", required = false) String uploadedDate,
+	                                                                 @ApiParam(value = "file") @RequestParam(value = "file", required = false) String file,
+	                                                                 @ApiParam(value = "user") @RequestParam(value = "user", required = false) String user) {
 		log.info("request for bulk upload status received.");
 		Page<ApplicationType> page;
 		searchQuery = sanitize(searchQuery);
-		if(StringUtils.isBlank(searchQuery)) {
-			page = uploadFileService.getUploadStatus(pageable);
-		} else {
+		uploadedDate = sanitize(uploadedDate);
+		file = sanitize(file);
+		user = sanitize(user);
+
+		if(!StringUtils.isBlank(uploadedDate) || !StringUtils.isBlank(file) || !StringUtils.isBlank(user)) {
+			page = uploadFileService.searchUploads(uploadedDate, file, user, pageable);
+		} else if(StringUtils.isBlank(searchQuery)) {
 			page = uploadFileService.searchUploads(searchQuery, pageable);
+		} else {
+			page = uploadFileService.getUploadStatus(pageable);
 		}
+
+
 		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/generic-upload/status");
 
 		return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
