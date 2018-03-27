@@ -9,7 +9,12 @@ import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import com.transformuk.hee.tis.security.model.UserProfile;
 import com.transformuk.hee.tis.security.util.TisSecurityHelper;
-import io.swagger.annotations.*;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -21,7 +26,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -32,9 +43,13 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.text.ParseException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertToLocalDateTime;
 
 @RestController
 @RequestMapping("/api")
@@ -48,6 +63,9 @@ public class UploadFileResource {
 
 	private final String XLS_MIME_TYPE = "application/vnd.ms-excel";
 	private final String XLX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+	static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
 
 	public UploadFileResource(UploadFileService uploadFileService, FileProcessService fileProcessService,
 	                          FileValidator fileValidator) {
@@ -132,24 +150,23 @@ public class UploadFileResource {
 	@Timed
 	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable,
 	                                                                 @ApiParam(value = "any wildcard string to be searched") @RequestParam(value = "searchQuery", required = false) String searchQuery,
-	                                                                 @ApiParam(value = "date string any substring of the format YYYY-MM-DD HH:MM:SS") @RequestParam(value = "uploadedDate", required = false) String uploadedDate,
+	                                                                 @ApiParam(value = "date string any substring of the format YYYY-MM-DD") @RequestParam(value = "uploadedDate", required = false) String uploadedDate,
 	                                                                 @ApiParam(value = "file") @RequestParam(value = "file", required = false) String file,
 	                                                                 @ApiParam(value = "user") @RequestParam(value = "user", required = false) String user) {
 		log.info("request for bulk upload status received.");
 		Page<ApplicationType> page;
 		searchQuery = sanitize(searchQuery);
-		uploadedDate = sanitize(uploadedDate);
 		file = sanitize(file);
 		user = sanitize(user);
+		uploadedDate = sanitize(uploadedDate);
 
 		if(!StringUtils.isBlank(uploadedDate) || !StringUtils.isBlank(file) || !StringUtils.isBlank(user)) {
-			page = uploadFileService.searchUploads(uploadedDate, file, user, pageable);
-		} else if(StringUtils.isBlank(searchQuery)) {
+			page = uploadFileService.searchUploads(StringUtils.isBlank(uploadedDate) ? null : convertToLocalDateTime(uploadedDate, dateTimeFormatter), file, user, pageable);
+		} else if(!StringUtils.isBlank(searchQuery)) {
 			page = uploadFileService.searchUploads(searchQuery, pageable);
 		} else {
 			page = uploadFileService.getUploadStatus(pageable);
 		}
-
 
 		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/generic-upload/status");
 

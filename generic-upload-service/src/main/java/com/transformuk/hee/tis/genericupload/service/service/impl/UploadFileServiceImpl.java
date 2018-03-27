@@ -22,11 +22,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.domain.Specifications;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,11 +39,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.function.Predicate;
+
+import static com.transformuk.hee.tis.genericupload.service.service.impl.SpecificationFactory.containsLike;
 
 @Service
 @Transactional
@@ -136,6 +146,45 @@ public class UploadFileServiceImpl implements UploadFileService {
 	@Override
 	public Page<ApplicationType> getUploadStatus(Pageable pageable) {
 		return applicationTypeRepository.findAll(pageable);
+	}
+
+	private static Specification<ApplicationType> dateIs(final LocalDateTime localDateTime) {
+		return (final Root<ApplicationType> root, final CriteriaQuery<?> query, final CriteriaBuilder builder) -> {
+			if (localDateTime != null) {
+				return builder.between(root.get("uploadedDate"), localDateTime, localDateTime.plusDays(1).minusSeconds(1));
+			}
+			return builder.conjunction();
+		};
+	}
+
+	@Transactional(readOnly = true)
+	public Page<ApplicationType> searchUploads(LocalDateTime uploadedDate, String file, String user, Pageable pageable) {
+		List<Specification<ApplicationType>> specs = new ArrayList<>();
+		//add the text search criteria
+		if (uploadedDate != null) {
+			specs.add(Specifications.where(dateIs(uploadedDate)));
+		}
+		if (StringUtils.isNotEmpty(user)) {
+			specs.add(Specifications.where(containsLike("username", user))
+					.or(Specifications.where(containsLike("firstName", user)))
+					.or(Specifications.where(containsLike("lastName", user))));
+		}
+		if (StringUtils.isNotEmpty(file)) {
+			specs.add(Specifications.where(containsLike("fileName", file)));
+		}
+
+		Page<ApplicationType> result;
+		if (!specs.isEmpty()) {
+			Specifications<ApplicationType> fullSpec = Specifications.where(specs.get(0));
+			//add the rest of the specs that made it in
+			for (int i = 1; i < specs.size(); i++) {
+				fullSpec = fullSpec.and(specs.get(i));
+			}
+			result = applicationTypeRepository.findAll(fullSpec, pageable);
+		} else {
+			result = applicationTypeRepository.findAll(pageable);
+		}
+		return result;
 	}
 
 	@Override
