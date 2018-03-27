@@ -42,6 +42,14 @@ public abstract class MapperConfiguration {
         return localDate;
     }
 
+    public static LocalDateTime convertToLocalDateTime(String date, DateTimeFormatter dateTimeFormatter) {
+        LocalDateTime localDate = null;
+        if (date != null) {
+            return LocalDateTime.from(LocalDate.parse(date, dateTimeFormatter).atStartOfDay());
+        }
+        return localDate;
+    }
+
     public static LocalDate convertDate(String date) {
         LocalDate localDate = null;
         if (date != null) {
