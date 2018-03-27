@@ -10,7 +10,8 @@ public class PeopleFetcher extends DTOFetcher<Long, PersonDTO> {
 		super.dtoFetchingServiceCall = tcsService::findPeopleIn;
 	}
 
-	public void setIdMappingFunction(Function idMappingFunction) {
+	public PeopleFetcher setIdMappingFunction(Function idMappingFunction) {
 		super.keyFunction = idMappingFunction;
+		return this;
 	}
 }

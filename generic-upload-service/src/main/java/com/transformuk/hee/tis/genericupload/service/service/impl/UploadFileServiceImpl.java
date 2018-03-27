@@ -98,8 +98,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 		Set<Integer> setOfLineNumbersWithErrors = lineNumberErrors.keySet();
 		OutputStream fileWithErrorsOnly = new ByteArrayOutputStream();
 
-		try(ByteArrayOutputStream baos = (ByteArrayOutputStream) fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName());
-		    InputStream bis = new ByteArrayInputStream(baos.toByteArray())) {
+		try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName()))) {
 			Workbook workbook = WorkbookFactory.create(bis);
 
 			Sheet sheet = workbook.getSheetAt(0);
