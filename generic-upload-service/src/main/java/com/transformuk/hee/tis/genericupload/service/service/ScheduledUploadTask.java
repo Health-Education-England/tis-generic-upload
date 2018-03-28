@@ -32,6 +32,8 @@ import javax.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -383,6 +385,13 @@ public class ScheduledUploadTask {
 	private Set<String> collectRegNumbers(List<PersonXLS> personXLSS, Function<PersonXLS, String> extractRegistrationNumber) {
 		return personXLSS.stream()
 				.map(extractRegistrationNumber::apply)
+				.map(s -> {
+						try {
+							return URLEncoder.encode(s, "UTF-8");
+						} catch (UnsupportedEncodingException e) {
+							throw new AssertionError("UTF-8 is unknown");
+						}
+					})
 				.collect(Collectors.toSet());
 	}
 
