@@ -100,8 +100,8 @@ public class UploadFileResource {
 
 		// Validate file formats
 		for (MultipartFile file : fileList) {
-			if(isNotExcelContentType(file) || doesNotHaveAnExcelExtension(file)) {
-				log.error("Bad content type or extension");
+			if(!(hasAnExcelExtension(file))) {
+				log.error("Did not receive a file with an Excel extension");
 				return new ResponseEntity<>("Content type %s not supported", HttpStatus.UNSUPPORTED_MEDIA_TYPE);
 			}
 		}
@@ -123,14 +123,9 @@ public class UploadFileResource {
 		return new ResponseEntity<>(applicationType, HttpStatus.OK);
 	}
 
-	public boolean isNotExcelContentType(MultipartFile file) {
-		String contentType = file.getContentType();
-		return !(XLS_MIME_TYPE.equalsIgnoreCase(contentType) || XLX_MIME_TYPE.equalsIgnoreCase(contentType));
-	}
-
-	public boolean doesNotHaveAnExcelExtension(MultipartFile file) {
+	public boolean hasAnExcelExtension(MultipartFile file) {
 		String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-		return extension != null && !(extension.equals("xls") || extension.equals("xlsx"));
+		return extension != null && ("xls".equals(extension) || "xlsx".equals(extension));
 	}
 
 	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)
