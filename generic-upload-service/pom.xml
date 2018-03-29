@@ -162,6 +162,20 @@
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
+			<artifactId>tcs-service</artifactId>
+			<version>3.4.29</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.transformuk.hee.tis</groupId>
+			<artifactId>reference-service</artifactId>
+			<version>3.2.6</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>generic-upload-api</artifactId>
 			<version>1.0.0</version>
 		</dependency>
