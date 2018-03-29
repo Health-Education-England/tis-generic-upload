@@ -115,4 +115,15 @@ public class ExcelToObjectMapperTest {
     LocalDate localDate = new LocalDate(2001, 7, 6);
     Assert.assertEquals(localDate.toDate(), getDate("7/6/01"));
   }
+
+
+  @Test
+  public void shouldSkipEmptyRowsAgain() throws Exception {
+    String filePath = new ClassPathResource("TIS People Import Template - empty row.xlsx").getURI().getPath();
+    FileInputStream inputStream = new FileInputStream(filePath);
+    excelToObjectMapper = new ExcelToObjectMapper(inputStream);
+    List<PersonXLS> actual = excelToObjectMapper.map(PersonXLS.class,
+        new PersonHeaderMapper().getFieldMap());
+    assertThat(actual.get(0).getRecordStatus()).isNotNull();
+  }
 }

@@ -49,11 +49,12 @@ public class ExcelToObjectMapper {
   public <T> ArrayList<T> map(Class<T> cls, Map<String, String> columnMap) throws NoSuchFieldException, IllegalAccessException, InstantiationException, ParseException {
     ArrayList<T> list = new ArrayList();
 
-    Field rowNumber = cls.getDeclaredField(ROW_NUMBER);
-    rowNumber.setAccessible(true);
+    Field rowNumberFieldInXLS = cls.getDeclaredField(ROW_NUMBER);
+    rowNumberFieldInXLS.setAccessible(true);
     Sheet sheet = workbook.getSheetAt(0);
     int lastRow = sheet.getLastRowNum();
-    for (int i = 1; i <= lastRow; i++) {
+    for (int rowNumber = 1; rowNumber <= lastRow; rowNumber++) {
+      if(sheet.getRow(rowNumber) == null || isEmptyRow(sheet.getRow(rowNumber))) continue;
     	Object obj = cls.newInstance();
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
@@ -66,15 +67,27 @@ public class ExcelToObjectMapper {
         } else {
           index = getHeaderIndex(fieldName, workbook);
         }
-        Cell cell = sheet.getRow(i).getCell(index);
+        Cell cell = sheet.getRow(rowNumber).getCell(index);
         Field classField = obj.getClass().getDeclaredField(fieldName);
         setObjectFieldValueFromCell(obj, classField, cell);
       }
-      rowNumber.setInt(obj, i);
+      rowNumberFieldInXLS.setInt(obj, rowNumber);
       if(!isAllBlanks(obj))
         list.add((T) obj);
     }
     return list;
+  }
+
+  //https://stackoverflow.com/a/20002688
+  public static boolean isEmptyRow(Row row){
+    boolean isEmptyRow = true;
+    for(int cellNum = row.getFirstCellNum(); cellNum < row.getLastCellNum(); cellNum++){
+      Cell cell = row.getCell(cellNum);
+      if(cell != null && cell.getCellTypeEnum() != CellType.BLANK && StringUtils.isNotBlank(cell.toString())){
+        isEmptyRow = false;
+      }
+    }
+    return isEmptyRow;
   }
 
   private boolean isAllBlanks(Object obj) throws IllegalAccessException {

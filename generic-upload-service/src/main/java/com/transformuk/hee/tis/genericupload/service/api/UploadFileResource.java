@@ -116,8 +116,11 @@ public class UploadFileResource {
 			applicationType = uploadFileService.upload(fileList, profileFromContext.getUserName(), profileFromContext.getFirstName(), profileFromContext.getLastName());
 		} catch (InvalidKeyException | StorageException | URISyntaxException e) {
 			return new ResponseEntity<>("Application error while storing the file : " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}	catch (IOException | NoSuchFieldException | InstantiationException | IllegalAccessException | ParseException | InvalidFormatException | MethodArgumentNotValidException e) {
+		}	catch (IOException | ReflectiveOperationException| ParseException | InvalidFormatException | MethodArgumentNotValidException e) {
 			return new ResponseEntity<>("File uploaded cannot be processed " + e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("Unexpected Exception " + e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 
 		return new ResponseEntity<>(applicationType, HttpStatus.OK);

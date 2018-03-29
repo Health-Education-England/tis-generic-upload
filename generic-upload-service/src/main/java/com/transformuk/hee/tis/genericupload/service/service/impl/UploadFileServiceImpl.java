@@ -48,6 +48,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Predicate;
 
+import static com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper.isEmptyRow;
 import static com.transformuk.hee.tis.genericupload.service.service.impl.SpecificationFactory.containsLike;
 
 @Service
@@ -114,7 +115,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 			Sheet sheet = workbook.getSheetAt(0);
 			int totalColumns = sheet.getRow(0).getLastCellNum();
 			for (int rowNumber = sheet.getLastRowNum(); rowNumber > 0; rowNumber--) {
-				if(isEmptyRow(sheet.getRow(rowNumber))) continue;
+				if(sheet.getRow(rowNumber) == null || isEmptyRow(sheet.getRow(rowNumber))) continue;
 				int indexInProcessedErrorMap = rowNumber - 1;
 				if(setOfLineNumbersWithErrors.contains(indexInProcessedErrorMap)) {
 					Cell errorReportingCell = sheet.getRow(rowNumber).createCell(totalColumns, CellType.STRING);
@@ -130,19 +131,6 @@ public class UploadFileServiceImpl implements UploadFileService {
 
 		return Collections.singletonMap(applicationType.getFileName(), fileWithErrorsOnly);
 	}
-
-	//https://stackoverflow.com/a/20002688
-	boolean isEmptyRow(Row row){
-		boolean isEmptyRow = true;
-		for(int cellNum = row.getFirstCellNum(); cellNum < row.getLastCellNum(); cellNum++){
-			Cell cell = row.getCell(cellNum);
-			if(cell != null && cell.getCellTypeEnum() != CellType.BLANK && StringUtils.isNotBlank(cell.toString())){
-				isEmptyRow = false;
-			}
-		}
-		return isEmptyRow;
-	}
-
 	@Override
 	public Page<ApplicationType> getUploadStatus(Pageable pageable) {
 		return applicationTypeRepository.findAll(pageable);
