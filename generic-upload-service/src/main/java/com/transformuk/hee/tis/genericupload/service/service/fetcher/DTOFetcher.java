@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service.fetcher;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,12 +16,27 @@ public abstract class DTOFetcher<DTO_KEY, DTO> {
 
 	protected Function<List<DTO_KEY>, List<DTO>> dtoFetchingServiceCall;
 	protected Function<DTO, DTO_KEY> keyFunction;
+	protected Set<DTO_KEY> duplicateKeys;
 
 	public Map<DTO_KEY, DTO> findWithKeys(Set<DTO_KEY> ids) {
-		return StreamSupport.stream(partition(ids, QUERYSTRING_LENGTH_LIMITING_BATCH_SIZE).spliterator(), false) //partition into chunks to get data in batches
+		//had to incorporate groupingBy to cater for scenarios when the gmc keys existed in TIS on multiple records.
+		Map<DTO_KEY, List<DTO>> keysWithDuplicates = StreamSupport.stream(partition(ids, QUERYSTRING_LENGTH_LIMITING_BATCH_SIZE).spliterator(), false) //partition into chunks to get data in batches
 				.map(dtoFetchingServiceCall)
 				.flatMap(Collection::stream)
-				.collect(Collectors.toMap(keyFunction, Function.identity()));
+				.collect(Collectors.groupingBy(keyFunction, HashMap::new, Collectors.toList()));
+
+		duplicateKeys = keysWithDuplicates.entrySet().stream()
+				.filter(dtoEntry -> dtoEntry.getValue().size() > 1)
+				.map(Map.Entry::getKey)
+				.collect(Collectors.toSet());
+
+		return keysWithDuplicates.entrySet().stream()
+				.filter(dtoEntry -> dtoEntry.getValue().size() == 1)
+				.collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().get(0)));
+	}
+
+	public Set<DTO_KEY> getDuplicateKeys() {
+		return duplicateKeys;
 	}
 
 	//convenience method to

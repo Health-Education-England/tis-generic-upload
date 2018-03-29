@@ -67,6 +67,7 @@ public class ScheduledUploadTask {
 	private static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programme found for : ";
 	private static final String CURRICULUM_NOT_FOUND = "Curriculum not found : ";
 	private static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for : ";
+	public static final String REGISTRATION_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS = "Registration number exists on multiple records in TIS";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -181,6 +182,7 @@ public class ScheduledUploadTask {
 		Map<String, PersonDTO> phnDetailsMap = peopleByPHNFetcher.findWithKeys(phNumbers);
 
 		Function<PersonDTO, String> personDTOToPHNID = PersonDTO::getPublicHealthNumber;
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithPHNumbers, getPhNumber, peopleByPHNFetcher.getDuplicateKeys(), REGISTRATION_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS);
 
 		if (!phnDetailsMap.isEmpty()) {
 			Set<Long> personIds = peopleByPHNFetcher.extractIds(phnDetailsMap, PersonDTO::getId);
@@ -222,6 +224,7 @@ public class ScheduledUploadTask {
 
 		Set<String> gdcNumbers = collectRegNumbers(rowsWithGDCNumbers, getGdcNumber);
 		Map<String, GdcDetailsDTO> gdcDetailsMap = gdcDtoFetcher.findWithKeys(gdcNumbers);
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGDCNumbers, getGdcNumber, gdcDtoFetcher.getDuplicateKeys(), REGISTRATION_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS);
 
 		if (!gdcDetailsMap.isEmpty()) {
 			Set<Long> personIdsFromGDCDetailsTable = gdcDtoFetcher.extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
@@ -272,6 +275,7 @@ public class ScheduledUploadTask {
 
 		Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
 		Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithKeys(gmcNumbers);
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGMCNumbers, getGmcNumber, gmcDtoFetcher.getDuplicateKeys(), REGISTRATION_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS);
 
 		if (!gmcDetailsMap.isEmpty()) {
 			Set<Long> personIdsFromGMCDetailsTable = gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
@@ -373,10 +377,14 @@ public class ScheduledUploadTask {
 			}
 		}
 
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(personXLSList, extractRegistrationNumber, regNumbersDuplicatesSet, REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE);
+	}
+
+	private void setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(List<PersonXLS> personXLSList, Function<PersonXLS, String> extractRegistrationNumber, Set<String> regNumbersDuplicatesSet, String errorMessage) {
 		for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext(); ) {
 			PersonXLS personXLS = iterator.next();
 			if (regNumbersDuplicatesSet.contains(extractRegistrationNumber.apply(personXLS))) {
-				personXLS.setErrorMessage(REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE);
+				personXLS.setErrorMessage(errorMessage);
 				iterator.remove();
 			}
 		}
