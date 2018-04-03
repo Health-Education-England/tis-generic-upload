@@ -57,15 +57,13 @@ public class ScheduledUploadTask {
 	private static final Logger logger = getLogger(ScheduledUploadTask.class);
 	private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-	private static final String REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number identified as duplicate in uploaded file";
-	private static final String GMC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for GMC number does not match surname in TIS";
-	private static final String GDC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for GDC number does not match surname in TIS";
-	private static final String PH_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for Public Health number does not match surname in TIS";
-	private static final String PROGRAMME_NOT_FOUND = "Programme not found : ";
-	private static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programme found for : ";
+	private static final String REG_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number (%s) identified as duplicate in uploaded file";
+	private static final String REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for %s does not match surname in TIS";
+	private static final String REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS = "Registration number (%s) exists on multiple records in TIS";
+	private static final String PROGRAMME_NOT_FOUND = "Programme not found for programme name (%1$s) and programme number (%2$s)";
+	private static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programmes found for programme name (%1$s) and programme number (%2$s)";
 	private static final String CURRICULUM_NOT_FOUND = "Curriculum not found : ";
 	private static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for : ";
-	public static final String REGISTRATION_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS = "Registration number exists on multiple records in TIS";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -174,13 +172,13 @@ public class ScheduledUploadTask {
 		//check whether a PH record exists in TIS
 		Function<PersonXLS, String> getPhNumber = PersonXLS::getPublicHealthNumber;
 		List<PersonXLS> rowsWithPHNumbers = getRowsWithRegistrationNumber(personXLSS, getPhNumber);
-		flagAndEliminateDuplicates(rowsWithPHNumbers, getPhNumber);
+		flagAndEliminateDuplicates(rowsWithPHNumbers, getPhNumber, "PHN");
 
 		Set<String> phNumbers = collectRegNumbers(rowsWithPHNumbers, getPhNumber);
 		Map<String, PersonDTO> phnDetailsMap = peopleByPHNFetcher.findWithKeys(phNumbers);
 
 		Function<PersonDTO, String> personDTOToPHNID = PersonDTO::getPublicHealthNumber;
-		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithPHNumbers, getPhNumber, peopleByPHNFetcher.getDuplicateKeys(), REGISTRATION_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS);
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithPHNumbers, getPhNumber, peopleByPHNFetcher.getDuplicateKeys(), String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, "PHN"));
 
 		if (!phnDetailsMap.isEmpty()) {
 			Set<Long> personIds = peopleByPHNFetcher.extractIds(phnDetailsMap, PersonDTO::getId);
@@ -193,7 +191,7 @@ public class ScheduledUploadTask {
 					if (pbdMapByPH.get(phnDetailsMap.get(phNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownPHsInTIS.add(personXLS);
 					} else {
-						personXLS.setErrorMessage(PH_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS);
+						personXLS.setErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "Public Health Number"));
 					}
 				}
 			}
@@ -218,11 +216,11 @@ public class ScheduledUploadTask {
 		//check whether a GDC record exists in TIS
 		Function<PersonXLS, String> getGdcNumber = PersonXLS::getGdcNumber;
 		List<PersonXLS> rowsWithGDCNumbers = getRowsWithRegistrationNumber(personXLSS, getGdcNumber);
-		flagAndEliminateDuplicates(rowsWithGDCNumbers, getGdcNumber);
+		flagAndEliminateDuplicates(rowsWithGDCNumbers, getGdcNumber, "GDC");
 
 		Set<String> gdcNumbers = collectRegNumbers(rowsWithGDCNumbers, getGdcNumber);
 		Map<String, GdcDetailsDTO> gdcDetailsMap = gdcDtoFetcher.findWithKeys(gdcNumbers);
-		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGDCNumbers, getGdcNumber, gdcDtoFetcher.getDuplicateKeys(), REGISTRATION_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS);
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGDCNumbers, getGdcNumber, gdcDtoFetcher.getDuplicateKeys(), String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, "GDC"));
 
 		if (!gdcDetailsMap.isEmpty()) {
 			Set<Long> personIdsFromGDCDetailsTable = gdcDtoFetcher.extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
@@ -235,7 +233,7 @@ public class ScheduledUploadTask {
 					if (pbdMapByGDC.get(gdcDetailsMap.get(gdcNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownGDCsInTIS.add(personXLS);
 					} else {
-						personXLS.setErrorMessage(GDC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS);
+						personXLS.setErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "GDC Number"));
 					}
 				}
 			}
@@ -269,11 +267,11 @@ public class ScheduledUploadTask {
 		//check whether a GMC record exists in TIS
 		Function<PersonXLS, String> getGmcNumber = PersonXLS::getGmcNumber;
 		List<PersonXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumber(personXLSS, getGmcNumber);
-		flagAndEliminateDuplicates(rowsWithGMCNumbers, getGmcNumber);
+		flagAndEliminateDuplicates(rowsWithGMCNumbers, getGmcNumber, "GMC");
 
 		Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
 		Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithKeys(gmcNumbers);
-		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGMCNumbers, getGmcNumber, gmcDtoFetcher.getDuplicateKeys(), REGISTRATION_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS);
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGMCNumbers, getGmcNumber, gmcDtoFetcher.getDuplicateKeys(), String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, "GMC"));
 
 		if (!gmcDetailsMap.isEmpty()) {
 			Set<Long> personIdsFromGMCDetailsTable = gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
@@ -286,7 +284,7 @@ public class ScheduledUploadTask {
 					if (pbdMapByGMC.get(gmcDetailsMap.get(gmcNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownGMCsInTIS.add(personXLS);
 					} else {
-						personXLS.setErrorMessage(GMC_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS);
+						personXLS.setErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "GMC Number"));
 					}
 				}
 			}
@@ -365,7 +363,7 @@ public class ScheduledUploadTask {
 		return sb.toString();
 	}
 
-	private void flagAndEliminateDuplicates(List<PersonXLS> personXLSList, Function<PersonXLS, String> extractRegistrationNumber) {
+	private void flagAndEliminateDuplicates(List<PersonXLS> personXLSList, Function<PersonXLS, String> extractRegistrationNumber, String regNumberString) {
 		Set<String> regNumbersSet = new HashSet<>();
 		Set<String> regNumbersDuplicatesSet = new HashSet<>();
 
@@ -375,7 +373,7 @@ public class ScheduledUploadTask {
 			}
 		}
 
-		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(personXLSList, extractRegistrationNumber, regNumbersDuplicatesSet, REGISTRATION_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE);
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(personXLSList, extractRegistrationNumber, regNumbersDuplicatesSet, String.format(REG_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE, regNumberString));
 	}
 
 	private void setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(List<PersonXLS> personXLSList, Function<PersonXLS, String> extractRegistrationNumber, Set<String> regNumbersDuplicatesSet, String errorMessage) {
@@ -493,9 +491,9 @@ public class ScheduledUploadTask {
 			if (programmeDTOs.size() == 1) {
 				programmeDTO = programmeDTOs.get(0);
 			} else if (programmeDTOs.isEmpty()) {
-				throw new IllegalArgumentException(PROGRAMME_NOT_FOUND + programmeName);
-			} else if (programmeDTOs.size() > 1) {
-				throw new IllegalArgumentException(MULTIPLE_PROGRAMME_FOUND_FOR + programmeName);
+				throw new IllegalArgumentException(String.format(PROGRAMME_NOT_FOUND, programmeName, programmeNumber));
+			} else {
+				throw new IllegalArgumentException(String.format(MULTIPLE_PROGRAMME_FOUND_FOR, programmeName, programmeNumber));
 			}
 		}
 		return programmeDTO;
@@ -509,7 +507,7 @@ public class ScheduledUploadTask {
 				curriculumDTO = curriculumDTOs.get(0);
 			} else if (curriculumDTOs.isEmpty()) {
 				throw new IllegalArgumentException(CURRICULUM_NOT_FOUND + curriculumName);
-			} else if (curriculumDTOs.size() > 1) {
+			} else {
 				throw new IllegalArgumentException(MULTIPLE_CURRICULA_FOUND_FOR + curriculumName);
 			}
 		}
@@ -518,13 +516,12 @@ public class ScheduledUploadTask {
 
 	public PersonDTO getPersonDTO(PersonXLS personXLS, CurriculumDTO curriculumDTO1, CurriculumDTO curriculumDTO2, CurriculumDTO curriculumDTO3, ProgrammeDTO programmeDTO) {
 		PersonDTO personDTO = new PersonDTO();
-		LocalDateTime addedDate = LocalDateTime.now();
-		personDTO.setAddedDate(addedDate == null ? LocalDateTime.now() : addedDate);
+		personDTO.setAddedDate(LocalDateTime.now());
 		personDTO.setInactiveDate(convertDateTime(personXLS.getInactiveDate()));
 		personDTO.setPublicHealthNumber(personXLS.getPublicHealthNumber());
 		personDTO.setStatus(Status.fromString(personXLS.getRecordStatus()));
 		personDTO.setRole(personXLS.getRole());
-		//TODO NI Number - waiting for CIO update
+		//TODO NI Number
 
 		personDTO.setContactDetails(getContactDetailsDTO(personXLS));
 		personDTO.setPersonalDetails(getPersonalDetailsDTO(personXLS));
