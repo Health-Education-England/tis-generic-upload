@@ -10,7 +10,6 @@ import com.transformuk.hee.tis.genericupload.service.repository.model.Applicatio
 import com.transformuk.hee.tis.genericupload.service.service.FileImportResults;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
@@ -107,7 +106,11 @@ public class UploadFileServiceImpl implements UploadFileService {
 
 			Sheet sheet = workbook.getSheetAt(0);
 			int totalColumns = sheet.getRow(0).getLastCellNum();
-			setErrorHeader(workbook, sheet, totalColumns);
+			int errorReportingColumnIndex = totalColumns;
+	    if(sheet.getRow(0).getCell(errorReportingColumnIndex - 1).getStringCellValue().equalsIgnoreCase(REASON_FOR_IMPORT_FAILURE)) {
+		    errorReportingColumnIndex--; //overwrite the last error column
+	    }
+			setErrorHeader(workbook, sheet, errorReportingColumnIndex);
 
 			for (int rowNumber = sheet.getLastRowNum(); rowNumber > 0; rowNumber--) {
 				Row row = sheet.getRow(rowNumber);
@@ -118,12 +121,12 @@ public class UploadFileServiceImpl implements UploadFileService {
 					continue;
 				}
 
-				Cell errorReportingCell = row.createCell(totalColumns, CellType.STRING);
+				Cell errorReportingCell = row.createCell(errorReportingColumnIndex, CellType.STRING);
 				setFontToRed(workbook, errorReportingCell.getCellStyle(), false);
 				errorReportingCell.setCellValue(lineNumberErrors.get(rowNumber));
 			}
 
-			sheet.autoSizeColumn(totalColumns);
+			sheet.autoSizeColumn(errorReportingColumnIndex);
 			workbook.write(fileWithErrorsOnly);
 		} catch (IOException | InvalidFormatException e) {
 			LOG.error("Error building errors with uploaded template : " + e.getMessage());
