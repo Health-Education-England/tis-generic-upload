@@ -10,13 +10,9 @@ import com.transformuk.hee.tis.genericupload.service.repository.model.Applicatio
 import com.transformuk.hee.tis.genericupload.service.service.FileImportResults;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,20 +29,16 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.util.*;
-import java.util.function.Predicate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper.isEmptyRow;
 import static com.transformuk.hee.tis.genericupload.service.service.impl.SpecificationFactory.containsLike;
@@ -54,6 +46,8 @@ import static com.transformuk.hee.tis.genericupload.service.service.impl.Specifi
 @Service
 @Transactional
 public class UploadFileServiceImpl implements UploadFileService {
+
+	public static final String REASON_FOR_IMPORT_FAILURE = "Reason for import failure";
 
 	private final Logger LOG = LoggerFactory.getLogger(UploadFileServiceImpl.class);
 
@@ -101,36 +95,76 @@ public class UploadFileServiceImpl implements UploadFileService {
 	}
 
 	@Override
-	public Map<String, OutputStream> findErrorsByLogId(Long logId) {
+	public String findErrorsByLogId(Long logId, OutputStream fileWithErrorsOnly) {
 		ApplicationType applicationType = applicationTypeRepository.findByLogId(logId);
 		Gson gson = new Gson();
 		FileImportResults fileImportResults = gson.fromJson(applicationType.getErrorJson(), FileImportResults.class);
 		Map<Integer, String> lineNumberErrors = fileImportResults.getLineNumberErrors();
 		Set<Integer> setOfLineNumbersWithErrors = lineNumberErrors.keySet();
-		OutputStream fileWithErrorsOnly = new ByteArrayOutputStream();
 
 		try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName()))) {
 			Workbook workbook = WorkbookFactory.create(bis);
 
 			Sheet sheet = workbook.getSheetAt(0);
 			int totalColumns = sheet.getRow(0).getLastCellNum();
+			setErrorHeader(workbook, sheet, totalColumns);
+
 			for (int rowNumber = sheet.getLastRowNum(); rowNumber > 0; rowNumber--) {
-				if(sheet.getRow(rowNumber) == null || isEmptyRow(sheet.getRow(rowNumber))) continue;
-				int indexInProcessedErrorMap = rowNumber - 1;
-				if(setOfLineNumbersWithErrors.contains(indexInProcessedErrorMap)) {
-					Cell errorReportingCell = sheet.getRow(rowNumber).createCell(totalColumns, CellType.STRING);
-					errorReportingCell.setCellValue(lineNumberErrors.get(indexInProcessedErrorMap));
-				} else {
-					sheet.removeRow(sheet.getRow(rowNumber));
+				Row row = sheet.getRow(rowNumber);
+				if(row == null) {
+					continue;
+				} else if(isEmptyRow(row) || !setOfLineNumbersWithErrors.contains(rowNumber)) {
+					removeRow(sheet, rowNumber);
+					continue;
 				}
+
+				Cell errorReportingCell = row.createCell(totalColumns, CellType.STRING);
+				setFontToRed(workbook, errorReportingCell.getCellStyle(), false);
+				errorReportingCell.setCellValue(lineNumberErrors.get(rowNumber));
 			}
+
+			sheet.autoSizeColumn(totalColumns);
 			workbook.write(fileWithErrorsOnly);
 		} catch (IOException | InvalidFormatException e) {
-			LOG.error("Error working with uploaded template : " + e.getMessage());
+			LOG.error("Error building errors with uploaded template : " + e.getMessage());
 		}
 
-		return Collections.singletonMap(applicationType.getFileName(), fileWithErrorsOnly);
+		return applicationType.getFileName();
 	}
+
+	public void setErrorHeader(Workbook workbook, Sheet sheet, int totalColumns) {
+		Cell errorReportingCellHeader = sheet.getRow(0).createCell(totalColumns, CellType.STRING);
+		errorReportingCellHeader.setCellValue(REASON_FOR_IMPORT_FAILURE);
+
+		CellStyle precedingCellHeaderStyle = sheet.getRow(0).getCell(totalColumns - 1).getCellStyle();
+		CellStyle headerStyle = workbook.createCellStyle();
+		headerStyle.cloneStyleFrom(precedingCellHeaderStyle);
+		errorReportingCellHeader.setCellStyle(headerStyle);
+
+		setFontToRed(workbook, headerStyle, true);
+	}
+
+	public void setFontToRed(Workbook workbook, CellStyle cellStyle, boolean embolden) {
+		Font font = workbook.createFont();
+		font.setColor(IndexedColors.RED.getIndex());
+		font.setBold(embolden);
+		cellStyle.setFont(font);
+	}
+
+	//Helper method to shift rows up to remove a row as the removeRow method only blanks it out - https://stackoverflow.com/a/3554129
+	public static void removeRow(Sheet sheet, int rowIndex) {
+		int lastRowNum = sheet.getLastRowNum();
+		if (rowIndex >= 0 && rowIndex < lastRowNum) {
+			sheet.shiftRows(rowIndex + 1, lastRowNum, -1);
+		}
+		if (rowIndex == lastRowNum) {
+			Row removingRow = sheet.getRow(rowIndex);
+			if (removingRow != null) {
+				sheet.removeRow(removingRow);
+			}
+		}
+	}
+
 	@Override
 	public Page<ApplicationType> getUploadStatus(Pageable pageable) {
 		return applicationTypeRepository.findAll(pageable);

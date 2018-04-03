@@ -32,5 +32,5 @@ public interface UploadFileService {
 
   Page<ApplicationType> searchUploads(String text, Pageable pageable);
 
-  Map<String, OutputStream> findErrorsByLogId(Long logId);
+  String findErrorsByLogId(Long logId, OutputStream outputStream);
 }

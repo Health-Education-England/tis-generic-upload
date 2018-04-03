@@ -175,15 +175,16 @@ public class UploadFileResource {
 	@ApiResponses(value = {@ApiResponse(code = 200, message = "Status list returned")})
 	@GetMapping(value = "/uploadedFileErrors/{logId}")
 	public ResponseEntity<byte[]> getUploadedFileErrors(@ApiParam(value = "The stored file log id", required = true) @PathVariable(value = "logId") final Long logId) {
-		Map.Entry<String, OutputStream> byLogId = uploadFileService.findErrorsByLogId(logId).entrySet().iterator().next();
-		ByteArrayOutputStream logIdOutputStream = (ByteArrayOutputStream) byLogId.getValue();
-
-		String filename = byLogId.getKey();
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentDispositionFormData(filename, filename);
-		headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-
-		return new ResponseEntity<>(logIdOutputStream.toByteArray(), headers, HttpStatus.OK);
+		try(ByteArrayOutputStream fileWithErrorsOnly = new ByteArrayOutputStream()) {
+			String filename = uploadFileService.findErrorsByLogId(logId, fileWithErrorsOnly);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentDispositionFormData(filename, filename);
+			headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+			return new ResponseEntity<>(fileWithErrorsOnly.toByteArray(), headers, HttpStatus.OK);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	private static String sanitize(String str) {

@@ -147,7 +147,7 @@ public class ScheduledUploadTask {
 				successCount++;
 			} else if (!StringUtils.isEmpty(personXLS.getErrorMessage())) {
 				errorCount++;
-				fir.addError(i, personXLS.getErrorMessage());
+				fir.addError(personXLSS.get(i).getRowNumber(), personXLS.getErrorMessage());
 			}
 		}
 
