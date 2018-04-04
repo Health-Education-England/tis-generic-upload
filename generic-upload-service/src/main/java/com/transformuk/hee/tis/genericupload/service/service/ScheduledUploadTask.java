@@ -105,6 +105,12 @@ public class ScheduledUploadTask {
 	public void scheduleTaskWithFixedDelay() {
 		logger.info("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
 		//TODO circuit-break on tcs/profile/reference/mysql connectivity
+		for (ApplicationType applicationType : applicationTypeRepository.findByFileStatusOrderByUploadedDate(FileStatus.IN_PROGRESS)) {
+			logger.warn("Found an upload file ({}) that is IN_PROGRESS with logId ({}). Setting it to PENDING", applicationType.getFileName(), applicationType.getLogId());
+			applicationType.setFileStatus(FileStatus.PENDING);
+			applicationTypeRepository.save(applicationType);
+		}
+
 		for (ApplicationType applicationType : applicationTypeRepository.findByFileStatusOrderByUploadedDate(FileStatus.PENDING)) {
 			//set to in progress
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
