@@ -39,14 +39,11 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.text.ParseException;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertToLocalDateTime;
@@ -65,7 +62,6 @@ public class UploadFileResource {
 	private final String XLX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 	static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
 
 	public UploadFileResource(UploadFileService uploadFileService, FileProcessService fileProcessService,
 	                          FileValidator fileValidator) {

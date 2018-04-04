@@ -11,12 +11,8 @@ import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 public interface UploadFileService {
-    //TODO externalise to environment variable
-    public static final String CONTAINER_NAME = "dev";
-
   /**
    * Files to upload on Azure blob account
    *

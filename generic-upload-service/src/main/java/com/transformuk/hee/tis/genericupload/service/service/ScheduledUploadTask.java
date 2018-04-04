@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.transformuk.hee.tis.genericupload.service.Application.CONTAINER_NAME;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDateTime;
 import static com.transformuk.hee.tis.genericupload.service.util.ReflectionUtil.copyIfNotNullOrEmpty;
@@ -109,7 +110,7 @@ public class ScheduledUploadTask {
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
 			applicationTypeRepository.save(applicationType);
 
-			try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName()))) {
+			try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), CONTAINER_NAME, applicationType.getFileName()))) {
 				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis);
 				final List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap()); // TODO : this is being done twice, once while doing first level validation, consider optimising
 				personXLSS.forEach(PersonXLS::initialiseSuccessfullyImported); //have to explicitly set this as class is populated by reflection

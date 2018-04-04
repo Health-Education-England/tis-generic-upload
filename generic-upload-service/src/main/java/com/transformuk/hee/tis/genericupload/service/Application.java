@@ -46,6 +46,7 @@ public class Application {
 
     private static final Logger log = LoggerFactory.getLogger(Application.class);
     private static final int EXPIRE_DATA_IN_SECONDS = 60;
+    public static final String CONTAINER_NAME = "fileupload";
 
     private final Environment env;
 

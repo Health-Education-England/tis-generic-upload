@@ -11,7 +11,13 @@ import com.transformuk.hee.tis.genericupload.service.service.FileImportResults;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.transformuk.hee.tis.genericupload.service.Application.CONTAINER_NAME;
 import static com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper.isEmptyRow;
 import static com.transformuk.hee.tis.genericupload.service.service.impl.SpecificationFactory.containsLike;
 
@@ -101,7 +108,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 		Map<Integer, String> lineNumberErrors = fileImportResults.getLineNumberErrors();
 		Set<Integer> setOfLineNumbersWithErrors = lineNumberErrors.keySet();
 
-		try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), UploadFileService.CONTAINER_NAME, applicationType.getFileName()))) {
+		try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), CONTAINER_NAME, applicationType.getFileName()))) {
 			Workbook workbook = WorkbookFactory.create(bis);
 
 			Sheet sheet = workbook.getSheetAt(0);
