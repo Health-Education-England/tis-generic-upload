@@ -105,7 +105,7 @@ public class UploadFileResource {
 		ApplicationType applicationType;
 		try {
 			// Validate file - for other type of file, please pass path variable and pass to validator
-			fileValidator.validate(fileList, FileType.RECRUITMENT, true);
+			fileValidator.validate(fileList, FileType.PEOPLE, true);
 
 			UserProfile profileFromContext = TisSecurityHelper.getProfileFromContext();
 			// if validation is success then store the file into azure and db

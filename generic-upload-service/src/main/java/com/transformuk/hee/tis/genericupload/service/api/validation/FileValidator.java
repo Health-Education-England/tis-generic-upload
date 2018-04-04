@@ -44,7 +44,7 @@ public class FileValidator {
 			for (MultipartFile file : files) {
 				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
 					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
-					if (validateMandatoryFields && fileType.equals(FileType.RECRUITMENT)) {
+					if (validateMandatoryFields && fileType.equals(FileType.PEOPLE)) {
 						validateMandatoryFields(fieldErrors, excelToObjectMapper, PersonXLS.class, new PersonHeaderMapper());
 					}
 				}
