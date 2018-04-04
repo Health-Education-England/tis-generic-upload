@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
+import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.config.ApplicationConfiguration;
 import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
@@ -109,6 +110,10 @@ public class ScheduledUploadTask {
 		logger.info("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
 		//TODO circuit-break on tcs/profile/reference/mysql connectivity
 		for (ApplicationType applicationType : applicationTypeRepository.findByFileStatusOrderByUploadedDate(FileStatus.PENDING)) {
+			if(!applicationType.getFileType().equals(FileType.PEOPLE)) {
+				logger.warn("File template {} other than People detected (ignoring for now) ", applicationType.getFileName());
+				continue;
+			}
 			//set to in progress
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
 			applicationTypeRepository.save(applicationType);

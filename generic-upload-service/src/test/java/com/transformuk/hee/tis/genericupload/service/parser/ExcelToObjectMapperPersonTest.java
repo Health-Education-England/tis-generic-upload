@@ -15,7 +15,7 @@ import java.util.List;
 import static com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper.getDate;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ExcelToObjectMapperTest {
+public class ExcelToObjectMapperPersonTest {
 
   private ExcelToObjectMapper excelToObjectMapper;
 

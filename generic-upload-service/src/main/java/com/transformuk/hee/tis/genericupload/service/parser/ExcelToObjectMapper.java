@@ -11,6 +11,8 @@ import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -76,6 +78,14 @@ public class ExcelToObjectMapper {
         list.add((T) obj);
     }
     return list;
+  }
+
+  public Set<String> getHeaders() {
+    Row headerRow = workbook.getSheetAt(0).getRow(0);
+    return IntStream.range(headerRow.getFirstCellNum(), headerRow.getLastCellNum())
+        .mapToObj(headerRow::getCell)
+        .map(Cell::getStringCellValue)
+        .collect(Collectors.toSet());
   }
 
   //https://stackoverflow.com/a/20002688

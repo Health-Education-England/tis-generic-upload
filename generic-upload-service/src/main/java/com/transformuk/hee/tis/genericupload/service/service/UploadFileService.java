@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.microsoft.azure.storage.StorageException;
+import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,7 @@ public interface UploadFileService {
    * @return
    * @throws Exception
    */
-  ApplicationType upload(List<MultipartFile> files, String username, String firstName, String lastName) throws InvalidKeyException, StorageException, URISyntaxException;
+  ApplicationType upload(List<MultipartFile> files, FileType fileType, String username, String firstName, String lastName) throws InvalidKeyException, StorageException, URISyntaxException;
 
   Page<ApplicationType> getUploadStatus(Pageable pageable);
 

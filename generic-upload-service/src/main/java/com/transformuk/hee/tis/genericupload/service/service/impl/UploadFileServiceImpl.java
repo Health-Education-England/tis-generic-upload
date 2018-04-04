@@ -70,13 +70,13 @@ public class UploadFileServiceImpl implements UploadFileService {
 		this.azureProperties = azureProperties;
 	}
 
-	public ApplicationType save(String fileName, long logId, String username, String firstName, String lastName) {
+	public ApplicationType save(String fileName, FileType fileType, long logId, String username, String firstName, String lastName) {
 		LOG.info("Request to save ApplicationType based on fileName : {}", fileName);
 
 		ApplicationType applicationType = new ApplicationType();
 		applicationType.setFileName(fileName);
 		applicationType.setUploadedDate(LocalDateTime.now());
-		applicationType.setFileType(FileType.PEOPLE);
+		applicationType.setFileType(fileType);
 		applicationType.setFileStatus(FileStatus.PENDING);
 		applicationType.setLogId(logId);
 		applicationType.setUsername(username);
@@ -87,7 +87,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 	}
 
 	@Override
-	public ApplicationType upload(List<MultipartFile> files, String username, String firstName, String lastName) throws InvalidKeyException, StorageException, URISyntaxException {
+	public ApplicationType upload(List<MultipartFile> files, FileType fileType, String username, String firstName, String lastName) throws InvalidKeyException, StorageException, URISyntaxException {
 		long logId = System.currentTimeMillis();
 
 		ApplicationType applicationType = null;
@@ -95,7 +95,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 			fileStorageRepository.store(logId, azureProperties.getContainerName(), files);
 			for (MultipartFile file : files) {
 				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
-					applicationType = save(file.getOriginalFilename(), logId, username, firstName, lastName);
+					applicationType = save(file.getOriginalFilename(), fileType, logId, username, firstName, lastName);
 				}
 			}
 		}

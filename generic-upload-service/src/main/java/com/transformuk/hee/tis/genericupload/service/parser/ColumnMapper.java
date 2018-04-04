@@ -6,12 +6,20 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public interface ColumnMapper {
-  Map<String,String> getFieldMap();
+public abstract class ColumnMapper {
+  protected static String[] fieldNameSource, fieldNameTarget;
 
-  Map<String,String> getMandatoryFieldMap();
+  public Map<String, String> getFieldMap() {
+    return createFieldMap(fieldNameSource, fieldNameTarget);
+  }
 
-  default Map<String, String> createFieldMap(String[] fieldNameSource, String[] fieldNameTarget){
+  public Map<String,String> getMandatoryFieldMap(){
+    return this.getFieldMap().entrySet().stream().filter(map -> map.getValue().contains("*")).
+        collect(Collectors.toMap(p -> p.getKey(), p -> p.getValue()));
+  }
+
+
+  protected Map<String, String> createFieldMap(String[] fieldNameSource, String[] fieldNameTarget){
     Map<String,String> fieldMap = Maps.newHashMap();
     if(fieldNameSource != null && fieldNameTarget != null) {
       fieldMap = IntStream.range(0, fieldNameSource.length).boxed()

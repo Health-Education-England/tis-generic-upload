@@ -1,11 +1,13 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.UploadFileResource;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.slf4j.Logger;
@@ -38,14 +40,20 @@ public class FileValidator {
 	 *            The provided files to validate
 	 * @throws MethodArgumentNotValidException
 	 */
-	public void validate(List<MultipartFile> files, FileType fileType, boolean validateMandatoryFields) throws IOException, NoSuchFieldException, InstantiationException, ParseException, IllegalAccessException, InvalidFormatException, MethodArgumentNotValidException {
+	public FileType validate(List<MultipartFile> files, boolean validateMandatoryFields) throws IOException, NoSuchFieldException, InstantiationException, ParseException, IllegalAccessException, InvalidFormatException, MethodArgumentNotValidException {
 		List<FieldError> fieldErrors = new ArrayList<>();
+		FileType fileType = null;
 		if (!ObjectUtils.isEmpty(files)) {
 			for (MultipartFile file : files) {
 				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
 					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
-					if (validateMandatoryFields && fileType.equals(FileType.PEOPLE)) {
-						validateMandatoryFields(fieldErrors, excelToObjectMapper, PersonXLS.class, new PersonHeaderMapper());
+					if (validateMandatoryFields) {
+						fileType = getFileType(excelToObjectMapper);
+						if (fileType.equals(FileType.PEOPLE)) {
+							validateMandatoryFields(fieldErrors, excelToObjectMapper, PersonXLS.class, new PersonHeaderMapper());
+						} else if (fileType.equals(FileType.PLACEMENTS)) {
+							validateMandatoryFields(fieldErrors, excelToObjectMapper, PlacementXLS.class, new PlacementHeaderMapper());
+						}
 					}
 				}
 			}
@@ -56,6 +64,11 @@ public class FileValidator {
 			fieldErrors.forEach(bindingResult::addError);
 			throw new MethodArgumentNotValidException(null, bindingResult);
 		}
+		return fileType;
+	}
+
+	private FileType getFileType(ExcelToObjectMapper excelToObjectMapper) {
+		return excelToObjectMapper.getHeaders().contains("Placement Type*") ? FileType.PLACEMENTS : FileType.PEOPLE;
 	}
 
 	/**
@@ -70,19 +83,19 @@ public class FileValidator {
 	private void validateMandatoryFields(List<FieldError> fieldErrors, ExcelToObjectMapper excelToObjectMapper,
 			Class dtoClass, ColumnMapper columnMapper) throws InstantiationException, IllegalAccessException, ParseException, NoSuchFieldException {
 		Map<String, String> columnNameToMandatoryColumnsMap = columnMapper.getMandatoryFieldMap();
-		List<PersonXLS> result = excelToObjectMapper.map(dtoClass, columnNameToMandatoryColumnsMap);
+		List<?> result = excelToObjectMapper.map(dtoClass, columnNameToMandatoryColumnsMap);
 		AtomicInteger rowIndex = new AtomicInteger(0);
 		result.forEach(row -> {
 			rowIndex.incrementAndGet();
-			columnNameToMandatoryColumnsMap.entrySet().stream().forEach(columnNameToMandatoryColumnsMapEntry -> {
+			columnNameToMandatoryColumnsMap.keySet().forEach(columnNameToMandatoryColumnsMapKey -> {
 				try {
-					Field currentField = row.getClass().getDeclaredField(columnNameToMandatoryColumnsMapEntry.getKey());
+					Field currentField = row.getClass().getDeclaredField(columnNameToMandatoryColumnsMapKey);
 					if (currentField != null) {
 						currentField.setAccessible(true);
 						String value = (String) currentField.get(row);
 						if (StringUtils.isBlank(value)) {
-							fieldErrors.add(new FieldError("Bulk-Upload", columnNameToMandatoryColumnsMapEntry.getKey(),
-									String.format("%s Field is required at line no %d ", columnNameToMandatoryColumnsMapEntry.getKey(), rowIndex.get())));
+							fieldErrors.add(new FieldError("Bulk-Upload", columnNameToMandatoryColumnsMapKey,
+									String.format("%s Field is required at line no %d ", columnNameToMandatoryColumnsMapKey, rowIndex.get())));
 						}
 					}
 				} catch (NoSuchFieldException | IllegalAccessException e) {
