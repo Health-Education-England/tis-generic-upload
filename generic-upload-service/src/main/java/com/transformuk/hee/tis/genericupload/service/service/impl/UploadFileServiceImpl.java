@@ -122,7 +122,6 @@ public class UploadFileServiceImpl implements UploadFileService {
 				}
 
 				Cell errorReportingCell = row.createCell(errorReportingColumnIndex, CellType.STRING);
-				setFontToRed(workbook, errorReportingCell.getCellStyle(), false);
 				errorReportingCell.setCellValue(lineNumberErrors.get(rowNumber));
 			}
 
@@ -143,15 +142,6 @@ public class UploadFileServiceImpl implements UploadFileService {
 		CellStyle headerStyle = workbook.createCellStyle();
 		headerStyle.cloneStyleFrom(precedingCellHeaderStyle);
 		errorReportingCellHeader.setCellStyle(headerStyle);
-
-		setFontToRed(workbook, headerStyle, true);
-	}
-
-	public void setFontToRed(Workbook workbook, CellStyle cellStyle, boolean embolden) {
-		Font font = workbook.createFont();
-		font.setColor(IndexedColors.RED.getIndex());
-		font.setBold(embolden);
-		cellStyle.setFont(font);
 	}
 
 	//Helper method to shift rows up to remove a row as the removeRow method only blanks it out - https://stackoverflow.com/a/3554129
