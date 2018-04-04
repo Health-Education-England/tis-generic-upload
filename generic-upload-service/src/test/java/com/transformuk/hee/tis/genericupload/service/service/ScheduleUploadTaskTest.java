@@ -12,7 +12,7 @@ import java.text.ParseException;
 public class ScheduleUploadTaskTest {
     @Test
     public void canBuildAPersonDTOFromPersonXLS() throws ParseException {
-        ScheduledUploadTask scheduledUploadTask =  new ScheduledUploadTask(null, null);
+        ScheduledUploadTask scheduledUploadTask =  new ScheduledUploadTask(null, null, null);
         PersonXLS personXLS = PersonDTOHelper.getPersonXLS();
         SpecialtyGroupDTO specialtyGroupDTO = PersonDTOHelper.createSpecialtyGroupDTO();
         SpecialtyDTO specialtyDTO = PersonDTOHelper.createSpecialtyDTO(specialtyGroupDTO);

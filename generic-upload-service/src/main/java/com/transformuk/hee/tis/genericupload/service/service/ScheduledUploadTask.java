@@ -6,6 +6,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.config.ApplicationConfiguration;
+import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
@@ -47,7 +48,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.transformuk.hee.tis.genericupload.service.Application.CONTAINER_NAME;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDateTime;
 import static com.transformuk.hee.tis.genericupload.service.util.ReflectionUtil.copyIfNotNullOrEmpty;
@@ -83,12 +83,15 @@ public class ScheduledUploadTask {
 
 	private final ApplicationTypeRepository applicationTypeRepository;
 	private ApplicationConfiguration applicationConfiguration;
+	private final AzureProperties azureProperties;
 
 	@Autowired
 	public ScheduledUploadTask(FileStorageRepository fileStorageRepository,
-	                           ApplicationTypeRepository applicationTypeRepository) {
+	                           ApplicationTypeRepository applicationTypeRepository,
+	                           AzureProperties azureProperties) {
 		this.fileStorageRepository = fileStorageRepository;
 		this.applicationTypeRepository = applicationTypeRepository;
+		this.azureProperties = azureProperties;
 	}
 
 	@PostConstruct
@@ -110,7 +113,7 @@ public class ScheduledUploadTask {
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
 			applicationTypeRepository.save(applicationType);
 
-			try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), CONTAINER_NAME, applicationType.getFileName()))) {
+			try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), azureProperties.getContainerName(), applicationType.getFileName()))) {
 				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis);
 				final List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap()); // TODO : this is being done twice, once while doing first level validation, consider optimising
 				personXLSS.forEach(PersonXLS::initialiseSuccessfullyImported); //have to explicitly set this as class is populated by reflection

@@ -5,6 +5,7 @@ import com.microsoft.azure.storage.StorageException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
+import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import com.transformuk.hee.tis.genericupload.service.service.FileImportResults;
@@ -45,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.transformuk.hee.tis.genericupload.service.Application.CONTAINER_NAME;
 import static com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper.isEmptyRow;
 import static com.transformuk.hee.tis.genericupload.service.service.impl.SpecificationFactory.containsLike;
 
@@ -59,13 +59,15 @@ public class UploadFileServiceImpl implements UploadFileService {
 
 	private final FileStorageRepository fileStorageRepository;
 	private final ApplicationTypeRepository applicationTypeRepository;
+	private final AzureProperties azureProperties;
 
 	@Autowired
 	public UploadFileServiceImpl(FileStorageRepository fileStorageRepository,
-	                             ApplicationTypeRepository applicationTypeRepository) {
+	                             ApplicationTypeRepository applicationTypeRepository,
+	                             AzureProperties azureProperties) {
 		this.fileStorageRepository = fileStorageRepository;
 		this.applicationTypeRepository = applicationTypeRepository;
-		// this.personRepository = personRepository;
+		this.azureProperties = azureProperties;
 	}
 
 	public ApplicationType save(String fileName, long logId, String username, String firstName, String lastName) {
@@ -90,7 +92,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 
 		ApplicationType applicationType = null;
 		if (!ObjectUtils.isEmpty(files)) {
-			fileStorageRepository.store(logId, CONTAINER_NAME, files);
+			fileStorageRepository.store(logId, azureProperties.getContainerName(), files);
 			for (MultipartFile file : files) {
 				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
 					applicationType = save(file.getOriginalFilename(), logId, username, firstName, lastName);
@@ -108,7 +110,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 		Map<Integer, String> lineNumberErrors = fileImportResults.getLineNumberErrors();
 		Set<Integer> setOfLineNumbersWithErrors = lineNumberErrors.keySet();
 
-		try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), CONTAINER_NAME, applicationType.getFileName()))) {
+		try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), azureProperties.getContainerName(), applicationType.getFileName()))) {
 			Workbook workbook = WorkbookFactory.create(bis);
 
 			Sheet sheet = workbook.getSheetAt(0);
