@@ -487,7 +487,9 @@ public class ScheduledUploadTask {
 			CurriculumDTO curriculumDTO3 = getCurriculumDTO(personXLS.getCurriculum3());
 
 			ProgrammeDTO programmeDTO = getProgrammeDTO(personXLS.getProgrammeName(), personXLS.getProgrammeNumber());
-			programmeDTO.setCurricula(curricula);
+			if(programmeDTO != null) {
+				programmeDTO.setCurricula(curricula);
+			}
 			personDTO = getPersonDTO(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3, programmeDTO);
 		} catch (IllegalArgumentException e) {
 			personXLS.setErrorMessage(e.getMessage());
@@ -547,27 +549,31 @@ public class ScheduledUploadTask {
 
 		personDTO.setRightToWork(getRightToWorkDTO(personXLS));
 
-		LocalDate programmeEndDate = convertDate(personXLS.getProgrammeEndDate());
-		ProgrammeMembershipType programmeMembershipType = ProgrammeMembershipType.fromString(personXLS.getProgrammeMembership());
+		if(programmeDTO != null) {
+			LocalDate programmeEndDate = null;
+			if (personXLS.getProgrammeEndDate() != null) {
+				programmeEndDate = convertDate(personXLS.getProgrammeEndDate());
+			}
 
-		Set<ProgrammeMembershipDTO> programmeMembershipDTOS = new HashSet<>();
-		LocalDate curriculum1StartDateAsProgrammeStartDate = null;
-		try {
-			curriculum1StartDateAsProgrammeStartDate = personXLS.getCurriculum1StartDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		if (curriculumDTO1 != null) {
-			programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate()));
-		}
-		if (curriculumDTO2 != null) {
-			programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate()));
-		}
-		if (curriculumDTO3 != null) {
-			programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate()));
-		}
-		personDTO.setProgrammeMemberships(programmeMembershipDTOS);
+			LocalDate curriculum1StartDateAsProgrammeStartDate = null;
+			if (personXLS.getCurriculum1StartDate() != null) {
+				curriculum1StartDateAsProgrammeStartDate = personXLS.getCurriculum1StartDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			}
 
+			ProgrammeMembershipType programmeMembershipType = ProgrammeMembershipType.fromString(personXLS.getProgrammeMembership());
+
+			Set<ProgrammeMembershipDTO> programmeMembershipDTOS = new HashSet<>();
+			if (curriculumDTO1 != null) {
+				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate()));
+			}
+			if (curriculumDTO2 != null) {
+				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate()));
+			}
+			if (curriculumDTO3 != null) {
+				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate()));
+			}
+			personDTO.setProgrammeMemberships(programmeMembershipDTOS);
+		}
 		return personDTO;
 	}
 
