@@ -462,9 +462,11 @@ public class ScheduledUploadTask {
 
 	private void addQualificationsAndProgrammeMemberships(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
 		QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
-		qualificationDTO.setPerson(savedPersonDTO);
-		if (!savedPersonDTO.getQualifications().contains(qualificationDTO)) {
-			tcsServiceImpl.createQualification(qualificationDTO);
+		if(qualificationDTO != null) {
+			qualificationDTO.setPerson(savedPersonDTO);
+			if (!savedPersonDTO.getQualifications().contains(qualificationDTO)) {
+				tcsServiceImpl.createQualification(qualificationDTO);
+			}
 		}
 
 		for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
@@ -570,11 +572,14 @@ public class ScheduledUploadTask {
 	}
 
 	private QualificationDTO getQualificationDTO(PersonXLS personXLS) {
-		QualificationDTO qualificationDTO = new QualificationDTO();
-		qualificationDTO.setCountryOfQualification(personXLS.getCountryOfQualification());
-		qualificationDTO.setQualification(personXLS.getQualification());
-		qualificationDTO.setMedicalSchool(personXLS.getMedicalSchool());
-		qualificationDTO.setQualificationAttainedDate(convertDate(personXLS.getDateAttained()));
+		QualificationDTO qualificationDTO = null;
+		if(personXLS.getQualification() != null || personXLS.getCountryOfQualification() != null || personXLS.getCountryOfQualification() != null || personXLS.getCountryOfQualification() != null) {
+			qualificationDTO = new QualificationDTO();
+			qualificationDTO.setCountryOfQualification(personXLS.getCountryOfQualification());
+			qualificationDTO.setQualification(personXLS.getQualification());
+			qualificationDTO.setMedicalSchool(personXLS.getMedicalSchool());
+			qualificationDTO.setQualificationAttainedDate(convertDate(personXLS.getDateAttained()));
+		}
 		return qualificationDTO;
 	}
 
