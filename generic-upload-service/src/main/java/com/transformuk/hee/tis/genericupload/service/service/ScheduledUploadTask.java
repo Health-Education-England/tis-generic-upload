@@ -136,9 +136,9 @@ public class ScheduledUploadTask {
 				logger.error("Error while processing excel file : " + e.getMessage());
 				applicationType.setFileStatus(FileStatus.PENDING);
 			} catch (Exception e) {
-				logger.error("Error while reading excel file and mapping headers : " + e.getMessage());
+				logger.error("Unknown Error while processing excel file : " + e.getMessage());
 				e.printStackTrace();
-				applicationType.setFileStatus(FileStatus.INVALID_HEADERS);
+				applicationType.setFileStatus(FileStatus.UNEXPECTED_ERROR);
 			} finally {
 				applicationTypeRepository.save(applicationType);
 			}
