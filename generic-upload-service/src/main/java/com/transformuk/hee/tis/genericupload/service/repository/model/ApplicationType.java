@@ -1,7 +1,9 @@
 package com.transformuk.hee.tis.genericupload.service.repository.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -12,6 +14,8 @@ import java.util.Objects;
 public class ApplicationType implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    @JsonIgnore
+    @ApiModelProperty(hidden = true)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,7 +38,11 @@ public class ApplicationType implements Serializable {
     private String username;
     private String firstName;
     private String lastName;
+
+    @JsonIgnore
+    @ApiModelProperty(hidden=true)
     private String errorJson;
+
     private Integer numberOfErrors;
     private Integer numberImported;
 
