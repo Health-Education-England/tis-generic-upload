@@ -111,16 +111,21 @@ public class UploadFileResource {
 			// if validation is success then store the file into azure and db
 			applicationType = uploadFileService.upload(fileList, fileType, profileFromContext.getUserName(), profileFromContext.getFirstName(), profileFromContext.getLastName());
 		} catch (InvalidKeyException | StorageException | URISyntaxException e) {
-			return new ResponseEntity<>("Application error while storing the file : " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+			return logAndReturnResponseEntity("Application error while storing the file : ", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}	catch (IOException | ReflectiveOperationException| ParseException | InvalidFormatException | MethodArgumentNotValidException e) {
-			return new ResponseEntity<>("File uploaded cannot be processed " + e.getMessage(), HttpStatus.BAD_REQUEST);
+			return logAndReturnResponseEntity("File uploaded cannot be processed : ", e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
-			e.printStackTrace();
-			return new ResponseEntity<>("Unexpected Exception " + e.getMessage(), HttpStatus.BAD_REQUEST);
+			return logAndReturnResponseEntity("Unexpected Exception : ", e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 
 		return new ResponseEntity<>(applicationType, HttpStatus.OK);
 	}
+
+	private ResponseEntity<String> logAndReturnResponseEntity(String messagePrefix, String exceptionMessage, HttpStatus httpStatus) {
+		log.error(messagePrefix + exceptionMessage);
+		return new ResponseEntity<>(messagePrefix + exceptionMessage, httpStatus);
+	}
+
 
 	public boolean hasAnExcelExtension(MultipartFile file) {
 		String extension = FilenameUtils.getExtension(file.getOriginalFilename());
@@ -178,10 +183,10 @@ public class UploadFileResource {
 			headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
 			return new ResponseEntity<>(fileWithErrorsOnly.toByteArray(), headers, HttpStatus.OK);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Error reading file : " + logId);
 			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Unexpected error building template with errors : " + logId);
 			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

@@ -26,6 +26,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
@@ -48,11 +49,15 @@ public class FileValidator {
 				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
 					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
 					if (validateMandatoryFields) {
-						fileType = getFileType(excelToObjectMapper);
-						if (fileType.equals(FileType.PEOPLE)) {
-							validateMandatoryFields(fieldErrors, excelToObjectMapper, PersonXLS.class, new PersonHeaderMapper());
-						} else if (fileType.equals(FileType.PLACEMENTS)) {
+						Set<String> headers = excelToObjectMapper.getHeaders();
+						if(headers.contains("Placement Type*")) {
+							fileType = FileType.PLACEMENTS;
 							validateMandatoryFields(fieldErrors, excelToObjectMapper, PlacementXLS.class, new PlacementHeaderMapper());
+						} else if(headers.contains("Email Address")) {
+							fileType = FileType.PEOPLE;
+							validateMandatoryFields(fieldErrors, excelToObjectMapper, PersonXLS.class, new PersonHeaderMapper());
+						} else {
+							throw new InvalidFormatException("Unrecognised upload template");
 						}
 					}
 				}
@@ -65,10 +70,6 @@ public class FileValidator {
 			throw new MethodArgumentNotValidException(null, bindingResult);
 		}
 		return fileType;
-	}
-
-	private FileType getFileType(ExcelToObjectMapper excelToObjectMapper) {
-		return excelToObjectMapper.getHeaders().contains("Placement Type*") ? FileType.PLACEMENTS : FileType.PEOPLE;
 	}
 
 	/**
