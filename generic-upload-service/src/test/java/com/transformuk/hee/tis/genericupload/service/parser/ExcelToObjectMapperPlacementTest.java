@@ -8,6 +8,8 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.FileInputStream;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,10 +34,22 @@ public class ExcelToObjectMapperPlacementTest {
   }
 
   @Test
-  public void shouldMapPlacementType() throws Exception {
+  public void shouldMapPlacementTypeAndWTE() throws Exception {
     List<PlacementXLS> actual = excelToObjectMapper.map(PlacementXLS.class,
         new PlacementHeaderMapper().getFieldMap());
     assertThat(actual.get(0).getPlacementType()).isNotNull();
     assertThat(actual.get(0).getPlacementType()).isEqualToIgnoringCase("In Post");
+    assertThat(actual.get(0).getWte()).isEqualTo(1);
+  }
+
+  @Test
+  public void shouldMapNPNs() throws Exception {
+    List<PlacementXLS> actual = excelToObjectMapper.map(PlacementXLS.class,
+        new PlacementHeaderMapper().getFieldMap());
+
+    Set<String> placementNPNs = actual.stream()
+        .map(PlacementXLS::getNationalPostNumber)
+        .collect(Collectors.toSet());
+    assertThat(placementNPNs.size()).isEqualTo(9);
   }
 }

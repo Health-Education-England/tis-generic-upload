@@ -51,7 +51,7 @@ public class ExcelToObjectMapper {
   public <T> ArrayList<T> map(Class<T> cls, Map<String, String> columnMap) throws NoSuchFieldException, IllegalAccessException, InstantiationException, ParseException {
     ArrayList<T> list = new ArrayList();
 
-    Field rowNumberFieldInXLS = cls.getDeclaredField(ROW_NUMBER);
+    Field rowNumberFieldInXLS = cls.getSuperclass().getDeclaredField(ROW_NUMBER);
     rowNumberFieldInXLS.setAccessible(true);
     Sheet sheet = workbook.getSheetAt(0);
     int lastRow = sheet.getLastRowNum();
@@ -61,7 +61,6 @@ public class ExcelToObjectMapper {
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
-        if(shouldSkipField(fieldName)) continue;
         String xlsColumnName = columnMap.get(fieldName.toLowerCase());
         int index;
         if (StringUtils.isNotEmpty(xlsColumnName)) {
@@ -103,19 +102,14 @@ public class ExcelToObjectMapper {
   private boolean isAllBlanks(Object obj) throws IllegalAccessException {
     boolean allBlanks = true;
     for (Field f : obj.getClass().getDeclaredFields()) {
-    	  if(f.getName().startsWith("$") || //skip surefire jacoco fields
-            shouldSkipField(f.getName())) continue;
+    	  if(f.getName().startsWith("$")) //skip surefire jacoco fields
+    	    continue;
         f.setAccessible(true);
         allBlanks = allBlanks && org.springframework.util.StringUtils.isEmpty(f.get(obj));
     }
     return allBlanks;
   }
 
-  private boolean shouldSkipField(String fieldName) {
-    return fieldName.equalsIgnoreCase(ROW_NUMBER) ||
-        fieldName.equalsIgnoreCase(ERROR_MESSAGE) ||
-        fieldName.equalsIgnoreCase(SUCCESSFULLY_IMPORTED);
-  }
 
   /**
    * Read value from Cell and set it to given field of given object.
@@ -136,6 +130,8 @@ public class ExcelToObjectMapper {
           String trim = cell.getStringCellValue().trim();
           if (cls == Date.class) {
             field.set(obj, getDate(trim));
+          } else if(cls == Float.class) {
+            field.set(obj, Float.valueOf(trim));
           } else {
             field.set(obj, trim);
           }

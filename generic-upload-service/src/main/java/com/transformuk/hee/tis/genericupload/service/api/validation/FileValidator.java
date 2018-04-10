@@ -24,6 +24,7 @@ import java.lang.reflect.Field;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,10 +94,16 @@ public class FileValidator {
 					Field currentField = row.getClass().getDeclaredField(columnNameToMandatoryColumnsMapKey);
 					if (currentField != null) {
 						currentField.setAccessible(true);
-						String value = (String) currentField.get(row);
-						if (StringUtils.isBlank(value)) {
-							fieldErrors.add(new FieldError("Bulk-Upload", columnNameToMandatoryColumnsMapKey,
-									String.format("%s Field is required at line no %d ", columnNameToMandatoryColumnsMapKey, rowIndex.get())));
+						if(currentField.getType() == String.class) {
+							String value = (String) currentField.get(row);
+							if (StringUtils.isBlank(value)) {
+								fieldErrors.add(new FieldError("Bulk-Upload", columnNameToMandatoryColumnsMapKey,
+										String.format("%s Field is required at line no %d ", columnNameToMandatoryColumnsMapKey, rowIndex.get())));
+							}
+						} else if(currentField.getType() == Date.class) {
+							//TODO validate Date Fields
+						} else if(currentField.getType() == Float.class) {
+							//TODO validate Float Fields
 						}
 					}
 				} catch (NoSuchFieldException | IllegalAccessException e) {

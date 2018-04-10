@@ -3,11 +3,7 @@ package com.transformuk.hee.tis.genericupload.api.dto;
 import java.util.Date;
 import java.util.Objects;
 
-public class PersonXLS {
-	private int rowNumber;
-	private String errorMessage;
-	private boolean successfullyImported;
-
+public class PersonXLS extends TemplateXLS {
 	private String title;
 	private String surname;
 	private String forenames;
@@ -588,18 +584,4 @@ public class PersonXLS {
 		sb.append('}');
 		return sb.toString();
 	}
-	public int getRowNumber() { return rowNumber;	}
-
-	public void setRowNumber(int rowNumber) { this.rowNumber = rowNumber; }
-
-	public String getErrorMessage() { return errorMessage; }
-
-	public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
-
-	public boolean isSuccessfullyImported() { return successfullyImported; }
-
-	public void setSuccessfullyImported(boolean successfullyImported) { this.successfullyImported = successfullyImported; }
-
-	public void initialiseSuccessfullyImported() { this.successfullyImported = false; }
-
 }

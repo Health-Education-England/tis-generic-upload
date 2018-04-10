@@ -115,6 +115,7 @@ public class UploadFileResource {
 		}	catch (IOException | ReflectiveOperationException| ParseException | InvalidFormatException | MethodArgumentNotValidException e) {
 			return logAndReturnResponseEntity("File uploaded cannot be processed : ", e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
+			e.printStackTrace();
 			return logAndReturnResponseEntity("Unexpected Exception : ", e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 

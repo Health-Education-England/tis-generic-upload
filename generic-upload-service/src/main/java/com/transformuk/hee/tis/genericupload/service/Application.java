@@ -31,14 +31,16 @@ import java.util.concurrent.TimeUnit;
 @ComponentScans({
         @ComponentScan("com.transformuk.hee.tis.genericupload.service"),
         @ComponentScan("com.transformuk.hee.tis.client.impl"),
-        @ComponentScan("com.transformuk.hee.tis.tcs.client")
+        @ComponentScan("com.transformuk.hee.tis.tcs.client"),
+        @ComponentScan("com.transformuk.hee.tis.reference")
 })
 @EnableAutoConfiguration(exclude = {MetricFilterAutoConfiguration.class, MetricRepositoryAutoConfiguration.class})
 @EnableConfigurationProperties({ApplicationProperties.class})
 @PropertySource({
         "classpath:/config/application.properties",
         "classpath:/config/profileclientapplication.properties",
-        "classpath:/config/tcsclientapplication.properties"
+        "classpath:/config/tcsclientapplication.properties",
+        "classpath:/config/referenceclientapplication.properties"
 })
 @Import(TisFileStorageConfig.class)
 @EnableScheduling
@@ -100,6 +102,7 @@ public class Application {
                     "run with both the 'dev' and 'cloud' profiles at the same time.");
         }
         //TODO check how to handle IN_PROGRESS jobs in the ApplicationType table - if running as a single instance the jobs in progress should not be in progress any more
+        //TODO check if job can connect to Azure here - run a healthcheck on a Scheduled job and do the check before a user attempts to upload a file
     }
 
     @Bean

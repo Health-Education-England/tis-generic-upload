@@ -3,11 +3,7 @@ package com.transformuk.hee.tis.genericupload.api.dto;
 import java.util.Date;
 import java.util.Objects;
 
-public class PlacementXLS {
-	private int rowNumber;
-	private String errorMessage;
-	private boolean successfullyImported;
-
+public class PlacementXLS extends TemplateXLS {
 	private String forenames;
 	private String surname;
 	private String gmcNumber;
@@ -18,7 +14,7 @@ public class PlacementXLS {
 	private Date dateTo;
 	private String placementType;
 	private String site;
-	private String wte;
+	private Float wte;
 	private String grade;
 	private String specialty1;
 	private String specialty2;
@@ -26,30 +22,6 @@ public class PlacementXLS {
 	private String clinicalSupervisor;
 	private String educationalSupervisor;
 	private String comments;
-
-	public int getRowNumber() {
-		return rowNumber;
-	}
-
-	public void setRowNumber(int rowNumber) {
-		this.rowNumber = rowNumber;
-	}
-
-	public String getErrorMessage() {
-		return errorMessage;
-	}
-
-	public void setErrorMessage(String errorMessage) {
-		this.errorMessage = errorMessage;
-	}
-
-	public boolean isSuccessfullyImported() {
-		return successfullyImported;
-	}
-
-	public void setSuccessfullyImported(boolean successfullyImported) {
-		this.successfullyImported = successfullyImported;
-	}
 
 	public String getSurname() {
 		return surname;
@@ -131,11 +103,11 @@ public class PlacementXLS {
 		this.site = site;
 	}
 
-	public String getWte() {
+	public Float getWte() {
 		return wte;
 	}
 
-	public void setWte(String wte) {
+	public void setWte(Float wte) {
 		this.wte = wte;
 	}
 

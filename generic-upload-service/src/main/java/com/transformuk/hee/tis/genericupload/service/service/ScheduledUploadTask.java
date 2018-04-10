@@ -3,16 +3,21 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
-import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.config.ApplicationConfiguration;
 import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.*;
+import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
+import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
+import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.*;
 import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
@@ -70,6 +75,8 @@ public class ScheduledUploadTask {
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
 	@Autowired
+	private ReferenceServiceImpl referenceServiceImpl;
+	@Autowired
 	private final FileStorageRepository fileStorageRepository;
 	@Autowired
 	private FileProcessService fileProcessService;
@@ -81,6 +88,7 @@ public class ScheduledUploadTask {
 	private PersonBasicDetailsDTOFetcher pbdDtoFetcher;
 	private PeopleFetcher peopleFetcher;
 	private PeopleByPHNFetcher peopleByPHNFetcher;
+	private PostFetcher postFetcher;
 
 	private final ApplicationTypeRepository applicationTypeRepository;
 	private ApplicationConfiguration applicationConfiguration;
@@ -102,6 +110,7 @@ public class ScheduledUploadTask {
 		this.pbdDtoFetcher = new PersonBasicDetailsDTOFetcher(tcsServiceImpl);
 		this.peopleFetcher = new PeopleFetcher(tcsServiceImpl);
 		this.peopleByPHNFetcher = new PeopleByPHNFetcher(tcsServiceImpl);
+		this.postFetcher = new PostFetcher(tcsServiceImpl);
 	}
 
 	//waits fixedDelay milliseconds after the last run task
@@ -110,25 +119,17 @@ public class ScheduledUploadTask {
 		logger.info("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
 		//TODO circuit-break on tcs/profile/reference/mysql connectivity
 		for (ApplicationType applicationType : applicationTypeRepository.findByFileStatusOrderByUploadedDate(FileStatus.PENDING)) {
-			if(!applicationType.getFileType().equals(FileType.PEOPLE)) {
-				logger.warn("File template {} other than People detected (ignoring for now) ", applicationType.getFileName());
-				continue;
-			}
 			//set to in progress
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
 			applicationTypeRepository.save(applicationType);
 
 			try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), azureProperties.getContainerName(), applicationType.getFileName()))) {
 				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis);
-				final List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap()); // TODO : this is being done twice, once while doing first level validation, consider optimising
-				personXLSS.forEach(PersonXLS::initialiseSuccessfullyImported); //have to explicitly set this as class is populated by reflection
-
-				addPersons(getPersonsWithUnknownRegNumbers(personXLSS));
-				addOrUpdateGMCRecords(personXLSS);
-				addOrUpdateGDCRecords(personXLSS);
-				addOrUpdatePHRecords(personXLSS);
-
-				setJobToCompleted(applicationType, personXLSS);
+				switch (applicationType.getFileType()) {
+					case PEOPLE:      processPeopleUpload(applicationType, excelToObjectMapper); break;
+					case PLACEMENTS:  processPlacementsUpload(applicationType, excelToObjectMapper); break;
+					default: logger.error("Unknown FileType");
+				}
 			} catch (InvalidFormatException e) {
 				logger.error("Error while reading excel file : " + e.getMessage());
 				applicationType.setFileStatus(FileStatus.INVALID_FILE_FORMAT);
@@ -145,16 +146,197 @@ public class ScheduledUploadTask {
 		}
 	}
 
-	private void setJobToCompleted(ApplicationType applicationType, List<PersonXLS> personXLSS) {
+	private void processPlacementsUpload(ApplicationType applicationType, ExcelToObjectMapper excelToObjectMapper) throws NoSuchFieldException, IllegalAccessException, InstantiationException, java.text.ParseException {
+		final List<PlacementXLS> placementXLSS = excelToObjectMapper.map(PlacementXLS.class, new PlacementHeaderMapper().getFieldMap());
+		placementXLSS.forEach(PlacementXLS::initialiseSuccessfullyImported);
+
+		if (!CollectionUtils.isEmpty(placementXLSS)) {
+			Function<PlacementXLS, String> getPhNumber = PlacementXLS::getPublicHealthNumber;
+			Function<PlacementXLS, String> getGdcNumber = PlacementXLS::getGdcNumber;
+			Function<PlacementXLS, String> getGmcNumber = PlacementXLS::getGmcNumber;
+
+			List<PlacementXLS> rowsWithPHNumbers = getRowsWithRegistrationNumberForPlacements(placementXLSS, getPhNumber);
+			List<PlacementXLS> rowsWithGDCNumbers = getRowsWithRegistrationNumberForPlacements(placementXLSS, getGdcNumber);
+			List<PlacementXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumberForPlacements(placementXLSS, getGmcNumber);
+
+			Set<String> phNumbers = collectRegNumbersForPlacements(rowsWithPHNumbers, getPhNumber);
+			Set<String> gdcNumbers = collectRegNumbersForPlacements(rowsWithGDCNumbers, getGdcNumber);
+			Set<String> gmcNumbers = collectRegNumbersForPlacements(rowsWithGMCNumbers, getGmcNumber);
+
+			Map<String, PersonDTO> phnDetailsMap = peopleByPHNFetcher.findWithKeys(phNumbers);
+			Map<String, GdcDetailsDTO> gdcDetailsMap = gdcDtoFetcher.findWithKeys(gdcNumbers);
+			Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithKeys(gmcNumbers);
+
+			Map<Long, PersonBasicDetailsDTO> pbdMapByGDC = null;
+			if (!gdcDetailsMap.isEmpty()) {
+				Set<Long> personIdsFromGDCDetailsTable = gdcDtoFetcher.extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
+				pbdMapByGDC = pbdDtoFetcher.findWithKeys(personIdsFromGDCDetailsTable);
+			}
+
+			Map<Long, PersonBasicDetailsDTO> pbdMapByGMC = null;
+			if (!gmcDetailsMap.isEmpty()) {
+				Set<Long> personIdsFromGMCDetailsTable = gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
+				pbdMapByGMC = pbdDtoFetcher.findWithKeys(personIdsFromGMCDetailsTable);
+			}
+
+			Map<Long, PersonBasicDetailsDTO> pbdMapByPH = null;
+			if (!phnDetailsMap.isEmpty()) {
+				Set<Long> personIds = peopleByPHNFetcher.extractIds(phnDetailsMap, PersonDTO::getId);
+				pbdMapByPH = pbdDtoFetcher.findWithKeys(personIds);
+			}
+
+			Set<String> placementNPNs = placementXLSS.stream() //TODO NPNs are blank here !
+					.map(PlacementXLS::getNationalPostNumber)
+					.collect(Collectors.toSet());
+			Map<String, PostDTO> postsMappedByNPNs = postFetcher.findWithKeys(placementNPNs); //TODO filter posts CURRENT/INACTIVE
+			Set<String> duplicateNPNKeys = postFetcher.getDuplicateKeys();
+
+
+			Map<String, SiteDTO> siteMapByName = getSiteDTOMap(placementXLSS);
+			Map<String, GradeDTO> gradeMapByName = getGradeDTOMap(placementXLSS);
+
+			for(PlacementXLS placementXLS : placementXLSS) {
+				PersonBasicDetailsDTO personBasicDetailsDTO = null;
+				if(!StringUtils.isEmpty(getGdcNumber.apply(placementXLS))) {
+					personBasicDetailsDTO = pbdMapByGDC.get(gdcDetailsMap.get(getGdcNumber.apply(placementXLS)).getId());
+				} else if(!StringUtils.isEmpty(getGmcNumber.apply(placementXLS))) {
+					personBasicDetailsDTO = pbdMapByGMC.get(gmcDetailsMap.get(getGmcNumber.apply(placementXLS)).getId());
+				} else if(!StringUtils.isEmpty(getPhNumber.apply(placementXLS))) {
+					personBasicDetailsDTO = pbdMapByPH.get(phnDetailsMap.get(getPhNumber.apply(placementXLS)).getId());
+				}
+
+				if(personBasicDetailsDTO == null) {
+					placementXLS.addErrorMessage("Could not find person via registration number");
+				} else {
+					//validate that person exists
+					if(!placementXLS.getForenames().equalsIgnoreCase(personBasicDetailsDTO.getFirstName())) {
+						placementXLS.addErrorMessage("First name does not match first name obtained via registration number");
+					}
+
+					if(!placementXLS.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
+						placementXLS.addErrorMessage("Surname does not match last name obtained via registration number");
+					}
+				}
+
+
+				String nationalPostNumber = placementXLS.getNationalPostNumber();
+				if(duplicateNPNKeys.contains(nationalPostNumber)) {
+					placementXLS.addErrorMessage("Multiple posts found for National Post Number : " + nationalPostNumber);
+				} else if(!postsMappedByNPNs.containsKey(nationalPostNumber)) {
+					placementXLS.addErrorMessage("Could not find post by National Post Number : " + nationalPostNumber);
+				} else {
+					PostDTO postDTO = postsMappedByNPNs.get(nationalPostNumber);
+					if(postDTO != null && personBasicDetailsDTO != null) {
+						if(postDTO.getStatus().equals("DELETE")) {
+							placementXLS.addErrorMessage("POST status is set to DELETE for National Post Number : " + nationalPostNumber);
+						} else {
+							List<PlacementDetailsDTO> placementsByPostIdAndPersonId = tcsServiceImpl.getPlacementsByPostIdAndPersonId(postDTO.getId(), personBasicDetailsDTO.getId());
+							if(placementsByPostIdAndPersonId.isEmpty()) {
+								PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
+								placementDTO.setTraineeId(personBasicDetailsDTO.getId());
+								placementDTO.setPostId(postDTO.getId());
+
+								if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
+									placementDTO.setDateFrom(placementXLS.getDateFrom().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+									placementDTO.setDateTo(placementXLS.getDateTo().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+								} else {
+									if(placementXLS.getDateFrom() == null) {
+										placementXLS.addErrorMessage("Placement from date is mandatory");
+									}
+									if(placementXLS.getDateTo() == null) {
+										placementXLS.addErrorMessage("Placement to date is mandatory");
+									}
+								}
+
+								placementDTO.setPlacementType(placementXLS.getPlacementType());
+								placementDTO.setWholeTimeEquivalent(new Double(placementXLS.getWte()));
+
+								SiteDTO siteDTO = siteMapByName.get(placementXLS.getSite());
+								if(siteDTO == null) {
+									placementXLS.addErrorMessage("Multiple or no sites found for  : " + placementXLS.getSite());
+								} else {
+									placementDTO.setSiteCode(siteDTO.getSiteCode());
+									placementDTO.setSiteId(siteDTO.getId());
+								}
+
+								GradeDTO gradeDTO = gradeMapByName.get(placementXLS.getGrade());
+								if(gradeDTO == null) {
+									placementXLS.addErrorMessage("Multiple or no grades found for  : " + placementXLS.getGrade());
+								} else {
+									placementDTO.setGradeAbbreviation(gradeDTO.getAbbreviation());
+									placementDTO.setGradeId(gradeDTO.getId());
+								}
+
+								tcsServiceImpl.createPlacement(placementDTO);
+							} else {
+								//TODO update the placement and deal with multiple
+							}
+						}
+					} else {
+						logger.error("Unexpected error. Expected to have a post with id {} and person with id {}", postDTO.getId(), personBasicDetailsDTO.getId());
+						continue;
+					}
+				}
+
+				setJobToCompleted(applicationType, placementXLSS);
+			}
+		}
+	}
+
+	//TODO optimise these to be Fetcher like
+	private Map<String, GradeDTO> getGradeDTOMap(List<PlacementXLS> placementXLSS) {
+		Set<String> gradeNames = placementXLSS.stream()
+				.map(PlacementXLS::getGrade)
+				.collect(Collectors.toSet());
+		Map<String, GradeDTO> gradeMapByName = new HashMap<>();
+		for(String gradeName : gradeNames) {
+			List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
+			if(!gradesByName.isEmpty() && gradesByName.size() == 1) {
+				gradeMapByName.put(gradeName, gradesByName.get(0));
+			} else {
+				logger.error("Expected to find a single grade for : {}", gradeName);
+			}
+		}
+		return gradeMapByName;
+	}
+
+	private Map<String, SiteDTO> getSiteDTOMap(List<PlacementXLS> placementXLSS) {
+		Set<String> siteNames = placementXLSS.stream()
+				.map(PlacementXLS::getSite)
+				.collect(Collectors.toSet());
+		Map<String, SiteDTO> siteMapByName = new HashMap<>();
+		for(String siteName : siteNames) {
+			List<SiteDTO> sitesByName = referenceServiceImpl.findSitesByName(siteName);
+			if(!sitesByName.isEmpty() && sitesByName.size() == 1) {
+				siteMapByName.put(siteName, sitesByName.get(0));
+			} else {
+				logger.error("Expected to find a single site for : {}", siteName);
+			}
+		}
+		return siteMapByName;
+	}
+
+	public void processPeopleUpload(ApplicationType applicationType, ExcelToObjectMapper excelToObjectMapper) throws NoSuchFieldException, IllegalAccessException, InstantiationException, java.text.ParseException {
+		final List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap());
+		personXLSS.forEach(PersonXLS::initialiseSuccessfullyImported);
+
+		addPersons(getPersonsWithUnknownRegNumbers(personXLSS));
+		addOrUpdateGMCRecords(personXLSS);
+		addOrUpdateGDCRecords(personXLSS);
+		addOrUpdatePHRecords(personXLSS);
+
+		setJobToCompleted(applicationType, personXLSS);
+	}
+
+	private void setJobToCompleted(ApplicationType applicationType, List<? extends TemplateXLS> templateXLSS) {
 		FileImportResults fir = new FileImportResults();
 		int errorCount = 0, successCount = 0;
-		for (int i = 0; i < personXLSS.size(); i++) {
-			PersonXLS personXLS = personXLSS.get(i);
-			if (personXLS.isSuccessfullyImported()) {
+		for (TemplateXLS templateXLS : templateXLSS) {
+			if (templateXLS.isSuccessfullyImported()) {
 				successCount++;
-			} else if (!StringUtils.isEmpty(personXLS.getErrorMessage())) {
+			} else if (!StringUtils.isEmpty(templateXLS.getErrorMessage())) {
 				errorCount++;
-				fir.addError(personXLSS.get(i).getRowNumber(), personXLS.getErrorMessage());
+				fir.addError(templateXLS.getRowNumber(), templateXLS.getErrorMessage());
 			}
 		}
 
@@ -180,7 +362,7 @@ public class ScheduledUploadTask {
 	private void addOrUpdatePHRecords(List<PersonXLS> personXLSS) {
 		//check whether a PH record exists in TIS
 		Function<PersonXLS, String> getPhNumber = PersonXLS::getPublicHealthNumber;
-		List<PersonXLS> rowsWithPHNumbers = getRowsWithRegistrationNumber(personXLSS, getPhNumber);
+		List<PersonXLS> rowsWithPHNumbers = getRowsWithRegistrationNumberForPeople(personXLSS, getPhNumber);
 		flagAndEliminateDuplicates(rowsWithPHNumbers, getPhNumber, "PHN");
 
 		Set<String> phNumbers = collectRegNumbers(rowsWithPHNumbers, getPhNumber);
@@ -224,7 +406,7 @@ public class ScheduledUploadTask {
 	private void addOrUpdateGDCRecords(List<PersonXLS> personXLSS) {
 		//check whether a GDC record exists in TIS
 		Function<PersonXLS, String> getGdcNumber = PersonXLS::getGdcNumber;
-		List<PersonXLS> rowsWithGDCNumbers = getRowsWithRegistrationNumber(personXLSS, getGdcNumber);
+		List<PersonXLS> rowsWithGDCNumbers = getRowsWithRegistrationNumberForPeople(personXLSS, getGdcNumber);
 		flagAndEliminateDuplicates(rowsWithGDCNumbers, getGdcNumber, "GDC");
 
 		Set<String> gdcNumbers = collectRegNumbers(rowsWithGDCNumbers, getGdcNumber);
@@ -275,7 +457,7 @@ public class ScheduledUploadTask {
 	private void addOrUpdateGMCRecords(List<PersonXLS> personXLSS) {
 		//check whether a GMC record exists in TIS
 		Function<PersonXLS, String> getGmcNumber = PersonXLS::getGmcNumber;
-		List<PersonXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumber(personXLSS, getGmcNumber);
+		List<PersonXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumberForPeople(personXLSS, getGmcNumber);
 		flagAndEliminateDuplicates(rowsWithGMCNumbers, getGmcNumber, "GMC");
 
 		Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
@@ -401,10 +583,25 @@ public class ScheduledUploadTask {
 				.collect(Collectors.toSet());
 	}
 
-	private List<PersonXLS> getRowsWithRegistrationNumber(List<PersonXLS> personXLSS, Function<PersonXLS, String> extractRegistrationNumber) {
+	private Set<String> collectRegNumbersForPlacements(List<PlacementXLS> placementXLSS, Function<PlacementXLS, String> extractRegistrationNumber) {
+		return placementXLSS.stream()
+				.map(extractRegistrationNumber::apply)
+				.collect(Collectors.toSet());
+	}
+
+	private List<PersonXLS> getRowsWithRegistrationNumberForPeople(List<PersonXLS> personXLSS, Function<PersonXLS, String> extractRegistrationNumber) {
 		return personXLSS.stream()
 				.filter(personXLS -> {
 					String regNumber = extractRegistrationNumber.apply(personXLS);
+					return !"unknown".equalsIgnoreCase(regNumber) && !StringUtils.isEmpty(regNumber);
+				})
+				.collect(Collectors.toList());
+	}
+
+	private List<PlacementXLS> getRowsWithRegistrationNumberForPlacements(List<PlacementXLS> placementXLSS, Function<PlacementXLS, String> extractRegistrationNumber) {
+		return placementXLSS.stream()
+				.filter(placementXLS -> {
+					String regNumber = extractRegistrationNumber.apply(placementXLS);
 					return !"unknown".equalsIgnoreCase(regNumber) && !StringUtils.isEmpty(regNumber);
 				})
 				.collect(Collectors.toList());
