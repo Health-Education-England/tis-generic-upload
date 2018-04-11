@@ -240,36 +240,42 @@ public class ScheduledUploadTask {
 									placementDTO.setDateFrom(placementXLS.getDateFrom().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
 									placementDTO.setDateTo(placementXLS.getDateTo().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
 								} else {
-									if(placementXLS.getDateFrom() == null) {
-										placementXLS.addErrorMessage("Placement from date is mandatory");
-									}
-									if(placementXLS.getDateTo() == null) {
-										placementXLS.addErrorMessage("Placement to date is mandatory");
-									}
+									setPlacementDateValidationErrors(placementXLS);
 								}
 
-								placementDTO.setPlacementType(placementXLS.getPlacementType());
-								placementDTO.setWholeTimeEquivalent(new Double(placementXLS.getWte()));
+								setPlacementTypeOrRecordError(placementXLS, placementDTO);
+								setWTEOrRecordError(placementXLS, placementDTO);
+								setSiteOrRecordError(siteMapByName, placementXLS, placementDTO);
+								setGradeOrRecordError(gradeMapByName, placementXLS, placementDTO);
 
-								SiteDTO siteDTO = siteMapByName.get(placementXLS.getSite());
-								if(siteDTO == null) {
-									placementXLS.addErrorMessage("Multiple or no sites found for  : " + placementXLS.getSite());
-								} else {
-									placementDTO.setSiteCode(siteDTO.getSiteCode());
-									placementDTO.setSiteId(siteDTO.getId());
+								if(!placementXLS.hasErrors()) {
+									tcsServiceImpl.createPlacement(placementDTO);
 								}
-
-								GradeDTO gradeDTO = gradeMapByName.get(placementXLS.getGrade());
-								if(gradeDTO == null) {
-									placementXLS.addErrorMessage("Multiple or no grades found for  : " + placementXLS.getGrade());
-								} else {
-									placementDTO.setGradeAbbreviation(gradeDTO.getAbbreviation());
-									placementDTO.setGradeId(gradeDTO.getId());
-								}
-
-								tcsServiceImpl.createPlacement(placementDTO);
 							} else {
-								//TODO update the placement and deal with multiple
+								if(placementsByPostIdAndPersonId.size() > 1) {
+									placementXLS.addErrorMessage(String.format("Multiple placements found for post with id (%1$s) and person with id (%2$s)", postDTO.getId(), personBasicDetailsDTO.getId()));
+								} else {
+									PlacementDetailsDTO placementDTO = placementsByPostIdAndPersonId.get(0);
+									if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
+										if(!placementXLS.getDateFrom().equals(placementDTO.getDateFrom())) {
+											placementXLS.addErrorMessage("From date does not match existing placement");
+										}
+										if(!placementXLS.getDateTo().equals(placementDTO.getDateTo())) {
+											placementXLS.addErrorMessage("To date does not match existing placement");
+										}
+									} else {
+										setPlacementDateValidationErrors(placementXLS);
+									}
+
+									setPlacementTypeOrRecordError(placementXLS, placementDTO);
+									setWTEOrRecordError(placementXLS, placementDTO);
+									setSiteOrRecordError(siteMapByName, placementXLS, placementDTO);
+									setGradeOrRecordError(gradeMapByName, placementXLS, placementDTO);
+
+									if(!placementXLS.hasErrors()) {
+										tcsServiceImpl.updatePlacement(placementDTO);
+									}
+								}
 							}
 						}
 					} else {
@@ -280,6 +286,51 @@ public class ScheduledUploadTask {
 
 				setJobToCompleted(applicationType, placementXLSS);
 			}
+		}
+	}
+
+	private void setGradeOrRecordError(Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
+		if(StringUtils.isEmpty(placementXLS.getGrade())) {
+			placementXLS.addErrorMessage("Multiple or no grades found for  : " + placementXLS.getGrade());
+		} else {
+			GradeDTO gradeDTO = gradeMapByName.get(placementXLS.getGrade());
+			placementDTO.setGradeAbbreviation(gradeDTO.getAbbreviation());
+			placementDTO.setGradeId(gradeDTO.getId());
+		}
+	}
+
+	private void setSiteOrRecordError(Map<String, SiteDTO> siteMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
+		if(StringUtils.isEmpty(placementXLS.getSite())) {
+			placementXLS.addErrorMessage("Multiple or no sites found for  : " + placementXLS.getSite());
+		} else {
+			SiteDTO siteDTO = siteMapByName.get(placementXLS.getSite());
+			placementDTO.setSiteCode(siteDTO.getSiteCode());
+			placementDTO.setSiteId(siteDTO.getId());
+		}
+	}
+
+	private void setWTEOrRecordError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
+		if(placementXLS.getWte() == null) {
+			placementXLS.addErrorMessage("Whole Time Equivalent (WTE) is mandatory");
+		} else {
+			placementDTO.setWholeTimeEquivalent(new Double(placementXLS.getWte()));
+		}
+	}
+
+	private void setPlacementTypeOrRecordError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
+		if(StringUtils.isEmpty(placementXLS.getPlacementType())) {
+			placementXLS.addErrorMessage("Placement Type is mandatory");
+		} else {
+			placementDTO.setPlacementType(placementXLS.getPlacementType());
+		}
+	}
+
+	private void setPlacementDateValidationErrors(PlacementXLS placementXLS) {
+		if(placementXLS.getDateFrom() == null) {
+			placementXLS.addErrorMessage("Placement from date is mandatory");
+		}
+		if(placementXLS.getDateTo() == null) {
+			placementXLS.addErrorMessage("Placement to date is mandatory");
 		}
 	}
 
