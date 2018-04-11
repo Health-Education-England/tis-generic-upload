@@ -22,7 +22,7 @@ public class ExcelToObjectMapper {
   public static final String ROW_NUMBER = "rowNumber";
   public static final String ERROR_MESSAGE = "errorMessage";
   public static final String SUCCESSFULLY_IMPORTED = "successfullyImported";
-  private static final SimpleDateFormat dateFormat = new SimpleDateFormat("M/d/yy");
+  private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M/yy");
   private Workbook workbook;
 
   public ExcelToObjectMapper(InputStream excelFile) throws IOException, InvalidFormatException {
