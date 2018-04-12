@@ -214,20 +214,22 @@ public class PlacementTransformerService {
 	}
 
 	private void setGradeOrRecordError(Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
-		if(StringUtils.isEmpty(placementXLS.getGrade())) {
-			placementXLS.addErrorMessage("Multiple or no grades found for  : " + placementXLS.getGrade());
+		String grade = placementXLS.getGrade();
+		if(!StringUtils.isEmpty(grade) && !gradeMapByName.containsKey(grade)) {
+			placementXLS.addErrorMessage("Multiple or no grades found for  : " + grade);
 		} else {
-			GradeDTO gradeDTO = gradeMapByName.get(placementXLS.getGrade());
+			GradeDTO gradeDTO = gradeMapByName.get(grade);
 			placementDTO.setGradeAbbreviation(gradeDTO.getAbbreviation());
 			placementDTO.setGradeId(gradeDTO.getId());
 		}
 	}
 
 	private void setSiteOrRecordError(Map<String, SiteDTO> siteMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
-		if(StringUtils.isEmpty(placementXLS.getSite())) {
-			placementXLS.addErrorMessage("Multiple or no sites found for  : " + placementXLS.getSite());
+		String site = placementXLS.getSite();
+		if(!StringUtils.isEmpty(site) && !siteMapByName.containsKey(site)) {
+			placementXLS.addErrorMessage("Multiple or no sites found for  : " + site);
 		} else {
-			SiteDTO siteDTO = siteMapByName.get(placementXLS.getSite());
+			SiteDTO siteDTO = siteMapByName.get(site);
 			placementDTO.setSiteCode(siteDTO.getSiteCode());
 			placementDTO.setSiteId(siteDTO.getId());
 		}
