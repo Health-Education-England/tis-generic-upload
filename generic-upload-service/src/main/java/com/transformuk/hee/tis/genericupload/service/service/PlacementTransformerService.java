@@ -23,7 +23,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
-import java.time.ZoneId;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static org.slf4j.LoggerFactory.getLogger;
 
 @Component
@@ -146,17 +147,8 @@ public class PlacementTransformerService {
 								placementDTO.setTraineeId(personBasicDetailsDTO.getId());
 								placementDTO.setPostId(postDTO.getId());
 
-								if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
-									placementDTO.setDateFrom(placementXLS.getDateFrom().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-									placementDTO.setDateTo(placementXLS.getDateTo().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-								} else {
-									setPlacementDateValidationErrors(placementXLS);
-								}
-
-								setPlacementTypeOrRecordError(placementXLS, placementDTO);
-								setWTEOrRecordError(placementXLS, placementDTO);
-								setSiteOrRecordError(siteMapByName, placementXLS, placementDTO);
-								setGradeOrRecordError(gradeMapByName, placementXLS, placementDTO);
+								setDatesOrRecordError(placementXLS, placementDTO, false);
+								setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
 
 								if(!placementXLS.hasErrors()) {
 									tcsServiceImpl.createPlacement(placementDTO);
@@ -166,21 +158,9 @@ public class PlacementTransformerService {
 									placementXLS.addErrorMessage(String.format("Multiple placements found for post with id (%1$s) and person with id (%2$s)", postDTO.getId(), personBasicDetailsDTO.getId()));
 								} else {
 									PlacementDetailsDTO placementDTO = placementsByPostIdAndPersonId.get(0);
-									if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
-										if(!placementXLS.getDateFrom().equals(placementDTO.getDateFrom())) {
-											placementXLS.addErrorMessage("From date does not match existing placement");
-										}
-										if(!placementXLS.getDateTo().equals(placementDTO.getDateTo())) {
-											placementXLS.addErrorMessage("To date does not match existing placement");
-										}
-									} else {
-										setPlacementDateValidationErrors(placementXLS);
-									}
 
-									setPlacementTypeOrRecordError(placementXLS, placementDTO);
-									setWTEOrRecordError(placementXLS, placementDTO);
-									setSiteOrRecordError(siteMapByName, placementXLS, placementDTO);
-									setGradeOrRecordError(gradeMapByName, placementXLS, placementDTO);
+									setDatesOrRecordError(placementXLS, placementDTO, true);
+									setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
 
 									if(!placementXLS.hasErrors()) {
 										tcsServiceImpl.updatePlacement(placementDTO);
@@ -193,6 +173,42 @@ public class PlacementTransformerService {
 						continue;
 					}
 				}
+			}
+		}
+	}
+
+	public void setOtherMandatoryFields(Map<String, SiteDTO> siteMapByName,
+	                                    Map<String, GradeDTO> gradeMapByName,
+	                                    PlacementXLS placementXLS,
+	                                    PlacementDetailsDTO placementDTO) {
+		setPlacementTypeOrRecordError(placementXLS, placementDTO);
+		setWTEOrRecordError(placementXLS, placementDTO);
+		setSiteOrRecordError(siteMapByName, placementXLS, placementDTO);
+		setGradeOrRecordError(gradeMapByName, placementXLS, placementDTO);
+	}
+
+	public void setDatesOrRecordError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, boolean update) {
+		if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
+			LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
+			LocalDate dateTo = convertDate(placementXLS.getDateTo());
+
+			if(update) {
+				if (!dateFrom.equals(placementDTO.getDateFrom())) {
+					placementXLS.addErrorMessage("From date does not match existing placement");
+				}
+				if (!dateTo.equals(placementDTO.getDateTo())) {
+					placementXLS.addErrorMessage("To date does not match existing placement");
+				}
+			} else {
+				placementDTO.setDateFrom(dateFrom);
+				placementDTO.setDateTo(dateTo);
+			}
+		} else {
+			if(placementXLS.getDateFrom() == null) {
+				placementXLS.addErrorMessage("Placement from date is mandatory");
+			}
+			if(placementXLS.getDateTo() == null) {
+				placementXLS.addErrorMessage("Placement to date is mandatory");
 			}
 		}
 	}
@@ -230,15 +246,6 @@ public class PlacementTransformerService {
 			placementXLS.addErrorMessage("Placement Type is mandatory");
 		} else {
 			placementDTO.setPlacementType(placementXLS.getPlacementType());
-		}
-	}
-
-	private void setPlacementDateValidationErrors(PlacementXLS placementXLS) {
-		if(placementXLS.getDateFrom() == null) {
-			placementXLS.addErrorMessage("Placement from date is mandatory");
-		}
-		if(placementXLS.getDateTo() == null) {
-			placementXLS.addErrorMessage("Placement to date is mandatory");
 		}
 	}
 
