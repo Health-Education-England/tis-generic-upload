@@ -186,12 +186,13 @@ public class PlacementTransformerService {
 	public void setSpecialties(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName) {
 		Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = placementDTO.getSpecialties();
 		if(placementSpecialtyDTOS == null) {
-			placementSpecialtyDTOS = new HashSet<>();
-			placementDTO.setSpecialties(placementSpecialtyDTOS);
+			placementSpecialtyDTOS = initialiseNewPlacementSpecialtyDTOS(placementDTO);
 		}
 
 		Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional1 = buildPlacementSpecialtyDTO(placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty1(), true);
 		if(placementSpecialtyDTOOptional1.isPresent()) {
+			placementSpecialtyDTOS = initialiseNewPlacementSpecialtyDTOS(placementDTO);
+
 			PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
 			addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
 		}
@@ -209,6 +210,12 @@ public class PlacementTransformerService {
 		}
 	}
 
+	public Set<PlacementSpecialtyDTO> initialiseNewPlacementSpecialtyDTOS(PlacementDetailsDTO placementDTO) {
+		Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = new HashSet<>();
+		placementDTO.setSpecialties(placementSpecialtyDTOS);
+		return placementSpecialtyDTOS;
+	}
+
 	public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS, PlacementSpecialtyDTO placementSpecialtyDTO) {
 		if(placementSpecialtyDTOS.size() == 0) {
 			placementSpecialtyDTOS.add(placementSpecialtyDTO);
@@ -221,20 +228,22 @@ public class PlacementTransformerService {
 	public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName, String specialtyName, boolean primary) {
 		if(!StringUtils.isEmpty(specialtyName)) {
 			List<SpecialtyDTO> specialtyByName = getSpecialtyDTOsForName.apply(specialtyName);
-			if(specialtyByName == null || specialtyByName.size() != 1) {
-				if(specialtyByName.size() == 0) {
-					placementXLS.addErrorMessage("Did not find specialty for name : " + specialtyName);
-				} else if(specialtyByName.size() > 1) {
-					placementXLS.addErrorMessage("Found multiple specialties for name : " + specialtyName);
-				}
-			} else {
-				SpecialtyDTO specialtyDTO = specialtyByName.get(0);
-				PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
-				placementSpecialtyDTO.setPlacementId(placementDTO.getId());
-				placementSpecialtyDTO.setSpecialtyId(specialtyDTO.getId());
+			if(specialtyByName != null) {
+				if (specialtyByName.size() != 1) {
+					if (specialtyByName.size() == 0) {
+						placementXLS.addErrorMessage("Did not find specialty for name : " + specialtyName);
+					} else {
+						placementXLS.addErrorMessage("Found multiple specialties for name : " + specialtyName);
+					}
+				} else {
+					SpecialtyDTO specialtyDTO = specialtyByName.get(0);
+					PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
+					placementSpecialtyDTO.setPlacementId(placementDTO.getId());
+					placementSpecialtyDTO.setSpecialtyId(specialtyDTO.getId());
 
-				placementSpecialtyDTO.setPlacementSpecialtyType(primary ? PostSpecialtyType.PRIMARY : PostSpecialtyType.OTHER);
-				return Optional.of(placementSpecialtyDTO);
+					placementSpecialtyDTO.setPlacementSpecialtyType(primary ? PostSpecialtyType.PRIMARY : PostSpecialtyType.OTHER);
+					return Optional.of(placementSpecialtyDTO);
+				}
 			}
 		}
 		return Optional.empty();

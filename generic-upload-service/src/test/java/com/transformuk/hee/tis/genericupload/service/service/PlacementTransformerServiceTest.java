@@ -132,7 +132,7 @@ public class PlacementTransformerServiceTest {
 	}
 
 	@Test
-	public void addsTheNewSpecialtyAsNonPrimaryIfOneAlreadyExistsInTheDTO() {
+	public void overwritesSpecialtiesIfOneSpecialtyExistsOnUpload() {
 		PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
 		placementSpecialtyDTO.setSpecialtyId(10L);
 		placementSpecialtyDTO.setPlacementId(10L);
@@ -142,10 +142,31 @@ public class PlacementTransformerServiceTest {
 		placementDTO.setSpecialties(placementSpecialtyDTOS);
 
 		placementTransformerService.setSpecialties(placementXLS, placementDTO, PlacementTransformerServiceTest::getSpecialtiesForString);
-		assertThat(placementDTO.getSpecialties().size()).isEqualTo(2);
+		assertThat(placementDTO.getSpecialties().size()).isEqualTo(1);
 		for(PlacementSpecialtyDTO placementSpecialtyDTOFromPlacement : placementDTO.getSpecialties()) {
 			if(placementSpecialtyDTOFromPlacement.getSpecialtyId() == 12345L) {
-				assertThat(placementSpecialtyDTOFromPlacement.getPlacementSpecialtyType()).isEqualTo(PostSpecialtyType.OTHER);
+				assertThat(placementSpecialtyDTOFromPlacement.getPlacementSpecialtyType()).isEqualTo(PostSpecialtyType.PRIMARY);
+			}
+		}
+	}
+
+	@Test
+	public void doesNotOverwritesSpecialtiesIfNoSpecialtyExistsOnUpload() {
+		PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
+		placementSpecialtyDTO.setSpecialtyId(10L);
+		placementSpecialtyDTO.setPlacementId(10L);
+		placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.PRIMARY);
+		Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = new HashSet<>();
+		placementSpecialtyDTOS.add(placementSpecialtyDTO);
+		placementDTO.setSpecialties(placementSpecialtyDTOS);
+
+		placementXLS.setSpecialty1("");
+
+		placementTransformerService.setSpecialties(placementXLS, placementDTO, PlacementTransformerServiceTest::getSpecialtiesForString);
+		assertThat(placementDTO.getSpecialties().size()).isEqualTo(1);
+		for(PlacementSpecialtyDTO placementSpecialtyDTOFromPlacement : placementDTO.getSpecialties()) {
+			if(placementSpecialtyDTOFromPlacement.getSpecialtyId() == 10L) {
+				assertThat(placementSpecialtyDTOFromPlacement.getPlacementSpecialtyType()).isEqualTo(PostSpecialtyType.PRIMARY);
 			}
 		}
 	}
