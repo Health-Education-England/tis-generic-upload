@@ -14,7 +14,10 @@ import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonBasicDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PlacementSpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
+import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +28,10 @@ import org.springframework.util.StringUtils;
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -119,7 +124,6 @@ public class PlacementTransformerService {
 				if(personBasicDetailsDTO == null) {
 					placementXLS.addErrorMessage("Could not find person via registration number");
 				} else {
-					//validate that person exists
 					if(!placementXLS.getForenames().equalsIgnoreCase(personBasicDetailsDTO.getFirstName())) {
 						placementXLS.addErrorMessage("First name does not match first name obtained via registration number");
 					}
@@ -138,7 +142,7 @@ public class PlacementTransformerService {
 				} else {
 					PostDTO postDTO = postsMappedByNPNs.get(nationalPostNumber);
 					if(postDTO != null && personBasicDetailsDTO != null) {
-						if(postDTO.getStatus().equals("DELETE")) {
+						if("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
 							placementXLS.addErrorMessage("POST status is set to DELETE for National Post Number : " + nationalPostNumber);
 						} else {
 							List<PlacementDetailsDTO> placementsByPostIdAndPersonId = tcsServiceImpl.getPlacementsByPostIdAndPersonId(postDTO.getId(), personBasicDetailsDTO.getId());
@@ -149,6 +153,7 @@ public class PlacementTransformerService {
 
 								setDatesOrRecordError(placementXLS, placementDTO, false);
 								setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
+								setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
 
 								if(!placementXLS.hasErrors()) {
 									tcsServiceImpl.createPlacement(placementDTO);
@@ -161,6 +166,7 @@ public class PlacementTransformerService {
 
 									setDatesOrRecordError(placementXLS, placementDTO, true);
 									setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
+									setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName);
 
 									if(!placementXLS.hasErrors()) {
 										tcsServiceImpl.updatePlacement(placementDTO);
@@ -177,6 +183,63 @@ public class PlacementTransformerService {
 		}
 	}
 
+	public void setSpecialties(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName) {
+		Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = placementDTO.getSpecialties();
+		if(placementSpecialtyDTOS == null) {
+			placementSpecialtyDTOS = new HashSet<>();
+			placementDTO.setSpecialties(placementSpecialtyDTOS);
+		}
+
+		Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional1 = buildPlacementSpecialtyDTO(placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty1(), true);
+		if(placementSpecialtyDTOOptional1.isPresent()) {
+			PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
+			addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+		}
+
+		Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty2(), false);
+		if(placementSpecialtyDTOOptional2.isPresent()) {
+			PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
+			addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+		}
+
+		Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(), false);
+		if(placementSpecialtyDTOOptional3.isPresent()) {
+			PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
+			addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+		}
+	}
+
+	public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS, PlacementSpecialtyDTO placementSpecialtyDTO) {
+		if(placementSpecialtyDTOS.size() == 0) {
+			placementSpecialtyDTOS.add(placementSpecialtyDTO);
+		} else if(!placementSpecialtyDTOS.contains(placementSpecialtyDTO)) {
+			placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
+			placementSpecialtyDTOS.add(placementSpecialtyDTO);
+		}
+	}
+
+	public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName, String specialtyName, boolean primary) {
+		if(!StringUtils.isEmpty(specialtyName)) {
+			List<SpecialtyDTO> specialtyByName = getSpecialtyDTOsForName.apply(specialtyName);
+			if(specialtyByName == null || specialtyByName.size() != 1) {
+				if(specialtyByName.size() == 0) {
+					placementXLS.addErrorMessage("Did not find specialty for name : " + specialtyName);
+				} else if(specialtyByName.size() > 1) {
+					placementXLS.addErrorMessage("Found multiple specialties for name : " + specialtyName);
+				}
+			} else {
+				SpecialtyDTO specialtyDTO = specialtyByName.get(0);
+				PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
+				placementSpecialtyDTO.setPlacementId(placementDTO.getId());
+				placementSpecialtyDTO.setSpecialtyId(specialtyDTO.getId());
+
+				placementSpecialtyDTO.setPlacementSpecialtyType(primary ? PostSpecialtyType.PRIMARY : PostSpecialtyType.OTHER);
+				return Optional.of(placementSpecialtyDTO);
+			}
+		}
+		return Optional.empty();
+	}
+
 	public void setOtherMandatoryFields(Map<String, SiteDTO> siteMapByName,
 	                                    Map<String, GradeDTO> gradeMapByName,
 	                                    PlacementXLS placementXLS,
@@ -187,12 +250,12 @@ public class PlacementTransformerService {
 		setGradeOrRecordError(gradeMapByName, placementXLS, placementDTO);
 	}
 
-	public void setDatesOrRecordError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, boolean update) {
+	public void setDatesOrRecordError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, boolean updatePlacement) {
 		if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
 			LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
 			LocalDate dateTo = convertDate(placementXLS.getDateTo());
 
-			if(update) {
+			if(updatePlacement) {
 				if (!dateFrom.equals(placementDTO.getDateFrom())) {
 					placementXLS.addErrorMessage("From date does not match existing placement");
 				}
