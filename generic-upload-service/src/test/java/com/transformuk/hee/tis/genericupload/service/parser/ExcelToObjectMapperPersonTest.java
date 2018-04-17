@@ -9,6 +9,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.io.FileInputStream;
 import java.text.ParseException;
+import java.util.Date;
 import java.util.List;
 
 
@@ -25,7 +26,7 @@ public class ExcelToObjectMapperPersonTest {
   public void setUp() throws Exception {
     String filePath = new ClassPathResource(FILE_NAME).getURI().getPath();
     FileInputStream inputStream = new FileInputStream(filePath);
-    excelToObjectMapper = new ExcelToObjectMapper(inputStream);
+    excelToObjectMapper = new ExcelToObjectMapper(inputStream, true);
   }
 
   @Test
@@ -116,6 +117,11 @@ public class ExcelToObjectMapperPersonTest {
     Assert.assertEquals(localDate.toDate(), getDate("6/7/01"));
   }
 
+  @Test(expected = ParseException.class)
+  public void throwsAnExceptionOnBadDates() throws ParseException {
+    Assert.assertNull(getDate("111/11/2124"));
+  }
+
   @Test
   public void canParseDatesWith4CharactersInYears() throws ParseException {
     LocalDate localDate = new LocalDate(2001, 7, 6);
@@ -126,7 +132,7 @@ public class ExcelToObjectMapperPersonTest {
   public void shouldSkipEmptyRowsAgain() throws Exception {
     String filePath = new ClassPathResource("TIS People Import Template - empty row.xlsx").getURI().getPath();
     FileInputStream inputStream = new FileInputStream(filePath);
-    excelToObjectMapper = new ExcelToObjectMapper(inputStream);
+    excelToObjectMapper = new ExcelToObjectMapper(inputStream, false);
     List<PersonXLS> actual = excelToObjectMapper.map(PersonXLS.class,
         new PersonHeaderMapper().getFieldMap());
     assertThat(actual.get(0).getRecordStatus()).isNotNull();

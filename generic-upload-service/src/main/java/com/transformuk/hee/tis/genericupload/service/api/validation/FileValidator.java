@@ -22,7 +22,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -42,19 +41,19 @@ public class FileValidator {
 	 *            The provided files to validate
 	 * @throws MethodArgumentNotValidException
 	 */
-	public FileType validate(List<MultipartFile> files, boolean validateMandatoryFields) throws IOException, NoSuchFieldException, InstantiationException, ParseException, IllegalAccessException, InvalidFormatException, MethodArgumentNotValidException {
+	public FileType validate(List<MultipartFile> files, boolean validateMandatoryFields, boolean validateDates) throws IOException, InvalidFormatException, MethodArgumentNotValidException, ReflectiveOperationException {
 		List<FieldError> fieldErrors = new ArrayList<>();
 		FileType fileType = null;
 		if (!ObjectUtils.isEmpty(files)) {
 			for (MultipartFile file : files) {
 				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
-					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream());
+					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream(), validateDates);
 					if (validateMandatoryFields) {
 						Set<String> headers = excelToObjectMapper.getHeaders();
 						if(headers.contains("Placement Type*")) {
 							fileType = FileType.PLACEMENTS;
 							validateMandatoryFields(fieldErrors, excelToObjectMapper, PlacementXLS.class, new PlacementHeaderMapper());
-						} else if(headers.contains("Email Address")) {
+						} else if(headers.contains("Email Address")) { //TODO do something more robust than this
 							fileType = FileType.PEOPLE;
 							validateMandatoryFields(fieldErrors, excelToObjectMapper, PersonXLS.class, new PersonHeaderMapper());
 						} else {
@@ -83,7 +82,7 @@ public class FileValidator {
 	 * @throws Exception
 	 */
 	private void validateMandatoryFields(List<FieldError> fieldErrors, ExcelToObjectMapper excelToObjectMapper,
-			Class dtoClass, ColumnMapper columnMapper) throws InstantiationException, IllegalAccessException, ParseException, NoSuchFieldException {
+			Class dtoClass, ColumnMapper columnMapper) throws ReflectiveOperationException {
 		Map<String, String> columnNameToMandatoryColumnsMap = columnMapper.getMandatoryFieldMap();
 		List<?> result = excelToObjectMapper.map(dtoClass, columnNameToMandatoryColumnsMap);
 		AtomicInteger rowIndex = new AtomicInteger(0);

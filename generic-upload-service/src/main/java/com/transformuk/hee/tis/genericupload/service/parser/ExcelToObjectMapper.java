@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -20,13 +22,12 @@ public class ExcelToObjectMapper {
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
 
   public static final String ROW_NUMBER = "rowNumber";
-  public static final String ERROR_MESSAGE = "errorMessage";
-  public static final String SUCCESSFULLY_IMPORTED = "successfullyImported";
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M/yy");
   private Workbook workbook;
 
-  public ExcelToObjectMapper(InputStream excelFile) throws IOException, InvalidFormatException {
+  public ExcelToObjectMapper(InputStream excelFile, boolean validateDates) throws IOException, InvalidFormatException {
     workbook = createWorkBook(excelFile);
+    dateFormat.setLenient(!validateDates);
   }
 
   /**
@@ -48,7 +49,7 @@ public class ExcelToObjectMapper {
    * @return List of object of type T.
    * @throws Exception if failed to generate mapping.
    */
-  public <T> ArrayList<T> map(Class<T> cls, Map<String, String> columnMap) throws NoSuchFieldException, IllegalAccessException, InstantiationException, ParseException {
+  public <T> ArrayList<T> map(Class<T> cls, Map<String, String> columnMap) throws ReflectiveOperationException {
     ArrayList<T> list = new ArrayList();
 
     Field rowNumberFieldInXLS = cls.getSuperclass().getDeclaredField(ROW_NUMBER);
@@ -70,7 +71,13 @@ public class ExcelToObjectMapper {
         }
         Cell cell = sheet.getRow(rowNumber).getCell(index);
         Field classField = obj.getClass().getDeclaredField(fieldName);
-        setObjectFieldValueFromCell(obj, classField, cell);
+        try {
+          setObjectFieldValueFromCell(obj, classField, cell);
+        } catch (ParseException e) {
+          logger.info("Error while extracting cell value from object : " + e.getMessage());
+          Method method = obj.getClass().getMethod("addErrorMessage", String.class);
+          method.invoke(obj, e.getMessage());
+        }
       }
       rowNumberFieldInXLS.setInt(obj, rowNumber);
       if(!isAllBlanks(obj))

@@ -82,7 +82,7 @@ public class FileProcessServiceImpl implements FileProcessService {
         at.setFileStatus(FileStatus.IN_PROGRESS);
         applicationTypeRepository.save(at);
         // process the file
-        ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(Files.newInputStream(tempFilePath));
+        ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(Files.newInputStream(tempFilePath), false);
         List<PersonXLS> result = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap());
         if (!CollectionUtils.isEmpty(result)) {
           applicationConfiguration.getSteps().stream().forEach(stepConfiguration -> sendData(Lists.newArrayList(result), stepConfiguration));

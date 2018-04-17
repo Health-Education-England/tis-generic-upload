@@ -23,7 +23,7 @@ public class ExcelToObjectMapperPlacementTest {
   public void setUp() throws Exception {
     String filePath = new ClassPathResource(FILE_NAME).getURI().getPath();
     FileInputStream inputStream = new FileInputStream(filePath);
-    excelToObjectMapper = new ExcelToObjectMapper(inputStream);
+    excelToObjectMapper = new ExcelToObjectMapper(inputStream, false);
   }
 
   @Test

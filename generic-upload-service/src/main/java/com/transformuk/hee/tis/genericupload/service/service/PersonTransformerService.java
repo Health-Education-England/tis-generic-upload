@@ -122,7 +122,7 @@ public class PersonTransformerService {
 					if (pbdMapByPH.get(phnDetailsMap.get(phNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownPHsInTIS.add(personXLS);
 					} else {
-						personXLS.setErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "Public Health Number"));
+						personXLS.addErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "Public Health Number"));
 					}
 				}
 			}
@@ -164,7 +164,7 @@ public class PersonTransformerService {
 					if (pbdMapByGDC.get(gdcDetailsMap.get(gdcNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownGDCsInTIS.add(personXLS);
 					} else {
-						personXLS.setErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "GDC Number"));
+						personXLS.addErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "GDC Number"));
 					}
 				}
 			}
@@ -215,7 +215,7 @@ public class PersonTransformerService {
 					if (pbdMapByGMC.get(gmcDetailsMap.get(gmcNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
 						knownGMCsInTIS.add(personXLS);
 					} else {
-						personXLS.setErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "GMC Number"));
+						personXLS.addErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "GMC Number"));
 					}
 				}
 			}
@@ -262,15 +262,17 @@ public class PersonTransformerService {
 
 	private void updateOrRecordError(PersonDTO personDTOFromDB, PersonDTO personDTOFromXLS, PersonXLS personXLS) {
 		try {
-			personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
-			addQualificationsAndProgrammeMemberships(personXLS, personDTOFromXLS, personDTOFromDB);
-			personXLS.setSuccessfullyImported(true);
+			if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
+				personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
+				addQualificationsAndProgrammeMemberships(personXLS, personDTOFromXLS, personDTOFromDB);
+				personXLS.setSuccessfullyImported(true);
+			}
 		} catch (HttpClientErrorException e) {
-			personXLS.setErrorMessage(getSingleMessageFromSpringJsonErrorMessages(e.getResponseBodyAsString()));
+			personXLS.addErrorMessage(getSingleMessageFromSpringJsonErrorMessages(e.getResponseBodyAsString()));
 		} catch (ResourceAccessException rae) {
 			if(rae.getCause() != null && rae.getCause() instanceof IOException) {
 				IOException ioe = (IOException) rae.getCause();
-				personXLS.setErrorMessage(getSingleMessageFromSpringJsonErrorMessages(ioe.getMessage()));
+				personXLS.addErrorMessage(getSingleMessageFromSpringJsonErrorMessages(ioe.getMessage()));
 			} else {
 				logger.error("Unexpected exception : " + rae.getMessage());
 			}
@@ -311,7 +313,7 @@ public class PersonTransformerService {
 		for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext(); ) {
 			PersonXLS personXLS = iterator.next();
 			if (regNumbersDuplicatesSet.contains(extractRegistrationNumber.apply(personXLS))) {
-				personXLS.setErrorMessage(errorMessage);
+				personXLS.addErrorMessage(errorMessage);
 				iterator.remove();
 			}
 		}
@@ -366,21 +368,24 @@ public class PersonTransformerService {
 	private void addPersons(Set<PersonXLS> personsInXLS) {
 		if (!CollectionUtils.isEmpty(personsInXLS)) {
 			for (PersonXLS personXLS : personsInXLS) {
-				PersonDTO personDTO = getPersonDTO(personXLS);
-				if (personDTO != null) {
-					PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
-					try {
-						addQualificationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
-					} catch (ResourceAccessException rae) {
-						//TODO this exception handling is duplicated
-						if(rae.getCause() != null && rae.getCause() instanceof IOException) {
-							IOException ioe = (IOException) rae.getCause();
-							personXLS.setErrorMessage(getSingleMessageFromSpringJsonErrorMessages(ioe.getMessage()));
-						} else {
-							logger.error("Unexpected exception : " + rae.getMessage());
+				if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
+					PersonDTO personDTO = getPersonDTO(personXLS);
+					if (personDTO != null) {
+						PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
+						try {
+							addQualificationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
+						} catch (ResourceAccessException rae) {
+							//TODO this exception handling is duplicated
+							if(rae.getCause() != null && rae.getCause() instanceof IOException) {
+								IOException ioe = (IOException) rae.getCause();
+								personXLS.addErrorMessage(getSingleMessageFromSpringJsonErrorMessages(ioe.getMessage()));
+							} else {
+								logger.error("Unexpected exception : " + rae.getMessage());
+							}
 						}
 					}
 				}
+
 				if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
 					personXLS.setSuccessfullyImported(true);
 				}
@@ -420,7 +425,7 @@ public class PersonTransformerService {
 			}
 			personDTO = getPersonDTO(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3, programmeDTO);
 		} catch (IllegalArgumentException e) {
-			personXLS.setErrorMessage(e.getMessage());
+			personXLS.addErrorMessage(e.getMessage());
 		}
 		return personDTO;
 	}
@@ -507,7 +512,7 @@ public class PersonTransformerService {
 
 	private QualificationDTO getQualificationDTO(PersonXLS personXLS) {
 		QualificationDTO qualificationDTO = null;
-		if(personXLS.getQualification() != null || personXLS.getCountryOfQualification() != null || personXLS.getCountryOfQualification() != null || personXLS.getCountryOfQualification() != null) {
+		if(personXLS.getQualification() != null || personXLS.getCountryOfQualification() != null || personXLS.getMedicalSchool() != null || personXLS.getDateAttained() != null) {
 			qualificationDTO = new QualificationDTO();
 			qualificationDTO.setCountryOfQualification(personXLS.getCountryOfQualification());
 			qualificationDTO.setQualification(personXLS.getQualification());

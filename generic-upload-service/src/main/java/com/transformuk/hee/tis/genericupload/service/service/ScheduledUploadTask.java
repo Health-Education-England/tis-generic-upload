@@ -62,7 +62,7 @@ public class ScheduledUploadTask {
 			applicationTypeRepository.save(applicationType);
 
 			try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), azureProperties.getContainerName(), applicationType.getFileName()))) {
-				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis);
+				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis, true);
 
 				switch (applicationType.getFileType()) {
 

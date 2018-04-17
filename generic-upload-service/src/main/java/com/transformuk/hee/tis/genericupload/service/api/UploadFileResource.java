@@ -105,14 +105,14 @@ public class UploadFileResource {
 		ApplicationType applicationType;
 		try {
 			// Validate file - for other type of file, please pass path variable and pass to validator
-			FileType fileType = fileValidator.validate(fileList, true);
+			FileType fileType = fileValidator.validate(fileList, true, false);
 
 			UserProfile profileFromContext = TisSecurityHelper.getProfileFromContext();
 			// if validation is success then store the file into azure and db
 			applicationType = uploadFileService.upload(fileList, fileType, profileFromContext.getUserName(), profileFromContext.getFirstName(), profileFromContext.getLastName());
 		} catch (InvalidKeyException | StorageException | URISyntaxException e) {
 			return logAndReturnResponseEntity("Application error while storing the file : ", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}	catch (IOException | ReflectiveOperationException| ParseException | InvalidFormatException | MethodArgumentNotValidException e) {
+		}	catch (IOException | ReflectiveOperationException | InvalidFormatException | MethodArgumentNotValidException e) {
 			return logAndReturnResponseEntity("File uploaded cannot be processed : ", e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
 			e.printStackTrace();
