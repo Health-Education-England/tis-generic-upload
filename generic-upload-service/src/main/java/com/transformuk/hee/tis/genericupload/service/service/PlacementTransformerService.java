@@ -157,6 +157,7 @@ public class PlacementTransformerService {
 
 								if(!placementXLS.hasErrors()) {
 									tcsServiceImpl.createPlacement(placementDTO);
+									placementXLS.setSuccessfullyImported(true);
 								}
 							} else {
 								if(placementsByPostIdAndPersonId.size() > 1) { //TODO validate this is ok - seem like we have to iterate and find at least one that matches dates - if not error
@@ -170,6 +171,7 @@ public class PlacementTransformerService {
 
 									if(!placementXLS.hasErrors()) {
 										tcsServiceImpl.updatePlacement(placementDTO);
+										placementXLS.setSuccessfullyImported(true);
 									}
 								}
 							}
