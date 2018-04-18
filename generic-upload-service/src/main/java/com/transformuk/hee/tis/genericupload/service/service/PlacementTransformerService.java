@@ -26,6 +26,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
+import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -112,18 +113,19 @@ public class PlacementTransformerService {
 			Map<String, GradeDTO> gradeMapByName = getGradeDTOMap(placementXLSS);
 
 			for(PlacementXLS placementXLS : placementXLSS) {
+				Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = null;
 				PersonBasicDetailsDTO personBasicDetailsDTO = null;
 				if(!StringUtils.isEmpty(getGdcNumber.apply(placementXLS))) {
-					personBasicDetailsDTO = pbdMapByGDC.get(gdcDetailsMap.get(getGdcNumber.apply(placementXLS)).getId());
+					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getGdcNumber, gdcDetailsMap, pbdMapByGDC, placementXLS);
 				} else if(!StringUtils.isEmpty(getGmcNumber.apply(placementXLS))) {
-					personBasicDetailsDTO = pbdMapByGMC.get(gmcDetailsMap.get(getGmcNumber.apply(placementXLS)).getId());
+					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getGmcNumber, gmcDetailsMap, pbdMapByGMC, placementXLS);
 				} else if(!StringUtils.isEmpty(getPhNumber.apply(placementXLS))) {
-					personBasicDetailsDTO = pbdMapByPH.get(phnDetailsMap.get(getPhNumber.apply(placementXLS)).getId());
+					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getPhNumber, phnDetailsMap, pbdMapByPH, placementXLS);
 				}
-
-				if(personBasicDetailsDTO == null) {
-					placementXLS.addErrorMessage("Could not find person via registration number");
-				} else {
+				if(personBasicDetailsDTOOptional != null && personBasicDetailsDTOOptional.isPresent()) {
+					personBasicDetailsDTO = personBasicDetailsDTOOptional.get();
+				}
+				if(personBasicDetailsDTO != null) {
 					if(!placementXLS.getForenames().equalsIgnoreCase(personBasicDetailsDTO.getFirstName())) {
 						placementXLS.addErrorMessage("First name does not match first name obtained via registration number");
 					}
@@ -132,7 +134,6 @@ public class PlacementTransformerService {
 						placementXLS.addErrorMessage("Surname does not match last name obtained via registration number");
 					}
 				}
-
 
 				String nationalPostNumber = placementXLS.getNationalPostNumber();
 				if(duplicateNPNKeys.contains(nationalPostNumber)) {
@@ -150,39 +151,53 @@ public class PlacementTransformerService {
 								PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
 								placementDTO.setTraineeId(personBasicDetailsDTO.getId());
 								placementDTO.setPostId(postDTO.getId());
-
-								setDatesOrRecordError(placementXLS, placementDTO, false);
-								setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
-								setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
-
-								if(!placementXLS.hasErrors()) {
-									tcsServiceImpl.createPlacement(placementDTO);
-									placementXLS.setSuccessfullyImported(true);
-								}
+								saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, false);
 							} else {
 								if(placementsByPostIdAndPersonId.size() > 1) { //TODO validate this is ok - seem like we have to iterate and find at least one that matches dates - if not error
 									placementXLS.addErrorMessage(String.format("Multiple placements found for post with id (%1$s) and person with id (%2$s)", postDTO.getId(), personBasicDetailsDTO.getId()));
 								} else {
 									PlacementDetailsDTO placementDTO = placementsByPostIdAndPersonId.get(0);
-
-									setDatesOrRecordError(placementXLS, placementDTO, true);
-									setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
-									setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName);
-
-									if(!placementXLS.hasErrors()) {
-										tcsServiceImpl.updatePlacement(placementDTO);
-										placementXLS.setSuccessfullyImported(true);
-									}
+									saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, true);
 								}
 							}
 						}
-					} else {
-						logger.error("Unexpected error. Expected to have a post with id {} and person with id {}", postDTO.getId(), personBasicDetailsDTO.getId());
-						continue;
 					}
 				}
 			}
 		}
+	}
+
+	public void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, boolean updatePlacement) {
+		setDatesOrRecordError(placementXLS, placementDTO, updatePlacement);
+		setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
+		setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
+
+		if(!placementXLS.hasErrors()) {
+			if(updatePlacement) {
+				tcsServiceImpl.updatePlacement(placementDTO);
+			} else {
+				tcsServiceImpl.createPlacement(placementDTO);
+			}
+			placementXLS.setSuccessfullyImported(true);
+		}
+	}
+
+	public Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDTO(Function<PlacementXLS, String> getRegNumber, Map<String, ? extends Object> regNumberDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByRegNumber, PlacementXLS placementXLS) {
+		Object regNumberDTO = regNumberDetailsMap.get(getRegNumber.apply(placementXLS));
+		if(regNumberDTO != null) {
+			try {
+				Method method = regNumberDTO.getClass().getMethod("getId");
+				Long id = (Long) method.invoke(regNumberDTO);
+				if (id != null) {
+					return Optional.of(pbdMapByRegNumber.get(id));
+				}
+			} catch (ReflectiveOperationException e) {
+				logger.error("Unexpected exception : " + e.getMessage());
+			}
+		}
+
+		placementXLS.addErrorMessage("Did not find a person for registration number : " + getRegNumber.apply(placementXLS));
+		return Optional.empty();
 	}
 
 	public void setSpecialties(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName) {
