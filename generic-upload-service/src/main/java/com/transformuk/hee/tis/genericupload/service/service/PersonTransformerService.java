@@ -441,6 +441,8 @@ public class PersonTransformerService {
 			} else {
 				throw new IllegalArgumentException(String.format(MULTIPLE_PROGRAMME_FOUND_FOR, programmeName, programmeNumber));
 			}
+		} else {
+			throw new IllegalArgumentException(String.format(PROGRAMME_NOT_FOUND, programmeName, programmeNumber));
 		}
 		return programmeDTO;
 	}
