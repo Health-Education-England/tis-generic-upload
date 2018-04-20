@@ -7,6 +7,7 @@ import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -123,6 +124,15 @@ public class PlacementTransformerServiceTest {
 	}
 
 	@Test
+	public void handlesSpecialtyOnlyOn2OnCreate() {
+		placementXLS.setSpecialty1("");
+		placementXLS.setSpecialty2(ANOTHER);
+
+		placementTransformerService.setSpecialties(placementXLS, placementDTO, PlacementTransformerServiceTest::getSpecialtiesForString);
+		assertThat(placementDTO.getSpecialties().size()).isEqualTo(1);
+	}
+
+	@Test
 	public void handlesDuplicationOnPrimary() {
 		placementXLS.setSpecialty2(ANOTHER);
 		placementXLS.setSpecialty3("12345");
@@ -169,5 +179,28 @@ public class PlacementTransformerServiceTest {
 				assertThat(placementSpecialtyDTOFromPlacement.getPlacementSpecialtyType()).isEqualTo(PostSpecialtyType.PRIMARY);
 			}
 		}
+	}
+
+	@Test
+	@Ignore //TODO confirm if primary specialty can be skipped
+	public void overwritesSpecialtiesIfOneSpecialtyExistsOnUploadWhichIsntPrimary() {
+		PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
+		placementSpecialtyDTO.setSpecialtyId(10L);
+		placementSpecialtyDTO.setPlacementId(10L);
+		placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.PRIMARY);
+		Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = new HashSet<>();
+		placementSpecialtyDTOS.add(placementSpecialtyDTO);
+		placementDTO.setSpecialties(placementSpecialtyDTOS);
+
+		placementTransformerService.setSpecialties(placementXLS, placementDTO, PlacementTransformerServiceTest::getSpecialtiesForString);
+		assertThat(placementDTO.getSpecialties().size()).isEqualTo(1);
+
+		placementXLS.setSpecialty1("");
+		placementXLS.setSpecialty2(ANOTHER);
+
+		placementTransformerService.setSpecialties(placementXLS, placementDTO, PlacementTransformerServiceTest::getSpecialtiesForString);
+		assertThat(placementDTO.getSpecialties().size()).isEqualTo(1);
+		assertThat(placementDTO.getSpecialties().iterator().next().getPlacementId()).isEqualTo(123453L);
+
 	}
 }
