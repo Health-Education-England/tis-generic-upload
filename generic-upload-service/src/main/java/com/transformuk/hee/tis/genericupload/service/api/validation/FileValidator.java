@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.UploadFileResource;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
@@ -44,6 +45,7 @@ public class FileValidator {
 	public FileType validate(List<MultipartFile> files, boolean validateMandatoryFields, boolean validateDates) throws IOException, InvalidFormatException, MethodArgumentNotValidException, ReflectiveOperationException {
 		List<FieldError> fieldErrors = new ArrayList<>();
 		FileType fileType = null;
+
 		if (!ObjectUtils.isEmpty(files)) {
 			for (MultipartFile file : files) {
 				if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
@@ -52,10 +54,10 @@ public class FileValidator {
 						Set<String> headers = excelToObjectMapper.getHeaders();
 						if(headers.contains("Placement Type*")) {
 							fileType = FileType.PLACEMENTS;
-							validateMandatoryFields(fieldErrors, excelToObjectMapper, PlacementXLS.class, new PlacementHeaderMapper());
+							validateMandatoryFieldsOrThrowError(files, fieldErrors, PlacementXLS.class, excelToObjectMapper, new PlacementHeaderMapper());
 						} else if(headers.contains("Email Address")) { //TODO do something more robust than this
 							fileType = FileType.PEOPLE;
-							validateMandatoryFields(fieldErrors, excelToObjectMapper, PersonXLS.class, new PersonHeaderMapper());
+							validateMandatoryFieldsOrThrowError(files, fieldErrors, PersonXLS.class, excelToObjectMapper, new PersonHeaderMapper());
 						} else {
 							throw new InvalidFormatException("Unrecognised upload template");
 						}
@@ -64,27 +66,34 @@ public class FileValidator {
 			}
 		}
 
-		if (!fieldErrors.isEmpty()) {
-			BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult("Bulk-Upload", files.get(0).getName());
-			fieldErrors.forEach(bindingResult::addError);
-			throw new MethodArgumentNotValidException(null, bindingResult);
-		}
+
 		return fileType;
 	}
+
+	public void validateMandatoryFieldsOrThrowError(List<MultipartFile> files, List<FieldError> fieldErrors, Class templateXLS, ExcelToObjectMapper excelToObjectMapper, ColumnMapper columnMapper) throws ReflectiveOperationException, MethodArgumentNotValidException {
+		validateMandatoryFields(fieldErrors, excelToObjectMapper, templateXLS, columnMapper);
+		if (!fieldErrors.isEmpty()) {
+			BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(templateXLS.getSimpleName(), files.get(0).getName());
+			fieldErrors.forEach(bindingResult::addError);
+
+			throw new MethodArgumentNotValidException(null, bindingResult);
+		}
+	}
+
 
 	/**
 	 * Validate mandatory fields
 	 *
 	 * @param fieldErrors
 	 * @param excelToObjectMapper
-	 * @param dtoClass
+	 * @param mappedToClass
 	 * @param columnMapper
 	 * @throws Exception
 	 */
 	private void validateMandatoryFields(List<FieldError> fieldErrors, ExcelToObjectMapper excelToObjectMapper,
-			Class dtoClass, ColumnMapper columnMapper) throws ReflectiveOperationException {
+			Class mappedToClass, ColumnMapper columnMapper) throws ReflectiveOperationException {
 		Map<String, String> columnNameToMandatoryColumnsMap = columnMapper.getMandatoryFieldMap();
-		List<?> result = excelToObjectMapper.map(dtoClass, columnNameToMandatoryColumnsMap);
+		List<?> result = excelToObjectMapper.map(mappedToClass, columnNameToMandatoryColumnsMap);
 		AtomicInteger rowIndex = new AtomicInteger(0);
 		result.forEach(row -> {
 			rowIndex.incrementAndGet();
@@ -96,7 +105,7 @@ public class FileValidator {
 						if(currentField.getType() == String.class) {
 							String value = (String) currentField.get(row);
 							if (StringUtils.isBlank(value)) {
-								fieldErrors.add(new FieldError("Bulk-Upload", columnNameToMandatoryColumnsMapKey,
+								fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
 										String.format("%s Field is required at line no %d ", columnNameToMandatoryColumnsMapKey, rowIndex.get())));
 							}
 						} else if(currentField.getType() == Date.class) {
@@ -106,7 +115,7 @@ public class FileValidator {
 						}
 					}
 				} catch (NoSuchFieldException | IllegalAccessException e) {
-					LOG.debug("Field doesn't exists");
+					LOG.error("Field doesn't exists : " + columnNameToMandatoryColumnsMapKey);
 				}
 			});
 		});

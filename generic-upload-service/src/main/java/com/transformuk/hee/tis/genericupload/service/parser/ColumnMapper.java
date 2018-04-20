@@ -15,7 +15,7 @@ public abstract class ColumnMapper {
 
   public Map<String,String> getMandatoryFieldMap(){
     return this.getFieldMap().entrySet().stream().filter(map -> map.getValue().contains("*")).
-        collect(Collectors.toMap(p -> p.getKey(), p -> p.getValue()));
+        collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
 
@@ -23,8 +23,7 @@ public abstract class ColumnMapper {
     Map<String,String> fieldMap = Maps.newHashMap();
     if(fieldNameSource != null && fieldNameTarget != null) {
       fieldMap = IntStream.range(0, fieldNameSource.length).boxed()
-          .collect(Collectors.toMap(i -> fieldNameSource[i].toLowerCase(),
-              i -> fieldNameTarget[i].toLowerCase()));
+          .collect(Collectors.toMap(i -> fieldNameSource[i], i -> fieldNameTarget[i]));
     }
     return fieldMap;
   }
