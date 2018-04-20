@@ -38,6 +38,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,13 +50,15 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Component
 public class PersonTransformerService {
 	private static final Logger logger = getLogger(PersonTransformerService.class);
-	private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
 	private static final String REG_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number (%s) identified as duplicate in uploaded file";
 	private static final String REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for %s does not match surname in TIS";
 	private static final String REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS = "Registration number (%s) exists on multiple records in TIS";
 	private static final String PROGRAMME_NOT_FOUND = "Programme not found for programme name (%1$s) and programme number (%2$s)";
+	private static final String PROGRAMME_NAME_NOT_SPECIFIED = "Programme name (%s) has not been specified. Both programme name and number are needed to identify the programme";
+	private static final String PROGRAMME_NUMBER_NOT_SPECIFIED = "Programme number (%s) has not been specified. Both programme name and number are needed to identify the programme";
 	private static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programmes found for programme name (%1$s) and programme number (%2$s)";
+	private static final String PROGRAMME_MEMBERSHIP_DUPLICATED = "Programme Membership already exists for curriculum with curriculum start date (%1$s) and end date (%2$s)";
 	private static final String CURRICULUM_NOT_FOUND = "Curriculum not found : ";
 	private static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for : ";
 
@@ -407,6 +410,10 @@ public class PersonTransformerService {
 
 			if (!savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
 				tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
+			} else {
+				personXLS.addErrorMessage(String.format(PROGRAMME_MEMBERSHIP_DUPLICATED,
+						programmeMembershipDTO.getCurriculumStartDate(),
+						programmeMembershipDTO.getCurriculumEndDate()));
 			}
 		}
 	}
@@ -431,32 +438,50 @@ public class PersonTransformerService {
 	}
 
 	private ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber) throws IllegalArgumentException {
+		return getProgrammeDTO(programmeName, programmeNumber, tcsServiceImpl::getProgrammeByNameAndNumber);
+	}
+
+	ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber, BiFunction<String, String, List<ProgrammeDTO>> getProgrammeByNameAndNumber) throws IllegalArgumentException {
 		ProgrammeDTO programmeDTO = null;
-		if (programmeName != null && programmeNumber != null) {
-			List<ProgrammeDTO> programmeDTOs = tcsServiceImpl.getProgrammeByNameAndNumber(programmeName, programmeNumber);
-			if (programmeDTOs.size() == 1) {
-				programmeDTO = programmeDTOs.get(0);
-			} else if (programmeDTOs.isEmpty()) {
+		if (!StringUtils.isEmpty(programmeName) && !StringUtils.isEmpty(programmeNumber)) {
+			List<ProgrammeDTO> programmeDTOs = getProgrammeByNameAndNumber.apply(programmeName, programmeNumber);
+			if (!CollectionUtils.isEmpty(programmeDTOs)) {
+				if(programmeDTOs.size() == 1) {
+					programmeDTO = programmeDTOs.get(0);
+				} else {
+					throw new IllegalArgumentException(String.format(MULTIPLE_PROGRAMME_FOUND_FOR, programmeName, programmeNumber));
+				}
+			} else if (CollectionUtils.isEmpty(programmeDTOs)) {
 				throw new IllegalArgumentException(String.format(PROGRAMME_NOT_FOUND, programmeName, programmeNumber));
-			} else {
-				throw new IllegalArgumentException(String.format(MULTIPLE_PROGRAMME_FOUND_FOR, programmeName, programmeNumber));
 			}
 		} else {
-			throw new IllegalArgumentException(String.format(PROGRAMME_NOT_FOUND, programmeName, programmeNumber));
+			if(!StringUtils.isEmpty(programmeName) || !StringUtils.isEmpty(programmeNumber)) {
+				if (StringUtils.isEmpty(programmeName)) {
+					throw new IllegalArgumentException(String.format(PROGRAMME_NAME_NOT_SPECIFIED, programmeName));
+				} else if (StringUtils.isEmpty(programmeNumber)) {
+					throw new IllegalArgumentException(String.format(PROGRAMME_NUMBER_NOT_SPECIFIED, programmeNumber));
+				}
+			}
 		}
 		return programmeDTO;
 	}
 
 	private CurriculumDTO getCurriculumDTO(String curriculumName) throws IllegalArgumentException {
+		return getCurriculumDTO(curriculumName, tcsServiceImpl::getCurriculaByName);
+	}
+
+	CurriculumDTO getCurriculumDTO(String curriculumName, Function<String, List<CurriculumDTO>> getCurriculumByName) throws IllegalArgumentException {
 		CurriculumDTO curriculumDTO = null;
-		if (curriculumName != null) {
-			List<CurriculumDTO> curriculumDTOs = tcsServiceImpl.getCurriculaByName(curriculumName);
-			if (curriculumDTOs.size() == 1) {
-				curriculumDTO = curriculumDTOs.get(0);
-			} else if (curriculumDTOs.isEmpty()) {
+		if (!StringUtils.isEmpty(curriculumName)) {
+			List<CurriculumDTO> curriculumDTOs = getCurriculumByName.apply(curriculumName);
+			if (!CollectionUtils.isEmpty(curriculumDTOs)) {
+				if(curriculumDTOs.size() == 1) {
+					curriculumDTO = curriculumDTOs.get(0);
+				} else {
+					throw new IllegalArgumentException(MULTIPLE_CURRICULA_FOUND_FOR + curriculumName);
+				}
+			} else if (CollectionUtils.isEmpty(curriculumDTOs)) {
 				throw new IllegalArgumentException(CURRICULUM_NOT_FOUND + curriculumName);
-			} else {
-				throw new IllegalArgumentException(MULTIPLE_CURRICULA_FOUND_FOR + curriculumName);
 			}
 		}
 		return curriculumDTO;
