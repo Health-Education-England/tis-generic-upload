@@ -67,9 +67,13 @@ public class PersonTransformerService {
 	private static final String PROGRAMME_MEMBERSHIP_DUPLICATED = "Programme Membership already exists for curriculum with curriculum start date (%1$s) and end date (%2$s)";
 	private static final String CURRICULUM_NOT_FOUND = "Curriculum not found : ";
 	private static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for : ";
+
 	private static final String GDC = "GDC";
 	private static final String GMC = "GMC";
 	private static final String PHN = "PHN";
+
+	public static final String UNKNOWN = "unknown";
+	public static final String FOUND_UNKNOWN_REG_NUMBERS_IN_XML_FILE_UPLOADED_ADDING_TO_TIS = "Found {} unknown reg numbers in xml file uploaded. Adding to TIS";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -103,11 +107,11 @@ public class PersonTransformerService {
 		//TODO determine what to do if
 		Set<PersonXLS> unknownRegNumbers = personXLSS.stream()
 				.filter(personXLS ->
-						"unknown".equalsIgnoreCase(personXLS.getGmcNumber()) ||
-								"unknown".equalsIgnoreCase(personXLS.getGdcNumber()) ||
-								"unknown".equalsIgnoreCase(personXLS.getPublicHealthNumber()))
+						UNKNOWN.equalsIgnoreCase(personXLS.getGmcNumber()) ||
+						UNKNOWN.equalsIgnoreCase(personXLS.getGdcNumber()) ||
+						UNKNOWN.equalsIgnoreCase(personXLS.getPublicHealthNumber()))
 				.collect(Collectors.toSet());
-		logger.info("Found {} unknown reg numbers in xml file uploaded. Adding to TIS", unknownRegNumbers.size());
+		logger.info(FOUND_UNKNOWN_REG_NUMBERS_IN_XML_FILE_UPLOADED_ADDING_TO_TIS, unknownRegNumbers.size());
 		return unknownRegNumbers;
 	}
 
