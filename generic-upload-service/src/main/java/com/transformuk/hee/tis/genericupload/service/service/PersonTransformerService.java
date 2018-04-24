@@ -138,6 +138,17 @@ public class PersonTransformerService {
 		return knownRegNumbersInTIS;
 	}
 
+	<KEY_TYPE> void updateDatastoreWithRowsFromXLS(Map<String, PersonDTO> regNumberToPersonDTOFromXLSMap, Map<KEY_TYPE, PersonDTO> personDTOMapFromTCS, Map<String, PersonXLS> regNumberToPersonXLSMap) {
+		for (String key : regNumberToPersonDTOFromXLSMap.keySet()) {
+			PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
+			PersonDTO personDTOFromXLS = regNumberToPersonDTOFromXLSMap.get(key);
+			if (personDTOFromXLS != null) {
+				overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
+				updateOrRecordError(personDTOFromDB, personDTOFromXLS, regNumberToPersonXLSMap.get(key));
+			}
+		}
+	}
+
 	private void addOrUpdatePHRecords(List<PersonXLS> personXLSS) {
 		//check whether a PH record exists in TIS
 		Function<PersonXLS, String> getPhNumber = PersonXLS::getPublicHealthNumber;
@@ -158,14 +169,7 @@ public class PersonTransformerService {
 			Map<String, PersonDTO> phNumberToPersonDTOFromXLSMap = getRegNumberToPersonDTOFromXLSMap(personDTOToPHNID, knownPHsInTIS);
 			Map<String, PersonXLS> phnToPersonXLSMap = getRegNumberToPersonXLSMap(getPhNumber, knownPHsInTIS);
 
-			for (String key : phNumberToPersonDTOFromXLSMap.keySet()) {
-				PersonDTO personDTOFromDB = phnDetailsMap.get(key);
-				PersonDTO personDTOFromXLS = phNumberToPersonDTOFromXLSMap.get(key);
-				if (personDTOFromXLS != null) {
-					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
-					updateOrRecordError(personDTOFromDB, personDTOFromXLS, phnToPersonXLSMap.get(key));
-				}
-			}
+			updateDatastoreWithRowsFromXLS(phNumberToPersonDTOFromXLSMap, phnDetailsMap, phnToPersonXLSMap);
 		}
 
 		addPersons(getRegNumbersNotInTCS(rowsWithPHNumbers, phnDetailsMap.keySet()));
@@ -195,15 +199,7 @@ public class PersonTransformerService {
 			Map<Long, PersonDTO> personDTOMapFromTCS = peopleFetcher.setIdMappingFunction(personDTOToGdcID).findWithKeys(personIds);
 			Map<String, PersonXLS> gdcToPersonXLSMap = getRegNumberToPersonXLSMap(getGdcNumber, knownGDCsInTIS);
 
-			//now that we have both lets copy updated data
-			for (String key : gdcNumberToPersonDTOFromXLSMap.keySet()) {
-				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
-				PersonDTO personDTOFromXLS = gdcNumberToPersonDTOFromXLSMap.get(key);
-				if (personDTOFromXLS != null) {
-					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
-					updateOrRecordError(personDTOFromDB, personDTOFromXLS, gdcToPersonXLSMap.get(key));
-				}
-			}
+			updateDatastoreWithRowsFromXLS(gdcNumberToPersonDTOFromXLSMap, personDTOMapFromTCS, gdcToPersonXLSMap);
 		}
 
 		addPersons(getRegNumbersNotInTCS(rowsWithGDCNumbers, gdcDetailsMap.keySet()));
@@ -233,14 +229,7 @@ public class PersonTransformerService {
 			Map<String, PersonXLS> gmcToPersonXLSMap = getRegNumberToPersonXLSMap(getGmcNumber, knownGMCsInTIS);
 
 			//now that we have both lets copy updated data
-			for (String key : gmcNumberToPersonDTOFromXLSMap.keySet()) {
-				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
-				PersonDTO personDTOFromXLS = gmcNumberToPersonDTOFromXLSMap.get(key);
-				if (personDTOFromXLS != null) {
-					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
-					updateOrRecordError(personDTOFromDB, personDTOFromXLS, gmcToPersonXLSMap.get(key));
-				}
-			}
+			updateDatastoreWithRowsFromXLS(gmcNumberToPersonDTOFromXLSMap, personDTOMapFromTCS, gmcToPersonXLSMap);
 		}
 
 		addPersons(getRegNumbersNotInTCS(rowsWithGMCNumbers, gmcDetailsMap.keySet()));
