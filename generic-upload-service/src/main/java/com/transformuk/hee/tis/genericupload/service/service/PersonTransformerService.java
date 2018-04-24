@@ -1,22 +1,13 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import com.google.common.collect.Lists;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
-import com.transformuk.hee.tis.tcs.api.dto.ContactDetailsDTO;
-import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
-import com.transformuk.hee.tis.tcs.api.dto.GdcDetailsDTO;
-import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
-import com.transformuk.hee.tis.tcs.api.dto.PersonBasicDetailsDTO;
-import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
-import com.transformuk.hee.tis.tcs.api.dto.PersonalDetailsDTO;
-import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
-import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
-import com.transformuk.hee.tis.tcs.api.dto.QualificationDTO;
-import com.transformuk.hee.tis.tcs.api.dto.RightToWorkDTO;
+import com.transformuk.hee.tis.tcs.api.dto.*;
 import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
@@ -412,8 +403,8 @@ public class PersonTransformerService {
 				tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
 			} else {
 				personXLS.addErrorMessage(String.format(PROGRAMME_MEMBERSHIP_DUPLICATED,
-						programmeMembershipDTO.getCurriculumStartDate(),
-						programmeMembershipDTO.getCurriculumEndDate()));
+						programmeMembershipDTO.getCurriculumMemberships().get(0).getCurriculumStartDate(),
+						programmeMembershipDTO.getCurriculumMemberships().get(0).getCurriculumEndDate()));
 			}
 		}
 	}
@@ -603,11 +594,14 @@ public class PersonTransformerService {
 		programmeMembershipDTO.setProgrammeStartDate(programmeStartDate);
 		programmeMembershipDTO.setProgrammeEndDate(programmeEndDate);
 
-		programmeMembershipDTO.setCurriculumId(curriculumDTO.getId());
+		CurriculumMembershipDTO curriculumMembershipDTO = new CurriculumMembershipDTO();
+		curriculumMembershipDTO.setCurriculumId(curriculumDTO.getId());
+		curriculumMembershipDTO.setCurriculumStartDate(convertDate(curriculumStartDate));
+		curriculumMembershipDTO.setCurriculumEndDate(convertDate(curriculumEndDate));
+		programmeMembershipDTO.setCurriculumMemberships(Lists.newArrayList());
+		programmeMembershipDTO.getCurriculumMemberships().add(curriculumMembershipDTO);
 		programmeMembershipDTO.setProgrammeId(programmeDTO.getId());
 
-		programmeMembershipDTO.setCurriculumStartDate(convertDate(curriculumStartDate));
-		programmeMembershipDTO.setCurriculumEndDate(convertDate(curriculumEndDate));
 		return programmeMembershipDTO;
 	}
 }

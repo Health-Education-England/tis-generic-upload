@@ -205,24 +205,25 @@ public class PeopleMapperConfiguration extends MapperConfiguration {
                         LocalDate programmeEndDate = convertDate(source.getProgrammeEndDate());
                         ProgrammeMembershipType programmeMembershipType = ProgrammeMembershipType.fromString(source.getProgrammeMembership());
 
+
                         ProgrammeMembershipDTO programmeMembershipDTO1 = new ProgrammeMembershipDTO();
                         programmeMembershipDTO1.setProgrammeMembershipType(programmeMembershipType);
                         programmeMembershipDTO1.setProgrammeEndDate(programmeEndDate);
-                        programmeMembershipDTO1.setCurriculumStartDate(convertDate(source.getCurriculum1StartDate()));
+                        /*programmeMembershipDTO1.setCurriculumStartDate(convertDate(source.getCurriculum1StartDate()));
                         programmeMembershipDTO1.setCurriculumEndDate(convertDate(source.getCurriculum1EndDate()));
-
+*/
                         ProgrammeMembershipDTO programmeMembershipDTO2 = new ProgrammeMembershipDTO();
                         programmeMembershipDTO2.setProgrammeMembershipType(programmeMembershipType);
                         programmeMembershipDTO2.setProgrammeEndDate(programmeEndDate);
-                        programmeMembershipDTO2.setCurriculumStartDate(convertDate(source.getCurriculum2StartDate()));
+                       /* programmeMembershipDTO2.setCurriculumStartDate(convertDate(source.getCurriculum2StartDate()));
                         programmeMembershipDTO2.setCurriculumEndDate(convertDate(source.getCurriculum2EndDate()));
-
+*/
                         ProgrammeMembershipDTO programmeMembershipDTO3 = new ProgrammeMembershipDTO();
                         programmeMembershipDTO3.setProgrammeMembershipType(programmeMembershipType);
                         programmeMembershipDTO3.setProgrammeEndDate(programmeEndDate);
-                        programmeMembershipDTO3.setCurriculumStartDate(convertDate(source.getCurriculum3StartDate()));
+  /*                      programmeMembershipDTO3.setCurriculumStartDate(convertDate(source.getCurriculum3StartDate()));
                         programmeMembershipDTO3.setCurriculumEndDate(convertDate(source.getCurriculum3EndDate()));
-
+*/
                         //links the programme membership to each curricula
                         ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDTO1 = new ProgrammeMembershipCurriculaDTO();
                         programmeMembershipCurriculaDTO1.setCurriculumDTO(curriculumDTO1);
