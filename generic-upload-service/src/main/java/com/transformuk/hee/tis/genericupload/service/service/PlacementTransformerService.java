@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -102,12 +103,12 @@ public class PlacementTransformerService {
 				pbdMapByPH = pbdDtoFetcher.findWithKeys(personIds);
 			}
 
-			Set<String> placementNPNs = placementXLSS.stream() //TODO NPNs are blank here !
+			Set<String> placementNPNs = placementXLSS.stream()
 					.map(PlacementXLS::getNationalPostNumber)
+					.filter(Objects::nonNull)
 					.collect(Collectors.toSet());
-			Map<String, PostDTO> postsMappedByNPNs = postFetcher.findWithKeys(placementNPNs); //TODO filter posts CURRENT/INACTIVE
-			Set<String> duplicateNPNKeys = postFetcher.getDuplicateKeys();
-
+			Map<String, PostDTO> postsMappedByNPNs = !placementNPNs.isEmpty() ? postFetcher.findWithKeys(placementNPNs) : new HashMap<>();//TODO filter posts CURRENT/INACTIVE
+			Set<String> duplicateNPNKeys = !placementNPNs.isEmpty() ? postFetcher.getDuplicateKeys() : new HashSet<>();
 
 			Map<String, SiteDTO> siteMapByName = getSiteDTOMap(placementXLSS);
 			Map<String, GradeDTO> gradeMapByName = getGradeDTOMap(placementXLSS);
@@ -136,7 +137,9 @@ public class PlacementTransformerService {
 				}
 
 				String nationalPostNumber = placementXLS.getNationalPostNumber();
-				if(duplicateNPNKeys.contains(nationalPostNumber)) {
+				if(nationalPostNumber == null) {
+					placementXLS.addErrorMessage("National Post number is mandatory");
+				} else if(duplicateNPNKeys.contains(nationalPostNumber)) {
 					placementXLS.addErrorMessage("Multiple posts found for National Post Number : " + nationalPostNumber);
 				} else if(!postsMappedByNPNs.containsKey(nationalPostNumber)) {
 					placementXLS.addErrorMessage("Could not find post by National Post Number : " + nationalPostNumber);
