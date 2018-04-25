@@ -27,8 +27,14 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -43,7 +49,7 @@ public class PersonTransformerService {
 	private static final Logger logger = getLogger(PersonTransformerService.class);
 
 	private static final String REG_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number (%s) identified as duplicate in uploaded file";
-	private static final String REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for %s does not match surname in TIS";
+	private static final String REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for %s Number does not match surname in TIS";
 	private static final String REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS = "Registration number (%s) exists on multiple records in TIS";
 	private static final String PROGRAMME_NOT_FOUND = "Programme not found for programme name (%1$s) and programme number (%2$s)";
 	private static final String PROGRAMME_NAME_NOT_SPECIFIED = "Programme name (%s) has not been specified. Both programme name and number are needed to identify the programme";
@@ -52,6 +58,13 @@ public class PersonTransformerService {
 	private static final String PROGRAMME_MEMBERSHIP_DUPLICATED = "Programme Membership already exists for curriculum with curriculum start date (%1$s) and end date (%2$s)";
 	private static final String CURRICULUM_NOT_FOUND = "Curriculum not found : ";
 	private static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for : ";
+
+	private static final String GDC = "GDC";
+	private static final String GMC = "GMC";
+	private static final String PHN = "PHN";
+
+	public static final String UNKNOWN = "unknown";
+	public static final String FOUND_UNKNOWN_REG_NUMBERS_IN_XML_FILE_UPLOADED_ADDING_TO_TIS = "Found {} unknown reg numbers in xml file uploaded. Adding to TIS";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -85,53 +98,73 @@ public class PersonTransformerService {
 		//TODO determine what to do if
 		Set<PersonXLS> unknownRegNumbers = personXLSS.stream()
 				.filter(personXLS ->
-						"unknown".equalsIgnoreCase(personXLS.getGmcNumber()) ||
-								"unknown".equalsIgnoreCase(personXLS.getGdcNumber()) ||
-								"unknown".equalsIgnoreCase(personXLS.getPublicHealthNumber()))
+						UNKNOWN.equalsIgnoreCase(personXLS.getGmcNumber()) ||
+						UNKNOWN.equalsIgnoreCase(personXLS.getGdcNumber()) ||
+						UNKNOWN.equalsIgnoreCase(personXLS.getPublicHealthNumber()))
 				.collect(Collectors.toSet());
-		logger.info("Found {} unknown reg numbers in xml file uploaded. Adding to TIS", unknownRegNumbers.size());
+		logger.info(FOUND_UNKNOWN_REG_NUMBERS_IN_XML_FILE_UPLOADED_ADDING_TO_TIS, unknownRegNumbers.size());
 		return unknownRegNumbers;
+	}
+
+	<DTO> Set<Long> getIdsFromRegNumberDTOsMap(Set<PersonXLS> knownRegNumbersInTIS, Map<String, DTO> regNumberMap, Function<PersonXLS, String> getRegNumberFromXLS, Function<DTO, Long> getId) {
+		return knownRegNumbersInTIS.stream()
+				.map(personXLS -> getId.apply(regNumberMap.get(getRegNumberFromXLS.apply(personXLS))))
+				.collect(Collectors.toSet());
+	}
+
+	<DTO> Set<PersonXLS> getKnownRegNumbersInTIS(List<PersonXLS> rowsWithRegNumbers,
+	                                             Function<PersonXLS, String> getRegNumberFunction,
+	                                             Map<String, DTO> regNumberMap,
+	                                             Map<Long, PersonBasicDetailsDTO> pbdMapByRegNumber,
+	                                             Function<DTO, Long> getIdFunction,
+	                                             String registrationNumberString) {
+		Set<PersonXLS> knownRegNumbersInTIS = new HashSet<>();
+		for (PersonXLS personXLS : rowsWithRegNumbers) {
+			String regNumber = getRegNumberFunction.apply(personXLS);
+			if (regNumberMap.containsKey(regNumber)) {
+				Long id = getIdFunction.apply(regNumberMap.get(regNumber));
+				if (pbdMapByRegNumber.get(id).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
+					knownRegNumbersInTIS.add(personXLS);
+				} else {
+					personXLS.addErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, registrationNumberString));
+				}
+			}
+		}
+		return knownRegNumbersInTIS;
+	}
+
+	<KEY_TYPE> void updateDatastoreWithRowsFromXLS(Map<String, PersonDTO> regNumberToPersonDTOFromXLSMap, Map<KEY_TYPE, PersonDTO> personDTOMapFromTCS, Map<String, PersonXLS> regNumberToPersonXLSMap) {
+		for (String key : regNumberToPersonDTOFromXLSMap.keySet()) {
+			PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
+			PersonDTO personDTOFromXLS = regNumberToPersonDTOFromXLSMap.get(key);
+			if (personDTOFromXLS != null) {
+				overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
+				updateOrRecordError(personDTOFromDB, personDTOFromXLS, regNumberToPersonXLSMap.get(key));
+			}
+		}
 	}
 
 	private void addOrUpdatePHRecords(List<PersonXLS> personXLSS) {
 		//check whether a PH record exists in TIS
 		Function<PersonXLS, String> getPhNumber = PersonXLS::getPublicHealthNumber;
 		List<PersonXLS> rowsWithPHNumbers = getRowsWithRegistrationNumberForPeople(personXLSS, getPhNumber);
-		flagAndEliminateDuplicates(rowsWithPHNumbers, getPhNumber, "PHN");
+		flagAndEliminateDuplicates(rowsWithPHNumbers, getPhNumber, PHN);
 
 		Set<String> phNumbers = collectRegNumbers(rowsWithPHNumbers, getPhNumber);
 		Map<String, PersonDTO> phnDetailsMap = peopleByPHNFetcher.findWithKeys(phNumbers);
 
 		Function<PersonDTO, String> personDTOToPHNID = PersonDTO::getPublicHealthNumber;
-		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithPHNumbers, getPhNumber, peopleByPHNFetcher.getDuplicateKeys(), String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, "PHN"));
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithPHNumbers, getPhNumber, peopleByPHNFetcher.getDuplicateKeys(), String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, PHN));
 
 		if (!phnDetailsMap.isEmpty()) {
 			Set<Long> personIds = peopleByPHNFetcher.extractIds(phnDetailsMap, PersonDTO::getId);
 			Map<Long, PersonBasicDetailsDTO> pbdMapByPH = pbdDtoFetcher.findWithKeys(personIds);
-
-			Set<PersonXLS> knownPHsInTIS = new HashSet<>();
-			for (PersonXLS personXLS : rowsWithPHNumbers) {
-				String phNumber = getPhNumber.apply(personXLS);
-				if (phnDetailsMap.containsKey(phNumber)) {
-					if (pbdMapByPH.get(phnDetailsMap.get(phNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
-						knownPHsInTIS.add(personXLS);
-					} else {
-						personXLS.addErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "Public Health Number"));
-					}
-				}
-			}
+			Set<PersonXLS> knownPHsInTIS = getKnownRegNumbersInTIS(rowsWithPHNumbers, getPhNumber, phnDetailsMap, pbdMapByPH, PersonDTO::getId, "Public Health");
 
 			Map<String, PersonDTO> phNumberToPersonDTOFromXLSMap = getRegNumberToPersonDTOFromXLSMap(personDTOToPHNID, knownPHsInTIS);
 			Map<String, PersonXLS> phnToPersonXLSMap = getRegNumberToPersonXLSMap(getPhNumber, knownPHsInTIS);
 
-			for (String key : phNumberToPersonDTOFromXLSMap.keySet()) {
-				PersonDTO personDTOFromDB = phnDetailsMap.get(key);
-				PersonDTO personDTOFromXLS = phNumberToPersonDTOFromXLSMap.get(key);
-				if (personDTOFromXLS != null) {
-					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
-					updateOrRecordError(personDTOFromDB, personDTOFromXLS, phnToPersonXLSMap.get(key));
-				}
-			}
+			updateDatastoreWithRowsFromXLS(phNumberToPersonDTOFromXLSMap, phnDetailsMap, phnToPersonXLSMap);
 		}
 
 		addPersons(getRegNumbersNotInTCS(rowsWithPHNumbers, phnDetailsMap.keySet()));
@@ -141,48 +174,27 @@ public class PersonTransformerService {
 		//check whether a GDC record exists in TIS
 		Function<PersonXLS, String> getGdcNumber = PersonXLS::getGdcNumber;
 		List<PersonXLS> rowsWithGDCNumbers = getRowsWithRegistrationNumberForPeople(personXLSS, getGdcNumber);
-		flagAndEliminateDuplicates(rowsWithGDCNumbers, getGdcNumber, "GDC");
+		flagAndEliminateDuplicates(rowsWithGDCNumbers, getGdcNumber, GDC);
 
 		Set<String> gdcNumbers = collectRegNumbers(rowsWithGDCNumbers, getGdcNumber);
 		Map<String, GdcDetailsDTO> gdcDetailsMap = gdcDtoFetcher.findWithKeys(gdcNumbers);
-		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGDCNumbers, getGdcNumber, gdcDtoFetcher.getDuplicateKeys(), String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, "GDC"));
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGDCNumbers, getGdcNumber, gdcDtoFetcher.getDuplicateKeys(), String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, GDC));
 
 		if (!gdcDetailsMap.isEmpty()) {
 			Set<Long> personIdsFromGDCDetailsTable = gdcDtoFetcher.extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
 			Map<Long, PersonBasicDetailsDTO> pbdMapByGDC = pbdDtoFetcher.findWithKeys(personIdsFromGDCDetailsTable);
-
-			Set<PersonXLS> knownGDCsInTIS = new HashSet<>();
-			for (PersonXLS personXLS : rowsWithGDCNumbers) {
-				String gdcNumber = getGdcNumber.apply(personXLS);
-				if (gdcDetailsMap.containsKey(gdcNumber)) {
-					if (pbdMapByGDC.get(gdcDetailsMap.get(gdcNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
-						knownGDCsInTIS.add(personXLS);
-					} else {
-						personXLS.addErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "GDC Number"));
-					}
-				}
-			}
+			Set<PersonXLS> knownGDCsInTIS = getKnownRegNumbersInTIS(rowsWithGDCNumbers, getGdcNumber, gdcDetailsMap, pbdMapByGDC, GdcDetailsDTO::getId, GDC);
 
 			//deep compare and update if necessary
 			Function<PersonDTO, String> personDTOToGdcID = personDTO -> personDTO.getGdcDetails().getGdcNumber();
 			Map<String, PersonDTO> gdcNumberToPersonDTOFromXLSMap = getRegNumberToPersonDTOFromXLSMap(personDTOToGdcID, knownGDCsInTIS);
 
-			Set<Long> personIds = knownGDCsInTIS.stream()
-					.map(personXLS -> gdcDetailsMap.get(personXLS.getGdcNumber()).getId())
-					.collect(Collectors.toSet());
+			Set<Long> personIds = getIdsFromRegNumberDTOsMap(knownGDCsInTIS, gdcDetailsMap, getGdcNumber, GdcDetailsDTO::getId);
 
 			Map<Long, PersonDTO> personDTOMapFromTCS = peopleFetcher.setIdMappingFunction(personDTOToGdcID).findWithKeys(personIds);
 			Map<String, PersonXLS> gdcToPersonXLSMap = getRegNumberToPersonXLSMap(getGdcNumber, knownGDCsInTIS);
 
-			//now that we have both lets copy updated data
-			for (String key : gdcNumberToPersonDTOFromXLSMap.keySet()) {
-				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
-				PersonDTO personDTOFromXLS = gdcNumberToPersonDTOFromXLSMap.get(key);
-				if (personDTOFromXLS != null) {
-					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
-					updateOrRecordError(personDTOFromDB, personDTOFromXLS, gdcToPersonXLSMap.get(key));
-				}
-			}
+			updateDatastoreWithRowsFromXLS(gdcNumberToPersonDTOFromXLSMap, personDTOMapFromTCS, gdcToPersonXLSMap);
 		}
 
 		addPersons(getRegNumbersNotInTCS(rowsWithGDCNumbers, gdcDetailsMap.keySet()));
@@ -192,48 +204,27 @@ public class PersonTransformerService {
 		//check whether a GMC record exists in TIS
 		Function<PersonXLS, String> getGmcNumber = PersonXLS::getGmcNumber;
 		List<PersonXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumberForPeople(personXLSS, getGmcNumber);
-		flagAndEliminateDuplicates(rowsWithGMCNumbers, getGmcNumber, "GMC");
+		flagAndEliminateDuplicates(rowsWithGMCNumbers, getGmcNumber, GMC);
 
 		Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
 		Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithKeys(gmcNumbers);
-		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGMCNumbers, getGmcNumber, gmcDtoFetcher.getDuplicateKeys(), String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, "GMC"));
+		setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(rowsWithGMCNumbers, getGmcNumber, gmcDtoFetcher.getDuplicateKeys(), String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, GMC));
 
 		if (!gmcDetailsMap.isEmpty()) {
 			Set<Long> personIdsFromGMCDetailsTable = gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
 			Map<Long, PersonBasicDetailsDTO> pbdMapByGMC = pbdDtoFetcher.findWithKeys(personIdsFromGMCDetailsTable);
-
-			Set<PersonXLS> knownGMCsInTIS = new HashSet<>();
-			for (PersonXLS personXLS : rowsWithGMCNumbers) {
-				String gmcNumber = getGmcNumber.apply(personXLS);
-				if (gmcDetailsMap.containsKey(gmcNumber)) {
-					if (pbdMapByGMC.get(gmcDetailsMap.get(gmcNumber).getId()).getLastName().equalsIgnoreCase(personXLS.getSurname())) {
-						knownGMCsInTIS.add(personXLS);
-					} else {
-						personXLS.addErrorMessage(String.format(REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS, "GMC Number"));
-					}
-				}
-			}
+			Set<PersonXLS> knownGMCsInTIS = getKnownRegNumbersInTIS(rowsWithGMCNumbers, getGmcNumber, gmcDetailsMap, pbdMapByGMC, GmcDetailsDTO::getId, GMC);
 
 			//deep compare and update if necessary
 			Function<PersonDTO, String> personDTOToGmcID = personDTO -> personDTO.getGmcDetails().getGmcNumber();
 			Map<String, PersonDTO> gmcNumberToPersonDTOFromXLSMap = getRegNumberToPersonDTOFromXLSMap(personDTOToGmcID, knownGMCsInTIS);
 
-			Set<Long> personIds = knownGMCsInTIS.stream()
-					.map(personXLS -> gmcDetailsMap.get(personXLS.getGmcNumber()).getId())
-					.collect(Collectors.toSet());
-
+			Set<Long> personIds = getIdsFromRegNumberDTOsMap(knownGMCsInTIS, gmcDetailsMap, getGmcNumber, GmcDetailsDTO::getId);
 			Map<Long, PersonDTO> personDTOMapFromTCS = peopleFetcher.setIdMappingFunction(personDTOToGmcID).findWithKeys(personIds);
 			Map<String, PersonXLS> gmcToPersonXLSMap = getRegNumberToPersonXLSMap(getGmcNumber, knownGMCsInTIS);
 
 			//now that we have both lets copy updated data
-			for (String key : gmcNumberToPersonDTOFromXLSMap.keySet()) {
-				PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
-				PersonDTO personDTOFromXLS = gmcNumberToPersonDTOFromXLSMap.get(key);
-				if (personDTOFromXLS != null) {
-					overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
-					updateOrRecordError(personDTOFromDB, personDTOFromXLS, gmcToPersonXLSMap.get(key));
-				}
-			}
+			updateDatastoreWithRowsFromXLS(gmcNumberToPersonDTOFromXLSMap, personDTOMapFromTCS, gmcToPersonXLSMap);
 		}
 
 		addPersons(getRegNumbersNotInTCS(rowsWithGMCNumbers, gmcDetailsMap.keySet()));

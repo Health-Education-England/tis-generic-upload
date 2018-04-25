@@ -1,11 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
-import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
-import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetcher;
-import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
-import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
-import com.transformuk.hee.tis.genericupload.service.service.fetcher.PostFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.*;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
@@ -26,16 +22,17 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
-import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -43,6 +40,27 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Component
 public class PlacementTransformerService {
 	private static final Logger logger = getLogger(PlacementTransformerService.class);
+	
+	public static final String FIRST_NAME_DOES_NOT_MATCH_FIRST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "First name does not match first name obtained via registration number";
+	public static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
+	public static final String NATIONAL_POST_NUMBER_IS_MANDATORY = "National Post number is mandatory";
+	public static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts found for National Post Number : ";
+	public static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by National Post Number : ";
+	public static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER = "POST status is set to DELETE for National Post Number : ";
+	public static final String MULTIPLE_PLACEMENTS_FOUND_FOR_POST_WITH_ID_1$S_AND_PERSON_WITH_ID_2$S = "Multiple placements found for post with id (%1$s) and person with id (%2$s)";
+	public static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER = "Did not find a person for registration number : ";
+	public static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name : ";
+	public static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
+	public static final String FROM_DATE_DOES_NOT_MATCH_EXISTING_PLACEMENT = "From date does not match existing placement";
+	public static final String TO_DATE_DOES_NOT_MATCH_EXISTING_PLACEMENT = "To date does not match existing placement";
+	public static final String PLACEMENT_FROM_DATE_IS_MANDATORY = "Placement from date is mandatory";
+	public static final String PLACEMENT_TO_DATE_IS_MANDATORY = "Placement to date is mandatory";
+	public static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
+	public static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
+	public static final String WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY = "Whole Time Equivalent (WTE) is mandatory";
+	public static final String PLACEMENT_TYPE_IS_MANDATORY = "Placement Type is mandatory";
+	public static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : {}";
+	public static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : {}";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -54,6 +72,9 @@ public class PlacementTransformerService {
 	private PersonBasicDetailsDTOFetcher pbdDtoFetcher;
 	private PeopleByPHNFetcher peopleByPHNFetcher;
 	private PostFetcher postFetcher;
+	Function<PlacementXLS, String> getPhNumber = PlacementXLS::getPublicHealthNumber;
+	Function<PlacementXLS, String> getGdcNumber = PlacementXLS::getGdcNumber;
+	Function<PlacementXLS, String> getGmcNumber = PlacementXLS::getGmcNumber;
 
 	@PostConstruct
 	public void initialiseFetchers() {
@@ -64,97 +85,86 @@ public class PlacementTransformerService {
 		this.postFetcher = new PostFetcher(tcsServiceImpl);
 	}
 
-	public void processPlacementsUpload(List<PlacementXLS> placementXLSS) {
+	<DTO> Map<String, DTO> buildRegNumberDetailsMap(List<PlacementXLS> placementXLSS, Function<PlacementXLS, String> getRegNumberFunction, DTOFetcher<String, DTO> fetcher) {
+		return fetcher.findWithKeys(
+						collectRegNumbersForPlacements(
+								getRowsWithRegistrationNumberForPlacements(placementXLSS, getRegNumberFunction),
+								getRegNumberFunction));
+	}
+
+	<DTO> Map<Long, PersonBasicDetailsDTO> buildPersonBasicDetailsMapForRegNumber(Map<String, DTO> regNumberMap, DTOFetcher<String, DTO> idExtractingFetcher, Function<DTO, Long> getId) {
+		return regNumberMap.isEmpty() ? null : pbdDtoFetcher.findWithKeys(idExtractingFetcher.extractIds(regNumberMap, getId));
+	}
+
+	void processPlacementsUpload(List<PlacementXLS> placementXLSS) {
+
 		placementXLSS.forEach(PlacementXLS::initialiseSuccessfullyImported);
 
 		if (!CollectionUtils.isEmpty(placementXLSS)) {
-			Function<PlacementXLS, String> getPhNumber = PlacementXLS::getPublicHealthNumber;
-			Function<PlacementXLS, String> getGdcNumber = PlacementXLS::getGdcNumber;
-			Function<PlacementXLS, String> getGmcNumber = PlacementXLS::getGmcNumber;
+			Map<String, PersonDTO> phnDetailsMap = buildRegNumberDetailsMap(placementXLSS, getPhNumber, peopleByPHNFetcher);
+			Map<Long, PersonBasicDetailsDTO> pbdMapByPH = buildPersonBasicDetailsMapForRegNumber(phnDetailsMap, peopleByPHNFetcher, PersonDTO::getId);
 
-			List<PlacementXLS> rowsWithPHNumbers = getRowsWithRegistrationNumberForPlacements(placementXLSS, getPhNumber);
-			List<PlacementXLS> rowsWithGDCNumbers = getRowsWithRegistrationNumberForPlacements(placementXLSS, getGdcNumber);
-			List<PlacementXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumberForPlacements(placementXLSS, getGmcNumber);
+			Map<String, GdcDetailsDTO> gdcDetailsMap = buildRegNumberDetailsMap(placementXLSS, getGdcNumber, gdcDtoFetcher);
+			Map<Long, PersonBasicDetailsDTO> pbdMapByGDC = buildPersonBasicDetailsMapForRegNumber(gdcDetailsMap, gdcDtoFetcher, GdcDetailsDTO::getId);
 
-			Set<String> phNumbers = collectRegNumbersForPlacements(rowsWithPHNumbers, getPhNumber);
-			Set<String> gdcNumbers = collectRegNumbersForPlacements(rowsWithGDCNumbers, getGdcNumber);
-			Set<String> gmcNumbers = collectRegNumbersForPlacements(rowsWithGMCNumbers, getGmcNumber);
+			Map<String, GmcDetailsDTO> gmcDetailsMap = buildRegNumberDetailsMap(placementXLSS, getGmcNumber, gmcDtoFetcher);
+			Map<Long, PersonBasicDetailsDTO> pbdMapByGMC = buildPersonBasicDetailsMapForRegNumber(gmcDetailsMap, gmcDtoFetcher, GmcDetailsDTO::getId);
 
-			Map<String, PersonDTO> phnDetailsMap = peopleByPHNFetcher.findWithKeys(phNumbers);
-			Map<String, GdcDetailsDTO> gdcDetailsMap = gdcDtoFetcher.findWithKeys(gdcNumbers);
-			Map<String, GmcDetailsDTO> gmcDetailsMap = gmcDtoFetcher.findWithKeys(gmcNumbers);
-
-			Map<Long, PersonBasicDetailsDTO> pbdMapByGDC = null;
-			if (!gdcDetailsMap.isEmpty()) {
-				Set<Long> personIdsFromGDCDetailsTable = gdcDtoFetcher.extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
-				pbdMapByGDC = pbdDtoFetcher.findWithKeys(personIdsFromGDCDetailsTable);
-			}
-
-			Map<Long, PersonBasicDetailsDTO> pbdMapByGMC = null;
-			if (!gmcDetailsMap.isEmpty()) {
-				Set<Long> personIdsFromGMCDetailsTable = gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
-				pbdMapByGMC = pbdDtoFetcher.findWithKeys(personIdsFromGMCDetailsTable);
-			}
-
-			Map<Long, PersonBasicDetailsDTO> pbdMapByPH = null;
-			if (!phnDetailsMap.isEmpty()) {
-				Set<Long> personIds = peopleByPHNFetcher.extractIds(phnDetailsMap, PersonDTO::getId);
-				pbdMapByPH = pbdDtoFetcher.findWithKeys(personIds);
-			}
-
-			Set<String> placementNPNs = placementXLSS.stream() //TODO NPNs are blank here !
+			Set<String> placementNPNs = placementXLSS.stream()
 					.map(PlacementXLS::getNationalPostNumber)
+					.filter(Objects::nonNull)
 					.collect(Collectors.toSet());
-			Map<String, PostDTO> postsMappedByNPNs = postFetcher.findWithKeys(placementNPNs); //TODO filter posts CURRENT/INACTIVE
-			Set<String> duplicateNPNKeys = postFetcher.getDuplicateKeys();
-
+			Map<String, PostDTO> postsMappedByNPNs = !placementNPNs.isEmpty() ? postFetcher.findWithKeys(placementNPNs) : new HashMap<>();//TODO filter posts CURRENT/INACTIVE
+			Set<String> duplicateNPNKeys = !placementNPNs.isEmpty() ? postFetcher.getDuplicateKeys() : new HashSet<>();
 
 			Map<String, SiteDTO> siteMapByName = getSiteDTOMap(placementXLSS);
 			Map<String, GradeDTO> gradeMapByName = getGradeDTOMap(placementXLSS);
 
-			for(PlacementXLS placementXLS : placementXLSS) {
-				Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = null;
+			for (PlacementXLS placementXLS : placementXLSS) {
+				Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = Optional.empty();
 				PersonBasicDetailsDTO personBasicDetailsDTO = null;
-				if(!StringUtils.isEmpty(getGdcNumber.apply(placementXLS))) {
-					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getGdcNumber, gdcDetailsMap, pbdMapByGDC, placementXLS);
-				} else if(!StringUtils.isEmpty(getGmcNumber.apply(placementXLS))) {
-					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getGmcNumber, gmcDetailsMap, pbdMapByGMC, placementXLS);
-				} else if(!StringUtils.isEmpty(getPhNumber.apply(placementXLS))) {
-					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getPhNumber, phnDetailsMap, pbdMapByPH, placementXLS);
+				if (!StringUtils.isEmpty(getGdcNumber.apply(placementXLS))) {
+					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getGdcNumber, gdcDetailsMap, pbdMapByGDC, placementXLS, GdcDetailsDTO::getId);
+				} else if (!StringUtils.isEmpty(getGmcNumber.apply(placementXLS))) {
+					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getGmcNumber, gmcDetailsMap, pbdMapByGMC, placementXLS, GmcDetailsDTO::getId);
+				} else if (!StringUtils.isEmpty(getPhNumber.apply(placementXLS))) {
+					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getPhNumber, phnDetailsMap, pbdMapByPH, placementXLS, PersonDTO::getId);
 				}
-				if(personBasicDetailsDTOOptional != null && personBasicDetailsDTOOptional.isPresent()) {
+				if (personBasicDetailsDTOOptional != null && personBasicDetailsDTOOptional.isPresent()) {
 					personBasicDetailsDTO = personBasicDetailsDTOOptional.get();
 				}
-				if(personBasicDetailsDTO != null) {
-					if(!placementXLS.getForenames().equalsIgnoreCase(personBasicDetailsDTO.getFirstName())) {
-						placementXLS.addErrorMessage("First name does not match first name obtained via registration number");
+				if (personBasicDetailsDTO != null) {
+					if (!placementXLS.getForenames().equalsIgnoreCase(personBasicDetailsDTO.getFirstName())) {
+						placementXLS.addErrorMessage(FIRST_NAME_DOES_NOT_MATCH_FIRST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER);
 					}
 
-					if(!placementXLS.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
-						placementXLS.addErrorMessage("Surname does not match last name obtained via registration number");
+					if (!placementXLS.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
+						placementXLS.addErrorMessage(SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER);
 					}
 				}
 
 				String nationalPostNumber = placementXLS.getNationalPostNumber();
-				if(duplicateNPNKeys.contains(nationalPostNumber)) {
-					placementXLS.addErrorMessage("Multiple posts found for National Post Number : " + nationalPostNumber);
-				} else if(!postsMappedByNPNs.containsKey(nationalPostNumber)) {
-					placementXLS.addErrorMessage("Could not find post by National Post Number : " + nationalPostNumber);
+				if(nationalPostNumber == null) {
+					placementXLS.addErrorMessage(NATIONAL_POST_NUMBER_IS_MANDATORY);
+				} else if(duplicateNPNKeys.contains(nationalPostNumber)) {
+					placementXLS.addErrorMessage(MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
+				} else if (!postsMappedByNPNs.containsKey(nationalPostNumber)) {
+					placementXLS.addErrorMessage(COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER + nationalPostNumber);
 				} else {
 					PostDTO postDTO = postsMappedByNPNs.get(nationalPostNumber);
-					if(postDTO != null && personBasicDetailsDTO != null) {
-						if("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
-							placementXLS.addErrorMessage("POST status is set to DELETE for National Post Number : " + nationalPostNumber);
+					if (postDTO != null && personBasicDetailsDTO != null) {
+						if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
+							placementXLS.addErrorMessage(POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
 						} else {
 							List<PlacementDetailsDTO> placementsByPostIdAndPersonId = tcsServiceImpl.getPlacementsByPostIdAndPersonId(postDTO.getId(), personBasicDetailsDTO.getId());
-							if(placementsByPostIdAndPersonId.isEmpty()) {
+							if (placementsByPostIdAndPersonId.isEmpty()) {
 								PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
 								placementDTO.setTraineeId(personBasicDetailsDTO.getId());
 								placementDTO.setPostId(postDTO.getId());
 								saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, false);
 							} else {
-								if(placementsByPostIdAndPersonId.size() > 1) { //TODO validate this is ok - seem like we have to iterate and find at least one that matches dates - if not error
-									placementXLS.addErrorMessage(String.format("Multiple placements found for post with id (%1$s) and person with id (%2$s)", postDTO.getId(), personBasicDetailsDTO.getId()));
+								if (placementsByPostIdAndPersonId.size() > 1) { //TODO validate this is ok - seem like we have to iterate and find at least one that matches dates - if not error
+									placementXLS.addErrorMessage(String.format(MULTIPLE_PLACEMENTS_FOUND_FOR_POST_WITH_ID_1$S_AND_PERSON_WITH_ID_2$S, postDTO.getId(), personBasicDetailsDTO.getId()));
 								} else {
 									PlacementDetailsDTO placementDTO = placementsByPostIdAndPersonId.get(0);
 									saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, true);
@@ -172,8 +182,8 @@ public class PlacementTransformerService {
 		setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
 		setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
 
-		if(!placementXLS.hasErrors()) {
-			if(updatePlacement) {
+		if (!placementXLS.hasErrors()) {
+			if (updatePlacement) {
 				tcsServiceImpl.updatePlacement(placementDTO);
 			} else {
 				tcsServiceImpl.createPlacement(placementDTO);
@@ -182,32 +192,24 @@ public class PlacementTransformerService {
 		}
 	}
 
-	public Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDTO(Function<PlacementXLS, String> getRegNumber, Map<String, ? extends Object> regNumberDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByRegNumber, PlacementXLS placementXLS) {
-		Object regNumberDTO = regNumberDetailsMap.get(getRegNumber.apply(placementXLS));
-		if(regNumberDTO != null) {
-			try {
-				Method method = regNumberDTO.getClass().getMethod("getId");
-				Long id = (Long) method.invoke(regNumberDTO);
-				if (id != null) {
-					return Optional.of(pbdMapByRegNumber.get(id));
-				}
-			} catch (ReflectiveOperationException e) {
-				logger.error("Unexpected exception : " + e.getMessage());
-			}
+	<DTO> Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDTO(Function<PlacementXLS, String> getRegNumber, Map<String, DTO> regNumberDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByRegNumber, PlacementXLS placementXLS, Function<DTO, Long> getId) {
+		DTO regNumberDTO = regNumberDetailsMap.get(getRegNumber.apply(placementXLS));
+		if (regNumberDTO != null) {
+			return Optional.of(pbdMapByRegNumber.get(getId.apply(regNumberDTO)));
+		} else {
+			placementXLS.addErrorMessage(DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER + getRegNumber.apply(placementXLS));
+			return Optional.empty();
 		}
-
-		placementXLS.addErrorMessage("Did not find a person for registration number : " + getRegNumber.apply(placementXLS));
-		return Optional.empty();
 	}
 
 	public void setSpecialties(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName) {
 		Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = placementDTO.getSpecialties();
-		if(placementSpecialtyDTOS == null) {
+		if (placementSpecialtyDTOS == null) {
 			placementSpecialtyDTOS = initialiseNewPlacementSpecialtyDTOS(placementDTO);
 		}
 
 		Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional1 = buildPlacementSpecialtyDTO(placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty1(), true);
-		if(placementSpecialtyDTOOptional1.isPresent()) {
+		if (placementSpecialtyDTOOptional1.isPresent()) {
 			placementSpecialtyDTOS = initialiseNewPlacementSpecialtyDTOS(placementDTO);
 
 			PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
@@ -215,13 +217,13 @@ public class PlacementTransformerService {
 		}
 
 		Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty2(), false);
-		if(placementSpecialtyDTOOptional2.isPresent()) {
+		if (placementSpecialtyDTOOptional2.isPresent()) {
 			PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
 			addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
 		}
 
 		Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(), false);
-		if(placementSpecialtyDTOOptional3.isPresent()) {
+		if (placementSpecialtyDTOOptional3.isPresent()) {
 			PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
 			addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
 		}
@@ -234,23 +236,23 @@ public class PlacementTransformerService {
 	}
 
 	public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS, PlacementSpecialtyDTO placementSpecialtyDTO) {
-		if(placementSpecialtyDTOS.size() == 0) {
+		if (placementSpecialtyDTOS.size() == 0) {
 			placementSpecialtyDTOS.add(placementSpecialtyDTO);
-		} else if(!placementSpecialtyDTOS.contains(placementSpecialtyDTO)) {
+		} else if (!placementSpecialtyDTOS.contains(placementSpecialtyDTO)) {
 			placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
 			placementSpecialtyDTOS.add(placementSpecialtyDTO);
 		}
 	}
 
 	public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName, String specialtyName, boolean primary) {
-		if(!StringUtils.isEmpty(specialtyName)) {
+		if (!StringUtils.isEmpty(specialtyName)) {
 			List<SpecialtyDTO> specialtyByName = getSpecialtyDTOsForName.apply(specialtyName);
-			if(specialtyByName != null) {
+			if (specialtyByName != null) {
 				if (specialtyByName.size() != 1) {
 					if (specialtyByName.size() == 0) {
-						placementXLS.addErrorMessage("Did not find specialty for name : " + specialtyName);
+						placementXLS.addErrorMessage(DID_NOT_FIND_SPECIALTY_FOR_NAME + specialtyName);
 					} else {
-						placementXLS.addErrorMessage("Found multiple specialties for name : " + specialtyName);
+						placementXLS.addErrorMessage(FOUND_MULTIPLE_SPECIALTIES_FOR_NAME + specialtyName);
 					}
 				} else {
 					SpecialtyDTO specialtyDTO = specialtyByName.get(0);
@@ -277,35 +279,35 @@ public class PlacementTransformerService {
 	}
 
 	public void setDatesOrRecordError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, boolean updatePlacement) {
-		if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
+		if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
 			LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
 			LocalDate dateTo = convertDate(placementXLS.getDateTo());
 
-			if(updatePlacement) {
+			if (updatePlacement) {
 				if (!dateFrom.equals(placementDTO.getDateFrom())) {
-					placementXLS.addErrorMessage("From date does not match existing placement");
+					placementXLS.addErrorMessage(FROM_DATE_DOES_NOT_MATCH_EXISTING_PLACEMENT);
 				}
 				if (!dateTo.equals(placementDTO.getDateTo())) {
-					placementXLS.addErrorMessage("To date does not match existing placement");
+					placementXLS.addErrorMessage(TO_DATE_DOES_NOT_MATCH_EXISTING_PLACEMENT);
 				}
 			} else {
 				placementDTO.setDateFrom(dateFrom);
 				placementDTO.setDateTo(dateTo);
 			}
 		} else {
-			if(placementXLS.getDateFrom() == null) {
-				placementXLS.addErrorMessage("Placement from date is mandatory");
+			if (placementXLS.getDateFrom() == null) {
+				placementXLS.addErrorMessage(PLACEMENT_FROM_DATE_IS_MANDATORY);
 			}
-			if(placementXLS.getDateTo() == null) {
-				placementXLS.addErrorMessage("Placement to date is mandatory");
+			if (placementXLS.getDateTo() == null) {
+				placementXLS.addErrorMessage(PLACEMENT_TO_DATE_IS_MANDATORY);
 			}
 		}
 	}
 
 	private void setGradeOrRecordError(Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
 		String grade = placementXLS.getGrade();
-		if(!StringUtils.isEmpty(grade) && !gradeMapByName.containsKey(grade)) {
-			placementXLS.addErrorMessage("Multiple or no grades found for  : " + grade);
+		if (!StringUtils.isEmpty(grade) && !gradeMapByName.containsKey(grade)) {
+			placementXLS.addErrorMessage(MULTIPLE_OR_NO_GRADES_FOUND_FOR + grade);
 		} else {
 			GradeDTO gradeDTO = gradeMapByName.get(grade);
 			placementDTO.setGradeAbbreviation(gradeDTO.getAbbreviation());
@@ -315,8 +317,8 @@ public class PlacementTransformerService {
 
 	private void setSiteOrRecordError(Map<String, SiteDTO> siteMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
 		String site = placementXLS.getSite();
-		if(!StringUtils.isEmpty(site) && !siteMapByName.containsKey(site)) {
-			placementXLS.addErrorMessage("Multiple or no sites found for  : " + site);
+		if (!StringUtils.isEmpty(site) && !siteMapByName.containsKey(site)) {
+			placementXLS.addErrorMessage(MULTIPLE_OR_NO_SITES_FOUND_FOR + site);
 		} else {
 			SiteDTO siteDTO = siteMapByName.get(site);
 			placementDTO.setSiteCode(siteDTO.getSiteCode());
@@ -325,16 +327,16 @@ public class PlacementTransformerService {
 	}
 
 	private void setWTEOrRecordError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
-		if(placementXLS.getWte() == null) {
-			placementXLS.addErrorMessage("Whole Time Equivalent (WTE) is mandatory");
+		if (placementXLS.getWte() == null) {
+			placementXLS.addErrorMessage(WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY);
 		} else {
 			placementDTO.setWholeTimeEquivalent(new Double(placementXLS.getWte()));
 		}
 	}
 
 	private void setPlacementTypeOrRecordError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
-		if(StringUtils.isEmpty(placementXLS.getPlacementType())) {
-			placementXLS.addErrorMessage("Placement Type is mandatory");
+		if (StringUtils.isEmpty(placementXLS.getPlacementType())) {
+			placementXLS.addErrorMessage(PLACEMENT_TYPE_IS_MANDATORY);
 		} else {
 			placementDTO.setPlacementType(placementXLS.getPlacementType());
 		}
@@ -346,12 +348,12 @@ public class PlacementTransformerService {
 				.map(PlacementXLS::getGrade)
 				.collect(Collectors.toSet());
 		Map<String, GradeDTO> gradeMapByName = new HashMap<>();
-		for(String gradeName : gradeNames) {
+		for (String gradeName : gradeNames) {
 			List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
-			if(!gradesByName.isEmpty() && gradesByName.size() == 1) {
+			if (!gradesByName.isEmpty() && gradesByName.size() == 1) {
 				gradeMapByName.put(gradeName, gradesByName.get(0));
 			} else {
-				logger.error("Expected to find a single grade for : {}", gradeName);
+				logger.error(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName);
 			}
 		}
 		return gradeMapByName;
@@ -362,12 +364,12 @@ public class PlacementTransformerService {
 				.map(PlacementXLS::getSite)
 				.collect(Collectors.toSet());
 		Map<String, SiteDTO> siteMapByName = new HashMap<>();
-		for(String siteName : siteNames) {
+		for (String siteName : siteNames) {
 			List<SiteDTO> sitesByName = referenceServiceImpl.findSitesByName(siteName);
-			if(!sitesByName.isEmpty() && sitesByName.size() == 1) {
+			if (!sitesByName.isEmpty() && sitesByName.size() == 1) {
 				siteMapByName.put(siteName, sitesByName.get(0));
 			} else {
-				logger.error("Expected to find a single site for : {}", siteName);
+				logger.error(EXPECTED_TO_FIND_A_SINGLE_SITE_FOR, siteName);
 			}
 		}
 		return siteMapByName;
