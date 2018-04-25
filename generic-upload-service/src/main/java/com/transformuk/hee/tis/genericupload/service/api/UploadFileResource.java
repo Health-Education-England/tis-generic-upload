@@ -4,6 +4,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.microsoft.azure.storage.StorageException;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
+import com.transformuk.hee.tis.genericupload.service.api.validation.ValidationException;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
@@ -112,7 +113,7 @@ public class UploadFileResource {
 			applicationType = uploadFileService.upload(fileList, fileType, profileFromContext.getUserName(), profileFromContext.getFirstName(), profileFromContext.getLastName());
 		} catch (InvalidKeyException | StorageException | URISyntaxException e) {
 			return logAndReturnResponseEntity("Application error while storing the file : ", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}	catch (IOException | ReflectiveOperationException | InvalidFormatException | MethodArgumentNotValidException e) {
+		}	catch (IOException | ReflectiveOperationException | InvalidFormatException | ValidationException e) {
 			return logAndReturnResponseEntity("File uploaded cannot be processed : ", e.getMessage(), HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
 			e.printStackTrace();

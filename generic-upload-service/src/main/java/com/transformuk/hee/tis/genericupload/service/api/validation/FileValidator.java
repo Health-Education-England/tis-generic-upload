@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,7 +43,7 @@ public class FileValidator {
 	 *            The provided files to validate
 	 * @throws MethodArgumentNotValidException
 	 */
-	public FileType validate(List<MultipartFile> files, boolean validateMandatoryFields, boolean validateDates) throws IOException, InvalidFormatException, MethodArgumentNotValidException, ReflectiveOperationException {
+	public FileType validate(List<MultipartFile> files, boolean validateMandatoryFields, boolean validateDates) throws IOException, InvalidFormatException, ValidationException, ReflectiveOperationException {
 		List<FieldError> fieldErrors = new ArrayList<>();
 		FileType fileType = null;
 
@@ -70,13 +71,13 @@ public class FileValidator {
 		return fileType;
 	}
 
-	public void validateMandatoryFieldsOrThrowError(List<MultipartFile> files, List<FieldError> fieldErrors, Class templateXLS, ExcelToObjectMapper excelToObjectMapper, ColumnMapper columnMapper) throws ReflectiveOperationException, MethodArgumentNotValidException {
+	public void validateMandatoryFieldsOrThrowError(List<MultipartFile> files, List<FieldError> fieldErrors, Class templateXLS, ExcelToObjectMapper excelToObjectMapper, ColumnMapper columnMapper) throws ReflectiveOperationException, ValidationException {
 		validateMandatoryFields(fieldErrors, excelToObjectMapper, templateXLS, columnMapper);
 		if (!fieldErrors.isEmpty()) {
-			BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(templateXLS.getSimpleName(), files.get(0).getName());
+			BindingResult bindingResult = new BeanPropertyBindingResult(templateXLS.getSimpleName(), files.get(0).getName());
 			fieldErrors.forEach(bindingResult::addError);
 
-			throw new MethodArgumentNotValidException(null, bindingResult);
+			throw new ValidationException(bindingResult);
 		}
 	}
 

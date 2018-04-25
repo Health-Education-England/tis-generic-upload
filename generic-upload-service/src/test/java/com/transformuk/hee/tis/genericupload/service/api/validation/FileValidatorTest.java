@@ -33,8 +33,8 @@ public class FileValidatorTest {
 	 * @see <a href="http://joel-costigliola.github.io/assertj/assertj-core-features-highlight.html#exception-assertion">Exception assertions guide</a>)
 	 * TODO use guide above to assert the contents after getting past the 500 Response to a proper Spring error
 	 */
-	@Test(expected = MethodArgumentNotValidException.class)
-	public void shouldValidateMandatoryFields() throws ReflectiveOperationException, InvalidFormatException, MethodArgumentNotValidException, IOException {
+	@Test(expected = ValidationException.class)
+	public void shouldValidateMandatoryFields() throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
 		String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
 		String filePath = new ClassPathResource(filename).getURI().getPath();
 		FileInputStream inputStream = new FileInputStream(filePath);
