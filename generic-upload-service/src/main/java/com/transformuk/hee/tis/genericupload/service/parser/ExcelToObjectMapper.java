@@ -62,7 +62,7 @@ public class ExcelToObjectMapper {
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
-        String xlsColumnName = columnMap.get(fieldName.toLowerCase());
+        String xlsColumnName = columnMap.get(fieldName);
         int index;
         if (StringUtils.isNotEmpty(xlsColumnName)) {
           index = getHeaderIndex(xlsColumnName, workbook);

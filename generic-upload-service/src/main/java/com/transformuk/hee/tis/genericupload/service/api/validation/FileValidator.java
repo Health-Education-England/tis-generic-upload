@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,9 +32,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper.getDate;
+
 @Component
 public class FileValidator {
 
+	public static final String DATE_MISSING_ON_MANDATORY_FIELD  = "Date missing or incorrect format on mandatory field (%1$s)";
+	public static final String FIELD_IS_REQUIRED_AT_LINE_NO = "%s Field is required at line no %d ";
 	private final Logger LOG = LoggerFactory.getLogger(UploadFileResource.class);
 
 	/**
@@ -55,10 +60,10 @@ public class FileValidator {
 						Set<String> headers = excelToObjectMapper.getHeaders();
 						if(headers.contains("Placement Type*")) {
 							fileType = FileType.PLACEMENTS;
-							validateMandatoryFieldsOrThrowError(files, fieldErrors, PlacementXLS.class, excelToObjectMapper, new PlacementHeaderMapper());
+							validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementXLS.class, excelToObjectMapper, new PlacementHeaderMapper());
 						} else if(headers.contains("Email Address")) { //TODO do something more robust than this
 							fileType = FileType.PEOPLE;
-							validateMandatoryFieldsOrThrowError(files, fieldErrors, PersonXLS.class, excelToObjectMapper, new PersonHeaderMapper());
+							validateMandatoryFieldsOrThrowException(files, fieldErrors, PersonXLS.class, excelToObjectMapper, new PersonHeaderMapper());
 						} else {
 							throw new InvalidFormatException("Unrecognised upload template");
 						}
@@ -67,11 +72,10 @@ public class FileValidator {
 			}
 		}
 
-
 		return fileType;
 	}
 
-	public void validateMandatoryFieldsOrThrowError(List<MultipartFile> files, List<FieldError> fieldErrors, Class templateXLS, ExcelToObjectMapper excelToObjectMapper, ColumnMapper columnMapper) throws ReflectiveOperationException, ValidationException {
+	public void validateMandatoryFieldsOrThrowException(List<MultipartFile> files, List<FieldError> fieldErrors, Class templateXLS, ExcelToObjectMapper excelToObjectMapper, ColumnMapper columnMapper) throws ReflectiveOperationException, ValidationException {
 		validateMandatoryFields(fieldErrors, excelToObjectMapper, templateXLS, columnMapper);
 		if (!fieldErrors.isEmpty()) {
 			BindingResult bindingResult = new BeanPropertyBindingResult(templateXLS.getSimpleName(), files.get(0).getName());
@@ -107,10 +111,14 @@ public class FileValidator {
 							String value = (String) currentField.get(row);
 							if (StringUtils.isBlank(value)) {
 								fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
-										String.format("%s Field is required at line no %d ", columnNameToMandatoryColumnsMapKey, rowIndex.get())));
+										String.format(FIELD_IS_REQUIRED_AT_LINE_NO, columnNameToMandatoryColumnsMapKey, rowIndex.get())));
 							}
 						} else if(currentField.getType() == Date.class) {
-							//TODO validate Date Fields
+							Date date = (Date) currentField.get(row);//TODO should throw an exception on invalid date
+							if (date == null) {
+								fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
+										String.format(DATE_MISSING_ON_MANDATORY_FIELD, columnNameToMandatoryColumnsMapKey)));
+							}
 						} else if(currentField.getType() == Float.class) {
 							//TODO validate Float Fields
 						}
