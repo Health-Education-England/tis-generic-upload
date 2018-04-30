@@ -493,7 +493,11 @@ public class PersonTransformerService {
 		personDTO.setAddedDate(LocalDateTime.now());
 		personDTO.setInactiveDate(convertDateTime(personXLS.getInactiveDate()));
 		personDTO.setPublicHealthNumber(personXLS.getPublicHealthNumber());
-		personDTO.setStatus(Status.fromString(personXLS.getRecordStatus()));
+		if(!StringUtils.isEmpty(personXLS.getRecordStatus())) {
+			personDTO.setStatus(Status.fromString(personXLS.getRecordStatus()));
+		} else {
+			personDTO.setStatus(Status.CURRENT);
+		}
 		personDTO.setRole(personXLS.getRole());
 		//TODO NI Number
 
