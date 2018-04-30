@@ -353,7 +353,10 @@ public class PlacementTransformerService {
 			if (!gradesByName.isEmpty() && gradesByName.size() == 1) {
 				gradeMapByName.put(gradeName, gradesByName.get(0));
 			} else {
-				logger.error(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName);
+				placementXLSS.stream().filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName)).forEach(placementXLS -> {
+					logger.error(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName);
+					placementXLS.addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
+				});
 			}
 		}
 		return gradeMapByName;
@@ -369,7 +372,10 @@ public class PlacementTransformerService {
 			if (!sitesByName.isEmpty() && sitesByName.size() == 1) {
 				siteMapByName.put(siteName, sitesByName.get(0));
 			} else {
-				logger.error(EXPECTED_TO_FIND_A_SINGLE_SITE_FOR, siteName);
+				placementXLSS.stream().filter(placementXLS -> placementXLS.getSite().equalsIgnoreCase(siteName)).forEach(placementXLS -> {
+					logger.error(EXPECTED_TO_FIND_A_SINGLE_SITE_FOR, siteName);
+					placementXLS.addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_SITE_FOR, siteName));
+				});
 			}
 		}
 		return siteMapByName;

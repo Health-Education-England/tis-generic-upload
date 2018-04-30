@@ -26,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -113,8 +114,14 @@ public class UploadFileResource {
 			applicationType = uploadFileService.upload(fileList, fileType, profileFromContext.getUserName(), profileFromContext.getFirstName(), profileFromContext.getLastName());
 		} catch (InvalidKeyException | StorageException | URISyntaxException e) {
 			return logAndReturnResponseEntity("Application error while storing the file : ", e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}	catch (IOException | ReflectiveOperationException | InvalidFormatException | ValidationException e) {
+		}	catch (IOException | ReflectiveOperationException | InvalidFormatException e) {
 			return logAndReturnResponseEntity("File uploaded cannot be processed : ", e.getMessage(), HttpStatus.BAD_REQUEST);
+		} catch (ValidationException ve) {
+			StringBuilder sb = new StringBuilder();
+			for(FieldError fieldError : ve.getBindingResult().getFieldErrors()) {
+				sb.append(System.lineSeparator() + fieldError.getDefaultMessage());
+			}
+			return logAndReturnResponseEntity("File uploaded failed validation : ", sb.toString(), HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return logAndReturnResponseEntity("Unexpected Exception : ", e.getMessage(), HttpStatus.BAD_REQUEST);
