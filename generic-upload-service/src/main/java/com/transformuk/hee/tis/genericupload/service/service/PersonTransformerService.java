@@ -74,6 +74,7 @@ public class PersonTransformerService {
 
 	public static final String UNKNOWN = "unknown";
 	public static final String FOUND_UNKNOWN_REG_NUMBERS_IN_XML_FILE_UPLOADED_ADDING_TO_TIS = "Found {} unknown reg numbers in xml file uploaded. Adding to TIS";
+	public static final String PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA = "Programme should have at least one curricula";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -523,7 +524,12 @@ public class PersonTransformerService {
 			if (curriculumDTO3 != null) {
 				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate()));
 			}
-			personDTO.setProgrammeMemberships(programmeMembershipDTOS);
+
+			if(programmeMembershipDTOS.isEmpty()) {
+				personXLS.addErrorMessage(PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA);
+			} else {
+				personDTO.setProgrammeMemberships(programmeMembershipDTOS);
+			}
 		}
 		return personDTO;
 	}
