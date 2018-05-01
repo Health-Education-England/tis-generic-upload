@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
+import com.transformuk.hee.tis.genericupload.service.util.POIUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
@@ -57,7 +58,8 @@ public class ExcelToObjectMapper {
     Sheet sheet = workbook.getSheetAt(0);
     int lastRow = sheet.getLastRowNum();
     for (int rowNumber = 1; rowNumber <= lastRow; rowNumber++) {
-      if(sheet.getRow(rowNumber) == null || isEmptyRow(sheet.getRow(rowNumber))) continue;
+      POIUtil poiUtil = new POIUtil();
+      if(sheet.getRow(rowNumber) == null || poiUtil.isEmptyRow(sheet.getRow(rowNumber))) continue;
     	Object obj = cls.newInstance();
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
@@ -92,18 +94,6 @@ public class ExcelToObjectMapper {
         .mapToObj(headerRow::getCell)
         .map(Cell::getStringCellValue)
         .collect(Collectors.toSet());
-  }
-
-  //https://stackoverflow.com/a/20002688
-  public static boolean isEmptyRow(Row row){
-    boolean isEmptyRow = true;
-    for(int cellNum = row.getFirstCellNum(); cellNum < row.getLastCellNum(); cellNum++){
-      Cell cell = row.getCell(cellNum);
-      if(cell != null && cell.getCellTypeEnum() != CellType.BLANK && StringUtils.isNotBlank(cell.toString())){
-        isEmptyRow = false;
-      }
-    }
-    return isEmptyRow;
   }
 
   private boolean isAllBlanks(Object obj) throws IllegalAccessException {

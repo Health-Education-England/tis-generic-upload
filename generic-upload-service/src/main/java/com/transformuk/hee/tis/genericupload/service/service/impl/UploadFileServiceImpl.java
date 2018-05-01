@@ -10,6 +10,7 @@ import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeR
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import com.transformuk.hee.tis.genericupload.service.service.FileImportResults;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
+import com.transformuk.hee.tis.genericupload.service.util.POIUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -46,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper.isEmptyRow;
 import static com.transformuk.hee.tis.genericupload.service.service.impl.SpecificationFactory.containsLike;
 
 @Service
@@ -123,9 +123,10 @@ public class UploadFileServiceImpl implements UploadFileService {
 
 			for (int rowNumber = sheet.getLastRowNum(); rowNumber > 0; rowNumber--) {
 				Row row = sheet.getRow(rowNumber);
+				POIUtil poiUtil = new POIUtil();
 				if(row == null) {
 					continue;
-				} else if(isEmptyRow(row) || !setOfLineNumbersWithErrors.contains(rowNumber)) {
+				} else if(poiUtil.isEmptyRow(row) || !setOfLineNumbersWithErrors.contains(rowNumber)) {
 					removeRow(sheet, rowNumber);
 					continue;
 				}
