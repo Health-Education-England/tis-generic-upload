@@ -31,7 +31,14 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Component
 public class ScheduledUploadTask {
 	private static final Logger logger = getLogger(ScheduledUploadTask.class);
+
 	private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+	public static final String FILE_IMPORT_SUCCESS_AND_ERROR_COUNTS_DON_T_MATCH_INPUT_NUMBER_OF_ROWS = "File import success and error counts don't match input number of rows";
+	public static final String UNKNOWN_FILE_TYPE = "Unknown FileType";
+	public static final String ERROR_WHILE_READING_EXCEL_FILE = "Error while reading excel file : ";
+	public static final String ERROR_WHILE_PROCESSING_EXCEL_FILE = "Error while processing excel file : ";
+	public static final String UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE = "Unknown Error while processing excel file : ";
 
 	@Autowired
 	private PlacementTransformerService placementTransformerService;
@@ -78,16 +85,16 @@ public class ScheduledUploadTask {
 						setJobToCompleted(applicationType, placementXLSS);
 						break;
 
-					default: logger.error("Unknown FileType");
+					default: logger.error(UNKNOWN_FILE_TYPE);
 				}
 			} catch (InvalidFormatException e) {
-				logger.error("Error while reading excel file : " + e.getMessage());
+				logger.error(ERROR_WHILE_READING_EXCEL_FILE + e.getMessage());
 				applicationType.setFileStatus(FileStatus.INVALID_FILE_FORMAT);
 			} catch (HttpServerErrorException | HttpClientErrorException e) { //thrown when connecting to TCS
-				logger.error("Error while processing excel file : " + e.getMessage());
+				logger.error(ERROR_WHILE_PROCESSING_EXCEL_FILE + e.getMessage());
 				applicationType.setFileStatus(FileStatus.PENDING);
 			} catch (Exception e) {
-				logger.error("Unknown Error while processing excel file : " + e.getMessage());
+				logger.error(UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE + e.getMessage());
 				e.printStackTrace();
 				applicationType.setFileStatus(FileStatus.UNEXPECTED_ERROR);
 			} finally {
@@ -106,6 +113,10 @@ public class ScheduledUploadTask {
 				errorCount++;
 				fir.addError(templateXLS.getRowNumber(), templateXLS.getErrorMessage());
 			}
+		}
+
+		if(errorCount + successCount != templateXLSS.size()) {
+			logger.warn(FILE_IMPORT_SUCCESS_AND_ERROR_COUNTS_DON_T_MATCH_INPUT_NUMBER_OF_ROWS);
 		}
 
 		applicationType.setNumberOfErrors(errorCount);

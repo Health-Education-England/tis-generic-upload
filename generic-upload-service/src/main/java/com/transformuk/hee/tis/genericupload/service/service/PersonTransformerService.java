@@ -73,8 +73,8 @@ public class PersonTransformerService {
 	private static final String PHN = "PHN";
 
 	public static final String UNKNOWN = "unknown";
-	public static final String FOUND_UNKNOWN_REG_NUMBERS_IN_XML_FILE_UPLOADED_ADDING_TO_TIS = "Found {} unknown reg numbers in xml file uploaded. Adding to TIS";
 	public static final String PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA = "Programme should have at least one curricula";
+	public static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED = "At least one of the three registration numbers needs to be specified";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -96,6 +96,7 @@ public class PersonTransformerService {
 
 	public void processPeopleUpload(List<PersonXLS> personXLSS) {
 		personXLSS.forEach(PersonXLS::initialiseSuccessfullyImported);
+		markRowsWithoutRegistrationNumbers(personXLSS);
 
 		addPersons(getPersonsWithUnknownRegNumbers(personXLSS));
 		addOrUpdateGMCRecords(personXLSS);
@@ -112,8 +113,16 @@ public class PersonTransformerService {
 						UNKNOWN.equalsIgnoreCase(personXLS.getGdcNumber()) ||
 						UNKNOWN.equalsIgnoreCase(personXLS.getPublicHealthNumber()))
 				.collect(Collectors.toSet());
-		logger.info(FOUND_UNKNOWN_REG_NUMBERS_IN_XML_FILE_UPLOADED_ADDING_TO_TIS, unknownRegNumbers.size());
 		return unknownRegNumbers;
+	}
+
+	private void  markRowsWithoutRegistrationNumbers(List<PersonXLS> personXLSS) {
+		personXLSS.stream()
+					.filter(personXLS ->
+							personXLS.getGmcNumber() == null &&
+							personXLS.getGdcNumber() == null &&
+							personXLS.getPublicHealthNumber() == null )
+					.forEach(personXLS -> personXLS.addErrorMessage(AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED));
 	}
 
 	<DTO> Set<Long> getIdsFromRegNumberDTOsMap(Set<PersonXLS> knownRegNumbersInTIS, Map<String, DTO> regNumberMap, Function<PersonXLS, String> getRegNumberFromXLS, Function<DTO, Long> getId) {
