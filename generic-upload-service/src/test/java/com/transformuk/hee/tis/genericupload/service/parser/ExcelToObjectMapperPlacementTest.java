@@ -17,7 +17,7 @@ public class ExcelToObjectMapperPlacementTest {
 
   private ExcelToObjectMapper excelToObjectMapper;
 
-  private static final String FILE_NAME = "TIS Placement Import Template - Test.xls";
+  private static final String FILE_NAME = "TIS Placement Import Template - Test.xlsx";
 
   @Before
   public void setUp() throws Exception {
@@ -31,6 +31,13 @@ public class ExcelToObjectMapperPlacementTest {
     List<PlacementXLS> actual = excelToObjectMapper.map(PlacementXLS.class,
             new PlacementHeaderMapper().getFieldMap());
     Assert.assertNotNull(actual);
+  }
+
+  @Test
+  public void shouldMapPlacement() throws Exception {
+    List<PlacementXLS> actual = excelToObjectMapper.map(PlacementXLS.class,
+        new PlacementHeaderMapper().getFieldMap());
+    assertThat(actual.get(0).getPlacementStatus()).isNotNull();
   }
 
   @Test

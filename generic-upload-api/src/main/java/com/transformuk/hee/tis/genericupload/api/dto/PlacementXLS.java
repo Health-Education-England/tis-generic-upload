@@ -13,6 +13,7 @@ public class PlacementXLS extends TemplateXLS {
 	private Date dateFrom;
 	private Date dateTo;
 	private String placementType;
+	private String placementStatus;
 	private String site;
 	private Float wte;
 	private String grade;
@@ -93,6 +94,14 @@ public class PlacementXLS extends TemplateXLS {
 
 	public void setPlacementType(String placementType) {
 		this.placementType = placementType;
+	}
+
+	public String getPlacementStatus() {
+		return placementStatus;
+	}
+
+	public void setPlacementStatus(String placementStatus) {
+		this.placementStatus = placementStatus;
 	}
 
 	public String getSite() {
@@ -181,6 +190,7 @@ public class PlacementXLS extends TemplateXLS {
 				Objects.equals(dateFrom, that.dateFrom) &&
 				Objects.equals(dateTo, that.dateTo) &&
 				Objects.equals(placementType, that.placementType) &&
+				Objects.equals(placementStatus, that.placementStatus) &&
 				Objects.equals(site, that.site) &&
 				Objects.equals(wte, that.wte) &&
 				Objects.equals(grade, that.grade) &&
@@ -194,7 +204,7 @@ public class PlacementXLS extends TemplateXLS {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(surname, forenames, gmcNumber, gdcNumber, publicHealthNumber, nationalPostNumber, dateFrom, dateTo, placementType, site, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
+		return Objects.hash(surname, forenames, gmcNumber, gdcNumber, publicHealthNumber, nationalPostNumber, dateFrom, dateTo, placementType, placementStatus, site, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
 	}
 
 	@Override
@@ -209,6 +219,7 @@ public class PlacementXLS extends TemplateXLS {
 		sb.append(", dateFrom=").append(dateFrom);
 		sb.append(", dateTo=").append(dateTo);
 		sb.append(", placementType='").append(placementType).append('\'');
+		sb.append(", placementStatus='").append(placementStatus).append('\'');
 		sb.append(", site='").append(site).append('\'');
 		sb.append(", wte='").append(wte).append('\'');
 		sb.append(", grade='").append(grade).append('\'');

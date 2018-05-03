@@ -18,6 +18,7 @@ import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementSpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.enumeration.PlacementStatus;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import org.slf4j.Logger;
@@ -163,18 +164,23 @@ public class PlacementTransformerService {
 								LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
 								LocalDate dateTo = convertDate(placementXLS.getDateTo());
 
-								boolean existingPlacementUpdated = false;
+								boolean existingPlacementUpdatedOrDeleted = false;
 								if (!placementsByPostIdAndPersonId.isEmpty()) {
 									for (PlacementDetailsDTO placementDTO : placementsByPostIdAndPersonId) {
 										if (dateFrom.equals(placementDTO.getDateFrom()) && dateTo.equals(placementDTO.getDateTo())) {
-											saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, true);
-											existingPlacementUpdated = true;
+											if("DELETE".equalsIgnoreCase(placementXLS.getPlacementStatus())) {
+												tcsServiceImpl.deletePlacement(placementDTO.getId());
+												placementXLS.setSuccessfullyImported(true);
+											} else {
+												saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, true);
+											}
+											existingPlacementUpdatedOrDeleted = true;
 											break;
 										}
 									}
 								}
 
-								if (placementsByPostIdAndPersonId.isEmpty() || !existingPlacementUpdated) {
+								if (placementsByPostIdAndPersonId.isEmpty() || !existingPlacementUpdatedOrDeleted) {
 									PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
 									placementDTO.setTraineeId(personBasicDetailsDTO.getId());
 									placementDTO.setPostId(postDTO.getId());
@@ -297,6 +303,7 @@ public class PlacementTransformerService {
 	                                    Map<String, GradeDTO> gradeMapByName,
 	                                    PlacementXLS placementXLS,
 	                                    PlacementDetailsDTO placementDTO) {
+		placementDTO.setStatus(PlacementStatus.CURRENT);
 		setPlacementTypeOrRecordError(placementXLS, placementDTO);
 		setWTEOrRecordError(placementXLS, placementDTO);
 		setSiteOrRecordError(siteMapByName, placementXLS, placementDTO);

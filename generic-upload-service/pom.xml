@@ -158,7 +158,7 @@
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>tcs-client</artifactId>
-			<version>3.0.49</version>
+			<version>3.0.50</version>
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee</groupId>
@@ -173,7 +173,7 @@
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>generic-upload-api</artifactId>
-			<version>1.0.0</version>
+			<version>1.0.1</version>
 		</dependency>
 		<!-- TIS END -->
 
