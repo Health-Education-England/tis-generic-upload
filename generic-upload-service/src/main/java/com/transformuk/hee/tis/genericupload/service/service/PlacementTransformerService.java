@@ -1,7 +1,12 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
-import com.transformuk.hee.tis.genericupload.service.service.fetcher.*;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.DTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.PostFetcher;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
@@ -32,7 +37,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.Objects;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -47,12 +51,9 @@ public class PlacementTransformerService {
 	public static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts found for National Post Number : ";
 	public static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by National Post Number : ";
 	public static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER = "POST status is set to DELETE for National Post Number : ";
-	public static final String MULTIPLE_PLACEMENTS_FOUND_FOR_POST_WITH_ID_1$S_AND_PERSON_WITH_ID_2$S = "Multiple placements found for post with id (%1$s) and person with id (%2$s)";
 	public static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER = "Did not find a person for registration number : ";
 	public static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name : ";
 	public static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
-	public static final String FROM_DATE_DOES_NOT_MATCH_EXISTING_PLACEMENT = "From date does not match existing placement";
-	public static final String TO_DATE_DOES_NOT_MATCH_EXISTING_PLACEMENT = "To date does not match existing placement";
 	public static final String PLACEMENT_FROM_DATE_IS_MANDATORY = "Placement from date is mandatory";
 	public static final String PLACEMENT_TO_DATE_IS_MANDATORY = "Placement to date is mandatory";
 	public static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
@@ -156,18 +157,30 @@ public class PlacementTransformerService {
 						if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
 							placementXLS.addErrorMessage(POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
 						} else {
-							List<PlacementDetailsDTO> placementsByPostIdAndPersonId = tcsServiceImpl.getPlacementsByPostIdAndPersonId(postDTO.getId(), personBasicDetailsDTO.getId());
-							if (placementsByPostIdAndPersonId.isEmpty()) {
-								PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
-								placementDTO.setTraineeId(personBasicDetailsDTO.getId());
-								placementDTO.setPostId(postDTO.getId());
-								saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, false);
-							} else {
-								if (placementsByPostIdAndPersonId.size() > 1) { //TODO validate this is ok - seem like we have to iterate and find at least one that matches dates - if not error
-									placementXLS.addErrorMessage(String.format(MULTIPLE_PLACEMENTS_FOUND_FOR_POST_WITH_ID_1$S_AND_PERSON_WITH_ID_2$S, postDTO.getId(), personBasicDetailsDTO.getId()));
-								} else {
-									PlacementDetailsDTO placementDTO = placementsByPostIdAndPersonId.get(0);
-									saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, true);
+							if (datesAreValid(placementXLS)) {
+								List<PlacementDetailsDTO> placementsByPostIdAndPersonId = tcsServiceImpl.getPlacementsByPostIdAndPersonId(postDTO.getId(), personBasicDetailsDTO.getId());
+
+								LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
+								LocalDate dateTo = convertDate(placementXLS.getDateTo());
+
+								boolean existingPlacementUpdated = false;
+								if (!placementsByPostIdAndPersonId.isEmpty()) {
+									for (PlacementDetailsDTO placementDTO : placementsByPostIdAndPersonId) {
+										if (dateFrom.equals(placementDTO.getDateFrom()) && dateTo.equals(placementDTO.getDateTo())) {
+											saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, true);
+											existingPlacementUpdated = true;
+											break;
+										}
+									}
+								}
+
+								if (placementsByPostIdAndPersonId.isEmpty() || !existingPlacementUpdated) {
+									PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
+									placementDTO.setTraineeId(personBasicDetailsDTO.getId());
+									placementDTO.setPostId(postDTO.getId());
+									placementDTO.setDateFrom(dateFrom);
+									placementDTO.setDateTo(dateTo);
+									saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, false);
 								}
 							}
 						}
@@ -177,8 +190,20 @@ public class PlacementTransformerService {
 		}
 	}
 
+	private boolean datesAreValid(PlacementXLS placementXLS) {
+		if (placementXLS.getDateFrom() == null || placementXLS.getDateTo() == null) {
+			if (placementXLS.getDateFrom() == null) {
+				placementXLS.addErrorMessage(PLACEMENT_FROM_DATE_IS_MANDATORY);
+			}
+			if (placementXLS.getDateTo() == null) {
+				placementXLS.addErrorMessage(PLACEMENT_TO_DATE_IS_MANDATORY);
+			}
+			return false;
+		}
+		return true;
+	}
+
 	public void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, boolean updatePlacement) {
-		setDatesOrRecordError(placementXLS, placementDTO, updatePlacement);
 		setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
 		setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
 
@@ -276,32 +301,6 @@ public class PlacementTransformerService {
 		setWTEOrRecordError(placementXLS, placementDTO);
 		setSiteOrRecordError(siteMapByName, placementXLS, placementDTO);
 		setGradeOrRecordError(gradeMapByName, placementXLS, placementDTO);
-	}
-
-	public void setDatesOrRecordError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, boolean updatePlacement) {
-		if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
-			LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
-			LocalDate dateTo = convertDate(placementXLS.getDateTo());
-
-			if (updatePlacement) {
-				if (!dateFrom.equals(placementDTO.getDateFrom())) {
-					placementXLS.addErrorMessage(FROM_DATE_DOES_NOT_MATCH_EXISTING_PLACEMENT);
-				}
-				if (!dateTo.equals(placementDTO.getDateTo())) {
-					placementXLS.addErrorMessage(TO_DATE_DOES_NOT_MATCH_EXISTING_PLACEMENT);
-				}
-			} else {
-				placementDTO.setDateFrom(dateFrom);
-				placementDTO.setDateTo(dateTo);
-			}
-		} else {
-			if (placementXLS.getDateFrom() == null) {
-				placementXLS.addErrorMessage(PLACEMENT_FROM_DATE_IS_MANDATORY);
-			}
-			if (placementXLS.getDateTo() == null) {
-				placementXLS.addErrorMessage(PLACEMENT_TO_DATE_IS_MANDATORY);
-			}
-		}
 	}
 
 	private void setGradeOrRecordError(Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO) {
