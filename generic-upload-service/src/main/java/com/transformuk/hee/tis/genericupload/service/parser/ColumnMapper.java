@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public abstract class ColumnMapper {
-  protected static String[] fieldNameSource, fieldNameTarget;
+  protected String[] fieldNameSource, fieldNameTarget;
 
   public Map<String, String> getFieldMap() {
     return createFieldMap(fieldNameSource, fieldNameTarget);

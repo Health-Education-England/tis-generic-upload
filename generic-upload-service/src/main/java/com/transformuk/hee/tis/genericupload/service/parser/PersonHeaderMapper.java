@@ -1,7 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
 public class PersonHeaderMapper extends ColumnMapper {
-  static {
+  public PersonHeaderMapper() {
     fieldNameSource = new String[] {
         "title",
         "surname",
