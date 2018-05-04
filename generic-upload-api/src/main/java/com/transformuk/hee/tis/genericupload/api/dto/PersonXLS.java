@@ -33,6 +33,7 @@ public class PersonXLS extends TemplateXLS {
 	private String programmeName;
 	private String programmeNumber;
 	private String programmeMembership;
+	private String rotation1;
 	private String ntnProgramme;
 	private String curriculum1;
 	private Date curriculum1StartDate;
@@ -288,6 +289,14 @@ public class PersonXLS extends TemplateXLS {
 		this.programmeMembership = programmeMembership;
 	}
 
+	public String getRotation1() {
+		return rotation1;
+	}
+
+	public void setRotation1(String rotation1) {
+		this.rotation1 = rotation1;
+	}
+
 	public String getNtnProgramme() {
 		return ntnProgramme;
 	}
@@ -498,6 +507,7 @@ public class PersonXLS extends TemplateXLS {
 				Objects.equals(programmeName, personXLS.programmeName) &&
 				Objects.equals(programmeNumber, personXLS.programmeNumber) &&
 				Objects.equals(programmeMembership, personXLS.programmeMembership) &&
+				Objects.equals(rotation1, personXLS.rotation1) &&
 				Objects.equals(ntnProgramme, personXLS.ntnProgramme) &&
 				Objects.equals(curriculum1, personXLS.curriculum1) &&
 				Objects.equals(curriculum1StartDate, personXLS.curriculum1StartDate) &&
@@ -524,7 +534,7 @@ public class PersonXLS extends TemplateXLS {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(title, surname, forenames, gender, dateOfBirth, gmcNumber, niNumber, gdcNumber, eeaResident, nationality, ethnicOrigin, address1, address2, address3, postCode, telephone, mobile, emailAddress, medicalSchool, qualification, dateAttained, countryOfQualification, disability, disabilityDetails, sexualOrientation, religiousBelief, programmeName, programmeNumber, programmeMembership, ntnProgramme, curriculum1, curriculum1StartDate, curriculum1EndDate, curriculum2, curriculum2StartDate, curriculum2EndDate, curriculum3, curriculum3StartDate, curriculum3EndDate, programmeEndDate, role, knownAs, permitToWork, settled, visaIssued, visaValidTo, visaDetails, maritalStatus, recordStatus, inactiveDate, publicHealthNumber);
+		return Objects.hash(title, surname, forenames, gender, dateOfBirth, gmcNumber, niNumber, gdcNumber, eeaResident, nationality, ethnicOrigin, address1, address2, address3, postCode, telephone, mobile, emailAddress, medicalSchool, qualification, dateAttained, countryOfQualification, disability, disabilityDetails, sexualOrientation, religiousBelief, programmeName, programmeNumber, programmeMembership, rotation1, ntnProgramme, curriculum1, curriculum1StartDate, curriculum1EndDate, curriculum2, curriculum2StartDate, curriculum2EndDate, curriculum3, curriculum3StartDate, curriculum3EndDate, programmeEndDate, role, knownAs, permitToWork, settled, visaIssued, visaValidTo, visaDetails, maritalStatus, recordStatus, inactiveDate, publicHealthNumber);
 	}
 
 	@Override
@@ -559,6 +569,7 @@ public class PersonXLS extends TemplateXLS {
 		sb.append(", programmeName='").append(programmeName).append('\'');
 		sb.append(", programmeNumber='").append(programmeNumber).append('\'');
 		sb.append(", programmeMembership='").append(programmeMembership).append('\'');
+		sb.append(", rotation1='").append(rotation1).append('\'');
 		sb.append(", ntnProgramme='").append(ntnProgramme).append('\'');
 		sb.append(", curriculum1='").append(curriculum1).append('\'');
 		sb.append(", curriculum1StartDate=").append(curriculum1StartDate);

@@ -70,6 +70,14 @@ public class ExcelToObjectMapperPersonTest {
 	}
 
 	@Test
+	public void shouldParseRotation() throws Exception {
+		List<PersonXLS> actual = setUpExcelToObjectMapper().map(PersonXLS.class,
+				new PersonHeaderMapper().getFieldMap());
+		Assert.assertEquals("Trauma & Orthopaedic Surgery NCEL UCLP - RNOH", actual.get(0).getRotation1());
+	}
+
+
+	@Test
 	public void allFieldsAreSet() throws Exception {
 		List<PersonXLS> actual = setUpExcelToObjectMapper().map(PersonXLS.class,
 				new PersonHeaderMapper().getFieldMap());

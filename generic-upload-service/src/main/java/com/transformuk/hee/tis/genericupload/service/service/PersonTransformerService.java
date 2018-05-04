@@ -27,14 +27,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -66,6 +59,9 @@ public class PersonTransformerService {
 	public static final String UNKNOWN = "unknown";
 	public static final String PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA = "Programme should have at least one curricula";
 	public static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED = "At least one of the three registration numbers needs to be specified";
+	public static final String CAN_ONLY_ADD_TO_A_ROTATION_LINKED_TO_THE_PROGRAMME_MEMBERSHIP_YOU_ARE_ADDING = "Can only add to a Rotation linked to the programme membership you are adding";
+	public static final String MULTIPLE_ROTATIONS_EXIST_FOR_PERSON_CANNOT_IDENTIFY_A_ROTATION_TO_UPDATE = "Multiple rotations exist for person. Cannot identify a rotation to update";
+	public static final String A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION = "A valid programme membership is needed to add a rotation";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -259,7 +255,7 @@ public class PersonTransformerService {
 		try {
 			if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
 				personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
-				addQualificationsAndProgrammeMemberships(personXLS, personDTOFromXLS, personDTOFromDB);
+				addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTOFromXLS, personDTOFromDB);
 				personXLS.setSuccessfullyImported(true);
 			}
 		} catch (HttpClientErrorException e) {
@@ -368,7 +364,7 @@ public class PersonTransformerService {
 					if (personDTO != null) {
 						PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
 						try {
-							addQualificationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
+							addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
 						} catch (ResourceAccessException rae) {
 							//TODO this exception handling is duplicated
 							if(rae.getCause() != null && rae.getCause() instanceof IOException) {
@@ -388,7 +384,7 @@ public class PersonTransformerService {
 		}
 	}
 
-	private void addQualificationsAndProgrammeMemberships(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
+	private void addQualificationsRotationsAndProgrammeMemberships(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
 		QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
 		if(qualificationDTO != null) {
 			qualificationDTO.setPerson(savedPersonDTO);
@@ -397,18 +393,65 @@ public class PersonTransformerService {
 			}
 		}
 
-		for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
-			programmeMembershipDTO.setPerson(savedPersonDTO);
+		if(!personDTO.getProgrammeMemberships().isEmpty()) {
+			creationOrUpdateRotation(personXLS, personDTO, savedPersonDTO);
 
-			if (!savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
-				tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
-			} else {
-				personXLS.addErrorMessage(String.format(PROGRAMME_MEMBERSHIP_DUPLICATED,
-						programmeMembershipDTO.getCurriculumMemberships().get(0).getCurriculumStartDate(),
-						programmeMembershipDTO.getCurriculumMemberships().get(0).getCurriculumEndDate()));
+			for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
+				programmeMembershipDTO.setPerson(savedPersonDTO);
+
+				if (!savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
+					tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
+				} else {
+					personXLS.addErrorMessage(String.format(PROGRAMME_MEMBERSHIP_DUPLICATED,
+							programmeMembershipDTO.getCurriculumMemberships().get(0).getCurriculumStartDate(),
+							programmeMembershipDTO.getCurriculumMemberships().get(0).getCurriculumEndDate()));
+				}
 			}
 		}
 	}
+
+	private void creationOrUpdateRotation(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
+		String rotationName = personXLS.getRotation1();
+		if (!StringUtils.isEmpty(rotationName)) {
+			if(personDTO.getProgrammeMemberships().isEmpty()) {
+				personXLS.addErrorMessage(A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION);
+			} else {
+				Long programmeId = personDTO.getProgrammeMemberships().iterator().next().getProgrammeId();
+				List<RotationDTO> rotationByProgrammeId = tcsServiceImpl.getRotationByProgrammeId(programmeId);
+				Map<Long, Long> rotationByProgrammeIdMap = rotationByProgrammeId.stream().collect(
+						Collectors.toMap(RotationDTO::getId, RotationDTO::getProgrammeId));
+
+				RotationDTO rotationDTOWithRotationName = rotationByProgrammeId.stream()
+						.filter(rotationDTO -> rotationDTO.getName().equalsIgnoreCase(rotationName))
+						.findFirst()
+						.orElse(null);
+
+				if (rotationDTOWithRotationName != null) {
+					List<RotationPersonDTO> rotationsForPerson = tcsServiceImpl.getRotationsForPerson(savedPersonDTO.getId());
+
+					List<RotationPersonDTO> personRotationsForProgramme = rotationsForPerson.stream()
+							.filter(rotationPersonDTO -> rotationByProgrammeIdMap.get(rotationPersonDTO.getRotationId()).equals(rotationDTOWithRotationName.getProgrammeId()))
+							.collect(Collectors.toList());
+
+					if (personRotationsForProgramme.size() == 1) {
+						RotationPersonDTO rotationPersonDTO = personRotationsForProgramme.get(0);
+						rotationPersonDTO.setRotationId(rotationDTOWithRotationName.getId());
+						tcsServiceImpl.updateRotationForPerson(rotationPersonDTO);
+					} else if (personRotationsForProgramme.size() == 0) { //add a Rotation
+						RotationPersonDTO rotationPersonDTO = new RotationPersonDTO();
+						rotationPersonDTO.setPersonId(savedPersonDTO.getId());
+						rotationPersonDTO.setRotationId(rotationDTOWithRotationName.getId());
+						tcsServiceImpl.createRotationForPerson(rotationPersonDTO);
+					} else {
+						personXLS.addErrorMessage(MULTIPLE_ROTATIONS_EXIST_FOR_PERSON_CANNOT_IDENTIFY_A_ROTATION_TO_UPDATE);
+					}
+				} else {
+					personXLS.addErrorMessage(CAN_ONLY_ADD_TO_A_ROTATION_LINKED_TO_THE_PROGRAMME_MEMBERSHIP_YOU_ARE_ADDING);
+				}
+			}
+		}
+	}
+
 
 	private PersonDTO getPersonDTO(PersonXLS personXLS) {
 		Set<CurriculumDTO> curricula = new HashSet<>();
