@@ -533,7 +533,6 @@ public class PersonTransformerService {
 			personDTO.setStatus(Status.CURRENT);
 		}
 		personDTO.setRole(personXLS.getRole());
-		//TODO NI Number
 
 		personDTO.setContactDetails(getContactDetailsDTO(personXLS));
 		personDTO.setPersonalDetails(getPersonalDetailsDTO(personXLS));
@@ -615,6 +614,7 @@ public class PersonTransformerService {
 		personalDetailsDTO.setEthnicOrigin(personXLS.getEthnicOrigin());
 		personalDetailsDTO.setSexualOrientation(personXLS.getSexualOrientation());
 		personalDetailsDTO.setReligiousBelief(personXLS.getReligiousBelief());
+		personalDetailsDTO.setNationalInsuranceNumber(personXLS.getNiNumber());
 		return personalDetailsDTO;
 	}
 
