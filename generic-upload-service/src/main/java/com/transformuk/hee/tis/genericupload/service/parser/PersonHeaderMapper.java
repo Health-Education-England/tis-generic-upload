@@ -87,7 +87,7 @@ public class PersonHeaderMapper extends ColumnMapper {
         "Programme Name",
         "Programme Number",
         "Programme Membership Type",
-        "Rotation #1",
+        "Rotation",
         "NTN (Programme)",
         "Curriculum #1",
         "Curriculum #1 Start Date",
