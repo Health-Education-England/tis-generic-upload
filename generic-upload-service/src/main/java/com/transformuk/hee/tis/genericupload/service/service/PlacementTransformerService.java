@@ -45,7 +45,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 @Component
 public class PlacementTransformerService {
 	private static final Logger logger = getLogger(PlacementTransformerService.class);
-	
+
+	public static final String AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON = "At least one of the 3 registration numbers should be provided to identify a person";
 	public static final String FIRST_NAME_DOES_NOT_MATCH_FIRST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "First name does not match first name obtained via registration number";
 	public static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
 	public static final String NATIONAL_POST_NUMBER_IS_MANDATORY = "National Post number is mandatory";
@@ -124,18 +125,18 @@ public class PlacementTransformerService {
 
 			for (PlacementXLS placementXLS : placementXLSS) {
 				Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = Optional.empty();
-				PersonBasicDetailsDTO personBasicDetailsDTO = null;
 				if (!StringUtils.isEmpty(getGdcNumber.apply(placementXLS))) {
 					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getGdcNumber, gdcDetailsMap, pbdMapByGDC, placementXLS, GdcDetailsDTO::getId);
 				} else if (!StringUtils.isEmpty(getGmcNumber.apply(placementXLS))) {
 					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getGmcNumber, gmcDetailsMap, pbdMapByGMC, placementXLS, GmcDetailsDTO::getId);
 				} else if (!StringUtils.isEmpty(getPhNumber.apply(placementXLS))) {
 					personBasicDetailsDTOOptional = getPersonBasicDetailsDTO(getPhNumber, phnDetailsMap, pbdMapByPH, placementXLS, PersonDTO::getId);
+				} else {
+					placementXLS.addErrorMessage(AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON);
 				}
+
 				if (personBasicDetailsDTOOptional != null && personBasicDetailsDTOOptional.isPresent()) {
-					personBasicDetailsDTO = personBasicDetailsDTOOptional.get();
-				}
-				if (personBasicDetailsDTO != null) {
+					PersonBasicDetailsDTO personBasicDetailsDTO = personBasicDetailsDTOOptional.get();
 					if (!placementXLS.getForenames().equalsIgnoreCase(personBasicDetailsDTO.getFirstName())) {
 						placementXLS.addErrorMessage(FIRST_NAME_DOES_NOT_MATCH_FIRST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER);
 					}
@@ -143,50 +144,49 @@ public class PlacementTransformerService {
 					if (!placementXLS.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
 						placementXLS.addErrorMessage(SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER);
 					}
-				}
+					String nationalPostNumber = placementXLS.getNationalPostNumber();
+					if(nationalPostNumber == null) {
+						placementXLS.addErrorMessage(NATIONAL_POST_NUMBER_IS_MANDATORY);
+					} else if(duplicateNPNKeys.contains(nationalPostNumber)) {
+						placementXLS.addErrorMessage(MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
+					} else if (!postsMappedByNPNs.containsKey(nationalPostNumber)) {
+						placementXLS.addErrorMessage(COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER + nationalPostNumber);
+					} else {
+						PostDTO postDTO = postsMappedByNPNs.get(nationalPostNumber);
+						if (postDTO != null && personBasicDetailsDTO != null) {
+							if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
+								placementXLS.addErrorMessage(POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
+							} else {
+								if (datesAreValid(placementXLS)) {
+									List<PlacementDetailsDTO> placementsByPostIdAndPersonId = tcsServiceImpl.getPlacementsByPostIdAndPersonId(postDTO.getId(), personBasicDetailsDTO.getId());
 
-				String nationalPostNumber = placementXLS.getNationalPostNumber();
-				if(nationalPostNumber == null) {
-					placementXLS.addErrorMessage(NATIONAL_POST_NUMBER_IS_MANDATORY);
-				} else if(duplicateNPNKeys.contains(nationalPostNumber)) {
-					placementXLS.addErrorMessage(MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
-				} else if (!postsMappedByNPNs.containsKey(nationalPostNumber)) {
-					placementXLS.addErrorMessage(COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER + nationalPostNumber);
-				} else {
-					PostDTO postDTO = postsMappedByNPNs.get(nationalPostNumber);
-					if (postDTO != null && personBasicDetailsDTO != null) {
-						if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
-							placementXLS.addErrorMessage(POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
-						} else {
-							if (datesAreValid(placementXLS)) {
-								List<PlacementDetailsDTO> placementsByPostIdAndPersonId = tcsServiceImpl.getPlacementsByPostIdAndPersonId(postDTO.getId(), personBasicDetailsDTO.getId());
+									LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
+									LocalDate dateTo = convertDate(placementXLS.getDateTo());
 
-								LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
-								LocalDate dateTo = convertDate(placementXLS.getDateTo());
-
-								boolean existingPlacementUpdatedOrDeleted = false;
-								if (!placementsByPostIdAndPersonId.isEmpty()) {
-									for (PlacementDetailsDTO placementDTO : placementsByPostIdAndPersonId) {
-										if (dateFrom.equals(placementDTO.getDateFrom()) && dateTo.equals(placementDTO.getDateTo())) {
-											if("DELETE".equalsIgnoreCase(placementXLS.getPlacementStatus())) {
-												tcsServiceImpl.deletePlacement(placementDTO.getId());
-												placementXLS.setSuccessfullyImported(true);
-											} else {
-												saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, true);
+									boolean existingPlacementUpdatedOrDeleted = false;
+									if (!placementsByPostIdAndPersonId.isEmpty()) {
+										for (PlacementDetailsDTO placementDTO : placementsByPostIdAndPersonId) {
+											if (dateFrom.equals(placementDTO.getDateFrom()) && dateTo.equals(placementDTO.getDateTo())) {
+												if ("DELETE".equalsIgnoreCase(placementXLS.getPlacementStatus())) {
+													tcsServiceImpl.deletePlacement(placementDTO.getId());
+													placementXLS.setSuccessfullyImported(true);
+												} else {
+													saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, true);
+												}
+												existingPlacementUpdatedOrDeleted = true;
+												break;
 											}
-											existingPlacementUpdatedOrDeleted = true;
-											break;
 										}
 									}
-								}
 
-								if (placementsByPostIdAndPersonId.isEmpty() || !existingPlacementUpdatedOrDeleted) {
-									PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
-									placementDTO.setTraineeId(personBasicDetailsDTO.getId());
-									placementDTO.setPostId(postDTO.getId());
-									placementDTO.setDateFrom(dateFrom);
-									placementDTO.setDateTo(dateTo);
-									saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, false);
+									if (placementsByPostIdAndPersonId.isEmpty() || !existingPlacementUpdatedOrDeleted) {
+										PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
+										placementDTO.setTraineeId(personBasicDetailsDTO.getId());
+										placementDTO.setPostId(postDTO.getId());
+										placementDTO.setDateFrom(dateFrom);
+										placementDTO.setDateTo(dateTo);
+										saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, false);
+									}
 								}
 							}
 						}
