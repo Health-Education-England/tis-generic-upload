@@ -437,7 +437,7 @@ public class PersonTransformerService {
 					List<RotationPersonDTO> rotationsForPerson = tcsServiceImpl.getRotationsForPerson(savedPersonDTO.getId());
 
 					List<RotationPersonDTO> personRotationsForProgramme = rotationsForPerson.stream()
-							.filter(rotationPersonDTO -> rotationByProgrammeIdMap.get(rotationPersonDTO.getRotationId()).equals(rotationDTOWithRotationName.getProgrammeId()))
+							.filter(rotationPersonDTO -> rotationDTOWithRotationName.getProgrammeId().equals(rotationByProgrammeIdMap.get(rotationPersonDTO.getRotationId())))
 							.collect(Collectors.toList());
 
 					if (personRotationsForProgramme.size() == 1) {
