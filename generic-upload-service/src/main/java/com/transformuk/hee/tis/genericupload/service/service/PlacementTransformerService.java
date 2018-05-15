@@ -7,6 +7,9 @@ import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetch
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PostFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.identity.RegNumberDTO;
+import com.transformuk.hee.tis.genericupload.service.service.identity.RegNumberToDTOLookup;
+import com.transformuk.hee.tis.genericupload.service.service.identity.SupervisorRegNumberIdService;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
@@ -14,8 +17,10 @@ import com.transformuk.hee.tis.tcs.api.dto.GdcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonBasicDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PersonLiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementSpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PlacementSupervisorDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PlacementStatus;
@@ -69,6 +74,8 @@ public class PlacementTransformerService {
 	private TcsServiceImpl tcsServiceImpl;
 	@Autowired
 	private ReferenceServiceImpl referenceServiceImpl;
+	@Autowired
+	private SupervisorRegNumberIdService supervisorRegNumberIdService;
 
 	private GMCDTOFetcher gmcDtoFetcher;
 	private GDCDTOFetcher gdcDtoFetcher;
@@ -90,9 +97,9 @@ public class PlacementTransformerService {
 
 	<DTO> Map<String, DTO> buildRegNumberDetailsMap(List<PlacementXLS> placementXLSS, Function<PlacementXLS, String> getRegNumberFunction, DTOFetcher<String, DTO> fetcher) {
 		return fetcher.findWithKeys(
-						collectRegNumbersForPlacements(
-								getRowsWithRegistrationNumberForPlacements(placementXLSS, getRegNumberFunction),
-								getRegNumberFunction));
+				collectRegNumbersForPlacements(
+						getRowsWithRegistrationNumberForPlacements(placementXLSS, getRegNumberFunction),
+						getRegNumberFunction));
 	}
 
 	<DTO> Map<Long, PersonBasicDetailsDTO> buildPersonBasicDetailsMapForRegNumber(Map<String, DTO> regNumberMap, DTOFetcher<String, DTO> idExtractingFetcher, Function<DTO, Long> getId) {
@@ -100,8 +107,8 @@ public class PlacementTransformerService {
 	}
 
 	void processPlacementsUpload(List<PlacementXLS> placementXLSS) {
-
 		placementXLSS.forEach(PlacementXLS::initialiseSuccessfullyImported);
+		RegNumberToDTOLookup regNumberToDTOLookup = supervisorRegNumberIdService.getRegNumbersForSheetOrMarkAsError(placementXLSS);
 
 		if (!CollectionUtils.isEmpty(placementXLSS)) {
 			Map<String, PersonDTO> phnDetailsMap = buildRegNumberDetailsMap(placementXLSS, getPhNumber, peopleByPHNFetcher);
@@ -145,15 +152,15 @@ public class PlacementTransformerService {
 						placementXLS.addErrorMessage(SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER);
 					}
 					String nationalPostNumber = placementXLS.getNationalPostNumber();
-					if(nationalPostNumber == null) {
+					if (nationalPostNumber == null) {
 						placementXLS.addErrorMessage(NATIONAL_POST_NUMBER_IS_MANDATORY);
-					} else if(duplicateNPNKeys.contains(nationalPostNumber)) {
+					} else if (duplicateNPNKeys.contains(nationalPostNumber)) {
 						placementXLS.addErrorMessage(MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
 					} else if (!postsMappedByNPNs.containsKey(nationalPostNumber)) {
 						placementXLS.addErrorMessage(COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER + nationalPostNumber);
 					} else {
 						PostDTO postDTO = postsMappedByNPNs.get(nationalPostNumber);
-						if (postDTO != null && personBasicDetailsDTO != null) {
+						if (postDTO != null) {
 							if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
 								placementXLS.addErrorMessage(POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
 							} else {
@@ -171,7 +178,7 @@ public class PlacementTransformerService {
 													tcsServiceImpl.deletePlacement(placementDTO.getId());
 													placementXLS.setSuccessfullyImported(true);
 												} else {
-													saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, true);
+													saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, true);
 												}
 												existingPlacementUpdatedOrDeleted = true;
 												break;
@@ -185,7 +192,7 @@ public class PlacementTransformerService {
 										placementDTO.setPostId(postDTO.getId());
 										placementDTO.setDateFrom(dateFrom);
 										placementDTO.setDateTo(dateTo);
-										saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, false);
+										saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, false);
 									}
 								}
 							}
@@ -209,9 +216,11 @@ public class PlacementTransformerService {
 		return true;
 	}
 
-	public void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, boolean updatePlacement) {
+	public void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, boolean updatePlacement) {
 		setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
 		setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
+
+		addSupervisorsToPlacement(placementXLS, placementDTO, regNumberToDTOLookup);
 
 		if (!placementXLS.hasErrors()) {
 			if (updatePlacement) {
@@ -221,6 +230,49 @@ public class PlacementTransformerService {
 			}
 			placementXLS.setSuccessfullyImported(true);
 		}
+	}
+
+	public void addSupervisorsToPlacement(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup) {
+		Function<PlacementXLS, String> getClinicalSupervisor = PlacementXLS::getClinicalSupervisor;
+		if (!StringUtils.isEmpty(getClinicalSupervisor.apply(placementXLS))) {
+			addSupervisorToPlacementOrReportError(placementXLS, placementDTO, getClinicalSupervisor,
+					getPlacementSupervisor(regNumberToDTOLookup.getDTOForClinicalSupervisor(getClinicalSupervisor.apply(placementXLS))),
+					"Clinical supervisor");
+		}
+
+		Function<PlacementXLS, String> getEducationalSupervisor = PlacementXLS::getEducationalSupervisor;
+		if (!StringUtils.isEmpty(getEducationalSupervisor.apply(placementXLS))) {
+			addSupervisorToPlacementOrReportError(placementXLS, placementDTO, getEducationalSupervisor,
+					getPlacementSupervisor(regNumberToDTOLookup.getDTOForEducationalSupervisor(getEducationalSupervisor.apply(placementXLS))),
+					"Educational supervisor");
+		}
+	}
+
+	public void addSupervisorToPlacementOrReportError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, Function<PlacementXLS, String> getSupervisor, Optional<PlacementSupervisorDTO> placementSupervisor, String supervisorTypeName) {
+		if (placementSupervisor.isPresent()) {
+			Set<PlacementSupervisorDTO> supervisors = placementDTO.getSupervisors() != null ? placementDTO.getSupervisors() : new HashSet<>();
+			PlacementSupervisorDTO placementSupervisorDTO = placementSupervisor.get();
+			switch (supervisorTypeName) {
+				case "Clinical supervisor" : placementSupervisorDTO.setType(1); break;
+				case "Educational supervisor" : placementSupervisorDTO.setType(2); break;
+				default: placementSupervisorDTO.setType(3); break;
+			}
+			supervisors.add(placementSupervisorDTO);
+		} else {
+			placementXLS.addErrorMessage("Could not find a " + supervisorTypeName + " for registration number : " + getSupervisor.apply(placementXLS));
+		}
+	}
+
+	public Optional<PlacementSupervisorDTO> getPlacementSupervisor(Optional<RegNumberDTO> dtoForSupervisor) {
+		if (dtoForSupervisor.isPresent()) {
+			RegNumberDTO regNumberDTO = dtoForSupervisor.get();
+			PlacementSupervisorDTO placementSupervisorDTO = new PlacementSupervisorDTO();
+			PersonLiteDTO personLiteDTO = new PersonLiteDTO();
+			personLiteDTO.setId(regNumberDTO.getId());
+			placementSupervisorDTO.setPerson(personLiteDTO);
+			return Optional.of(placementSupervisorDTO);
+		}
+		return Optional.empty();
 	}
 
 	<DTO> Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDTO(Function<PlacementXLS, String> getRegNumber, Map<String, DTO> regNumberDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByRegNumber, PlacementXLS placementXLS, Function<DTO, Long> getId) {
