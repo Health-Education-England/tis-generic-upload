@@ -572,13 +572,13 @@ public class PersonTransformerService {
 
 			Set<ProgrammeMembershipDTO> programmeMembershipDTOS = new HashSet<>();
 			if (curriculumDTO1 != null) {
-				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate()));
+				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate());
 			}
 			if (curriculumDTO2 != null) {
-				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate()));
+				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate());
 			}
 			if (curriculumDTO3 != null) {
-				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate()));
+				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate());
 			}
 
 			if(programmeMembershipDTOS.isEmpty()) {
@@ -644,7 +644,8 @@ public class PersonTransformerService {
 		return contactDetailsDTO;
 	}
 
-	private ProgrammeMembershipDTO getProgrammeMembershipDTO(LocalDate programmeStartDate,
+	private void addOrUpdateCurriculumToProgrammeMemberships(Set<ProgrammeMembershipDTO> programmeMembershipDTOs,
+	                                                         LocalDate programmeStartDate,
 	                                                         LocalDate programmeEndDate,
 	                                                         ProgrammeDTO programmeDTO,
 	                                                         CurriculumDTO curriculumDTO,
@@ -656,15 +657,24 @@ public class PersonTransformerService {
 		programmeMembershipDTO.setProgrammeMembershipType(programmeMembershipType);
 		programmeMembershipDTO.setProgrammeStartDate(programmeStartDate);
 		programmeMembershipDTO.setProgrammeEndDate(programmeEndDate);
+		programmeMembershipDTO.setProgrammeId(programmeDTO.getId());
 
 		CurriculumMembershipDTO curriculumMembershipDTO = new CurriculumMembershipDTO();
 		curriculumMembershipDTO.setCurriculumId(curriculumDTO.getId());
 		curriculumMembershipDTO.setCurriculumStartDate(convertDate(curriculumStartDate));
 		curriculumMembershipDTO.setCurriculumEndDate(convertDate(curriculumEndDate));
-		programmeMembershipDTO.setCurriculumMemberships(Lists.newArrayList());
-		programmeMembershipDTO.getCurriculumMemberships().add(curriculumMembershipDTO);
-		programmeMembershipDTO.setProgrammeId(programmeDTO.getId());
 
-		return programmeMembershipDTO;
+		if(programmeMembershipDTOs.contains(programmeMembershipDTO)) {
+			programmeMembershipDTOs.stream()
+					.filter(programmeMembershipDTO1 -> programmeMembershipDTO1.equals(programmeMembershipDTO))
+					.findFirst()
+					.get()
+					.getCurriculumMemberships()
+					.add(curriculumMembershipDTO);
+		} else {
+			programmeMembershipDTO.setCurriculumMemberships(Lists.newArrayList());
+			programmeMembershipDTO.getCurriculumMemberships().add(curriculumMembershipDTO);
+			programmeMembershipDTOs.add(programmeMembershipDTO);
+		}
 	}
 }
