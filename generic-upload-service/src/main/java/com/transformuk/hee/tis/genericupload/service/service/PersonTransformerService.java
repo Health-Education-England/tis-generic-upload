@@ -7,7 +7,20 @@ import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetch
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
-import com.transformuk.hee.tis.tcs.api.dto.*;
+import com.transformuk.hee.tis.tcs.api.dto.ContactDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
+import com.transformuk.hee.tis.tcs.api.dto.CurriculumMembershipDTO;
+import com.transformuk.hee.tis.tcs.api.dto.GdcDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PersonBasicDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PersonalDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
+import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
+import com.transformuk.hee.tis.tcs.api.dto.QualificationDTO;
+import com.transformuk.hee.tis.tcs.api.dto.RightToWorkDTO;
+import com.transformuk.hee.tis.tcs.api.dto.RotationDTO;
+import com.transformuk.hee.tis.tcs.api.dto.RotationPersonDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
@@ -27,7 +40,16 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,7 +70,6 @@ public class PersonTransformerService {
 	private static final String PROGRAMME_NAME_NOT_SPECIFIED = "Programme name (%s) has not been specified. Both programme name and number are needed to identify the programme";
 	private static final String PROGRAMME_NUMBER_NOT_SPECIFIED = "Programme number (%s) has not been specified. Both programme name and number are needed to identify the programme";
 	private static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programmes found for programme name (%1$s) and programme number (%2$s)";
-	private static final String PROGRAMME_MEMBERSHIP_DUPLICATED = "Programme Membership already exists for curriculum with curriculum start date (%1$s) and end date (%2$s)";
 	private static final String CURRICULUM_NOT_FOUND = "Curriculum not found : ";
 	private static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for : ";
 
@@ -572,13 +593,13 @@ public class PersonTransformerService {
 
 			Set<ProgrammeMembershipDTO> programmeMembershipDTOS = new HashSet<>();
 			if (curriculumDTO1 != null) {
-				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate()));
+				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate());
 			}
 			if (curriculumDTO2 != null) {
-				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate()));
+				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate());
 			}
 			if (curriculumDTO3 != null) {
-				programmeMembershipDTOS.add(getProgrammeMembershipDTO(curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate()));
+				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate());
 			}
 
 			if(programmeMembershipDTOS.isEmpty()) {
@@ -644,7 +665,8 @@ public class PersonTransformerService {
 		return contactDetailsDTO;
 	}
 
-	private ProgrammeMembershipDTO getProgrammeMembershipDTO(LocalDate programmeStartDate,
+	private void addOrUpdateCurriculumToProgrammeMemberships(Set<ProgrammeMembershipDTO> programmeMembershipDTOs,
+	                                                         LocalDate programmeStartDate,
 	                                                         LocalDate programmeEndDate,
 	                                                         ProgrammeDTO programmeDTO,
 	                                                         CurriculumDTO curriculumDTO,
@@ -656,15 +678,24 @@ public class PersonTransformerService {
 		programmeMembershipDTO.setProgrammeMembershipType(programmeMembershipType);
 		programmeMembershipDTO.setProgrammeStartDate(programmeStartDate);
 		programmeMembershipDTO.setProgrammeEndDate(programmeEndDate);
+		programmeMembershipDTO.setProgrammeId(programmeDTO.getId());
 
 		CurriculumMembershipDTO curriculumMembershipDTO = new CurriculumMembershipDTO();
 		curriculumMembershipDTO.setCurriculumId(curriculumDTO.getId());
 		curriculumMembershipDTO.setCurriculumStartDate(convertDate(curriculumStartDate));
 		curriculumMembershipDTO.setCurriculumEndDate(convertDate(curriculumEndDate));
-		programmeMembershipDTO.setCurriculumMemberships(Lists.newArrayList());
-		programmeMembershipDTO.getCurriculumMemberships().add(curriculumMembershipDTO);
-		programmeMembershipDTO.setProgrammeId(programmeDTO.getId());
 
-		return programmeMembershipDTO;
+		if(programmeMembershipDTOs.contains(programmeMembershipDTO)) {
+			programmeMembershipDTOs.stream()
+					.filter(programmeMembershipDTO1 -> programmeMembershipDTO1.equals(programmeMembershipDTO))
+					.findFirst()
+					.get()
+					.getCurriculumMemberships()
+					.add(curriculumMembershipDTO);
+		} else {
+			programmeMembershipDTO.setCurriculumMemberships(Lists.newArrayList());
+			programmeMembershipDTO.getCurriculumMemberships().add(curriculumMembershipDTO);
+			programmeMembershipDTOs.add(programmeMembershipDTO);
+		}
 	}
 }

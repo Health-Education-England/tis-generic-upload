@@ -84,7 +84,7 @@ public class ExcelToObjectMapper {
         Field classField = obj.getClass().getDeclaredField(fieldName);
         try {
           setObjectFieldValueFromCell(obj, classField, cell);
-        } catch (ParseException e) {
+        } catch (ParseException | IllegalArgumentException e) {
           logger.info("Error while extracting cell value from object : " + e.getMessage());
           Method method = obj.getClass().getMethod("addErrorMessage", String.class);
           method.invoke(obj, e.getMessage());
