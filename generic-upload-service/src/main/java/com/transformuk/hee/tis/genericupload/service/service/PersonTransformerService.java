@@ -384,6 +384,23 @@ public class PersonTransformerService {
 		}
 	}
 
+	private Long getPersonIdOrNull(PersonDTO person) {
+		return person != null ? person.getId() : null;
+	}
+
+	private boolean equalsProgrammeMembershipDTO(ProgrammeMembershipDTO pm1, ProgrammeMembershipDTO pm2) {
+		if (pm1 == pm2) return true;
+		if (pm1 == null || pm2 == null || pm1.getClass() != pm2.getClass()) return false;
+		return Objects.equals(getPersonIdOrNull(pm1.getPerson()), getPersonIdOrNull(pm2.getPerson())) &&
+				Objects.equals(pm1.getProgrammeStartDate(), pm2.getProgrammeStartDate()) &&
+				Objects.equals(pm1.getProgrammeEndDate(), pm2.getProgrammeEndDate()) &&
+				Objects.equals(pm1.getProgrammeMembershipType(), pm2.getProgrammeMembershipType());
+	}
+
+	private boolean programmeMembershipIsPartOfExistingMemberships(Set<ProgrammeMembershipDTO> list, ProgrammeMembershipDTO programmeMembershipDTOToCheck) {
+		return list.stream().anyMatch(programmeMembershipDTO -> equalsProgrammeMembershipDTO(programmeMembershipDTO, programmeMembershipDTOToCheck));
+	}
+
 	private void addQualificationsRotationsAndProgrammeMemberships(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
 		QualificationDTO qualificationDTO = getQualificationDTO(personXLS);
 		if(qualificationDTO != null) {
