@@ -94,7 +94,6 @@ public class PlacementTransformerService {
 	Function<PlacementXLS, String> getGdcNumber = PlacementXLS::getGdcNumber;
 	Function<PlacementXLS, String> getGmcNumber = PlacementXLS::getGmcNumber;
 
-	Set<String> clinicalSupervisorRoles, educationalSupervisorRoles;
 
 	@PostConstruct
 	public void initialiseFetchers() {
@@ -103,14 +102,6 @@ public class PlacementTransformerService {
 		this.pbdDtoFetcher = new PersonBasicDetailsDTOFetcher(tcsServiceImpl);
 		this.peopleByPHNFetcher = new PeopleByPHNFetcher(tcsServiceImpl);
 		this.postFetcher = new PostFetcher(tcsServiceImpl);
-
-		//TODO this needs to be refreshed if changed in reference - chances are NOT !
-		clinicalSupervisorRoles = referenceServiceImpl.getRolesByCategory(1L).stream()
-				.map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
-				.collect(Collectors.toSet());
-		educationalSupervisorRoles = referenceServiceImpl.getRolesByCategory(2L).stream()
-				.map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
-				.collect(Collectors.toSet());
 	}
 
 	<DTO> Map<String, DTO> buildRegNumberDetailsMap(List<PlacementXLS> placementXLSS, Function<PlacementXLS, String> getRegNumberFunction, DTOFetcher<String, DTO> fetcher) {
@@ -238,7 +229,13 @@ public class PlacementTransformerService {
 		setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
 		setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
 
-		addSupervisorsToPlacement(placementXLS, placementDTO, regNumberToDTOLookup);
+		Set<String> clinicalSupervisorRoles = referenceServiceImpl.getRolesByCategory(1L).stream()
+				.map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
+				.collect(Collectors.toSet());
+		Set<String> educationalSupervisorRoles = referenceServiceImpl.getRolesByCategory(2L).stream()
+				.map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
+				.collect(Collectors.toSet());
+		addSupervisorsToPlacement(placementXLS, placementDTO, regNumberToDTOLookup, clinicalSupervisorRoles, educationalSupervisorRoles);
 
 		if (!placementXLS.hasErrors()) {
 			if (updatePlacement) {
@@ -250,12 +247,12 @@ public class PlacementTransformerService {
 		}
 	}
 
-	private void addSupervisorsToPlacement(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup) {
-		addSupervisorToPlacement(placementXLS, placementDTO, regNumberToDTOLookup, regNumberToDTOLookup::getDTOForClinicalSupervisor, PlacementXLS::getClinicalSupervisor, CLINICAL_SUPERVISOR);
-		addSupervisorToPlacement(placementXLS, placementDTO, regNumberToDTOLookup, regNumberToDTOLookup::getDTOForEducationalSupervisor, PlacementXLS::getEducationalSupervisor, EDUCATIONAL_SUPERVISOR);
+	private void addSupervisorsToPlacement(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, Set<String> clinicalSupervisorRoles, Set<String> educationalSupervisorRoles) {
+		addSupervisorToPlacement(placementXLS, placementDTO, regNumberToDTOLookup, regNumberToDTOLookup::getDTOForClinicalSupervisor, PlacementXLS::getClinicalSupervisor, CLINICAL_SUPERVISOR, clinicalSupervisorRoles);
+		addSupervisorToPlacement(placementXLS, placementDTO, regNumberToDTOLookup, regNumberToDTOLookup::getDTOForEducationalSupervisor, PlacementXLS::getEducationalSupervisor, EDUCATIONAL_SUPERVISOR, educationalSupervisorRoles);
 	}
 
-	private void addSupervisorToPlacement(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, Function<String, Optional<RegNumberDTO>> getDTOForRegNumber, Function<PlacementXLS, String> getSupervisor, String supervisorType) {
+	private void addSupervisorToPlacement(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, Function<String, Optional<RegNumberDTO>> getDTOForRegNumber, Function<PlacementXLS, String> getSupervisor, String supervisorType, Set<String> supervisorRoles) {
 		if (!StringUtils.isEmpty(getSupervisor.apply(placementXLS))) {
 			Optional<RegNumberDTO> dtoForSupervisor = getDTOForRegNumber.apply(getSupervisor.apply(placementXLS));
 			if(dtoForSupervisor.isPresent()) {
@@ -265,7 +262,7 @@ public class PlacementTransformerService {
 						? ((PhnDTO) regNumberDTO).getRegNumberDTO()
 						: regNumberToDTOLookup.getPersonDetailsMapForSupervisorsByGmcAndGdc().get(regNumberDTO.getId());
 
-				if(!supervisorHasRole(personDTO, supervisorType)) {
+				if(!supervisorHasRole(personDTO, supervisorRoles)) {
 					placementXLS.addErrorMessage(String.format(IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER, supervisorType, getSupervisor.apply(placementXLS)));
 				} else {
 					PersonLiteDTO personLiteDTO = new PersonLiteDTO();
@@ -289,14 +286,13 @@ public class PlacementTransformerService {
 		}
 	}
 
-	private boolean supervisorHasRole(PersonDTO personDTO, String supervisorType) {
+	private boolean supervisorHasRole(PersonDTO personDTO, Set<String> supervisorRoles) {
 		if(StringUtils.isEmpty(personDTO.getRole())) {
 			return false;
 		}
 		Set<String> supervisorRolesAssignedToPerson = new HashSet<>(Arrays.asList(personDTO.getRole().split(",")));
-		Set<String> supervisorRolesForType = supervisorType.equalsIgnoreCase(CLINICAL_SUPERVISOR) ? clinicalSupervisorRoles : educationalSupervisorRoles;
 		return supervisorRolesAssignedToPerson.stream()
-				.anyMatch(roleAssignedToPerson -> supervisorRolesForType.contains(roleAssignedToPerson.toLowerCase().trim()));
+				.anyMatch(roleAssignedToPerson -> supervisorRoles.contains(roleAssignedToPerson.toLowerCase().trim()));
 	}
 
 
