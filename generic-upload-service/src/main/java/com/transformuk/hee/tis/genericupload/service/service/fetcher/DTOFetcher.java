@@ -1,5 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service.fetcher;
 
+import org.slf4j.Logger;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -10,8 +12,13 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.google.common.collect.Iterables.partition;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public abstract class DTOFetcher<DTO_KEY, DTO> {
+	private static final Logger logger = getLogger(DTOFetcher.class);
+
+	private static final String ID_FUNCTION_HAS_TO_BE_SPECIFIED_TO_IDENTIFY_DUPLICATE_KEYS = "Id function has to be specified to identify duplicate keys";
+
 	private final int QUERYSTRING_LENGTH_LIMITING_BATCH_SIZE = 32;	//TODO externalise
 
 	protected Function<List<DTO_KEY>, List<DTO>> dtoFetchingServiceCall;
@@ -19,6 +26,11 @@ public abstract class DTOFetcher<DTO_KEY, DTO> {
 	protected Set<DTO_KEY> duplicateKeys;
 
 	public Map<DTO_KEY, DTO> findWithKeys(Set<DTO_KEY> ids) {
+		if(keyFunction == null) {
+			logger.error(ID_FUNCTION_HAS_TO_BE_SPECIFIED_TO_IDENTIFY_DUPLICATE_KEYS);
+			throw new RuntimeException(ID_FUNCTION_HAS_TO_BE_SPECIFIED_TO_IDENTIFY_DUPLICATE_KEYS);
+		}
+
 		//had to incorporate groupingBy to cater for scenarios when the gmc keys existed in TIS on multiple records.
 		Map<DTO_KEY, List<DTO>> keysWithDuplicates = StreamSupport.stream(partition(ids, QUERYSTRING_LENGTH_LIMITING_BATCH_SIZE).spliterator(), false) //partition into chunks to get data in batches
 				.map(dtoFetchingServiceCall)
@@ -39,7 +51,6 @@ public abstract class DTOFetcher<DTO_KEY, DTO> {
 		return duplicateKeys;
 	}
 
-	//convenience method to
 	public Set<Long> extractIds(Map<DTO_KEY, DTO> dtos, Function<DTO, Long> idFunction) {
 		return dtos.entrySet().stream()
 				.map(dtoEntry -> idFunction.apply(dtoEntry.getValue()))

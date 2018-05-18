@@ -16,6 +16,40 @@ public class RegNumberToDTOLookup {
 	Map<String, GdcDetailsDTO> gdcDetailsMapForEducationalSupervisors;
 	Map<String, PersonDTO> phnDetailsMapForEducationalSupervisors;
 
+	Map<Long, PersonDTO> personDetailsMapForSupervisorsByGmcAndGdc;
+
+	public Map<String, GmcDetailsDTO> getGmcDetailsMapForClinicalSupervisors() {
+		return gmcDetailsMapForClinicalSupervisors;
+	}
+
+	public Map<String, GdcDetailsDTO> getGdcDetailsMapForClinicalSupervisors() {
+		return gdcDetailsMapForClinicalSupervisors;
+	}
+
+	public Map<String, PersonDTO> getPhnDetailsMapForClinicalSupervisors() {
+		return phnDetailsMapForClinicalSupervisors;
+	}
+
+	public Map<String, GmcDetailsDTO> getGmcDetailsMapForEducationalSupervisors() {
+		return gmcDetailsMapForEducationalSupervisors;
+	}
+
+	public Map<String, GdcDetailsDTO> getGdcDetailsMapForEducationalSupervisors() {
+		return gdcDetailsMapForEducationalSupervisors;
+	}
+
+	public Map<String, PersonDTO> getPhnDetailsMapForEducationalSupervisors() {
+		return phnDetailsMapForEducationalSupervisors;
+	}
+
+	public Map<Long, PersonDTO> getPersonDetailsMapForSupervisorsByGmcAndGdc() {
+		return personDetailsMapForSupervisorsByGmcAndGdc;
+	}
+
+	public void setPersonDetailsMapForSupervisorsByGmcAndGdc(Map<Long, PersonDTO> personDetailsMapForSupervisorsByGmcAndGdc) {
+		this.personDetailsMapForSupervisorsByGmcAndGdc = personDetailsMapForSupervisorsByGmcAndGdc;
+	}
+
 	public void setGmcDetailsMapForClinicalSupervisors(Map<String, GmcDetailsDTO> gmcDetailsMapForClinicalSupervisors) {
 		this.gmcDetailsMapForClinicalSupervisors = gmcDetailsMapForClinicalSupervisors;
 	}

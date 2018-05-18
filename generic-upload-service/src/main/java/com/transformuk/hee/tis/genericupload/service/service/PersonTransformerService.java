@@ -76,13 +76,13 @@ public class PersonTransformerService {
 	private static final String GDC = "GDC";
 	private static final String GMC = "GMC";
 	private static final String PHN = "PHN";
+	private static final String UNKNOWN = "unknown";
 
-	public static final String UNKNOWN = "unknown";
-	public static final String PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA = "Programme should have at least one curricula";
-	public static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED = "At least one of the three registration numbers needs to be specified";
-	public static final String CAN_ONLY_ADD_TO_A_ROTATION_LINKED_TO_THE_PROGRAMME_MEMBERSHIP_YOU_ARE_ADDING = "Can only add to a Rotation linked to the programme membership you are adding";
-	public static final String MULTIPLE_ROTATIONS_EXIST_FOR_PERSON_CANNOT_IDENTIFY_A_ROTATION_TO_UPDATE = "Multiple rotations exist for person. Cannot identify a rotation to update";
-	public static final String A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION = "A valid programme membership is needed to add a rotation";
+	private static final String PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA = "Programme should have at least one curricula";
+	private static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED = "At least one of the three registration numbers needs to be specified";
+	private static final String CAN_ONLY_ADD_TO_A_ROTATION_LINKED_TO_THE_PROGRAMME_MEMBERSHIP_YOU_ARE_ADDING = "Can only add to a Rotation linked to the programme membership you are adding";
+	private static final String MULTIPLE_ROTATIONS_EXIST_FOR_PERSON_CANNOT_IDENTIFY_A_ROTATION_TO_UPDATE = "Multiple rotations exist for person. Cannot identify a rotation to update";
+	private static final String A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION = "A valid programme membership is needed to add a rotation";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -217,7 +217,6 @@ public class PersonTransformerService {
 			Map<String, PersonDTO> gdcNumberToPersonDTOFromXLSMap = getRegNumberToPersonDTOFromXLSMap(personDTOToGdcID, knownGDCsInTIS);
 
 			Set<Long> personIds = getIdsFromRegNumberDTOsMap(knownGDCsInTIS, gdcDetailsMap, getGdcNumber, GdcDetailsDTO::getId);
-
 			Map<Long, PersonDTO> personDTOMapFromTCS = peopleFetcher.setIdMappingFunction(personDTOToGdcID).findWithKeys(personIds);
 			Map<String, PersonXLS> gdcToPersonXLSMap = getRegNumberToPersonXLSMap(getGdcNumber, knownGDCsInTIS);
 
@@ -482,7 +481,6 @@ public class PersonTransformerService {
 		}
 		return Optional.empty();
 	}
-
 
 	private PersonDTO getPersonDTO(PersonXLS personXLS) {
 		Set<CurriculumDTO> curricula = new HashSet<>();

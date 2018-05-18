@@ -7,8 +7,10 @@ import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetch
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PostFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.identity.PhnDTO;
 import com.transformuk.hee.tis.genericupload.service.service.identity.RegNumberDTO;
 import com.transformuk.hee.tis.genericupload.service.service.identity.RegNumberToDTOLookup;
+import com.transformuk.hee.tis.genericupload.service.service.identity.RegNumberType;
 import com.transformuk.hee.tis.genericupload.service.service.identity.SupervisorRegNumberIdService;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
@@ -34,6 +36,7 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,24 +54,29 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class PlacementTransformerService {
 	private static final Logger logger = getLogger(PlacementTransformerService.class);
 
-	public static final String AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON = "At least one of the 3 registration numbers should be provided to identify a person";
-	public static final String FIRST_NAME_DOES_NOT_MATCH_FIRST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "First name does not match first name obtained via registration number";
-	public static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
-	public static final String NATIONAL_POST_NUMBER_IS_MANDATORY = "National Post number is mandatory";
-	public static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts found for National Post Number : ";
-	public static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by National Post Number : ";
-	public static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER = "POST status is set to DELETE for National Post Number : ";
-	public static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER = "Did not find a person for registration number : ";
-	public static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name : ";
-	public static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
-	public static final String PLACEMENT_FROM_DATE_IS_MANDATORY = "Placement from date is mandatory";
-	public static final String PLACEMENT_TO_DATE_IS_MANDATORY = "Placement to date is mandatory";
-	public static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
-	public static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
-	public static final String WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY = "Whole Time Equivalent (WTE) is mandatory";
-	public static final String PLACEMENT_TYPE_IS_MANDATORY = "Placement Type is mandatory";
-	public static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : {}";
-	public static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : {}";
+	private static final String AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON = "At least one of the 3 registration numbers should be provided to identify a person";
+	private static final String FIRST_NAME_DOES_NOT_MATCH_FIRST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "First name does not match first name obtained via registration number";
+	private static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
+	private static final String NATIONAL_POST_NUMBER_IS_MANDATORY = "National Post number is mandatory";
+	private static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts found for National Post Number : ";
+	private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by National Post Number : ";
+	private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER = "POST status is set to DELETE for National Post Number : ";
+	private static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER = "Did not find a person for registration number : ";
+	private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name : ";
+	private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
+	private static final String PLACEMENT_FROM_DATE_IS_MANDATORY = "Placement from date is mandatory";
+	private static final String PLACEMENT_TO_DATE_IS_MANDATORY = "Placement to date is mandatory";
+	private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
+	private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
+	private static final String WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY = "Whole Time Equivalent (WTE) is mandatory";
+	private static final String PLACEMENT_TYPE_IS_MANDATORY = "Placement Type is mandatory";
+	private static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : {}";
+	private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : {}";
+	private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for registration number : %2$s";
+	private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
+
+	public static final String CLINICAL_SUPERVISOR = "Clinical supervisor";
+	public static final String EDUCATIONAL_SUPERVISOR = "Educational supervisor";
 
 	@Autowired
 	private TcsServiceImpl tcsServiceImpl;
@@ -86,6 +94,8 @@ public class PlacementTransformerService {
 	Function<PlacementXLS, String> getGdcNumber = PlacementXLS::getGdcNumber;
 	Function<PlacementXLS, String> getGmcNumber = PlacementXLS::getGmcNumber;
 
+	Set<String> clinicalSupervisorRoles, educationalSupervisorRoles;
+
 	@PostConstruct
 	public void initialiseFetchers() {
 		this.gmcDtoFetcher = new GMCDTOFetcher(tcsServiceImpl);
@@ -93,6 +103,14 @@ public class PlacementTransformerService {
 		this.pbdDtoFetcher = new PersonBasicDetailsDTOFetcher(tcsServiceImpl);
 		this.peopleByPHNFetcher = new PeopleByPHNFetcher(tcsServiceImpl);
 		this.postFetcher = new PostFetcher(tcsServiceImpl);
+
+		//TODO this needs to be refreshed if changed in reference - chances are NOT !
+		clinicalSupervisorRoles = referenceServiceImpl.getRolesByCategory(1L).stream()
+				.map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
+				.collect(Collectors.toSet());
+		educationalSupervisorRoles = referenceServiceImpl.getRolesByCategory(2L).stream()
+				.map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
+				.collect(Collectors.toSet());
 	}
 
 	<DTO> Map<String, DTO> buildRegNumberDetailsMap(List<PlacementXLS> placementXLSS, Function<PlacementXLS, String> getRegNumberFunction, DTOFetcher<String, DTO> fetcher) {
@@ -232,48 +250,55 @@ public class PlacementTransformerService {
 		}
 	}
 
-	public void addSupervisorsToPlacement(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup) {
-		Function<PlacementXLS, String> getClinicalSupervisor = PlacementXLS::getClinicalSupervisor;
-		if (!StringUtils.isEmpty(getClinicalSupervisor.apply(placementXLS))) {
-			addSupervisorToPlacementOrReportError(placementXLS, placementDTO, getClinicalSupervisor,
-					getPlacementSupervisor(regNumberToDTOLookup.getDTOForClinicalSupervisor(getClinicalSupervisor.apply(placementXLS))),
-					"Clinical supervisor");
-		}
-
-		Function<PlacementXLS, String> getEducationalSupervisor = PlacementXLS::getEducationalSupervisor;
-		if (!StringUtils.isEmpty(getEducationalSupervisor.apply(placementXLS))) {
-			addSupervisorToPlacementOrReportError(placementXLS, placementDTO, getEducationalSupervisor,
-					getPlacementSupervisor(regNumberToDTOLookup.getDTOForEducationalSupervisor(getEducationalSupervisor.apply(placementXLS))),
-					"Educational supervisor");
-		}
+	private void addSupervisorsToPlacement(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup) {
+		addSupervisorToPlacement(placementXLS, placementDTO, regNumberToDTOLookup, regNumberToDTOLookup::getDTOForClinicalSupervisor, PlacementXLS::getClinicalSupervisor, CLINICAL_SUPERVISOR);
+		addSupervisorToPlacement(placementXLS, placementDTO, regNumberToDTOLookup, regNumberToDTOLookup::getDTOForEducationalSupervisor, PlacementXLS::getEducationalSupervisor, EDUCATIONAL_SUPERVISOR);
 	}
 
-	public void addSupervisorToPlacementOrReportError(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, Function<PlacementXLS, String> getSupervisor, Optional<PlacementSupervisorDTO> placementSupervisor, String supervisorTypeName) {
-		if (placementSupervisor.isPresent()) {
-			Set<PlacementSupervisorDTO> supervisors = placementDTO.getSupervisors() != null ? placementDTO.getSupervisors() : new HashSet<>();
-			PlacementSupervisorDTO placementSupervisorDTO = placementSupervisor.get();
-			switch (supervisorTypeName) {
-				case "Clinical supervisor" : placementSupervisorDTO.setType(1); break;
-				case "Educational supervisor" : placementSupervisorDTO.setType(2); break;
-				default: placementSupervisorDTO.setType(3); break;
+	private void addSupervisorToPlacement(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, Function<String, Optional<RegNumberDTO>> getDTOForRegNumber, Function<PlacementXLS, String> getSupervisor, String supervisorType) {
+		if (!StringUtils.isEmpty(getSupervisor.apply(placementXLS))) {
+			Optional<RegNumberDTO> dtoForSupervisor = getDTOForRegNumber.apply(getSupervisor.apply(placementXLS));
+			if(dtoForSupervisor.isPresent()) {
+				RegNumberDTO regNumberDTO = dtoForSupervisor.get();
+
+				PersonDTO personDTO = regNumberDTO.getRegNumberType() == RegNumberType.PH
+						? ((PhnDTO) regNumberDTO).getRegNumberDTO()
+						: regNumberToDTOLookup.getPersonDetailsMapForSupervisorsByGmcAndGdc().get(regNumberDTO.getId());
+
+				if(!supervisorHasRole(personDTO, supervisorType)) {
+					placementXLS.addErrorMessage(String.format(IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER, supervisorType, getSupervisor.apply(placementXLS)));
+				} else {
+					PersonLiteDTO personLiteDTO = new PersonLiteDTO();
+					personLiteDTO.setId(regNumberDTO.getId());
+					PlacementSupervisorDTO placementSupervisorDTO = new PlacementSupervisorDTO();
+					placementSupervisorDTO.setPerson(personLiteDTO);
+
+					switch (supervisorType) {
+						case CLINICAL_SUPERVISOR : placementSupervisorDTO.setType(1); break;
+						case EDUCATIONAL_SUPERVISOR : placementSupervisorDTO.setType(2); break;
+						default: break;
+					}
+					if(placementDTO.getSupervisors() == null) {
+						placementDTO.setSupervisors(new HashSet<>());
+					}
+					placementDTO.getSupervisors().add(placementSupervisorDTO);
+				}
+			} else {
+				placementXLS.addErrorMessage(String.format(COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER, supervisorType, getSupervisor.apply(placementXLS)));
 			}
-			supervisors.add(placementSupervisorDTO);
-		} else {
-			placementXLS.addErrorMessage("Could not find a " + supervisorTypeName + " for registration number : " + getSupervisor.apply(placementXLS));
 		}
 	}
 
-	public Optional<PlacementSupervisorDTO> getPlacementSupervisor(Optional<RegNumberDTO> dtoForSupervisor) {
-		if (dtoForSupervisor.isPresent()) {
-			RegNumberDTO regNumberDTO = dtoForSupervisor.get();
-			PlacementSupervisorDTO placementSupervisorDTO = new PlacementSupervisorDTO();
-			PersonLiteDTO personLiteDTO = new PersonLiteDTO();
-			personLiteDTO.setId(regNumberDTO.getId());
-			placementSupervisorDTO.setPerson(personLiteDTO);
-			return Optional.of(placementSupervisorDTO);
+	private boolean supervisorHasRole(PersonDTO personDTO, String supervisorType) {
+		if(StringUtils.isEmpty(personDTO.getRole())) {
+			return false;
 		}
-		return Optional.empty();
+		Set<String> supervisorRolesAssignedToPerson = new HashSet<>(Arrays.asList(personDTO.getRole().split(",")));
+		Set<String> supervisorRolesForType = supervisorType.equalsIgnoreCase(CLINICAL_SUPERVISOR) ? clinicalSupervisorRoles : educationalSupervisorRoles;
+		return supervisorRolesAssignedToPerson.stream()
+				.anyMatch(roleAssignedToPerson -> supervisorRolesForType.contains(roleAssignedToPerson.toLowerCase().trim()));
 	}
+
 
 	<DTO> Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDTO(Function<PlacementXLS, String> getRegNumber, Map<String, DTO> regNumberDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByRegNumber, PlacementXLS placementXLS, Function<DTO, Long> getId) {
 		DTO regNumberDTO = regNumberDetailsMap.get(getRegNumber.apply(placementXLS));
