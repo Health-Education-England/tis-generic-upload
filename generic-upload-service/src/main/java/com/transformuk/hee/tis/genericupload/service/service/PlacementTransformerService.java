@@ -7,11 +7,11 @@ import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetch
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PostFetcher;
-import com.transformuk.hee.tis.genericupload.service.service.identity.PhnDTO;
-import com.transformuk.hee.tis.genericupload.service.service.identity.RegNumberDTO;
-import com.transformuk.hee.tis.genericupload.service.service.identity.RegNumberToDTOLookup;
-import com.transformuk.hee.tis.genericupload.service.service.identity.RegNumberType;
-import com.transformuk.hee.tis.genericupload.service.service.identity.SupervisorRegNumberIdService;
+import com.transformuk.hee.tis.genericupload.service.service.supervisor.PhnDTO;
+import com.transformuk.hee.tis.genericupload.service.service.supervisor.RegNumberDTO;
+import com.transformuk.hee.tis.genericupload.service.service.supervisor.RegNumberToDTOLookup;
+import com.transformuk.hee.tis.genericupload.service.service.supervisor.RegNumberType;
+import com.transformuk.hee.tis.genericupload.service.service.supervisor.SupervisorRegNumberIdService;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;

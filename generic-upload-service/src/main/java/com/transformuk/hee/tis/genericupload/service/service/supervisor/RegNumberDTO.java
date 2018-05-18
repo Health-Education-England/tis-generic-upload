@@ -1,4 +1,4 @@
-package com.transformuk.hee.tis.genericupload.service.service.identity;
+package com.transformuk.hee.tis.genericupload.service.service.supervisor;
 
 public abstract class RegNumberDTO<T> {
 	private T regNumberDTO;
