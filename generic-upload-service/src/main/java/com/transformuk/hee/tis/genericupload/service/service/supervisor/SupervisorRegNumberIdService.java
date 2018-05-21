@@ -82,17 +82,20 @@ public class SupervisorRegNumberIdService {
 
 	protected void lookupPeopleForGmcGdcDetails(RegNumberToDTOLookup regNumberToDTOLookup) {
 		Set<Long> gmcPersonIds = getIdsFromRegNumberDTOsMap(regNumberToDTOLookup.gmcDetailsMapForClinicalSupervisors, GmcDetailsDTO::getId);
+		gmcPersonIds.addAll(getIdsFromRegNumberDTOsMap(regNumberToDTOLookup.gmcDetailsMapForEducationalSupervisors, GmcDetailsDTO::getId));
 		Function<PersonDTO, String> personDTOToGmcID = personDTO -> personDTO.getGmcDetails().getGmcNumber();
 		Map<Long, PersonDTO> gmcPeople = peopleFetcher.setIdMappingFunction(personDTOToGmcID).findWithKeys(gmcPersonIds);
 
 		Set<Long> gdcPersonIds = getIdsFromRegNumberDTOsMap(regNumberToDTOLookup.gdcDetailsMapForClinicalSupervisors, GdcDetailsDTO::getId);
+		gdcPersonIds.addAll(getIdsFromRegNumberDTOsMap(regNumberToDTOLookup.gdcDetailsMapForEducationalSupervisors, GdcDetailsDTO::getId));
 		Function<PersonDTO, String> personDTOToGdcID = personDTO -> personDTO.getGdcDetails().getGdcNumber();
 		Map<Long, PersonDTO> gdcPeople = peopleFetcher.setIdMappingFunction(personDTOToGdcID).findWithKeys(gdcPersonIds);
 
 		Map<Long, PersonDTO> combinedGMCAndGDCPeopleList = Stream.concat(gmcPeople.entrySet().stream(), gdcPeople.entrySet().stream())
 				.collect(Collectors.toMap(
 						longPersonDTOEntry -> longPersonDTOEntry.getValue().getId(),
-						Map.Entry::getValue));
+						Map.Entry::getValue,
+						(a, b) -> a)); //merge function set to use on duplicates
 
 		regNumberToDTOLookup.setPersonDetailsMapForSupervisorsByGmcAndGdc(combinedGMCAndGDCPeopleList);
 	}
