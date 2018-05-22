@@ -58,13 +58,11 @@ public class ScheduledUploadTask {
 		this.azureProperties = azureProperties;
 	}
 
-	//waits fixedDelay milliseconds after the last run task
 	@Scheduled(fixedDelay = 5000, initialDelay = 2000) //TODO externalise this wait interval,
 	public void scheduleTaskWithFixedDelay() {
 		logger.info("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
 		//TODO circuit-break on tcs/profile/reference/mysql connectivity
 		for (ApplicationType applicationType : applicationTypeRepository.findByFileStatusOrderByUploadedDate(FileStatus.PENDING)) {
-			//set to in progress
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
 			applicationTypeRepository.save(applicationType);
 

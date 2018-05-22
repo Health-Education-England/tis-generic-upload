@@ -21,6 +21,7 @@ import com.transformuk.hee.tis.tcs.api.dto.QualificationDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RightToWorkDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RotationDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RotationPersonDTO;
+import com.transformuk.hee.tis.tcs.api.dto.TrainingNumberDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
@@ -589,15 +590,21 @@ public class PersonTransformerService {
 
 			ProgrammeMembershipType programmeMembershipType = ProgrammeMembershipType.fromString(personXLS.getProgrammeMembership());
 
+			TrainingNumberDTO trainingNumberDTO = null;
+			if (!StringUtils.isEmpty(personXLS.getNtnProgramme())) {
+				trainingNumberDTO = new TrainingNumberDTO();
+				trainingNumberDTO.setTrainingNumber(personXLS.getNtnProgramme());
+			}
+
 			Set<ProgrammeMembershipDTO> programmeMembershipDTOS = new HashSet<>();
 			if (curriculumDTO1 != null) {
-				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate());
+				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, trainingNumberDTO, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate());
 			}
 			if (curriculumDTO2 != null) {
-				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate());
+				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, trainingNumberDTO, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate());
 			}
 			if (curriculumDTO3 != null) {
-				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate());
+				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, trainingNumberDTO, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate());
 			}
 
 			if(programmeMembershipDTOS.isEmpty()) {
@@ -664,6 +671,7 @@ public class PersonTransformerService {
 	}
 
 	private void addOrUpdateCurriculumToProgrammeMemberships(Set<ProgrammeMembershipDTO> programmeMembershipDTOs,
+	                                                         TrainingNumberDTO trainingNumberDTO,
 	                                                         LocalDate programmeStartDate,
 	                                                         LocalDate programmeEndDate,
 	                                                         ProgrammeDTO programmeDTO,
@@ -677,6 +685,7 @@ public class PersonTransformerService {
 		programmeMembershipDTO.setProgrammeStartDate(programmeStartDate);
 		programmeMembershipDTO.setProgrammeEndDate(programmeEndDate);
 		programmeMembershipDTO.setProgrammeId(programmeDTO.getId());
+		programmeMembershipDTO.setTrainingNumber(trainingNumberDTO);
 
 		CurriculumMembershipDTO curriculumMembershipDTO = new CurriculumMembershipDTO();
 		curriculumMembershipDTO.setCurriculumId(curriculumDTO.getId());
