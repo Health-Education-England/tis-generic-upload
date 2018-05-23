@@ -108,13 +108,6 @@ public class PersonTransformerServiceIntTest {
 		assertThat(result).isNotNull();
 	}
 
-	@Test
-	public void canParseFieldErrorsIfNull() {
-		String errorJson = "{\"message\":\"error.internalServerError\",\"description\":\"Internal server error\",\"fieldErrors\":null}";
-		personTransformerService.getSingleMessageFromSpringJsonErrorMessages(errorJson);
-		assertThat(errorJson).isNotNull();
-	}
-
 	//have to use reflection to invoke
 	public QualificationDTO getQualificationDTO(PersonXLS personXLS) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 		Class[] parameterTypes = new Class[1];

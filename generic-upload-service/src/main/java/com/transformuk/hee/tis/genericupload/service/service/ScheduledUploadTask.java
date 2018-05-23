@@ -3,12 +3,14 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementDeleteHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
@@ -42,6 +44,8 @@ public class ScheduledUploadTask {
 
 	@Autowired
 	private PlacementTransformerService placementTransformerService;
+	@Autowired
+	private PlacementDeleteService placementDeleteService;
 	@Autowired
 	private PersonTransformerService personTransformerService;
 
@@ -81,6 +85,12 @@ public class ScheduledUploadTask {
 						List<PlacementXLS> placementXLSS = excelToObjectMapper.map(PlacementXLS.class, new PlacementHeaderMapper().getFieldMap());
 						placementTransformerService.processPlacementsUpload(placementXLSS);
 						setJobToCompleted(applicationType, placementXLSS);
+						break;
+
+					case PLACEMENTS_DELETE:
+						List<PlacementDeleteXLS> placementDeleteXLSS = excelToObjectMapper.map(PlacementDeleteXLS.class, new PlacementDeleteHeaderMapper().getFieldMap());
+						placementDeleteService.processPlacementsDeleteUpload(placementDeleteXLSS);
+						setJobToCompleted(applicationType, placementDeleteXLSS);
 						break;
 
 					default: logger.error(UNKNOWN_FILE_TYPE);

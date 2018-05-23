@@ -257,21 +257,6 @@ public class PersonTransformerService {
 		addPersons(getRegNumbersNotInTCS(rowsWithGMCNumbers, gmcDetailsMap.keySet()));
 	}
 
-	public String getSingleMessageFromSpringJsonErrorMessages(String responseJson) {
-		JSONObject jsonObject = new JSONObject(responseJson);
-		Object fieldErrorsString = jsonObject.get("fieldErrors");
-		if(!fieldErrorsString.equals(JSONObject.NULL)) {
-			JSONArray fieldErrors = jsonObject.getJSONArray("fieldErrors");
-			StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < fieldErrors.length(); i++) {
-				sb.append(fieldErrors.getJSONObject(i).get("message"));
-				sb.append(System.lineSeparator());
-			}
-			return sb.toString();
-		}
-		return "";
-	}
-
 	private void updateOrRecordError(PersonDTO personDTOFromDB, PersonDTO personDTOFromXLS, PersonXLS personXLS) {
 		try {
 			personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
@@ -280,14 +265,9 @@ public class PersonTransformerService {
 				personXLS.setSuccessfullyImported(true);
 			}
 		} catch (HttpClientErrorException e) {
-			personXLS.addErrorMessage(getSingleMessageFromSpringJsonErrorMessages(e.getResponseBodyAsString()));
+			personXLS.addErrorMessage(new ErrorHandler().getSingleMessageFromSpringJsonErrorMessages(e.getResponseBodyAsString()));
 		} catch (ResourceAccessException rae) {
-			if(rae.getCause() != null && rae.getCause() instanceof IOException) {
-				IOException ioe = (IOException) rae.getCause();
-				personXLS.addErrorMessage(getSingleMessageFromSpringJsonErrorMessages(ioe.getMessage()));
-			} else {
-				logger.error("Unexpected exception : " + rae.getMessage());
-			}
+			new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(personXLS, rae);
 		}
 	}
 
@@ -387,13 +367,7 @@ public class PersonTransformerService {
 						try {
 							addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
 						} catch (ResourceAccessException rae) {
-							//TODO this exception handling is duplicated
-							if(rae.getCause() != null && rae.getCause() instanceof IOException) {
-								IOException ioe = (IOException) rae.getCause();
-								personXLS.addErrorMessage(getSingleMessageFromSpringJsonErrorMessages(ioe.getMessage()));
-							} else {
-								logger.error("Unexpected exception : " + rae.getMessage());
-							}
+							new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(personXLS, rae);
 						}
 					}
 				}
