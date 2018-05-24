@@ -30,6 +30,8 @@ public class ApplicationType implements Serializable {
 
     private LocalDateTime processedDate;
 
+    private LocalDateTime jobStartTime;
+
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private FileStatus fileStatus;
@@ -85,6 +87,10 @@ public class ApplicationType implements Serializable {
     public void setProcessedDate(LocalDateTime processedDate) {
         this.processedDate = processedDate;
     }
+
+    public LocalDateTime getJobStartTime() { return jobStartTime; }
+
+    public void setJobStartTime(LocalDateTime jobStartTime) { this.jobStartTime = jobStartTime; }
 
     public FileStatus getFileStatus() {
         return fileStatus;
@@ -163,6 +169,7 @@ public class ApplicationType implements Serializable {
         sb.append(", fileType=").append(fileType);
         sb.append(", uploadedDate=").append(uploadedDate);
         sb.append(", processedDate=").append(processedDate);
+        sb.append(", jobStartTime=").append(jobStartTime);
         sb.append(", fileStatus=").append(fileStatus);
         sb.append(", logId=").append(logId);
         sb.append(", username='").append(username).append('\'');

@@ -1,7 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.repository;
 
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
-import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +25,8 @@ public interface ApplicationTypeRepository extends JpaRepository<ApplicationType
         "at.processedDate like %:text%";
 
     List<ApplicationType> findByFileStatusOrderByUploadedDate(FileStatus status);
+
+    ApplicationType findFirstByFileStatusOrderByUploadedDate(FileStatus status);
 
     ApplicationType findByLogId(Long logId);
 

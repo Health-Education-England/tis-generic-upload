@@ -6,7 +6,6 @@ import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.api.validation.ValidationException;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
-import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import com.transformuk.hee.tis.security.model.UserProfile;
 import com.transformuk.hee.tis.security.util.TisSecurityHelper;
@@ -27,7 +26,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,9 +41,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.text.ParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertToLocalDateTime;
@@ -56,19 +54,13 @@ public class UploadFileResource {
 	private final Logger log = LoggerFactory.getLogger(UploadFileResource.class);
 
 	private final UploadFileService uploadFileService;
-	private final FileProcessService fileProcessService;
 
 	private final FileValidator fileValidator;
 
-	private final String XLS_MIME_TYPE = "application/vnd.ms-excel";
-	private final String XLX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
 	static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-	public UploadFileResource(UploadFileService uploadFileService, FileProcessService fileProcessService,
-	                          FileValidator fileValidator) {
+	public UploadFileResource(UploadFileService uploadFileService, FileValidator fileValidator) {
 		this.uploadFileService = uploadFileService;
-		this.fileProcessService = fileProcessService;
 		this.fileValidator = fileValidator;
 	}
 
@@ -82,14 +74,14 @@ public class UploadFileResource {
 	@Timed
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity handleFileUpload(HttpServletRequest request) {
-		log.info("Received request to upload files.");
+		log.debug("Received request to upload files.");
 
 		MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
 		// extract files from MIME body
 		List<MultipartFile> fileList = mRequest.getFileMap()
 				.entrySet()
 				.stream()
-				.map(file -> file.getValue())
+				.map(Map.Entry::getValue)
 				.collect(Collectors.toList());
 		if (fileList.isEmpty()) {
 			log.error("Expected to receive file(s) as part of the upload");
@@ -119,7 +111,7 @@ public class UploadFileResource {
 		} catch (ValidationException ve) {
 			StringBuilder sb = new StringBuilder();
 			for(FieldError fieldError : ve.getBindingResult().getFieldErrors()) {
-				sb.append(System.lineSeparator() + fieldError.getDefaultMessage());
+				sb.append(System.lineSeparator()).append(fieldError.getDefaultMessage());
 			}
 			return logAndReturnResponseEntity("File uploaded failed validation : ", sb.toString(), HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
@@ -138,7 +130,7 @@ public class UploadFileResource {
 
 	public boolean hasAnExcelExtension(MultipartFile file) {
 		String extension = FilenameUtils.getExtension(file.getOriginalFilename());
-		return extension != null && ("xls".equals(extension) || "xlsx".equals(extension));
+		return "xls".equals(extension) || "xlsx".equals(extension);
 	}
 
 	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)
@@ -161,7 +153,7 @@ public class UploadFileResource {
 	                                                                 @ApiParam(value = "date string any substring of the format YYYY-MM-DD") @RequestParam(value = "uploadedDate", required = false) String uploadedDate,
 	                                                                 @ApiParam(value = "file") @RequestParam(value = "file", required = false) String file,
 	                                                                 @ApiParam(value = "user") @RequestParam(value = "user", required = false) String user) {
-		log.info("request for bulk upload status received.");
+		log.debug("request for bulk upload status received.");
 		Page<ApplicationType> page;
 		searchQuery = sanitize(searchQuery);
 		file = sanitize(file);

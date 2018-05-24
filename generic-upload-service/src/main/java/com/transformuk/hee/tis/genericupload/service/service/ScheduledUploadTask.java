@@ -35,12 +35,14 @@ public class ScheduledUploadTask {
 	private static final Logger logger = getLogger(ScheduledUploadTask.class);
 
 	private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+	private static final int HOURS_TO_WAIT_BEFORE_RESTARTING = 3; //TODO externalise
 
-	public static final String FILE_IMPORT_SUCCESS_AND_ERROR_COUNTS_DON_T_MATCH_INPUT_NUMBER_OF_ROWS = "File import success and error counts don't match input number of rows";
-	public static final String UNKNOWN_FILE_TYPE = "Unknown FileType";
-	public static final String ERROR_WHILE_READING_EXCEL_FILE = "Error while reading excel file : ";
-	public static final String ERROR_WHILE_PROCESSING_EXCEL_FILE = "Error while processing excel file : ";
-	public static final String UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE = "Unknown Error while processing excel file : ";
+	private static final String FILE_IMPORT_SUCCESS_AND_ERROR_COUNTS_DON_T_MATCH_INPUT_NUMBER_OF_ROWS = "File import success and error counts don't match input number of rows";
+	private static final String UNKNOWN_FILE_TYPE = "Unknown FileType";
+	private static final String ERROR_WHILE_READING_EXCEL_FILE = "Error while reading excel file : ";
+	private static final String ERROR_WHILE_PROCESSING_EXCEL_FILE = "Error while processing excel file : ";
+	private static final String UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE = "Unknown Error while processing excel file : ";
+
 
 	@Autowired
 	private PlacementTransformerService placementTransformerService;
@@ -62,12 +64,14 @@ public class ScheduledUploadTask {
 		this.azureProperties = azureProperties;
 	}
 
-	@Scheduled(fixedDelay = 5000, initialDelay = 2000) //TODO externalise this wait interval,
+	@Scheduled(fixedDelay = 1000, initialDelay = 2000) //TODO externalise this wait interval,
 	public void scheduleTaskWithFixedDelay() {
-		logger.info("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
+		logger.debug("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
 		//TODO circuit-break on tcs/profile/reference/mysql connectivity
-		for (ApplicationType applicationType : applicationTypeRepository.findByFileStatusOrderByUploadedDate(FileStatus.PENDING)) {
+		ApplicationType applicationType = applicationTypeRepository.findFirstByFileStatusOrderByUploadedDate(FileStatus.PENDING);
+		if(applicationType != null) {
 			applicationType.setFileStatus(FileStatus.IN_PROGRESS);
+			applicationType.setJobStartTime(LocalDateTime.now());
 			applicationTypeRepository.save(applicationType);
 
 			try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), azureProperties.getContainerName(), applicationType.getFileName()))) {
@@ -109,6 +113,22 @@ public class ScheduledUploadTask {
 				applicationTypeRepository.save(applicationType);
 			}
 		}
+
+		resetJobsInProgressIfOverHours(HOURS_TO_WAIT_BEFORE_RESTARTING);
+	}
+
+	/** Iterate through the jobs in progress (for over 3 hours) and set them to be restarted;
+	 *   - This is needed if the application terminates abruptly while a job is in progress;
+	 *   - Also caters for multiple instances of bulk uploads
+	 */
+	private void resetJobsInProgressIfOverHours(int hours) {
+		for(ApplicationType inProgressApplicationType : applicationTypeRepository.findByFileStatusOrderByUploadedDate(FileStatus.IN_PROGRESS)) {
+			if(inProgressApplicationType.getJobStartTime().plusHours(hours).isBefore(LocalDateTime.now())) {
+				logger.info("Resetting status on job for file {} with log id {}", inProgressApplicationType.getFileName(), inProgressApplicationType.getLogId());
+				inProgressApplicationType.setFileStatus(FileStatus.PENDING);
+				applicationTypeRepository.save(inProgressApplicationType);
+			}
+		}
 	}
 
 	private void setJobToCompleted(ApplicationType applicationType, List<? extends TemplateXLS> templateXLSS) {
@@ -132,5 +152,6 @@ public class ScheduledUploadTask {
 		applicationType.setErrorJson(fir.toJson());
 		applicationType.setProcessedDate(LocalDateTime.now());
 		applicationType.setFileStatus(FileStatus.COMPLETED);
+		logger.info("Job completed for file {} with log id {}", applicationType.getFileName(), applicationType.getLogId());
 	}
 }

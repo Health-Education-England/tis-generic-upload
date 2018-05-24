@@ -1,0 +1,1 @@
+ALTER TABLE `ApplicationType` ADD COLUMN `jobStartTime` timestamp NULL;

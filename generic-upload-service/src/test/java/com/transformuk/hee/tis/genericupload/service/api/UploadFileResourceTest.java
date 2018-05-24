@@ -5,7 +5,6 @@ import com.transformuk.hee.tis.genericupload.service.TestUtils;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.exception.ExceptionTranslator;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
-import com.transformuk.hee.tis.genericupload.service.service.FileProcessService;
 import com.transformuk.hee.tis.genericupload.service.service.UploadFileService;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,13 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockMultipartHttpServletRequest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,9 +26,6 @@ import org.springframework.web.client.RestTemplate;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -45,9 +38,6 @@ public class UploadFileResourceTest {
 
 	@Autowired
 	private ApplicationTypeRepository applicationTypeRepository;
-
-	@Autowired
-	private FileProcessService fileProcessService;
 
 	@Autowired
 	private FileValidator fileValidator;
@@ -73,7 +63,7 @@ public class UploadFileResourceTest {
 		MockitoAnnotations.initMocks(this);
         TestUtils.mockUserprofile(USER_ID, DBC);
 
-		UploadFileResource uploadFileResource = new UploadFileResource(uploadFileService, fileProcessService, fileValidator);
+		UploadFileResource uploadFileResource = new UploadFileResource(uploadFileService, fileValidator);
 		this.restContactDetailsMockMvc = MockMvcBuilders.standaloneSetup(uploadFileResource)
 				.setControllerAdvice(exceptionTranslator).setMessageConverters(jacksonMessageConverter).build();
 	}

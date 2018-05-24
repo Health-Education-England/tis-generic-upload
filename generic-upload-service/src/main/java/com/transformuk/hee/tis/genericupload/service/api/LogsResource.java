@@ -4,7 +4,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import com.codahale.metrics.annotation.Timed;
 import com.transformuk.hee.tis.genericupload.service.api.vm.LoggerVM;
-import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
