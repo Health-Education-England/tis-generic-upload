@@ -360,8 +360,8 @@ public class PersonTransformerService {
 				if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
 					PersonDTO personDTO = getPersonDTO(personXLS);
 					if (personDTO != null) {
-						PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
 						try {
+							PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
 							addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
 						} catch (ResourceAccessException rae) {
 							new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(personXLS, rae);
