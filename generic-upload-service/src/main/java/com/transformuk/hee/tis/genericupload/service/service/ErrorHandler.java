@@ -27,7 +27,7 @@ public class ErrorHandler {
 		StringBuilder sb = new StringBuilder();
 
 		Object fieldErrorsString = jsonObject.get("fieldErrors");
-		if(!fieldErrorsString.equals(JSONObject.NULL)) {
+		if(fieldErrorsString != null && !fieldErrorsString.equals(JSONObject.NULL)) {
 			JSONArray fieldErrors = jsonObject.getJSONArray("fieldErrors");
 			for (int i = 0; i < fieldErrors.length(); i++) {
 				sb.append(fieldErrors.getJSONObject(i).get("message"));
@@ -35,8 +35,10 @@ public class ErrorHandler {
 			}
 		}
 
-		sb.append(jsonObject.get("description"));
+		Object fieldDescString = jsonObject.get("description");
+		if(fieldDescString != null && !fieldDescString.equals(JSONObject.NULL)) {
+			sb.append(fieldDescString);
+		}
 		return sb.toString();
 	}
-
 }
