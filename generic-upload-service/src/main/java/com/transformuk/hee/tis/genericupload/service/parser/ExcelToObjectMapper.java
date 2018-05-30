@@ -145,6 +145,8 @@ public class ExcelToObjectMapper {
         case NUMERIC:
           if (DateUtil.isCellDateFormatted(cell)) {
             field.set(obj, cell.getDateCellValue());
+          } else if(cls == Float.class) {
+            field.set(obj, (float) cell.getNumericCellValue());
           } else {
             cell.setCellType(CellType.STRING);
             field.set(obj, cell.getStringCellValue());

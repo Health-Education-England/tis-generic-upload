@@ -46,7 +46,7 @@ public class ExcelToObjectMapperPlacementTest {
         new PlacementHeaderMapper().getFieldMap());
     assertThat(actual.get(0).getPlacementType()).isNotNull();
     assertThat(actual.get(0).getPlacementType()).isEqualToIgnoringCase("In Post");
-    assertThat(actual.get(0).getWte()).isEqualTo(1);
+    assertThat(actual.get(2).getWte()).isEqualTo(0.3f);
   }
 
   @Test
