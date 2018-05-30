@@ -70,9 +70,9 @@ public class PlacementTransformerService {
 	private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
 	private static final String WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY = "Whole Time Equivalent (WTE) is mandatory";
 	private static final String PLACEMENT_TYPE_IS_MANDATORY = "Placement Type is mandatory";
-	private static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : {}";
-	private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : {}";
-	private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for registration number : %2$s";
+	private static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : %s";
+	private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
+	private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for registration number : %s";
 	private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
 
 	public static final String CLINICAL_SUPERVISOR = "Clinical supervisor";
@@ -433,7 +433,7 @@ public class PlacementTransformerService {
 				gradeMapByName.put(gradeName, gradesByName.get(0));
 			} else {
 				placementXLSS.stream().filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName)).forEach(placementXLS -> {
-					logger.error(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName);
+					logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
 					placementXLS.addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
 				});
 			}
@@ -452,7 +452,7 @@ public class PlacementTransformerService {
 				siteMapByName.put(siteName, sitesByName.get(0));
 			} else {
 				placementXLSS.stream().filter(placementXLS -> placementXLS.getSite().equalsIgnoreCase(siteName)).forEach(placementXLS -> {
-					logger.error(EXPECTED_TO_FIND_A_SINGLE_SITE_FOR, siteName);
+					logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_SITE_FOR, siteName));
 					placementXLS.addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_SITE_FOR, siteName));
 				});
 			}
