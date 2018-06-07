@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.Objects;
 
 public class PlacementXLS extends TemplateXLS {
-	private String forenames;
 	private String surname;
 	private String gmcNumber;
 	private String gdcNumber;
@@ -30,14 +29,6 @@ public class PlacementXLS extends TemplateXLS {
 
 	public void setSurname(String surname) {
 		this.surname = surname;
-	}
-
-	public String getForenames() {
-		return forenames;
-	}
-
-	public void setForenames(String forenames) {
-		this.forenames = forenames;
 	}
 
 	public String getGmcNumber() {
@@ -182,7 +173,6 @@ public class PlacementXLS extends TemplateXLS {
 		if (o == null || getClass() != o.getClass()) return false;
 		PlacementXLS that = (PlacementXLS) o;
 		return Objects.equals(surname, that.surname) &&
-				Objects.equals(forenames, that.forenames) &&
 				Objects.equals(gmcNumber, that.gmcNumber) &&
 				Objects.equals(gdcNumber, that.gdcNumber) &&
 				Objects.equals(publicHealthNumber, that.publicHealthNumber) &&
@@ -204,14 +194,13 @@ public class PlacementXLS extends TemplateXLS {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(surname, forenames, gmcNumber, gdcNumber, publicHealthNumber, nationalPostNumber, dateFrom, dateTo, placementType, placementStatus, site, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
+		return Objects.hash(surname, gmcNumber, gdcNumber, publicHealthNumber, nationalPostNumber, dateFrom, dateTo, placementType, placementStatus, site, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("PlacementXLS{");
 		sb.append("surname='").append(surname).append('\'');
-		sb.append(", forenames='").append(forenames).append('\'');
 		sb.append(", gmcNumber='").append(gmcNumber).append('\'');
 		sb.append(", gdcNumber='").append(gdcNumber).append('\'');
 		sb.append(", publicHealthNumber='").append(publicHealthNumber).append('\'');

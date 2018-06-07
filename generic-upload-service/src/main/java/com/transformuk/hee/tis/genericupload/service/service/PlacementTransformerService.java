@@ -55,7 +55,6 @@ public class PlacementTransformerService {
 	private static final Logger logger = getLogger(PlacementTransformerService.class);
 
 	private static final String AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON = "At least one of the 3 registration numbers should be provided to identify a person";
-	private static final String FIRST_NAME_DOES_NOT_MATCH_FIRST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "First name does not match first name obtained via registration number";
 	private static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
 	private static final String NATIONAL_POST_NUMBER_IS_MANDATORY = "National Post number is mandatory";
 	private static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts found for National Post Number : ";
@@ -153,9 +152,6 @@ public class PlacementTransformerService {
 
 				if (personBasicDetailsDTOOptional != null && personBasicDetailsDTOOptional.isPresent()) {
 					PersonBasicDetailsDTO personBasicDetailsDTO = personBasicDetailsDTOOptional.get();
-					if (!placementXLS.getForenames().equalsIgnoreCase(personBasicDetailsDTO.getFirstName())) {
-						placementXLS.addErrorMessage(FIRST_NAME_DOES_NOT_MATCH_FIRST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER);
-					}
 
 					if (!placementXLS.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
 						placementXLS.addErrorMessage(SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER);

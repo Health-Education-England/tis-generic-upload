@@ -67,7 +67,6 @@ public class PlacementTransformerServiceTest {
 
 	public PlacementXLS createPlacementXLS(String forename, String surname, String gmcNumber, String npn, String specialtyName) {
 		PlacementXLS placementXLS = new PlacementXLS();
-		placementXLS.setForenames(forename);
 		placementXLS.setSurname(surname);
 		placementXLS.setGmcNumber(gmcNumber);
 		placementXLS.setNationalPostNumber(npn);

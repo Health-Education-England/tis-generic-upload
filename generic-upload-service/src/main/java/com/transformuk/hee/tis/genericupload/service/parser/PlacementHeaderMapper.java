@@ -3,7 +3,6 @@ package com.transformuk.hee.tis.genericupload.service.parser;
 public class PlacementHeaderMapper extends ColumnMapper {
 	public PlacementHeaderMapper() {
 		fieldNameSource = new String[] {
-				"forenames",
 				"surname",
 				"gmcNumber",
 				"gdcNumber",
@@ -25,7 +24,6 @@ public class PlacementHeaderMapper extends ColumnMapper {
 		};
 
 		fieldNameTarget = new String[] {
-				"Forenames*",
 				"Surname*",
 				"GMC Number",
 				"GDC Number",
