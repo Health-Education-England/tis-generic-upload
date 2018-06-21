@@ -110,9 +110,8 @@ public class UploadFileServiceImpl implements UploadFileService {
 		Map<Integer, String> lineNumberErrors = fileImportResults.getLineNumberErrors();
 		Set<Integer> setOfLineNumbersWithErrors = lineNumberErrors.keySet();
 
-		try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), azureProperties.getContainerName(), applicationType.getFileName()))) {
-			Workbook workbook = WorkbookFactory.create(bis);
-
+		try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), azureProperties.getContainerName(), applicationType.getFileName()));
+		     Workbook workbook = WorkbookFactory.create(bis)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			int totalColumns = sheet.getRow(0).getLastCellNum();
 			int errorReportingColumnIndex = totalColumns;

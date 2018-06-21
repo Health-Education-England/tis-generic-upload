@@ -393,14 +393,15 @@ public class PersonTransformerService {
 				rotationNameOptional.ifPresent(programmeMembershipDTO::setRotation);
 				if (savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
 					if(!StringUtils.isEmpty(programmeMembershipDTO.getRotation())) {
-						ProgrammeMembershipDTO savedProgrammeMembershipDTO = savedPersonDTO.getProgrammeMemberships().stream()
+						savedPersonDTO.getProgrammeMemberships().stream()
 								.filter(programmeMembershipDTO1 -> programmeMembershipDTO1.equals(programmeMembershipDTO))
 								.findFirst()
-								.get();
-						if (!Objects.equals(programmeMembershipDTO.getRotation(), savedProgrammeMembershipDTO.getRotation())) {
-							savedProgrammeMembershipDTO.setRotation(programmeMembershipDTO.getRotation());
-							tcsServiceImpl.updateProgrammeMembership(savedProgrammeMembershipDTO);
-						}
+								.ifPresent(savedProgrammeMembershipDTO -> {
+									if (Objects.equals(programmeMembershipDTO.getRotation(), savedProgrammeMembershipDTO.getRotation())) {
+										savedProgrammeMembershipDTO.setRotation(programmeMembershipDTO.getRotation());
+										tcsServiceImpl.updateProgrammeMembership(savedProgrammeMembershipDTO);
+									}
+								});
 					}
 				} else {
 					tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
@@ -665,11 +666,9 @@ public class PersonTransformerService {
 
 		if(programmeMembershipDTOs.contains(programmeMembershipDTO)) {
 			programmeMembershipDTOs.stream()
-					.filter(programmeMembershipDTO1 -> programmeMembershipDTO1.equals(programmeMembershipDTO))
+					.filter(eachPmd -> Objects.equals(eachPmd, programmeMembershipDTO))
 					.findFirst()
-					.get()
-					.getCurriculumMemberships()
-					.add(curriculumMembershipDTO);
+					.ifPresent(pmd -> pmd.getCurriculumMemberships().add(curriculumMembershipDTO));
 		} else {
 			programmeMembershipDTO.setCurriculumMemberships(Lists.newArrayList());
 			programmeMembershipDTO.getCurriculumMemberships().add(curriculumMembershipDTO);

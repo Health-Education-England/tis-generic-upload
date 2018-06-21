@@ -150,7 +150,7 @@ public class PlacementTransformerService {
 					placementXLS.addErrorMessage(AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON);
 				}
 
-				if (personBasicDetailsDTOOptional != null && personBasicDetailsDTOOptional.isPresent()) {
+				if (personBasicDetailsDTOOptional.isPresent()) {
 					PersonBasicDetailsDTO personBasicDetailsDTO = personBasicDetailsDTOOptional.get();
 
 					if (!placementXLS.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
