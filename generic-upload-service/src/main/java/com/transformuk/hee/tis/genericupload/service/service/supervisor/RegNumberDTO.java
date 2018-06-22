@@ -1,7 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service.supervisor;
 
 public abstract class RegNumberDTO<T> {
-	private T regNumberDTO;
+	private T dto;
 	protected RegNumberType regNumberType;
 
 	public RegNumberType getRegNumberType() {
@@ -9,11 +9,11 @@ public abstract class RegNumberDTO<T> {
 	}
 
 	public T getRegNumberDTO() {
-		return regNumberDTO;
+		return dto;
 	}
 
 	public void setRegNumberDTO(T regNumberDTO) {
-		this.regNumberDTO = regNumberDTO;
+		this.dto = regNumberDTO;
 	}
 
 	public abstract Long getId();

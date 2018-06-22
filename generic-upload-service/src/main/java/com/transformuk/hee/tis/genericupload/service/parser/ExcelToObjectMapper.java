@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -59,8 +60,8 @@ public class ExcelToObjectMapper {
    * @return List of object of type T.
    * @throws Exception if failed to generate mapping.
    */
-  public <T> ArrayList<T> map(Class<T> cls, Map<String, String> columnMap) throws ReflectiveOperationException {
-    ArrayList<T> list = new ArrayList();
+  public <T> List<T> map(Class<T> cls, Map<String, String> columnMap) throws ReflectiveOperationException {
+    List<T> list = new ArrayList();
 
     Field rowNumberFieldInXLS = cls.getSuperclass().getDeclaredField(ROW_NUMBER);
     rowNumberFieldInXLS.setAccessible(true);
@@ -85,7 +86,7 @@ public class ExcelToObjectMapper {
         try {
           setObjectFieldValueFromCell(obj, classField, cell);
         } catch (ParseException | IllegalArgumentException e) {
-          logger.info("Error while extracting cell value from object : " + e.getMessage());
+          logger.info("Error while extracting cell value from object : {} ", e.getMessage());
           Method method = obj.getClass().getMethod("addErrorMessage", String.class);
           method.invoke(obj, e.getMessage());
         }
@@ -184,7 +185,7 @@ public class ExcelToObjectMapper {
     try {
       field.set(obj, null);
     } catch (IllegalAccessException e1) {
-      e1.printStackTrace();
+      logger.error(e1.getMessage());
     }
   }
 
@@ -203,7 +204,7 @@ public class ExcelToObjectMapper {
     int index = -1;
     for (index = 0; index < totalColumns; index++) {
       Cell cell = sheet.getRow(0).getCell(index);
-      if (cell.getStringCellValue().toLowerCase().trim().equals(headerName.toLowerCase())) {
+      if (cell.getStringCellValue().trim().equalsIgnoreCase(headerName)) {
         break;
       }
     }

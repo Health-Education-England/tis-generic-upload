@@ -55,7 +55,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 
 	public static final String REASON_FOR_IMPORT_FAILURE = "Reason for import failure";
 
-	private final Logger LOG = LoggerFactory.getLogger(UploadFileServiceImpl.class);
+	private final Logger logger = LoggerFactory.getLogger(UploadFileServiceImpl.class);
 
 	private final FileStorageRepository fileStorageRepository;
 	private final ApplicationTypeRepository applicationTypeRepository;
@@ -71,7 +71,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 	}
 
 	public ApplicationType save(String fileName, FileType fileType, long logId, String username, String firstName, String lastName) {
-		LOG.info("Request to save ApplicationType based on fileName : {}", fileName);
+		logger.info("Request to save ApplicationType based on fileName : {}", fileName);
 
 		ApplicationType applicationType = new ApplicationType();
 		applicationType.setFileName(fileName);
@@ -123,7 +123,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 			for (int rowNumber = sheet.getLastRowNum(); rowNumber > 0; rowNumber--) {
 				Row row = sheet.getRow(rowNumber);
 				POIUtil poiUtil = new POIUtil();
-				if(row == null) {
+				if(row == null) { //TODO sonar complains about using 'continue' twice !
 					continue;
 				} else if(poiUtil.isEmptyRow(row) || !setOfLineNumbersWithErrors.contains(rowNumber)) {
 					removeRow(sheet, rowNumber);
@@ -137,7 +137,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 			sheet.autoSizeColumn(errorReportingColumnIndex);
 			workbook.write(fileWithErrorsOnly);
 		} catch (IOException | InvalidFormatException e) {
-			LOG.error("Error building errors with uploaded template : " + e.getMessage());
+			logger.error("Error building errors with uploaded template : {}", e.getMessage());
 		}
 
 		return applicationType.getFileName();

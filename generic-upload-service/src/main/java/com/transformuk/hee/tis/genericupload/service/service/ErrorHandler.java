@@ -18,7 +18,7 @@ public class ErrorHandler {
 			IOException ioe = (IOException) rae.getCause();
 			templateXLS.addErrorMessage(getSingleMessageFromSpringJsonErrorMessages(ioe.getMessage()));
 		} else {
-			logger.error("Unexpected exception : " + rae.getMessage());
+			logger.error("Unexpected exception : {}", rae.getMessage());
 		}
 	}
 

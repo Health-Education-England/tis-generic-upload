@@ -26,7 +26,6 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -55,12 +54,9 @@ import java.util.stream.Collectors;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDateTime;
 import static com.transformuk.hee.tis.genericupload.service.util.ReflectionUtil.copyIfNotNullOrEmpty;
-import static org.slf4j.LoggerFactory.getLogger;
 
 @Component
 public class PersonTransformerService {
-	private static final Logger logger = getLogger(PersonTransformerService.class);
-
 	private static final String REG_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number (%s) identified as duplicate in uploaded file";
 	private static final String REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for %s Number does not match surname in TIS";
 	private static final String REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS = "Registration number (%s) exists on multiple records in TIS";
@@ -112,14 +108,12 @@ public class PersonTransformerService {
 
 	private Set<PersonXLS> getPersonsWithUnknownRegNumbers(List<PersonXLS> personXLSS) {
 		//deal with unknowns - add all unknown as a new record - ignore duplicates
-		//TODO determine what to do if
-		Set<PersonXLS> unknownRegNumbers = personXLSS.stream()
+		return personXLSS.stream()
 				.filter(personXLS ->
 						UNKNOWN.equalsIgnoreCase(personXLS.getGmcNumber()) ||
 						UNKNOWN.equalsIgnoreCase(personXLS.getGdcNumber()) ||
 						UNKNOWN.equalsIgnoreCase(personXLS.getPublicHealthNumber()))
 				.collect(Collectors.toSet());
-		return unknownRegNumbers;
 	}
 
 	private void  markRowsWithoutRegistrationNumbers(List<PersonXLS> personXLSS) {
@@ -159,12 +153,12 @@ public class PersonTransformerService {
 	}
 
 	<KEY_TYPE> void updateDatastoreWithRowsFromXLS(Map<String, PersonDTO> regNumberToPersonDTOFromXLSMap, Map<KEY_TYPE, PersonDTO> personDTOMapFromTCS, Map<String, PersonXLS> regNumberToPersonXLSMap) {
-		for (String key : regNumberToPersonDTOFromXLSMap.keySet()) {
-			PersonDTO personDTOFromDB = personDTOMapFromTCS.get(key);
-			PersonDTO personDTOFromXLS = regNumberToPersonDTOFromXLSMap.get(key);
+		for (Map.Entry<String, PersonDTO> personDTOFromXLSEntry : regNumberToPersonDTOFromXLSMap.entrySet()) {
+			PersonDTO personDTOFromDB = personDTOMapFromTCS.get(personDTOFromXLSEntry.getKey());
+			PersonDTO personDTOFromXLS = personDTOFromXLSEntry.getValue();
 			if (personDTOFromXLS != null) {
 				overwriteDBValuesFromNonEmptyExcelValues(personDTOFromDB, personDTOFromXLS);
-				updateOrRecordError(personDTOFromDB, personDTOFromXLS, regNumberToPersonXLSMap.get(key));
+				updateOrRecordError(personDTOFromDB, personDTOFromXLS, regNumberToPersonXLSMap.get(personDTOFromXLSEntry.getKey()));
 			}
 		}
 	}
@@ -446,7 +440,7 @@ public class PersonTransformerService {
 						rotationPersonDTO.setRotationId(rotationDTOWithRotationName.getId());
 						tcsServiceImpl.updateRotationForPerson(rotationPersonDTO);
 						return Optional.of(rotationDTOWithRotationName.getName());
-					} else if (personRotationsForProgramme.size() == 0) { //add a Rotation
+					} else if (personRotationsForProgramme.isEmpty()) { //add a Rotation
 						RotationPersonDTO rotationPersonDTO = new RotationPersonDTO();
 						rotationPersonDTO.setPersonId(savedPersonDTO.getId());
 						rotationPersonDTO.setRotationId(rotationDTOWithRotationName.getId());
@@ -482,11 +476,11 @@ public class PersonTransformerService {
 		return personDTO;
 	}
 
-	private ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber) throws IllegalArgumentException {
+	private ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber) {
 		return getProgrammeDTO(programmeName, programmeNumber, tcsServiceImpl::getProgrammeByNameAndNumber);
 	}
 
-	ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber, BiFunction<String, String, List<ProgrammeDTO>> getProgrammeByNameAndNumber) throws IllegalArgumentException {
+	ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber, BiFunction<String, String, List<ProgrammeDTO>> getProgrammeByNameAndNumber) {
 		ProgrammeDTO programmeDTO = null;
 		if (!StringUtils.isEmpty(programmeName) && !StringUtils.isEmpty(programmeNumber)) {
 			programmeDTO = getProgrammeDTOForNameAndNumber(programmeName, programmeNumber, getProgrammeByNameAndNumber, programmeDTO);
@@ -516,11 +510,11 @@ public class PersonTransformerService {
 		return programmeDTO;
 	}
 
-	private CurriculumDTO getCurriculumDTO(String curriculumName) throws IllegalArgumentException {
+	private CurriculumDTO getCurriculumDTO(String curriculumName) {
 		return getCurriculumDTO(curriculumName, tcsServiceImpl::getCurriculaByName);
 	}
 
-	CurriculumDTO getCurriculumDTO(String curriculumName, Function<String, List<CurriculumDTO>> getCurriculumByName) throws IllegalArgumentException {
+	CurriculumDTO getCurriculumDTO(String curriculumName, Function<String, List<CurriculumDTO>> getCurriculumByName) {
 		CurriculumDTO curriculumDTO = null;
 		if (!StringUtils.isEmpty(curriculumName)) {
 			List<CurriculumDTO> curriculumDTOs = getCurriculumByName.apply(curriculumName);

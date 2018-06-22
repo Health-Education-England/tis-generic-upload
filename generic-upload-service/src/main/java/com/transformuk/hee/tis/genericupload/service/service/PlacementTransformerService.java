@@ -367,7 +367,7 @@ public class PlacementTransformerService {
 	}
 
 	public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS, PlacementSpecialtyDTO placementSpecialtyDTO) {
-		if (placementSpecialtyDTOS.size() == 0) {
+		if (placementSpecialtyDTOS.isEmpty()) {
 			placementSpecialtyDTOS.add(placementSpecialtyDTO);
 		} else if (!placementSpecialtyDTOS.contains(placementSpecialtyDTO)) {
 			placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
@@ -394,7 +394,7 @@ public class PlacementTransformerService {
 			List<SpecialtyDTO> specialtyByName = getSpecialtyDTOsForName.apply(specialtyName);
 			if (specialtyByName != null) {
 				if (specialtyByName.size() != 1) {
-					if (specialtyByName.size() == 0) {
+					if (specialtyByName.isEmpty()) {
 						placementXLS.addErrorMessage(DID_NOT_FIND_SPECIALTY_FOR_NAME + specialtyName);
 					} else {
 						placementXLS.addErrorMessage(FOUND_MULTIPLE_SPECIALTIES_FOR_NAME + specialtyName);
@@ -444,7 +444,7 @@ public class PlacementTransformerService {
 		if (placementXLS.getWte() == null) {
 			placementXLS.addErrorMessage(WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY);
 		} else {
-			placementDTO.setWholeTimeEquivalent(new Double(placementXLS.getWte()));
+			placementDTO.setWholeTimeEquivalent(placementXLS.getWte().doubleValue());
 		}
 	}
 

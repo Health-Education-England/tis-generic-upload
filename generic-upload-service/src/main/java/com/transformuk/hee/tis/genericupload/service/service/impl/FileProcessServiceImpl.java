@@ -39,7 +39,7 @@ public class FileProcessServiceImpl implements FileProcessService {
 
   private static final String DOT = ".";
   private static final String DEFAULT_MAPPER = "defaultMapper";
-  private final Logger LOG = LoggerFactory.getLogger(FileProcessServiceImpl.class);
+  private final Logger logger = LoggerFactory.getLogger(FileProcessServiceImpl.class);
 
   private final ApplicationTypeRepository applicationTypeRepository;
   private final FileStorageRepository fileStorageRepository;
@@ -89,7 +89,7 @@ public class FileProcessServiceImpl implements FileProcessService {
         }
 
       } catch (Exception e) {
-        LOG.error("Error while downloading file {}", at.getFileName());
+        logger.error("Error while downloading file {}", at.getFileName());
       }
 
     });
@@ -108,7 +108,7 @@ public class FileProcessServiceImpl implements FileProcessService {
     List<Object> updateItems = Lists.newArrayList();
 
 
-    LOG.info("Sending {} {} items to service using [{}] client to endpoint [{}]", items.size(),
+    logger.info("Sending {} {} items to service using [{}] client to endpoint [{}]", items.size(),
             items.get(0).getClass().getSimpleName(), stepConfiguration.getServiceClientBeanName(), stepConfiguration.getCreateUpdateEndpointUrl());
 
     items.stream().forEach(item -> processItems.add(view2DtoProcessor(item, stepConfiguration)));
@@ -124,9 +124,9 @@ public class FileProcessServiceImpl implements FileProcessService {
           updateItems.add(item);
         }
       } catch (NoSuchFieldException e) {
-        LOG.info("Field is not present in DTO {}", stepConfiguration.getDtoClassName().getSimpleName());
+        logger.info("Field is not present in DTO {}", stepConfiguration.getDtoClassName().getSimpleName());
       } catch (IllegalAccessException e) {
-        LOG.info("Field access error in DTO {}", stepConfiguration.getDtoClassName().getSimpleName());
+        logger.info("Field access error in DTO {}", stepConfiguration.getDtoClassName().getSimpleName());
       } catch (FileRecordStorageException e) {
 
       }

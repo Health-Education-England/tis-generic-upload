@@ -36,7 +36,7 @@ public class FileValidator {
 
 	public static final String DATE_MISSING_ON_MANDATORY_FIELD  = "Date missing or incorrect format on mandatory field (%1$s)";
 	public static final String FIELD_IS_REQUIRED_AT_LINE_NO = "%s Field is required at line no %d ";
-	private final Logger LOG = LoggerFactory.getLogger(UploadFileResource.class);
+	private final Logger logger = LoggerFactory.getLogger(UploadFileResource.class);
 
 	/**
 	 * Custom validator used during file upload checks for mandatory fields
@@ -112,7 +112,7 @@ public class FileValidator {
 				try {
 					validateField(fieldErrors, mappedToClass, rowIndex, row, columnNameToMandatoryColumnsMapKey);
 				} catch (NoSuchFieldException | IllegalAccessException e) {
-					LOG.error("Field doesn't exists : " + columnNameToMandatoryColumnsMapKey);
+					logger.error("Field doesn't exists : {}", columnNameToMandatoryColumnsMapKey);
 				}
 			});
 		});

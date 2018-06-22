@@ -39,9 +39,9 @@ public class ScheduledUploadTask {
 
 	private static final String FILE_IMPORT_SUCCESS_AND_ERROR_COUNTS_DON_T_MATCH_INPUT_NUMBER_OF_ROWS = "File import success and error counts don't match input number of rows";
 	private static final String UNKNOWN_FILE_TYPE = "Unknown FileType";
-	private static final String ERROR_WHILE_READING_EXCEL_FILE = "Error while reading excel file : ";
-	private static final String ERROR_WHILE_PROCESSING_EXCEL_FILE = "Error while processing excel file : ";
-	private static final String UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE = "Unknown Error while processing excel file : ";
+	private static final String ERROR_WHILE_READING_EXCEL_FILE = "Error while reading excel file : {}";
+	private static final String ERROR_WHILE_PROCESSING_EXCEL_FILE = "Error while processing excel file : {}";
+	private static final String UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE = "Unknown Error while processing excel file : {}";
 
 
 	@Autowired
@@ -66,7 +66,9 @@ public class ScheduledUploadTask {
 
 	@Scheduled(fixedDelay = 1000, initialDelay = 2000) //TODO externalise this wait interval,
 	public void scheduleTaskWithFixedDelay() {
-		logger.debug("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
+		if(logger.isDebugEnabled()) {
+			logger.debug("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
+		}
 		//TODO circuit-break on tcs/profile/reference/mysql connectivity
 		ApplicationType applicationType = applicationTypeRepository.findFirstByFileStatusOrderByUploadedDate(FileStatus.PENDING);
 		if(applicationType != null) {
@@ -100,14 +102,13 @@ public class ScheduledUploadTask {
 					default: logger.error(UNKNOWN_FILE_TYPE);
 				}
 			} catch (InvalidFormatException e) {
-				logger.error(ERROR_WHILE_READING_EXCEL_FILE + e.getMessage());
+				logger.error(ERROR_WHILE_READING_EXCEL_FILE, e.getMessage());
 				applicationType.setFileStatus(FileStatus.INVALID_FILE_FORMAT);
 			} catch (HttpServerErrorException | HttpClientErrorException e) { //thrown when connecting to TCS
-				logger.error(ERROR_WHILE_PROCESSING_EXCEL_FILE + e.getMessage());
+				logger.error(ERROR_WHILE_PROCESSING_EXCEL_FILE, e.getMessage());
 				applicationType.setFileStatus(FileStatus.PENDING);
 			} catch (Exception e) {
-				logger.error(UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE + e.getMessage());
-				e.printStackTrace();
+				logger.error(UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE, e.getMessage());
 				applicationType.setFileStatus(FileStatus.UNEXPECTED_ERROR);
 			} finally {
 				applicationTypeRepository.save(applicationType);
@@ -133,7 +134,8 @@ public class ScheduledUploadTask {
 
 	private void setJobToCompleted(ApplicationType applicationType, List<? extends TemplateXLS> templateXLSS) {
 		FileImportResults fir = new FileImportResults();
-		int errorCount = 0, successCount = 0;
+		int errorCount = 0;
+		int successCount = 0;
 		for (TemplateXLS templateXLS : templateXLSS) {
 			if (templateXLS.isSuccessfullyImported()) {
 				successCount++;

@@ -1,12 +1,10 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
-import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.transformuk.hee.tis.genericupload.service.event.FileRecordEvent;
 import com.transformuk.hee.tis.genericupload.service.event.FileRecordServiceFactory;
 import com.transformuk.hee.tis.genericupload.service.storage.FileRecordStorage;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.List;

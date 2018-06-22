@@ -115,7 +115,6 @@ public class UploadFileResource {
 			}
 			return logAndReturnResponseEntity("File uploaded failed validation : ", sb.toString(), HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
-			e.printStackTrace();
 			return logAndReturnResponseEntity("Unexpected Exception : ", e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 
@@ -123,7 +122,7 @@ public class UploadFileResource {
 	}
 
 	private ResponseEntity<String> logAndReturnResponseEntity(String messagePrefix, String exceptionMessage, HttpStatus httpStatus) {
-		log.error(messagePrefix + exceptionMessage);
+		log.error(messagePrefix, exceptionMessage);
 		return new ResponseEntity<>(messagePrefix + exceptionMessage, httpStatus);
 	}
 
@@ -184,10 +183,10 @@ public class UploadFileResource {
 			headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
 			return new ResponseEntity<>(fileWithErrorsOnly.toByteArray(), headers, HttpStatus.OK);
 		} catch (IOException e) {
-			log.error("Error reading file : " + logId);
+			log.error("Error reading file : {}", logId);
 			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		} catch (Exception e) {
-			log.error("Unexpected error building template with errors : " + logId);
+			log.error("Unexpected error building template with errors : {} ", logId);
 			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

@@ -11,7 +11,6 @@ import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -26,12 +25,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.slf4j.LoggerFactory.getLogger;
-
 @Component
 public class SupervisorRegNumberIdService {
-	private static final Logger logger = getLogger(SupervisorRegNumberIdService.class);
-
 	public static final String SUPERVISOR_CANNOT_BE_IDENTIFIED_IN_TIS = " cannot be identified in TIS";
 
 	@Autowired
