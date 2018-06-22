@@ -324,7 +324,7 @@ public class PersonTransformerService {
 		return personXLSS.stream()
 				.filter(personXLS -> {
 					String regNumber = extractRegistrationNumber.apply(personXLS);
-					return !"unknown".equalsIgnoreCase(regNumber) && !StringUtils.isEmpty(regNumber);
+					return !UNKNOWN.equalsIgnoreCase(regNumber) && !StringUtils.isEmpty(regNumber);
 				})
 				.collect(Collectors.toList());
 	}
@@ -358,20 +358,24 @@ public class PersonTransformerService {
 		if (!CollectionUtils.isEmpty(personsInXLS)) {
 			for (PersonXLS personXLS : personsInXLS) {
 				if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
-					PersonDTO personDTO = getPersonDTO(personXLS);
-					if (personDTO != null) {
-						try {
-							PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
-							addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
-						} catch (ResourceAccessException rae) {
-							new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(personXLS, rae);
-						}
-					}
+					addPerson(personXLS);
 				}
 
 				if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
 					personXLS.setSuccessfullyImported(true);
 				}
+			}
+		}
+	}
+
+	private void addPerson(PersonXLS personXLS) {
+		PersonDTO personDTO = getPersonDTO(personXLS);
+		if (personDTO != null) {
+			try {
+				PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
+				addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
+			} catch (ResourceAccessException rae) {
+				new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(personXLS, rae);
 			}
 		}
 	}
@@ -392,21 +396,25 @@ public class PersonTransformerService {
 				programmeMembershipDTO.setPerson(savedPersonDTO);
 				rotationNameOptional.ifPresent(programmeMembershipDTO::setRotation);
 				if (savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
-					if(!StringUtils.isEmpty(programmeMembershipDTO.getRotation())) {
-						savedPersonDTO.getProgrammeMemberships().stream()
-								.filter(programmeMembershipDTO1 -> programmeMembershipDTO1.equals(programmeMembershipDTO))
-								.findFirst()
-								.ifPresent(savedProgrammeMembershipDTO -> {
-									if (Objects.equals(programmeMembershipDTO.getRotation(), savedProgrammeMembershipDTO.getRotation())) {
-										savedProgrammeMembershipDTO.setRotation(programmeMembershipDTO.getRotation());
-										tcsServiceImpl.updateProgrammeMembership(savedProgrammeMembershipDTO);
-									}
-								});
-					}
+					updateRotationInExistingProgrammeMemberships(savedPersonDTO, programmeMembershipDTO);
 				} else {
 					tcsServiceImpl.createProgrammeMembership(programmeMembershipDTO);
 				}
 			}
+		}
+	}
+
+	private void updateRotationInExistingProgrammeMemberships(PersonDTO savedPersonDTO, ProgrammeMembershipDTO programmeMembershipDTO) {
+		if(!StringUtils.isEmpty(programmeMembershipDTO.getRotation())) {
+			savedPersonDTO.getProgrammeMemberships().stream()
+					.filter(programmeMembershipDTO1 -> programmeMembershipDTO1.equals(programmeMembershipDTO))
+					.findFirst()
+					.ifPresent(savedProgrammeMembershipDTO -> {
+						if (Objects.equals(programmeMembershipDTO.getRotation(), savedProgrammeMembershipDTO.getRotation())) {
+							savedProgrammeMembershipDTO.setRotation(programmeMembershipDTO.getRotation());
+							tcsServiceImpl.updateProgrammeMembership(savedProgrammeMembershipDTO);
+						}
+					});
 		}
 	}
 
@@ -481,16 +489,7 @@ public class PersonTransformerService {
 	ProgrammeDTO getProgrammeDTO(String programmeName, String programmeNumber, BiFunction<String, String, List<ProgrammeDTO>> getProgrammeByNameAndNumber) throws IllegalArgumentException {
 		ProgrammeDTO programmeDTO = null;
 		if (!StringUtils.isEmpty(programmeName) && !StringUtils.isEmpty(programmeNumber)) {
-			List<ProgrammeDTO> programmeDTOs = getProgrammeByNameAndNumber.apply(programmeName, programmeNumber);
-			if (!CollectionUtils.isEmpty(programmeDTOs)) {
-				if(programmeDTOs.size() == 1) {
-					programmeDTO = programmeDTOs.get(0);
-				} else {
-					throw new IllegalArgumentException(String.format(MULTIPLE_PROGRAMME_FOUND_FOR, programmeName, programmeNumber));
-				}
-			} else if (CollectionUtils.isEmpty(programmeDTOs)) {
-				throw new IllegalArgumentException(String.format(PROGRAMME_NOT_FOUND, programmeName, programmeNumber));
-			}
+			programmeDTO = getProgrammeDTOForNameAndNumber(programmeName, programmeNumber, getProgrammeByNameAndNumber, programmeDTO);
 		} else {
 			if(!StringUtils.isEmpty(programmeName) || !StringUtils.isEmpty(programmeNumber)) {
 				if (StringUtils.isEmpty(programmeName)) {
@@ -499,6 +498,20 @@ public class PersonTransformerService {
 					throw new IllegalArgumentException(String.format(PROGRAMME_NUMBER_NOT_SPECIFIED, programmeNumber));
 				}
 			}
+		}
+		return programmeDTO;
+	}
+
+	private ProgrammeDTO getProgrammeDTOForNameAndNumber(String programmeName, String programmeNumber, BiFunction<String, String, List<ProgrammeDTO>> getProgrammeByNameAndNumber, ProgrammeDTO programmeDTO) {
+		List<ProgrammeDTO> programmeDTOs = getProgrammeByNameAndNumber.apply(programmeName, programmeNumber);
+		if (!CollectionUtils.isEmpty(programmeDTOs)) {
+			if(programmeDTOs.size() == 1) {
+				programmeDTO = programmeDTOs.get(0);
+			} else {
+				throw new IllegalArgumentException(String.format(MULTIPLE_PROGRAMME_FOUND_FOR, programmeName, programmeNumber));
+			}
+		} else if (CollectionUtils.isEmpty(programmeDTOs)) {
+			throw new IllegalArgumentException(String.format(PROGRAMME_NOT_FOUND, programmeName, programmeNumber));
 		}
 		return programmeDTO;
 	}
@@ -550,15 +563,8 @@ public class PersonTransformerService {
 		personDTO.setRightToWork(getRightToWorkDTO(personXLS));
 
 		if(programmeDTO != null) {
-			LocalDate programmeEndDate = null;
-			if (personXLS.getProgrammeEndDate() != null) {
-				programmeEndDate = convertDate(personXLS.getProgrammeEndDate());
-			}
-
-			LocalDate curriculum1StartDateAsProgrammeStartDate = null;
-			if (personXLS.getCurriculum1StartDate() != null) {
-				curriculum1StartDateAsProgrammeStartDate = personXLS.getCurriculum1StartDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-			}
+			LocalDate programmeEndDate = personXLS.getProgrammeEndDate() == null ? null : convertDate(personXLS.getProgrammeEndDate());
+			LocalDate curriculum1StartDateAsProgrammeStartDate = personXLS.getCurriculum1StartDate() == null ? null : personXLS.getCurriculum1StartDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
 			ProgrammeMembershipType programmeMembershipType = ProgrammeMembershipType.fromString(personXLS.getProgrammeMembership());
 
@@ -569,15 +575,7 @@ public class PersonTransformerService {
 			}
 
 			Set<ProgrammeMembershipDTO> programmeMembershipDTOS = new HashSet<>();
-			if (curriculumDTO1 != null) {
-				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, trainingNumberDTO, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate());
-			}
-			if (curriculumDTO2 != null) {
-				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, trainingNumberDTO, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate());
-			}
-			if (curriculumDTO3 != null) {
-				addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, trainingNumberDTO, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate());
-			}
+			addOrUpdateCurricula(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3, programmeDTO, programmeEndDate, curriculum1StartDateAsProgrammeStartDate, programmeMembershipType, trainingNumberDTO, programmeMembershipDTOS);
 
 			if(programmeMembershipDTOS.isEmpty()) {
 				personXLS.addErrorMessage(PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA);
@@ -586,6 +584,18 @@ public class PersonTransformerService {
 			}
 		}
 		return personDTO;
+	}
+
+	protected void addOrUpdateCurricula(PersonXLS personXLS, CurriculumDTO curriculumDTO1, CurriculumDTO curriculumDTO2, CurriculumDTO curriculumDTO3, ProgrammeDTO programmeDTO, LocalDate programmeEndDate, LocalDate curriculum1StartDateAsProgrammeStartDate, ProgrammeMembershipType programmeMembershipType, TrainingNumberDTO trainingNumberDTO, Set<ProgrammeMembershipDTO> programmeMembershipDTOS) {
+		if (curriculumDTO1 != null) {
+			addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, trainingNumberDTO, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO1, programmeMembershipType, personXLS.getCurriculum1StartDate(), personXLS.getCurriculum1EndDate());
+		}
+		if (curriculumDTO2 != null) {
+			addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, trainingNumberDTO, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO2, programmeMembershipType, personXLS.getCurriculum2StartDate(), personXLS.getCurriculum2EndDate());
+		}
+		if (curriculumDTO3 != null) {
+			addOrUpdateCurriculumToProgrammeMemberships(programmeMembershipDTOS, trainingNumberDTO, curriculum1StartDateAsProgrammeStartDate, programmeEndDate, programmeDTO, curriculumDTO3, programmeMembershipType, personXLS.getCurriculum3StartDate(), personXLS.getCurriculum3EndDate());
+		}
 	}
 
 	private QualificationDTO getQualificationDTO(PersonXLS personXLS) {

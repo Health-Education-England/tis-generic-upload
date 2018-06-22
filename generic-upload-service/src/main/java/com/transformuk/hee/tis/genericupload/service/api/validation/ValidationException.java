@@ -4,7 +4,7 @@ import org.springframework.validation.BindingResult;
 
 public class ValidationException extends Exception {
 
-  private BindingResult bindingResult;
+  private transient BindingResult bindingResult;
 
   public ValidationException(BindingResult bindingResult) {
     this.bindingResult = bindingResult;

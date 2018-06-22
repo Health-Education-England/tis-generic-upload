@@ -55,23 +55,29 @@ public class FileValidator {
 					ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(file.getInputStream(), validateDates);
 					if (validateMandatoryFields) {
 						Set<String> headers = excelToObjectMapper.getHeaders();
-						if(headers.contains("Placement Type*")) {
-							fileType = FileType.PLACEMENTS;
-							validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementXLS.class, excelToObjectMapper, new PlacementHeaderMapper());
-						} else if(headers.contains("Email Address")) { //TODO do something more robust than this
-							fileType = FileType.PEOPLE;
-							validateMandatoryFieldsOrThrowException(files, fieldErrors, PersonXLS.class, excelToObjectMapper, new PersonHeaderMapper());
-						} else if(headers.contains("Placement Id*")) {
-							fileType = FileType.PLACEMENTS_DELETE;
-							validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementDeleteXLS.class, excelToObjectMapper, new PlacementDeleteHeaderMapper());
-						} else {
-							throw new InvalidFormatException("Unrecognised upload template");
-						}
+						fileType = getFileType(files, fieldErrors, excelToObjectMapper, headers);
 					}
 				}
 			}
 		}
 
+		return fileType;
+	}
+
+	protected FileType getFileType(List<MultipartFile> files, List<FieldError> fieldErrors, ExcelToObjectMapper excelToObjectMapper, Set<String> headers) throws ReflectiveOperationException, ValidationException, InvalidFormatException {
+		FileType fileType;
+		if(headers.contains("Placement Type*")) {
+			fileType = FileType.PLACEMENTS;
+			validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementXLS.class, excelToObjectMapper, new PlacementHeaderMapper());
+		} else if(headers.contains("Email Address")) { //TODO do something more robust than this
+			fileType = FileType.PEOPLE;
+			validateMandatoryFieldsOrThrowException(files, fieldErrors, PersonXLS.class, excelToObjectMapper, new PersonHeaderMapper());
+		} else if(headers.contains("Placement Id*")) {
+			fileType = FileType.PLACEMENTS_DELETE;
+			validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementDeleteXLS.class, excelToObjectMapper, new PlacementDeleteHeaderMapper());
+		} else {
+			throw new InvalidFormatException("Unrecognised upload template");
+		}
 		return fileType;
 	}
 
@@ -104,29 +110,33 @@ public class FileValidator {
 			rowIndex.incrementAndGet();
 			columnNameToMandatoryColumnsMap.keySet().forEach(columnNameToMandatoryColumnsMapKey -> {
 				try {
-					Field currentField = row.getClass().getDeclaredField(columnNameToMandatoryColumnsMapKey);
-					if (currentField != null) {
-						currentField.setAccessible(true);
-						if(currentField.getType() == String.class) {
-							String value = (String) currentField.get(row);
-							if (StringUtils.isBlank(value)) {
-								fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
-										String.format(FIELD_IS_REQUIRED_AT_LINE_NO, columnNameToMandatoryColumnsMapKey, rowIndex.get())));
-							}
-						} else if(currentField.getType() == Date.class) {
-							Date date = (Date) currentField.get(row);//TODO should throw an exception on invalid date
-							if (date == null) {
-								fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
-										String.format(DATE_MISSING_ON_MANDATORY_FIELD, columnNameToMandatoryColumnsMapKey)));
-							}
-						} else if(currentField.getType() == Float.class) {
-							//TODO validate Float Fields
-						}
-					}
+					validateField(fieldErrors, mappedToClass, rowIndex, row, columnNameToMandatoryColumnsMapKey);
 				} catch (NoSuchFieldException | IllegalAccessException e) {
 					LOG.error("Field doesn't exists : " + columnNameToMandatoryColumnsMapKey);
 				}
 			});
 		});
+	}
+
+	private void validateField(List<FieldError> fieldErrors, Class mappedToClass, AtomicInteger rowIndex, Object row, String columnNameToMandatoryColumnsMapKey) throws NoSuchFieldException, IllegalAccessException {
+		Field currentField = row.getClass().getDeclaredField(columnNameToMandatoryColumnsMapKey);
+		if (currentField != null) {
+			currentField.setAccessible(true);
+			if(currentField.getType() == String.class) {
+				String value = (String) currentField.get(row);
+				if (StringUtils.isBlank(value)) {
+					fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
+							String.format(FIELD_IS_REQUIRED_AT_LINE_NO, columnNameToMandatoryColumnsMapKey, rowIndex.get())));
+				}
+			} else if(currentField.getType() == Date.class) {
+				Date date = (Date) currentField.get(row);//TODO should throw an exception on invalid date
+				if (date == null) {
+					fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
+							String.format(DATE_MISSING_ON_MANDATORY_FIELD, columnNameToMandatoryColumnsMapKey)));
+				}
+			} else if(currentField.getType() == Float.class) {
+				//TODO validate Float Fields
+			}
+		}
 	}
 }
