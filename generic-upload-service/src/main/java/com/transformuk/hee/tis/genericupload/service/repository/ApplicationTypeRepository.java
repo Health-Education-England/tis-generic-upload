@@ -14,22 +14,19 @@ import java.util.List;
 
 @Repository
 public interface ApplicationTypeRepository extends JpaRepository<ApplicationType, Long>, JpaSpecificationExecutor {
-
-    String SEARCH_QUERY = "select at from ApplicationType at where " +
-        "at.fileName like %:text% or " +
-        "at.fileStatus like %:text% or " +
-        "at.username like %:text% or " +
-        "at.firstName like %:text% or " +
-        "at.lastName like %:text% or " +
-        "at.uploadedDate like %:text% or " +
-        "at.processedDate like %:text%";
-
     List<ApplicationType> findByFileStatusOrderByUploadedDate(FileStatus status);
 
     ApplicationType findFirstByFileStatusOrderByUploadedDate(FileStatus status);
 
     ApplicationType findByLogId(Long logId);
 
-    @Query(value = SEARCH_QUERY)
+    @Query(value = "select at from ApplicationType at where " +
+        "at.fileName like %:text% or " +
+        "at.fileStatus like %:text% or " +
+        "at.username like %:text% or " +
+        "at.firstName like %:text% or " +
+        "at.lastName like %:text% or " +
+        "at.uploadedDate like %:text% or " +
+        "at.processedDate like %:text%")
     Page<ApplicationType> fullTextSearch(@Param("text") String text, Pageable pageable);
 }
