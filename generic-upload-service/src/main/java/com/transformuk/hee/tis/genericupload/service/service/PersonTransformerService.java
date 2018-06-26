@@ -20,7 +20,6 @@ import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.dto.QualificationDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RightToWorkDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RotationDTO;
-import com.transformuk.hee.tis.tcs.api.dto.RotationPersonDTO;
 import com.transformuk.hee.tis.tcs.api.dto.TrainingNumberDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
@@ -384,7 +383,7 @@ public class PersonTransformerService {
 		}
 
 		if(!personDTO.getProgrammeMemberships().isEmpty()) {
-			Optional<String> rotationNameOptional = creationOrUpdateRotation(personXLS, personDTO, savedPersonDTO);
+			Optional<RotationDTO> rotationNameOptional = getRotationDTO(personXLS, personDTO, savedPersonDTO);
 
 			for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
 				programmeMembershipDTO.setPerson(savedPersonDTO);
@@ -404,7 +403,7 @@ public class PersonTransformerService {
 					.filter(programmeMembershipDTO1 -> programmeMembershipDTO1.equals(programmeMembershipDTO))
 					.findFirst()
 					.ifPresent(savedProgrammeMembershipDTO -> {
-						if (Objects.equals(programmeMembershipDTO.getRotation(), savedProgrammeMembershipDTO.getRotation())) {
+						if(!Objects.equals(programmeMembershipDTO.getRotation(), savedProgrammeMembershipDTO.getRotation())) {
 							savedProgrammeMembershipDTO.setRotation(programmeMembershipDTO.getRotation());
 							tcsServiceImpl.updateProgrammeMembership(savedProgrammeMembershipDTO);
 						}
@@ -412,7 +411,7 @@ public class PersonTransformerService {
 		}
 	}
 
-	private Optional<String> creationOrUpdateRotation(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
+	private Optional<RotationDTO> getRotationDTO(PersonXLS personXLS, PersonDTO personDTO, PersonDTO savedPersonDTO) {
 		String rotationName = personXLS.getRotation1();
 		if (!StringUtils.isEmpty(rotationName)) {
 			if(personDTO.getProgrammeMemberships().isEmpty()) {
@@ -429,26 +428,7 @@ public class PersonTransformerService {
 						.orElse(null);
 
 				if (rotationDTOWithRotationName != null) {
-					List<RotationPersonDTO> rotationsForPerson = tcsServiceImpl.getRotationsForPerson(savedPersonDTO.getId());
-
-					List<RotationPersonDTO> personRotationsForProgramme = rotationsForPerson.stream()
-							.filter(rotationPersonDTO -> rotationDTOWithRotationName.getProgrammeId().equals(rotationByProgrammeIdMap.get(rotationPersonDTO.getRotationId())))
-							.collect(Collectors.toList());
-
-					if (personRotationsForProgramme.size() == 1) {
-						RotationPersonDTO rotationPersonDTO = personRotationsForProgramme.get(0);
-						rotationPersonDTO.setRotationId(rotationDTOWithRotationName.getId());
-						tcsServiceImpl.updateRotationForPerson(rotationPersonDTO);
-						return Optional.of(rotationDTOWithRotationName.getName());
-					} else if (personRotationsForProgramme.isEmpty()) { //add a Rotation
-						RotationPersonDTO rotationPersonDTO = new RotationPersonDTO();
-						rotationPersonDTO.setPersonId(savedPersonDTO.getId());
-						rotationPersonDTO.setRotationId(rotationDTOWithRotationName.getId());
-						tcsServiceImpl.createRotationForPerson(rotationPersonDTO);
-						return Optional.of(rotationDTOWithRotationName.getName());
-					} else {
-						personXLS.addErrorMessage(MULTIPLE_ROTATIONS_EXIST_FOR_PERSON_CANNOT_IDENTIFY_A_ROTATION_TO_UPDATE);
-					}
+					return Optional.of(rotationDTOWithRotationName);
 				} else {
 					personXLS.addErrorMessage(CAN_ONLY_ADD_TO_A_ROTATION_LINKED_TO_THE_PROGRAMME_MEMBERSHIP_YOU_ARE_ADDING);
 				}
