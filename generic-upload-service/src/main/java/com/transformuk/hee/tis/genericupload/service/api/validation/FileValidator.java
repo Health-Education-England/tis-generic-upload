@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementByIdXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
@@ -8,6 +9,7 @@ import com.transformuk.hee.tis.genericupload.service.api.UploadFileResource;
 import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementByIdHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PlacementDeleteHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
 import org.apache.commons.lang3.StringUtils;
@@ -75,7 +77,10 @@ public class FileValidator {
 		} else if(headers.contains("Placement Id*")) {
 			fileType = FileType.PLACEMENTS_DELETE;
 			validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementDeleteXLS.class, excelToObjectMapper, new PlacementDeleteHeaderMapper());
-		} else {
+		} else if(headers.contains("TIS_Placement_ID*")) {
+      fileType = FileType.PLACEMENTS_BY_ID;
+      validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementByIdXLS.class, excelToObjectMapper, new PlacementByIdHeaderMapper());
+    } else {
 			throw new InvalidFormatException("Unrecognised upload template");
 		}
 		return fileType;

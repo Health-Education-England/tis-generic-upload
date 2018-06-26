@@ -172,7 +172,8 @@ public class UploadFileResource {
 		return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
 	}
 
-	@ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)
+
+  @ApiOperation(value = "View status of bulk uploads", notes = "View status of bulk uploads", responseContainer = "List", response = ApplicationType.class)
 	@ApiResponses(value = {@ApiResponse(code = 200, message = "Status list returned")})
 	@GetMapping(value = "/uploadedFileErrors/{logId}")
 	public ResponseEntity<byte[]> getUploadedFileErrors(@ApiParam(value = "The stored file log id", required = true) @PathVariable(value = "logId") final Long logId) {

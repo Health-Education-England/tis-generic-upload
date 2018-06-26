@@ -80,14 +80,16 @@ public class ScheduledUploadTask {
 				ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis, true);
 
 				switch (applicationType.getFileType()) {
-
-					case PEOPLE:
+				  case PEOPLE:
+            System.out.println("INSIDE switch8888888888888888888888888 PEOPLE");
 						List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap());
 						personTransformerService.processPeopleUpload(personXLSS);
 						setJobToCompleted(applicationType, personXLSS);
+
 						break;
 
 					case PLACEMENTS:
+            System.out.println("INSIDE switch8888888888888888888888888 PLACEMENTS");
 						List<PlacementXLS> placementXLSS = excelToObjectMapper.map(PlacementXLS.class, new PlacementHeaderMapper().getFieldMap());
 						placementTransformerService.processPlacementsUpload(placementXLSS);
 						setJobToCompleted(applicationType, placementXLSS);
