@@ -20,6 +20,7 @@ import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonBasicDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonLiteDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PlacementCommentDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementSpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementSupervisorDTO;
@@ -261,12 +262,29 @@ public class PlacementTransformerService {
 		addSupervisorsToPlacement(placementXLS, placementDTO, regNumberToDTOLookup, clinicalSupervisorRoles, educationalSupervisorRoles);
 
 		if (!placementXLS.hasErrors()) {
+			setCommentInPlacementDTO(placementDTO, placementXLS);
 			if (updatePlacement) {
 				tcsServiceImpl.updatePlacement(placementDTO);
 			} else {
 				tcsServiceImpl.createPlacement(placementDTO);
 			}
 			placementXLS.setSuccessfullyImported(true);
+		}
+	}
+
+	private void setCommentInPlacementDTO(PlacementDetailsDTO placementDTO, PlacementXLS placementXLS) {
+		if(!StringUtils.isEmpty(placementXLS.getComments())) {
+			if(placementDTO.getComments() == null) {
+				placementDTO.setComments(new HashSet<>());
+			}
+			PlacementCommentDTO placementCommentDTO;
+			if(!placementDTO.getComments().isEmpty()) {
+				placementCommentDTO = placementDTO.getComments().iterator().next();
+			} else {
+				placementCommentDTO = new PlacementCommentDTO();
+				placementDTO.getComments().add(placementCommentDTO);
+			}
+			placementCommentDTO.setBody(placementXLS.getComments());
 		}
 	}
 
