@@ -419,8 +419,6 @@ public class PersonTransformerService {
 			} else {
 				Long programmeId = personDTO.getProgrammeMemberships().iterator().next().getProgrammeId();
 				List<RotationDTO> rotationByProgrammeId = tcsServiceImpl.getRotationByProgrammeId(programmeId);
-				Map<Long, Long> rotationByProgrammeIdMap = rotationByProgrammeId.stream().collect(
-						Collectors.toMap(RotationDTO::getId, RotationDTO::getProgrammeId));
 
 				RotationDTO rotationDTOWithRotationName = rotationByProgrammeId.stream()
 						.filter(rotationDTO -> rotationDTO.getName().equalsIgnoreCase(rotationName))
