@@ -89,7 +89,7 @@ public class ScheduledUploadTask {
 
 					case PLACEMENTS:
 						List<PlacementXLS> placementXLSS = excelToObjectMapper.map(PlacementXLS.class, new PlacementHeaderMapper().getFieldMap());
-						placementTransformerService.processPlacementsUpload(placementXLSS);
+						placementTransformerService.processPlacementsUpload(placementXLSS, applicationType.getUsername());
 						setJobToCompleted(applicationType, placementXLSS);
 						break;
 
