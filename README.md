@@ -14,6 +14,8 @@ variables have to be set
 * `TCS_SERVER_URL`: the URL of TCS within the appropriate environment
 * `REFERENCE_SERVER_URL`: the URL of REFERENCE within the appropriate environment
 
+Get the CLOUD_BLOB_ACCOUNT_KEY from azure. Go to Storage accounts > tisdevstor > Access keys
+
 In other environments, the service uses [additional](https://github.com/Health-Education-England/TIS-DEVOPS/blob/master/ansible/roles/docker-compose/templates/generic-upload/docker-compose.yml#L23-#L47) environment variables to control configuration such as databases and ports, beyond the scope of this document.
 
 These environment can either be set on the OS shell using the export command (UNIX), then run the service using

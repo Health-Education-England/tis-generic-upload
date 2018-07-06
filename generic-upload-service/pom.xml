@@ -12,7 +12,7 @@
 
 	<groupId>com.transformuk.hee.tis</groupId>
 	<artifactId>generic-upload-service</artifactId>
-	<version>1.1.5</version>
+	<version>1.2.0</version>
 	<packaging>war</packaging>
 
 	<properties>
@@ -153,12 +153,12 @@
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>tcs-api</artifactId>
-			<version>3.2.2</version>
+			<version>3.2.4</version>
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>tcs-client</artifactId>
-			<version>3.0.60</version>
+			<version>3.0.62</version>
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee</groupId>
@@ -202,6 +202,21 @@
 		</dependency>
 		<!-- Custom end -->
 
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient</artifactId>
+      <version>${prometheus-simpleclient.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient_servlet</artifactId>
+      <version>${prometheus-simpleclient.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient_dropwizard</artifactId>
+      <version>${prometheus-simpleclient.version}</version>
+    </dependency>
 		<dependency>
 			<groupId>io.github.jhipster</groupId>
 			<artifactId>jhipster</artifactId>

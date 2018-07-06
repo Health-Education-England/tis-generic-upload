@@ -91,7 +91,7 @@ public class ScheduledUploadTask {
 					case PLACEMENTS:
             System.out.println("INSIDE switch8888888888888888888888888 PLACEMENTS");
 						List<PlacementXLS> placementXLSS = excelToObjectMapper.map(PlacementXLS.class, new PlacementHeaderMapper().getFieldMap());
-						placementTransformerService.processPlacementsUpload(placementXLSS);
+						placementTransformerService.processPlacementsUpload(placementXLSS, applicationType.getUsername());
 						setJobToCompleted(applicationType, placementXLSS);
 						break;
 
@@ -104,13 +104,13 @@ public class ScheduledUploadTask {
 					default: logger.error(UNKNOWN_FILE_TYPE);
 				}
 			} catch (InvalidFormatException e) {
-				logger.error(ERROR_WHILE_READING_EXCEL_FILE, e.getMessage());
+				logger.error(ERROR_WHILE_READING_EXCEL_FILE, e.getMessage(), e);
 				applicationType.setFileStatus(FileStatus.INVALID_FILE_FORMAT);
 			} catch (HttpServerErrorException | HttpClientErrorException e) { //thrown when connecting to TCS
-				logger.error(ERROR_WHILE_PROCESSING_EXCEL_FILE, e.getMessage());
+				logger.error(ERROR_WHILE_PROCESSING_EXCEL_FILE, e.getMessage(), e);
 				applicationType.setFileStatus(FileStatus.PENDING);
 			} catch (Exception e) {
-				logger.error(UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE, e.getMessage());
+				logger.error(UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE, e.getMessage(), e);
 				applicationType.setFileStatus(FileStatus.UNEXPECTED_ERROR);
 			} finally {
 				applicationTypeRepository.save(applicationType);

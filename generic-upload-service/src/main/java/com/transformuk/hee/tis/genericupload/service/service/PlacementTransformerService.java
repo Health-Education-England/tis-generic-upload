@@ -26,6 +26,7 @@ import com.transformuk.hee.tis.tcs.api.dto.PlacementSpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementSupervisorDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.enumeration.CommentSource;
 import com.transformuk.hee.tis.tcs.api.enumeration.PlacementStatus;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
@@ -115,7 +116,7 @@ public class PlacementTransformerService {
 		return regNumberMap.isEmpty() ? null : pbdDtoFetcher.findWithKeys(idExtractingFetcher.extractIds(regNumberMap, getId));
 	}
 
-	void processPlacementsUpload(List<PlacementXLS> placementXLSS) {
+	void processPlacementsUpload(List<PlacementXLS> placementXLSS, String username) {
 		placementXLSS.forEach(PlacementXLS::initialiseSuccessfullyImported);
 		RegNumberToDTOLookup regNumberToDTOLookup = supervisorRegNumberIdService.getRegNumbersForSheetOrMarkAsError(placementXLSS);
 
@@ -140,12 +141,12 @@ public class PlacementTransformerService {
 			Map<String, GradeDTO> gradeMapByName = getGradeDTOMap(placementXLSS);
 
 			for (PlacementXLS placementXLS : placementXLSS) {
-				useMatchingCriteriaToUpdatePlacement(regNumberToDTOLookup, phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC, postsMappedByNPNs, duplicateNPNKeys, siteMapByName, gradeMapByName, placementXLS);
+				useMatchingCriteriaToUpdatePlacement(regNumberToDTOLookup, phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC, postsMappedByNPNs, duplicateNPNKeys, siteMapByName, gradeMapByName, placementXLS, username);
 			}
 		}
 	}
 
-	private void useMatchingCriteriaToUpdatePlacement(RegNumberToDTOLookup regNumberToDTOLookup, Map<String, PersonDTO> phnDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByPH, Map<String, GdcDetailsDTO> gdcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGDC, Map<String, GmcDetailsDTO> gmcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGMC, Map<String, PostDTO> postsMappedByNPNs, Set<String> duplicateNPNKeys, Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS) {
+	private void useMatchingCriteriaToUpdatePlacement(RegNumberToDTOLookup regNumberToDTOLookup, Map<String, PersonDTO> phnDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByPH, Map<String, GdcDetailsDTO> gdcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGDC, Map<String, GmcDetailsDTO> gmcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGMC, Map<String, PostDTO> postsMappedByNPNs, Set<String> duplicateNPNKeys, Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, String username) {
 		Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = getPersonBasicDetailsDTOFromRegNumber(phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC, placementXLS);
 
 		if (personBasicDetailsDTOOptional.isPresent()) {
@@ -161,7 +162,7 @@ public class PlacementTransformerService {
 					if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
 						placementXLS.addErrorMessage(POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
 					} else {
-						updatePlacement(regNumberToDTOLookup, siteMapByName, gradeMapByName, placementXLS, personBasicDetailsDTO, postDTO);
+						updatePlacement(regNumberToDTOLookup, siteMapByName, gradeMapByName, placementXLS, personBasicDetailsDTO, postDTO, username);
 					}
 				}
 			}
@@ -197,7 +198,7 @@ public class PlacementTransformerService {
 		}
 	}
 
-	private void updatePlacement(RegNumberToDTOLookup regNumberToDTOLookup, Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PersonBasicDetailsDTO personBasicDetailsDTO, PostDTO postDTO) {
+	private void updatePlacement(RegNumberToDTOLookup regNumberToDTOLookup, Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PersonBasicDetailsDTO personBasicDetailsDTO, PostDTO postDTO, String username) {
 		if (datesAreValid(placementXLS)) {
 			List<PlacementDetailsDTO> placementsByPostIdAndPersonId = tcsServiceImpl.getPlacementsByPostIdAndPersonId(postDTO.getId(), personBasicDetailsDTO.getId());
 
@@ -206,7 +207,7 @@ public class PlacementTransformerService {
 
 			boolean existingPlacementUpdatedOrDeleted = false;
 			if (!placementsByPostIdAndPersonId.isEmpty()) {
-				existingPlacementUpdatedOrDeleted = updateOrDeleteExistingPlacement(regNumberToDTOLookup, siteMapByName, gradeMapByName, placementXLS, placementsByPostIdAndPersonId, dateFrom, dateTo, existingPlacementUpdatedOrDeleted);
+				existingPlacementUpdatedOrDeleted = updateOrDeleteExistingPlacement(regNumberToDTOLookup, siteMapByName, gradeMapByName, placementXLS, placementsByPostIdAndPersonId, dateFrom, dateTo, existingPlacementUpdatedOrDeleted, username);
 			}
 
 			if (placementsByPostIdAndPersonId.isEmpty() || !existingPlacementUpdatedOrDeleted) {
@@ -215,19 +216,19 @@ public class PlacementTransformerService {
 				placementDTO.setPostId(postDTO.getId());
 				placementDTO.setDateFrom(dateFrom);
 				placementDTO.setDateTo(dateTo);
-				saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, false);
+				saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, false, username);
 			}
 		}
 	}
 
-	private boolean updateOrDeleteExistingPlacement(RegNumberToDTOLookup regNumberToDTOLookup, Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, List<PlacementDetailsDTO> placementsByPostIdAndPersonId, LocalDate dateFrom, LocalDate dateTo, boolean existingPlacementUpdatedOrDeleted) {
+	private boolean updateOrDeleteExistingPlacement(RegNumberToDTOLookup regNumberToDTOLookup, Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, List<PlacementDetailsDTO> placementsByPostIdAndPersonId, LocalDate dateFrom, LocalDate dateTo, boolean existingPlacementUpdatedOrDeleted, String username) {
 		for (PlacementDetailsDTO placementDTO : placementsByPostIdAndPersonId) {
 			if (dateFrom.equals(placementDTO.getDateFrom()) && dateTo.equals(placementDTO.getDateTo())) {
 				if ("DELETE".equalsIgnoreCase(placementXLS.getPlacementStatus())) {
 					tcsServiceImpl.deletePlacement(placementDTO.getId());
 					placementXLS.setSuccessfullyImported(true);
 				} else {
-					saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, true);
+					saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, true, username);
 				}
 				existingPlacementUpdatedOrDeleted = true;
 				break;
@@ -249,7 +250,7 @@ public class PlacementTransformerService {
 		return true;
 	}
 
-	public void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, boolean updatePlacement) {
+	public void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, boolean updatePlacement, String username) {
 		setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
 		setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
 
@@ -262,7 +263,7 @@ public class PlacementTransformerService {
 		addSupervisorsToPlacement(placementXLS, placementDTO, regNumberToDTOLookup, clinicalSupervisorRoles, educationalSupervisorRoles);
 
 		if (!placementXLS.hasErrors()) {
-			setCommentInPlacementDTO(placementDTO, placementXLS);
+			setCommentInPlacementDTO(placementDTO, placementXLS, username);
 			if (updatePlacement) {
 				tcsServiceImpl.updatePlacement(placementDTO);
 			} else {
@@ -272,19 +273,24 @@ public class PlacementTransformerService {
 		}
 	}
 
-	private void setCommentInPlacementDTO(PlacementDetailsDTO placementDTO, PlacementXLS placementXLS) {
+	private void setCommentInPlacementDTO(PlacementDetailsDTO placementDTO, PlacementXLS placementXLS, String username) {
 		if(!StringUtils.isEmpty(placementXLS.getComments())) {
 			if(placementDTO.getComments() == null) {
 				placementDTO.setComments(new HashSet<>());
 			}
 			PlacementCommentDTO placementCommentDTO;
-			if(!placementDTO.getComments().isEmpty()) {
-				placementCommentDTO = placementDTO.getComments().iterator().next();
+			Optional<PlacementCommentDTO> commentsByGenericUpload = placementDTO.getComments().stream()
+					.filter(anExistingCommentForPlacement -> !StringUtils.isEmpty(anExistingCommentForPlacement.getSource()) && anExistingCommentForPlacement.getSource().equals(CommentSource.GENERIC_UPLOAD))
+					.findAny();
+			if(commentsByGenericUpload.isPresent()) {
+				placementCommentDTO = commentsByGenericUpload.get();
 			} else {
 				placementCommentDTO = new PlacementCommentDTO();
 				placementDTO.getComments().add(placementCommentDTO);
+				placementCommentDTO.setSource(CommentSource.GENERIC_UPLOAD);
 			}
 			placementCommentDTO.setBody(placementXLS.getComments());
+			placementCommentDTO.setAuthor(username);
 		}
 	}
 
