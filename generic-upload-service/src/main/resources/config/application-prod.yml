@@ -154,3 +154,6 @@ jhipster:
 # ===================================================================
 
 application:
+
+endpoints:
+    enabled: false # disable all monitoring endpoints
