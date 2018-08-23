@@ -1,15 +1,12 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.UploadFileResource;
-import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementDeleteHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.slf4j.Logger;
@@ -75,7 +72,11 @@ public class FileValidator {
 		} else if(headers.contains("Placement Id*")) {
 			fileType = FileType.PLACEMENTS_DELETE;
 			validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementDeleteXLS.class, excelToObjectMapper, new PlacementDeleteHeaderMapper());
-		} else {
+		} else if(headers.contains("Review date*")){
+			fileType = FileType.ASSESSMENTS;
+			validateMandatoryFieldsOrThrowException(files,fieldErrors,AssessmentXLS.class,excelToObjectMapper,new AssessmentHeaderMapper());
+		}
+		else {
 			throw new InvalidFormatException("Unrecognised upload template");
 		}
 		return fileType;
