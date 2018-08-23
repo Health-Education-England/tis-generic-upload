@@ -4,6 +4,7 @@ import com.transformuk.hee.tis.assessment.api.dto.*;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.*;
+import com.transformuk.hee.tis.genericupload.service.util.BooleanUtil;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.*;
@@ -159,15 +160,15 @@ public class AssessmentTransformerService {
       } else {
         assessmentXLS.addErrorMessage(MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC);
       }
-      assessmentDetailDTO.setPya(parseBoolean(assessmentXLS.getPya()));
+      assessmentDetailDTO.setPya(BooleanUtil.parseBooleanObject(assessmentXLS.getPya()));
       assessmentDTO.detail(assessmentDetailDTO);
 
       // Outcome
       AssessmentOutcomeDTO assessmentOutcomeDTO = new AssessmentOutcomeDTO();
       assessmentOutcomeDTO.setOutcome(assessmentXLS.getOutcome());
-      assessmentOutcomeDTO.setUnderAppeal(parseBoolean(assessmentXLS.getUnderAppeal()));
+      assessmentOutcomeDTO.setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXLS.getUnderAppeal()));
       assessmentOutcomeDTO.setAcademicOutcome(assessmentXLS.getAcademicOutcome());
-      assessmentOutcomeDTO.setExternalTrainer(parseBoolean(assessmentXLS.getExternalTrainer()));
+      assessmentOutcomeDTO.setExternalTrainer(BooleanUtil.parseBooleanObject(assessmentXLS.getExternalTrainer()));
       // Assessment outcome reasons
 
       GradeDTO gradeDTO = gradeMapByName.get(assessmentXLS.getNextRotationGradeName());
@@ -176,10 +177,10 @@ public class AssessmentTransformerService {
         assessmentOutcomeDTO.setNextRotationGradeAbbr(gradeDTO.getAbbreviation());
         assessmentOutcomeDTO.setNextRotationGradeId(gradeDTO.getId());
       }
-      assessmentOutcomeDTO.setTraineeNotifiedOfOutcome(parseBoolean(assessmentXLS.getTraineeNotifiedOfOutcome()));
+      assessmentOutcomeDTO.setTraineeNotifiedOfOutcome(BooleanUtil.parseBooleanObject(assessmentXLS.getTraineeNotifiedOfOutcome()));
       assessmentOutcomeDTO.setNextReviewDate(convertDate(assessmentXLS.getNextReviewDate()));
       assessmentOutcomeDTO.setComments(assessmentXLS.getComments());
-      assessmentOutcomeDTO.setTenPercentAudit(parseBoolean(assessmentXLS.getTenPercentAudit()));
+      assessmentOutcomeDTO.setTenPercentAudit(BooleanUtil.parseBooleanObject(assessmentXLS.getTenPercentAudit()));
       assessmentOutcomeDTO.setDetailedReasons(assessmentXLS.getDetailedReasons());
       assessmentOutcomeDTO.setMitigatingCircumstances(assessmentXLS.getMitigatingCircumstances());
       assessmentOutcomeDTO.setCompetencesToBeDeveloped(assessmentXLS.getCompetencesToBeDeveloped());
@@ -190,7 +191,7 @@ public class AssessmentTransformerService {
 
       //Revalidation
       RevalidationDTO revalidationDTO = new RevalidationDTO();
-      revalidationDTO.setKnownConcerns(parseBoolean(assessmentXLS.getKnownConcerns()));
+      revalidationDTO.setKnownConcerns(BooleanUtil.parseBooleanObject(assessmentXLS.getKnownConcerns()));
       revalidationDTO.setConcernSummary(assessmentXLS.getConcernSummary());
       revalidationDTO.setResponsibleOfficerComments(assessmentXLS.getResponsibleOfficerComments());
       assessmentDTO.setRevalidation(revalidationDTO);
@@ -200,12 +201,6 @@ public class AssessmentTransformerService {
     }
   }
 
-  private Boolean parseBoolean(String value){
-    if("YES".equalsIgnoreCase(value)){
-      return true;
-    }
-    return false;
-  }
 
   private Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDTOFromRegNumber(Map<String, PersonDTO> phnDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByPH, Map<String, GdcDetailsDTO> gdcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGDC, Map<String, GmcDetailsDTO> gmcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGMC, AssessmentXLS assessmentXLS) {
     if (!StringUtils.isEmpty(getGdcNumber.apply(assessmentXLS))) {
