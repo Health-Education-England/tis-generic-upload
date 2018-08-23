@@ -128,8 +128,8 @@ public class AssessmentTransformerService {
         assessmentXLS.addErrorMessage(MULTIPLE_OR_NO_GRADES_FOUND_FOR + grade);
       }
 
-      ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDTO = ProgrammeMembershipCurriculaDTO(personBasicDetailsDTO.getId(),
-              assessmentXLS.getProgrammeName(), assessmentXLS.getProgrammeNumber(), assessmentXLS.getCurriculumName());
+      ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDTO = getProgrammeMembershipCurriculaDTO(personBasicDetailsDTO.getId(),
+              assessmentXLS.getProgrammeName(), assessmentXLS.getProgrammeNumber(), assessmentXLS.getCurriculumName(),tcsServiceImpl::getProgrammeMembershipForTrainee);
       AssessmentDTO assessmentDTO = new AssessmentDTO();
       assessmentDTO.setFirstName(personBasicDetailsDTO.getFirstName());
       assessmentDTO.setLastName(personBasicDetailsDTO.getLastName());
@@ -271,11 +271,8 @@ public class AssessmentTransformerService {
             .collect(Collectors.toList());
   }
 
-  private ProgrammeMembershipCurriculaDTO ProgrammeMembershipCurriculaDTO(Long traineeId, String programmeName, String programmeNumber, String curriculumName) {
-    return getProgrammeMembershipCurriculaDTO(traineeId, programmeName, programmeNumber, curriculumName, tcsServiceImpl::getProgrammeMembershipForTrainee);
-  }
-
-  ProgrammeMembershipCurriculaDTO getProgrammeMembershipCurriculaDTO(Long traineeId, String programmeName, String programmeNumber, String curriculumName, Function<Long, List<ProgrammeMembershipCurriculaDTO>> getProgrammeMembershipForTrainee) {
+  private ProgrammeMembershipCurriculaDTO getProgrammeMembershipCurriculaDTO(Long traineeId, String programmeName, String programmeNumber,
+                                                                             String curriculumName, Function<Long, List<ProgrammeMembershipCurriculaDTO>> getProgrammeMembershipForTrainee) {
     ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDTO = null;
     if (!StringUtils.isEmpty(programmeName) || !StringUtils.isEmpty(programmeNumber)) {
       if (StringUtils.isEmpty(programmeName)) {
