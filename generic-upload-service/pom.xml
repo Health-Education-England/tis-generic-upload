@@ -12,7 +12,7 @@
 
 	<groupId>com.transformuk.hee.tis</groupId>
 	<artifactId>generic-upload-service</artifactId>
-	<version>1.2.2</version>
+	<version>1.2.3</version>
 	<packaging>war</packaging>
 
 	<properties>
@@ -158,7 +158,7 @@
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>tcs-client</artifactId>
-			<version>3.0.62</version>
+			<version>3.0.67</version>
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee</groupId>
@@ -172,8 +172,18 @@
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
+			<artifactId>assessments-api</artifactId>
+			<version>1.4.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.transformuk.hee.tis</groupId>
+			<artifactId>assessments-client</artifactId>
+			<version>1.0.15</version>
+		</dependency>
+		<dependency>
+			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>generic-upload-api</artifactId>
-			<version>1.0.3</version>
+			<version>1.0.4</version>
 		</dependency>
 		<!-- TIS END -->
 

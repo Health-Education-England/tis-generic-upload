@@ -37,6 +37,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -468,7 +469,7 @@ public class PlacementTransformerService {
 		if (placementXLS.getWte() == null) {
 			placementXLS.addErrorMessage(WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY);
 		} else {
-			placementDTO.setWholeTimeEquivalent(placementXLS.getWte().doubleValue());
+			placementDTO.setWholeTimeEquivalent(new BigDecimal(placementXLS.getWte()));
 		}
 	}
 

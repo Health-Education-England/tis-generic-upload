@@ -2,16 +2,10 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
-import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.*;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
-import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementDeleteHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.*;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import org.slf4j.Logger;
@@ -50,6 +44,8 @@ public class ScheduledUploadTask {
 	private PlacementDeleteService placementDeleteService;
 	@Autowired
 	private PersonTransformerService personTransformerService;
+	@Autowired
+	private AssessmentTransformerService assessmentTransformerService;
 
 	private final ApplicationTypeRepository applicationTypeRepository;
 	private final AzureProperties azureProperties;
@@ -97,6 +93,12 @@ public class ScheduledUploadTask {
 						List<PlacementDeleteXLS> placementDeleteXLSS = excelToObjectMapper.map(PlacementDeleteXLS.class, new PlacementDeleteHeaderMapper().getFieldMap());
 						placementDeleteService.processPlacementsDeleteUpload(placementDeleteXLSS);
 						setJobToCompleted(applicationType, placementDeleteXLSS);
+						break;
+
+					case ASSESSMENTS:
+						List<AssessmentXLS> assessmentXLSList = excelToObjectMapper.map(AssessmentXLS.class, new AssessmentHeaderMapper().getFieldMap());
+						assessmentTransformerService.processAssessmentsUpload(assessmentXLSList, applicationType.getUsername());
+						setJobToCompleted(applicationType, assessmentXLSList);
 						break;
 
 					default: logger.error(UNKNOWN_FILE_TYPE);

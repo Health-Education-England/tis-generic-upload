@@ -17,9 +17,6 @@ public abstract class MapperConfiguration {
 
     static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("d/MM/yyyy");
 
-    /*@Autowired
-    protected EtlService etlService;
-  */
     protected List<Object> existingPersons;
 
     protected static String convertLongToString(Long longParam) {
