@@ -97,7 +97,7 @@ public class ScheduledUploadTask {
 
 					case ASSESSMENTS:
 						List<AssessmentXLS> assessmentXLSList = excelToObjectMapper.map(AssessmentXLS.class, new AssessmentHeaderMapper().getFieldMap());
-						assessmentTransformerService.processAssessmentsUpload(assessmentXLSList, applicationType.getUsername());
+						assessmentTransformerService.processAssessmentsUpload(assessmentXLSList);
 						setJobToCompleted(applicationType, assessmentXLSList);
 						break;
 

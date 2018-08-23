@@ -76,7 +76,7 @@ public class AssessmentTransformerService {
     return regNumberMap.isEmpty() ? null : pbdDtoFetcher.findWithKeys(idExtractingFetcher.extractIds(regNumberMap, getId));
   }
 
-  void processAssessmentsUpload(List<AssessmentXLS> assessmentXLSList, String username) {
+  void processAssessmentsUpload(List<AssessmentXLS> assessmentXLSList) {
     assessmentXLSList.forEach(AssessmentXLS::initialiseSuccessfullyImported);
     markRowsWithoutRegistrationNumbers(assessmentXLSList);
 
@@ -93,7 +93,7 @@ public class AssessmentTransformerService {
       Map<String, GradeDTO> gradeMapByName = getGradeDTOMap(assessmentXLSList);
 
       for (AssessmentXLS assessmentXLS : assessmentXLSList) {
-        useMatchingCriteriaToCreateAssessment(phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC, gradeMapByName, assessmentXLS, username);
+        useMatchingCriteriaToCreateAssessment(phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC, gradeMapByName, assessmentXLS);
       }
     }
   }
@@ -112,7 +112,7 @@ public class AssessmentTransformerService {
                                                      Map<Long, PersonBasicDetailsDTO> pbdMapByPH, Map<String, GdcDetailsDTO> gdcDetailsMap,
                                                      Map<Long, PersonBasicDetailsDTO> pbdMapByGDC, Map<String, GmcDetailsDTO> gmcDetailsMap,
                                                      Map<Long, PersonBasicDetailsDTO> pbdMapByGMC,
-                                                     Map<String, GradeDTO> gradeMapByName, AssessmentXLS assessmentXLS, String username) {
+                                                     Map<String, GradeDTO> gradeMapByName, AssessmentXLS assessmentXLS) {
     Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = getPersonBasicDetailsDTOFromRegNumber(phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC, assessmentXLS);
 
     if (personBasicDetailsDTOOptional.isPresent()) {
@@ -195,7 +195,7 @@ public class AssessmentTransformerService {
       revalidationDTO.setResponsibleOfficerComments(assessmentXLS.getResponsibleOfficerComments());
       assessmentDTO.setRevalidation(revalidationDTO);
 
-      saveAssessment(personBasicDetailsDTO, assessmentXLS, assessmentDTO, username);
+      saveAssessment(personBasicDetailsDTO, assessmentXLS, assessmentDTO);
 
     }
   }
@@ -220,7 +220,7 @@ public class AssessmentTransformerService {
     }
   }
 
-  public void saveAssessment(PersonBasicDetailsDTO personBasicDetailsDTO, AssessmentXLS assessmentXLS, AssessmentDTO assessmentDTO, String username) {
+  public void saveAssessment(PersonBasicDetailsDTO personBasicDetailsDTO, AssessmentXLS assessmentXLS, AssessmentDTO assessmentDTO) {
 
     if (!assessmentXLS.hasErrors()) {
       assessmentServiceImpl.createTraineeAssessment(assessmentDTO, personBasicDetailsDTO.getId());
