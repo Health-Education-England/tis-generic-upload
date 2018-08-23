@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
         @ComponentScan("com.transformuk.hee.tis.genericupload.service"),
         @ComponentScan("com.transformuk.hee.tis.client.impl"),
         @ComponentScan("com.transformuk.hee.tis.tcs.client"),
+        @ComponentScan("com.transformuk.hee.tis.assessment.client"),
         @ComponentScan("com.transformuk.hee.tis.reference")
 })
 @EnableAutoConfiguration(exclude = {MetricFilterAutoConfiguration.class, MetricRepositoryAutoConfiguration.class})
@@ -40,7 +41,9 @@ import java.util.concurrent.TimeUnit;
         "classpath:/config/application.properties",
         "classpath:/config/profileclientapplication.properties",
         "classpath:/config/tcsclientapplication.properties",
+        "classpath:/config/assessmentsclientapplication.properties",
         "classpath:/config/referenceclientapplication.properties"
+
 })
 @Import(TisFileStorageConfig.class)
 @EnableScheduling
