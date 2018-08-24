@@ -69,6 +69,20 @@ public class FileValidatorTest {
 		}
 	}
 
+	@Test
+	public void shouldErrorForIncorrectDatesOnAssessmentMandatoryDateFieldsWithMessage() throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
+		String filename = "TIS Assessment Import Template - Step 2.xlsx";
+		String filePath = new ClassPathResource(filename).getURI().getPath();
+		FileInputStream inputStream = new FileInputStream(filePath);
+		MultipartFile multipartFile = new MockMultipartFile("file",
+						filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n", IOUtils.toByteArray(inputStream));
+		try {
+			fileValidator.validate(Collections.singletonList(multipartFile), true, true);
+		} catch(ValidationException ve){
+			Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+		}
+	}
+
 	private boolean oneOfTheFieldErrorsIs(BindingResult bindingResult, String subStringErrorToLookFor) {
 		logger.info(bindingResult.getFieldErrors().toString());
 

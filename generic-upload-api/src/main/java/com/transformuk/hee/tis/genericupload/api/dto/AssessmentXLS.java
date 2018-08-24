@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
+import java.util.Date;
 import java.util.Objects;
 
 public class AssessmentXLS extends TemplateXLS {
@@ -11,9 +12,9 @@ public class AssessmentXLS extends TemplateXLS {
   private String status;
   private String programmeName;
   private String programmeNumber;
-  private String reviewDate;
+  private Date reviewDate;
   private String curriculumName;
-  private String portfolioReviewDate;
+  private Date portfolioReviewDate;
   private String daysOutOfTraining;
   private String periodCoveredFrom;
   private String periodCoveredTo;
@@ -27,7 +28,7 @@ public class AssessmentXLS extends TemplateXLS {
   private String externalTrainer;
   private String nextRotationGradeName;
   private String traineeNotifiedOfOutcome;
-  private String nextReviewDate;
+  private Date nextReviewDate;
   private String comments;
   private String tenPercentAudit;
   private String detailedReasons;
@@ -104,11 +105,11 @@ public class AssessmentXLS extends TemplateXLS {
     this.programmeNumber = programmeNumber;
   }
 
-  public String getReviewDate() {
+  public Date getReviewDate() {
     return reviewDate;
   }
 
-  public void setReviewDate(String reviewDate) {
+  public void setReviewDate(Date reviewDate) {
     this.reviewDate = reviewDate;
   }
 
@@ -120,11 +121,11 @@ public class AssessmentXLS extends TemplateXLS {
     this.curriculumName = curriculumName;
   }
 
-  public String getPortfolioReviewDate() {
+  public Date getPortfolioReviewDate() {
     return portfolioReviewDate;
   }
 
-  public void setPortfolioReviewDate(String portfolioReviewDate) {
+  public void setPortfolioReviewDate(Date portfolioReviewDate) {
     this.portfolioReviewDate = portfolioReviewDate;
   }
 
@@ -232,11 +233,11 @@ public class AssessmentXLS extends TemplateXLS {
     this.traineeNotifiedOfOutcome = traineeNotifiedOfOutcome;
   }
 
-  public String getNextReviewDate() {
+  public Date getNextReviewDate() {
     return nextReviewDate;
   }
 
-  public void setNextReviewDate(String nextReviewDate) {
+  public void setNextReviewDate(Date nextReviewDate) {
     this.nextReviewDate = nextReviewDate;
   }
 
