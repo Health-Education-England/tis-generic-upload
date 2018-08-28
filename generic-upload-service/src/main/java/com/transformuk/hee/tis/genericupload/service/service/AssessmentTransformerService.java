@@ -238,6 +238,7 @@ public class AssessmentTransformerService {
   //TODO optimise these to be Fetcher like
   private Map<String, GradeDTO> getGradeDTOMap(List<AssessmentXLS> assessmentXLSList) {
     Set<String> gradeNames = assessmentXLSList.stream()
+            .filter(assessmentXLS -> !StringUtils.isEmpty(assessmentXLS.getNextRotationGradeName()))
             .map(AssessmentXLS::getNextRotationGradeName)
             .collect(Collectors.toSet());
     Map<String, GradeDTO> gradeMapByName = new HashMap<>();
