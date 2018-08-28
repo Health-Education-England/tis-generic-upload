@@ -16,8 +16,8 @@ public class AssessmentXLS extends TemplateXLS {
   private String curriculumName;
   private Date portfolioReviewDate;
   private String daysOutOfTraining;
-  private String periodCoveredFrom;
-  private String periodCoveredTo;
+  private Date periodCoveredFrom;
+  private Date periodCoveredTo;
   private String monthsCountedToTraining;
   private String pya;
   private String outcome;
@@ -137,19 +137,19 @@ public class AssessmentXLS extends TemplateXLS {
     this.daysOutOfTraining = daysOutOfTraining;
   }
 
-  public String getPeriodCoveredFrom() {
+  public Date getPeriodCoveredFrom() {
     return periodCoveredFrom;
   }
 
-  public void setPeriodCoveredFrom(String periodCoveredFrom) {
+  public void setPeriodCoveredFrom(Date periodCoveredFrom) {
     this.periodCoveredFrom = periodCoveredFrom;
   }
 
-  public String getPeriodCoveredTo() {
+  public Date getPeriodCoveredTo() {
     return periodCoveredTo;
   }
 
-  public void setPeriodCoveredTo(String periodCoveredTo) {
+  public void setPeriodCoveredTo(Date periodCoveredTo) {
     this.periodCoveredTo = periodCoveredTo;
   }
 
