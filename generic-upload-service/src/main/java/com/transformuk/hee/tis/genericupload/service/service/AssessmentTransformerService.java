@@ -150,6 +150,16 @@ public class AssessmentTransformerService {
 
       // Assessment Details
       AssessmentDetailDTO assessmentDetailDTO = new AssessmentDetailDTO();
+      if(programmeMembershipCurriculaDTO != null && programmeMembershipCurriculaDTO.getCurriculumMemberships() != null){
+        CurriculumDTO curriculumDTO = programmeMembershipCurriculaDTO.getCurriculumDTO();
+        assessmentDetailDTO.setCurriculumId(curriculumDTO.getId());
+        assessmentDetailDTO.setCurriculumName(curriculumDTO.getName());
+        assessmentDetailDTO.setCurriculumStartDate(programmeMembershipCurriculaDTO.getCurriculumMemberships().get(0).getCurriculumStartDate());
+        assessmentDetailDTO.setCurriculumEndDate(programmeMembershipCurriculaDTO.getCurriculumMemberships().get(0).getCurriculumEndDate());
+        assessmentDetailDTO.setCurriculumSpecialtyId(String.valueOf(curriculumDTO.getSpecialty().getId()));
+        assessmentDetailDTO.setCurriculumSpecialty(String.valueOf(curriculumDTO.getSpecialty().getName()));
+        assessmentDetailDTO.setCurriculumSubType(curriculumDTO.getCurriculumSubType().name());
+      }
       assessmentDetailDTO.setPortfolioReviewDate(convertDate(assessmentXLS.getPortfolioReviewDate()));
       if (NumberUtils.isDigits(assessmentXLS.getDaysOutOfTraining())) {
         assessmentDetailDTO.setDaysOutOfTraining(Integer.parseInt(assessmentXLS.getDaysOutOfTraining()));
