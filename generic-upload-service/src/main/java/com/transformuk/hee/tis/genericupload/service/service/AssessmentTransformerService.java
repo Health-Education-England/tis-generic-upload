@@ -237,17 +237,14 @@ public class AssessmentTransformerService {
         Long savedAssessmentId = savedAssessment.getId();
         // save Assessment Detail
         AssessmentDetailDTO assessmentDetailDTO = assessmentDTO.getDetail();
-        assessmentDetailDTO.setId(savedAssessmentId);
         assessmentServiceImpl.createTraineeAssessmentDetails(assessmentDetailDTO,traineeId,savedAssessmentId);
 
         // save Assessment Outcome
         AssessmentOutcomeDTO assessmentOutcomeDTO = assessmentDTO.getOutcome();
-        assessmentOutcomeDTO.setId(savedAssessmentId);
         assessmentServiceImpl.createTraineeAssessmentOutcome(assessmentOutcomeDTO,traineeId,savedAssessmentId);
 
         // save Assessment Reason
         RevalidationDTO revalidationDTO = assessmentDTO.getRevalidation();
-        revalidationDTO.setId(savedAssessmentId);
         assessmentServiceImpl.createTraineeAssessmentRevalidation(revalidationDTO,traineeId,savedAssessmentId);
       }
       assessmentXLS.setSuccessfullyImported(true);
