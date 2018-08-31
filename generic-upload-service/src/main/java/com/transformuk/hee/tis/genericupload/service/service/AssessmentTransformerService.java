@@ -135,7 +135,10 @@ public class AssessmentTransformerService {
       assessmentDTO.setLastName(personBasicDetailsDTO.getLastName());
       assessmentDTO.setTraineeId(personBasicDetailsDTO.getId());
       assessmentDTO.setType(assessmentXLS.getType());
-      assessmentDTO.setEventStatus(EventStatus.valueOf(assessmentXLS.getStatus()));
+      if(!StringUtils.isEmpty(assessmentXLS.getStatus())) {
+        assessmentDTO.setEventStatus(EventStatus.valueOf(assessmentXLS.getStatus()));
+      }
+
       if (programmeMembershipCurriculaDTO != null) {
         assessmentDTO.setProgrammeName(programmeMembershipCurriculaDTO.getProgrammeName());
         assessmentDTO.setProgrammeId(programmeMembershipCurriculaDTO.getProgrammeId());
