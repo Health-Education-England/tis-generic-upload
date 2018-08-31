@@ -220,8 +220,26 @@ public class AssessmentTransformerService {
 
   public void saveAssessment(PersonBasicDetailsDTO personBasicDetailsDTO, AssessmentXLS assessmentXLS, AssessmentDTO assessmentDTO) {
 
-    if (!assessmentXLS.hasErrors()) {
-      assessmentServiceImpl.createTraineeAssessment(assessmentDTO, personBasicDetailsDTO.getId());
+    if (!assessmentXLS.hasErrors() && personBasicDetailsDTO.getId() != null) {
+      Long traineeId = personBasicDetailsDTO.getId();
+      AssessmentDTO savedAssessment = assessmentServiceImpl.createTraineeAssessment(assessmentDTO, traineeId);
+      if(savedAssessment != null && savedAssessment.getId() != null){
+        Long savedAssessmentId = savedAssessment.getId();
+        // save Assessment Detail
+        AssessmentDetailDTO assessmentDetailDTO = assessmentDTO.getDetail();
+        assessmentDetailDTO.setId(savedAssessmentId);
+        assessmentServiceImpl.createTraineeAssessmentDetails(assessmentDetailDTO,traineeId,savedAssessmentId);
+
+        // save Assessment Outcome
+        AssessmentOutcomeDTO assessmentOutcomeDTO = assessmentDTO.getOutcome();
+        assessmentOutcomeDTO.setId(savedAssessmentId);
+        assessmentServiceImpl.createTraineeAssessmentOutcome(assessmentOutcomeDTO,traineeId,savedAssessmentId);
+
+        // save Assessment Reason
+        RevalidationDTO revalidationDTO = assessmentDTO.getRevalidation();
+        revalidationDTO.setId(savedAssessmentId);
+        assessmentServiceImpl.createTraineeAssessmentRevalidation(revalidationDTO,traineeId,savedAssessmentId);
+      }
       assessmentXLS.setSuccessfullyImported(true);
     }
   }
