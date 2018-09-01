@@ -224,10 +224,11 @@ public class AssessmentTransformerService {
         assessmentDTO.setEventStatus(EventStatus.valueOf(assessmentXLS.getStatus()));
       }
 
-      if (programmeMembershipCurriculaDTO != null) {
+      if (programmeMembershipCurriculaDTO != null && programmeMembershipCurriculaDTO.getCurriculumMemberships() != null) {
         assessmentDTO.setProgrammeName(programmeMembershipCurriculaDTO.getProgrammeName());
         assessmentDTO.setProgrammeId(programmeMembershipCurriculaDTO.getProgrammeId());
         assessmentDTO.setProgrammeNumber(programmeMembershipCurriculaDTO.getProgrammeNumber());
+        assessmentDTO.setProgrammeMembershipId(programmeMembershipCurriculaDTO.getCurriculumMemberships().get(0).getId() );
       } else {
         assessmentXLS.addErrorMessage(DID_NOT_FIND_PROGRAMME_CURRICULUM);
       }
