@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import com.google.common.collect.Maps;
 import com.transformuk.hee.tis.assessment.api.dto.*;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
@@ -38,9 +39,10 @@ public class AssessmentTransformerService {
 
   private static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED = "At least one of the three registration numbers needs to be specified";
 
-  public static final String DID_NOT_FIND_PROGRAMME_CURRICULUM = "Did not find Programme curriculum";
-  public static final String DAYS_OUT_OF_TRAINING_SHOULD_BE_NUMERIC = "Days out of training should be numeric";
-  public static final String MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC = "Months OOPR/OOPT counted towards training should be numeric";
+  private static final String DID_NOT_FIND_PROGRAMME_CURRICULUM = "Did not find Programme curriculum";
+  private static final String DAYS_OUT_OF_TRAINING_SHOULD_BE_NUMERIC = "Days out of training should be numeric";
+  private static final String MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC = "Months OOPR/OOPT counted towards training should be numeric";
+  private static final String GIVEN_OUTCOME_IS_NOT_VALID = "Given outcome is not valid";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -53,6 +55,7 @@ public class AssessmentTransformerService {
   private GDCDTOFetcher gdcDtoFetcher;
   private PersonBasicDetailsDTOFetcher pbdDtoFetcher;
   private PeopleByPHNFetcher peopleByPHNFetcher;
+  private Map<String,Long> outcomeMap;
   Function<AssessmentXLS, String> getPhNumber = AssessmentXLS::getPublicHealthNumber;
   Function<AssessmentXLS, String> getGdcNumber = AssessmentXLS::getGdcNumber;
   Function<AssessmentXLS, String> getGmcNumber = AssessmentXLS::getGmcNumber;
@@ -64,6 +67,23 @@ public class AssessmentTransformerService {
     this.gdcDtoFetcher = new GDCDTOFetcher(tcsServiceImpl);
     this.pbdDtoFetcher = new PersonBasicDetailsDTOFetcher(tcsServiceImpl);
     this.peopleByPHNFetcher = new PeopleByPHNFetcher(tcsServiceImpl);
+    this.outcomeMap = getOutcomeMap();
+  }
+
+  private Map<String,Long> getOutcomeMap(){
+    Map<String,Long> outcome = Maps.newHashMap();
+    outcome.put("Not Assessed",1L);
+    outcome.put("1",2L);
+    outcome.put("2",3L);
+    outcome.put("3",4L);
+    outcome.put("4",5L);
+    outcome.put("5",6L);
+    outcome.put("6",7L);
+    outcome.put("6R",8L);
+    outcome.put("7",9L);
+    outcome.put("8",10L);
+    outcome.put("9",11L);
+    return outcome;
   }
 
   <DTO> Map<String, DTO> buildRegNumberDetailsMap(List<AssessmentXLS> assessmentXLS, Function<AssessmentXLS, String> getRegNumberFunction, DTOFetcher<String, DTO> fetcher) {
@@ -177,29 +197,38 @@ public class AssessmentTransformerService {
       assessmentDTO.detail(assessmentDetailDTO);
 
       // Outcome
-      AssessmentOutcomeDTO assessmentOutcomeDTO = new AssessmentOutcomeDTO();
-      assessmentOutcomeDTO.setOutcome(assessmentXLS.getOutcome());
-      assessmentOutcomeDTO.setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXLS.getUnderAppeal()));
-      assessmentOutcomeDTO.setAcademicOutcome(assessmentXLS.getAcademicOutcome());
-      assessmentOutcomeDTO.setExternalTrainer(BooleanUtil.parseBooleanObject(assessmentXLS.getExternalTrainer()));
-      // Assessment outcome reasons
+      AssessmentOutcomeDTO assessmentOutcomeDTO = null;
+      if(!StringUtils.isEmpty(assessmentXLS.getOutcome())) {
+        assessmentOutcomeDTO = new AssessmentOutcomeDTO();
+        Long outcomeId = this.outcomeMap.get(assessmentXLS.getOutcome());
+        if(outcomeId != null) {
+          assessmentOutcomeDTO.setOutcomeId(this.outcomeMap.get(assessmentXLS.getOutcome()));
+        } else {
+          assessmentXLS.addErrorMessage(GIVEN_OUTCOME_IS_NOT_VALID);
+        }
+        assessmentOutcomeDTO.setOutcome(assessmentXLS.getOutcome());
+        assessmentOutcomeDTO.setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXLS.getUnderAppeal()));
+        assessmentOutcomeDTO.setAcademicOutcome(assessmentXLS.getAcademicOutcome());
+        assessmentOutcomeDTO.setExternalTrainer(BooleanUtil.parseBooleanObject(assessmentXLS.getExternalTrainer()));
+        // Assessment outcome reasons
 
-      GradeDTO gradeDTO = gradeMapByName.get(assessmentXLS.getNextRotationGradeName());
-      if (gradeDTO != null) {
-        assessmentOutcomeDTO.setNextRotationGradeName(gradeDTO.getName());
-        assessmentOutcomeDTO.setNextRotationGradeAbbr(gradeDTO.getAbbreviation());
-        assessmentOutcomeDTO.setNextRotationGradeId(gradeDTO.getId());
+        GradeDTO gradeDTO = gradeMapByName.get(assessmentXLS.getNextRotationGradeName());
+        if (gradeDTO != null) {
+          assessmentOutcomeDTO.setNextRotationGradeName(gradeDTO.getName());
+          assessmentOutcomeDTO.setNextRotationGradeAbbr(gradeDTO.getAbbreviation());
+          assessmentOutcomeDTO.setNextRotationGradeId(gradeDTO.getId());
+        }
+        assessmentOutcomeDTO.setTraineeNotifiedOfOutcome(BooleanUtil.parseBooleanObject(assessmentXLS.getTraineeNotifiedOfOutcome()));
+        assessmentOutcomeDTO.setNextReviewDate(convertDate(assessmentXLS.getNextReviewDate()));
+        assessmentOutcomeDTO.setComments(assessmentXLS.getComments());
+        assessmentOutcomeDTO.setTenPercentAudit(BooleanUtil.parseBooleanObject(assessmentXLS.getTenPercentAudit()));
+        assessmentOutcomeDTO.setDetailedReasons(assessmentXLS.getDetailedReasons());
+        assessmentOutcomeDTO.setMitigatingCircumstances(assessmentXLS.getMitigatingCircumstances());
+        assessmentOutcomeDTO.setCompetencesToBeDeveloped(assessmentXLS.getCompetencesToBeDeveloped());
+        assessmentOutcomeDTO.setOtherRecommendedActions(assessmentXLS.getOtherRecommendedActions());
+        assessmentOutcomeDTO.setRecommendedAdditionalTrainingTime(assessmentXLS.getRecommendedAdditionalTrainingTime());
+        assessmentOutcomeDTO.setAdditionalCommentsFromPanel(assessmentXLS.getAdditionalCommentsFromPanel());
       }
-      assessmentOutcomeDTO.setTraineeNotifiedOfOutcome(BooleanUtil.parseBooleanObject(assessmentXLS.getTraineeNotifiedOfOutcome()));
-      assessmentOutcomeDTO.setNextReviewDate(convertDate(assessmentXLS.getNextReviewDate()));
-      assessmentOutcomeDTO.setComments(assessmentXLS.getComments());
-      assessmentOutcomeDTO.setTenPercentAudit(BooleanUtil.parseBooleanObject(assessmentXLS.getTenPercentAudit()));
-      assessmentOutcomeDTO.setDetailedReasons(assessmentXLS.getDetailedReasons());
-      assessmentOutcomeDTO.setMitigatingCircumstances(assessmentXLS.getMitigatingCircumstances());
-      assessmentOutcomeDTO.setCompetencesToBeDeveloped(assessmentXLS.getCompetencesToBeDeveloped());
-      assessmentOutcomeDTO.setOtherRecommendedActions(assessmentXLS.getOtherRecommendedActions());
-      assessmentOutcomeDTO.setRecommendedAdditionalTrainingTime(assessmentXLS.getRecommendedAdditionalTrainingTime());
-      assessmentOutcomeDTO.setAdditionalCommentsFromPanel(assessmentXLS.getAdditionalCommentsFromPanel());
       assessmentDTO.setOutcome(assessmentOutcomeDTO);
 
       //Revalidation
