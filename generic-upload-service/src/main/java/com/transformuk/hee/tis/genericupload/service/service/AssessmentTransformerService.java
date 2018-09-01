@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.transformuk.hee.tis.assessment.api.dto.*;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
@@ -43,6 +44,8 @@ public class AssessmentTransformerService {
   private static final String DAYS_OUT_OF_TRAINING_SHOULD_BE_NUMERIC = "Days out of training should be numeric";
   private static final String MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC = "Months OOPR/OOPT counted towards training should be numeric";
   private static final String GIVEN_OUTCOME_IS_NOT_VALID = "Given outcome is not valid";
+  public static final String OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S = "Outcome reason is required for outcome : %s";
+  public static final String OTHER_REASON_IS_REQUIRED = "Other reason is required";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -55,7 +58,8 @@ public class AssessmentTransformerService {
   private GDCDTOFetcher gdcDtoFetcher;
   private PersonBasicDetailsDTOFetcher pbdDtoFetcher;
   private PeopleByPHNFetcher peopleByPHNFetcher;
-  private Map<String,Long> outcomeMap;
+  private Map<String, Long> outcomeMap;
+  private Map<Long, Map<String, AssessmentReason>> outcomeReasonMap;
   Function<AssessmentXLS, String> getPhNumber = AssessmentXLS::getPublicHealthNumber;
   Function<AssessmentXLS, String> getGdcNumber = AssessmentXLS::getGdcNumber;
   Function<AssessmentXLS, String> getGmcNumber = AssessmentXLS::getGmcNumber;
@@ -68,23 +72,84 @@ public class AssessmentTransformerService {
     this.pbdDtoFetcher = new PersonBasicDetailsDTOFetcher(tcsServiceImpl);
     this.peopleByPHNFetcher = new PeopleByPHNFetcher(tcsServiceImpl);
     this.outcomeMap = getOutcomeMap();
+    this.outcomeReasonMap = getOutcomeReasonMap();
   }
 
-  private Map<String,Long> getOutcomeMap(){
-    Map<String,Long> outcome = Maps.newHashMap();
-    outcome.put("Not Assessed",1L);
-    outcome.put("1",2L);
-    outcome.put("2",3L);
-    outcome.put("3",4L);
-    outcome.put("4",5L);
-    outcome.put("5",6L);
-    outcome.put("6",7L);
-    outcome.put("6R",8L);
-    outcome.put("7",9L);
-    outcome.put("8",10L);
-    outcome.put("9",11L);
+  //TODO: remove hard coding, as its require assessment BE and FE changes because Outcome model is not in API
+  private Map<String, Long> getOutcomeMap() {
+    Map<String, Long> outcome = Maps.newHashMap();
+    outcome.put("Not Assessed", 1L);
+    outcome.put("1", 2L);
+    outcome.put("2", 3L);
+    outcome.put("3", 4L);
+    outcome.put("4", 5L);
+    outcome.put("5", 6L);
+    outcome.put("6", 7L);
+    outcome.put("6R", 8L);
+    outcome.put("7", 9L);
+    outcome.put("8", 10L);
+    outcome.put("9", 11L);
     return outcome;
   }
+
+  //TODO: remove hard coding, as its require assessment BE and FE changes because Reason model is not in API
+  private Map<Long, Map<String, AssessmentReason>> getOutcomeReasonMap() {
+    Map<Long, Map<String, AssessmentReason>> outcomeReason = Maps.newHashMap();
+    Map<String, AssessmentReason> reason1 = Maps.newHashMap();
+    reason1.put("Trainee sick leave", new AssessmentReason(11L, "N1", "Trainee sick leave", false, false));
+    reason1.put("Trainee maternity/paternity leave", new AssessmentReason(12L, "N2", "Trainee maternity/paternity leave", false, false));
+    reason1.put("Trainee not in post long enough", new AssessmentReason(13L, "N3", "Trainee not in post long enough", false, false));
+    reason1.put("Trainee fell outside annual reporting period", new AssessmentReason(14L, "N4", "Trainee fell outside annual reporting period", false, false));
+    reason1.put("Trainee post-CCT", new AssessmentReason(15L, "N5", "Trainee post-CCT", false, false));
+    reason1.put("Trainee missed review", new AssessmentReason(16L, "N6", "Trainee missed review", false, false));
+    reason1.put("Trainee inter-Deanery transfer", new AssessmentReason(17L, "N7", "Trainee inter-Deanery transfer", false, false));
+    reason1.put("Trainee reviewed in other Deanery", new AssessmentReason(18L, "N8", "Trainee reviewed in other Deanery", false, false));
+    reason1.put("Trainee contract termination", new AssessmentReason(19L, "N9", "Trainee contract termination", false, false));
+    reason1.put("Trainee gross misconduct", new AssessmentReason(20L, "N10", "Trainee gross misconduct", false, false));
+    reason1.put("Trainee suspension", new AssessmentReason(21L, "N11", "Trainee suspension", false, false));
+    reason1.put("Other reason (please specify)", new AssessmentReason(22L, "N13", "Other reason (please specify)", true, false));
+    reason1.put("LTFT achieving progress at the expected rate", new AssessmentReason(23L, "N14", "LTFT achieving progress at the expected rate", false, false));
+    reason1.put("LTFT not achieving progress at the expected rate", new AssessmentReason(24L, "N15", "LTFT not achieving progress at the expected rate", false, false));
+    reason1.put("Dismissed", new AssessmentReason(25L, "N16", "Dismissed", false, false));
+    reason1.put("Dismissed no remedial training", new AssessmentReason(26L, "N17", "Dismissed no remedial training", false, false));
+    reason1.put("Dismissed received remedial training", new AssessmentReason(27L, "N18", "Dismissed received remedial training", false, false));
+    reason1.put("Dismissed no GMC referral", new AssessmentReason(28L, "N19", "Dismissed no GMC referral", false, false));
+    reason1.put("Dismissed - following GMC referral", new AssessmentReason(29L, "N20", "Dismissed - following GMC referral", false, false));
+    reason1.put("Resignation no remedial training undertaken", new AssessmentReason(30L, "N21", "Resignation no remedial training undertaken", false, false));
+    reason1.put("Resignation received remedial training", new AssessmentReason(31L, "N22", "Resignation received remedial training", false, false));
+    outcomeReason.put(1L, reason1);
+
+    outcomeReason.put(2L, null);
+
+    Map<String, AssessmentReason> reason3 = Maps.newHashMap();
+    reason3.put("Record keeping and evidence", new AssessmentReason(1L, "U1", "Record keeping and evidence", false, false));
+    reason3.put("Inadequate experience", new AssessmentReason(2L, "U2", "Inadequate experience", false, false));
+    reason3.put("No engagement with supervisor", new AssessmentReason(3L, "U3", "No engagement with supervisor", false, false));
+    reason3.put("Trainer absence", new AssessmentReason(4L, "U4", "Trainer absence", false, false));
+    reason3.put("Single exam failure", new AssessmentReason(5L, "U5", "Single exam failure", false, false));
+    reason3.put("Continual exam failure", new AssessmentReason(6L, "U6", "Continual exam failure", false, false));
+    reason3.put("Trainee requires Deanery support", new AssessmentReason(7L, "U7", "Trainee requires Deanery support", false, false));
+    reason3.put("Other reason (please specify)", new AssessmentReason(8L, "U8", "Other reason (please specify)", true, true));
+    reason3.put("Inadequate attendance", new AssessmentReason(9L, "U9", "Inadequate attendance", false, false));
+    reason3.put("Assessment/Curriculum outcomes not achieved", new AssessmentReason(10L, "U10", "Assessment/Curriculum outcomes not achieved", false, false));
+
+    outcomeReason.put(3L, reason3);
+
+    outcomeReason.put(4L, reason3);
+
+    outcomeReason.put(5L, reason3);
+
+    outcomeReason.put(6L, null);
+
+    outcomeReason.put(7L, null);
+
+    outcomeReason.put(8L, null);
+    outcomeReason.put(9L, null);
+    outcomeReason.put(10L, null);
+    outcomeReason.put(11L, null);
+    return outcomeReason;
+  }
+
 
   <DTO> Map<String, DTO> buildRegNumberDetailsMap(List<AssessmentXLS> assessmentXLS, Function<AssessmentXLS, String> getRegNumberFunction, DTOFetcher<String, DTO> fetcher) {
     return fetcher.findWithKeys(
@@ -149,13 +214,13 @@ public class AssessmentTransformerService {
       }
 
       ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDTO = getProgrammeMembershipCurriculaDTO(personBasicDetailsDTO.getId(),
-              assessmentXLS.getProgrammeName(), assessmentXLS.getProgrammeNumber(), assessmentXLS.getCurriculumName(),tcsServiceImpl::getProgrammeMembershipForTrainee);
+              assessmentXLS.getProgrammeName(), assessmentXLS.getProgrammeNumber(), assessmentXLS.getCurriculumName(), tcsServiceImpl::getProgrammeMembershipForTrainee);
       AssessmentDTO assessmentDTO = new AssessmentDTO();
       assessmentDTO.setFirstName(personBasicDetailsDTO.getFirstName());
       assessmentDTO.setLastName(personBasicDetailsDTO.getLastName());
       assessmentDTO.setTraineeId(personBasicDetailsDTO.getId());
       assessmentDTO.setType(assessmentXLS.getType());
-      if(!StringUtils.isEmpty(assessmentXLS.getStatus())) {
+      if (!StringUtils.isEmpty(assessmentXLS.getStatus())) {
         assessmentDTO.setEventStatus(EventStatus.valueOf(assessmentXLS.getStatus()));
       }
 
@@ -170,7 +235,7 @@ public class AssessmentTransformerService {
 
       // Assessment Details
       AssessmentDetailDTO assessmentDetailDTO = new AssessmentDetailDTO();
-      if(programmeMembershipCurriculaDTO != null && programmeMembershipCurriculaDTO.getCurriculumMemberships() != null){
+      if (programmeMembershipCurriculaDTO != null && programmeMembershipCurriculaDTO.getCurriculumMemberships() != null) {
         CurriculumDTO curriculumDTO = programmeMembershipCurriculaDTO.getCurriculumDTO();
         assessmentDetailDTO.setCurriculumId(curriculumDTO.getId());
         assessmentDetailDTO.setCurriculumName(curriculumDTO.getName());
@@ -198,10 +263,10 @@ public class AssessmentTransformerService {
 
       // Outcome
       AssessmentOutcomeDTO assessmentOutcomeDTO = null;
-      if(!StringUtils.isEmpty(assessmentXLS.getOutcome())) {
+      if (!StringUtils.isEmpty(assessmentXLS.getOutcome())) {
         assessmentOutcomeDTO = new AssessmentOutcomeDTO();
         Long outcomeId = this.outcomeMap.get(assessmentXLS.getOutcome());
-        if(outcomeId != null) {
+        if (outcomeId != null) {
           assessmentOutcomeDTO.setOutcomeId(this.outcomeMap.get(assessmentXLS.getOutcome()));
         } else {
           assessmentXLS.addErrorMessage(GIVEN_OUTCOME_IS_NOT_VALID);
@@ -228,6 +293,32 @@ public class AssessmentTransformerService {
         assessmentOutcomeDTO.setOtherRecommendedActions(assessmentXLS.getOtherRecommendedActions());
         assessmentOutcomeDTO.setRecommendedAdditionalTrainingTime(assessmentXLS.getRecommendedAdditionalTrainingTime());
         assessmentOutcomeDTO.setAdditionalCommentsFromPanel(assessmentXLS.getAdditionalCommentsFromPanel());
+        Map<String, AssessmentReason> reason = outcomeReasonMap.get(outcomeId);
+        List<AssessmentOutcomeReasonDTO> assessmentOutcomeReasonDTOList = Lists.newArrayList();
+
+        if (reason != null && StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessed())) {
+          assessmentXLS.addErrorMessage(String.format(OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S, assessmentXLS.getOutcome()));
+        } else if (reason != null) {
+          AssessmentReason assessmentReason = reason.get(assessmentXLS.getOutcomeNotAssessed());
+          if (assessmentReason != null) {
+            AssessmentOutcomeReasonDTO assessmentOutcomeReasonDTO = new AssessmentOutcomeReasonDTO();
+            assessmentOutcomeReasonDTO.setReasonLabel(assessmentReason.getLabel());
+            assessmentOutcomeReasonDTO.setReasonId(assessmentReason.getId());
+            assessmentOutcomeReasonDTO.setReasonCode(assessmentReason.getCode());
+            assessmentOutcomeReasonDTO.setRequireOther(assessmentReason.isRequireOther());
+            if (assessmentReason.isRequireOther()) {
+              if (!StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessedOther())) {
+                assessmentOutcomeReasonDTO.setOther(assessmentXLS.getOutcomeNotAssessedOther());
+              } else {
+                assessmentXLS.addErrorMessage(OTHER_REASON_IS_REQUIRED);
+              }
+            }
+
+            assessmentOutcomeReasonDTOList.add(assessmentOutcomeReasonDTO);
+          }
+        }
+        assessmentOutcomeDTO.setReasons(assessmentOutcomeReasonDTOList);
+
       }
       assessmentDTO.setOutcome(assessmentOutcomeDTO);
 
@@ -262,19 +353,19 @@ public class AssessmentTransformerService {
     if (!assessmentXLS.hasErrors() && personBasicDetailsDTO.getId() != null) {
       Long traineeId = personBasicDetailsDTO.getId();
       AssessmentDTO savedAssessment = assessmentServiceImpl.createTraineeAssessment(assessmentDTO, traineeId);
-      if(savedAssessment != null && savedAssessment.getId() != null){
+      if (savedAssessment != null && savedAssessment.getId() != null) {
         Long savedAssessmentId = savedAssessment.getId();
         // save Assessment Detail
         AssessmentDetailDTO assessmentDetailDTO = assessmentDTO.getDetail();
-        assessmentServiceImpl.createTraineeAssessmentDetails(assessmentDetailDTO,traineeId,savedAssessmentId);
+        assessmentServiceImpl.createTraineeAssessmentDetails(assessmentDetailDTO, traineeId, savedAssessmentId);
 
         // save Assessment Outcome
         AssessmentOutcomeDTO assessmentOutcomeDTO = assessmentDTO.getOutcome();
-        assessmentServiceImpl.createTraineeAssessmentOutcome(assessmentOutcomeDTO,traineeId,savedAssessmentId);
+        assessmentServiceImpl.createTraineeAssessmentOutcome(assessmentOutcomeDTO, traineeId, savedAssessmentId);
 
         // save Assessment Reason
         RevalidationDTO revalidationDTO = assessmentDTO.getRevalidation();
-        assessmentServiceImpl.createTraineeAssessmentRevalidation(revalidationDTO,traineeId,savedAssessmentId);
+        assessmentServiceImpl.createTraineeAssessmentRevalidation(revalidationDTO, traineeId, savedAssessmentId);
       }
       assessmentXLS.setSuccessfullyImported(true);
     }
