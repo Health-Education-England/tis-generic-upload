@@ -361,7 +361,9 @@ public class AssessmentTransformerService {
 
         // save Assessment Outcome
         AssessmentOutcomeDTO assessmentOutcomeDTO = assessmentDTO.getOutcome();
-        assessmentServiceImpl.createTraineeAssessmentOutcome(assessmentOutcomeDTO, traineeId, savedAssessmentId);
+        if(assessmentOutcomeDTO != null) {
+          assessmentServiceImpl.createTraineeAssessmentOutcome(assessmentOutcomeDTO, traineeId, savedAssessmentId);
+        }
 
         // save Assessment Reason
         RevalidationDTO revalidationDTO = assessmentDTO.getRevalidation();
