@@ -1,31 +1,27 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 
+import io.swagger.annotations.ApiModelProperty;
+
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * A Reason.
+ * An Assessment Outcome.
  */
-public class AssessmentReason implements Serializable {
+public class Outcome implements Serializable {
 
-  public AssessmentReason(Long id, String code, String label, boolean requireOther, boolean isLegacy) {
-    this.id = id;
-    this.code = code;
-    this.label = label;
-    this.requireOther = requireOther;
-    this.isLegacy = isLegacy;
-  }
-
+  @ApiModelProperty(value = "System generated ID that is assigned to the outcome upon creation. Required for updates")
   private Long id;
 
+  @ApiModelProperty(value = "A user friendly code that end users may know this outcome by", required = true)
   private String code;
 
+  @ApiModelProperty(value = "A human readable label that represents the Outcome", required = true)
   private String label;
 
-  private boolean requireOther;
-
-  private boolean isLegacy;
+  private Set<Reason> reasons;
 
   public Long getId() {
     return id;
@@ -33,6 +29,11 @@ public class AssessmentReason implements Serializable {
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  public Outcome id(Long id) {
+    this.id = id;
+    return this;
   }
 
   public String getCode() {
@@ -43,6 +44,11 @@ public class AssessmentReason implements Serializable {
     this.code = code;
   }
 
+  public Outcome code(String code) {
+    this.code = code;
+    return this;
+  }
+
   public String getLabel() {
     return label;
   }
@@ -51,20 +57,22 @@ public class AssessmentReason implements Serializable {
     this.label = label;
   }
 
-  public boolean isRequireOther() {
-    return requireOther;
+  public Outcome label(String label) {
+    this.label = label;
+    return this;
   }
 
-  public void setRequireOther(boolean requireOther) {
-    this.requireOther = requireOther;
+  public Set<Reason> getReasons() {
+    return reasons;
   }
 
-  public boolean isLegacy() {
-    return isLegacy;
+  public void setReasons(Set<Reason> reasons) {
+    this.reasons = reasons;
   }
 
-  public void setLegacy(boolean legacy) {
-    isLegacy = legacy;
+  public Outcome reasons(Set<Reason> reasons) {
+    this.reasons = reasons;
+    return this;
   }
 
   @Override
@@ -75,7 +83,7 @@ public class AssessmentReason implements Serializable {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    AssessmentReason assessment = (AssessmentReason) o;
+    Outcome assessment = (Outcome) o;
     if (assessment.getId() == null || getId() == null) {
       return false;
     }
@@ -93,8 +101,6 @@ public class AssessmentReason implements Serializable {
             "id=" + id +
             ", code='" + code + '\'' +
             ", label='" + label + '\'' +
-            ", requireOther=" + requireOther +
-            ", isLegacy=" + isLegacy +
             '}';
   }
 }
