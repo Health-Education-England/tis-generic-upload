@@ -235,29 +235,31 @@ public class AssessmentTransformerService {
         assessmentOutcomeDTO.setRecommendedAdditionalTrainingTime(assessmentXLS.getRecommendedAdditionalTrainingTime());
         assessmentOutcomeDTO.setAdditionalCommentsFromPanel(assessmentXLS.getAdditionalCommentsFromPanel());
 
-        Set<Reason> outcomeReasons = outcome.getReasons();
         List<AssessmentOutcomeReasonDTO> assessmentOutcomeReasonDTOList = Lists.newArrayList();
+        if (outcome != null) {
+          Set<Reason> outcomeReasons = outcome.getReasons();
 
-        if (outcomeReasons != null && StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessed())) {
-          assessmentXLS.addErrorMessage(String.format(OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S, assessmentXLS.getOutcome()));
-        } else if (outcomeReasons != null) {
-          Reason assessmentReason = outcomeReasons.stream().
-                  filter(or -> or.getLabel().equalsIgnoreCase(assessmentXLS.getOutcomeNotAssessed())).findAny().orElse(null);
-          if (assessmentReason != null) {
-            AssessmentOutcomeReasonDTO assessmentOutcomeReasonDTO = new AssessmentOutcomeReasonDTO();
-            assessmentOutcomeReasonDTO.setReasonLabel(assessmentReason.getLabel());
-            assessmentOutcomeReasonDTO.setReasonId(assessmentReason.getId());
-            assessmentOutcomeReasonDTO.setReasonCode(assessmentReason.getCode());
-            assessmentOutcomeReasonDTO.setRequireOther(assessmentReason.isRequireOther());
-            if (assessmentReason.isRequireOther()) {
-              if (!StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessedOther())) {
-                assessmentOutcomeReasonDTO.setOther(assessmentXLS.getOutcomeNotAssessedOther());
-              } else {
-                assessmentXLS.addErrorMessage(OTHER_REASON_IS_REQUIRED);
+          if (outcomeReasons != null && StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessed())) {
+            assessmentXLS.addErrorMessage(String.format(OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S, assessmentXLS.getOutcome()));
+          } else if (outcomeReasons != null) {
+            Reason assessmentReason = outcomeReasons.stream().
+                    filter(or -> or.getLabel().equalsIgnoreCase(assessmentXLS.getOutcomeNotAssessed())).findAny().orElse(null);
+            if (assessmentReason != null) {
+              AssessmentOutcomeReasonDTO assessmentOutcomeReasonDTO = new AssessmentOutcomeReasonDTO();
+              assessmentOutcomeReasonDTO.setReasonLabel(assessmentReason.getLabel());
+              assessmentOutcomeReasonDTO.setReasonId(assessmentReason.getId());
+              assessmentOutcomeReasonDTO.setReasonCode(assessmentReason.getCode());
+              assessmentOutcomeReasonDTO.setRequireOther(assessmentReason.isRequireOther());
+              if (assessmentReason.isRequireOther()) {
+                if (!StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessedOther())) {
+                  assessmentOutcomeReasonDTO.setOther(assessmentXLS.getOutcomeNotAssessedOther());
+                } else {
+                  assessmentXLS.addErrorMessage(OTHER_REASON_IS_REQUIRED);
+                }
               }
-            }
 
-            assessmentOutcomeReasonDTOList.add(assessmentOutcomeReasonDTO);
+              assessmentOutcomeReasonDTOList.add(assessmentOutcomeReasonDTO);
+            }
           }
         }
         assessmentOutcomeDTO.setReasons(assessmentOutcomeReasonDTOList);
