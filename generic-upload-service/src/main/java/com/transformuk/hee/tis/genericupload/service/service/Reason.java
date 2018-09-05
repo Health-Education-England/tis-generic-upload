@@ -21,6 +21,8 @@ public class Reason implements Serializable {
   @ApiModelProperty(value = "A human readable label that represents the Reason", required = true)
   private String label;
 
+  private Set<Outcome> outcomes;
+
   @ApiModelProperty(value = "indicator to state that if this reason is selected, that the 'other' field needs to be filled", required = true)
   private boolean requireOther;
 
@@ -66,6 +68,14 @@ public class Reason implements Serializable {
     return this;
   }
 
+  public Set<Outcome> getOutcomes() {
+    return outcomes;
+  }
+
+  public void setOutcomes(Set<Outcome> outcomes) {
+    this.outcomes = outcomes;
+  }
+
   public boolean isRequireOther() {
     return requireOther;
   }
@@ -108,6 +118,7 @@ public class Reason implements Serializable {
             "id=" + id +
             ", code='" + code + '\'' +
             ", label='" + label + '\'' +
+            ", outcomes=" + outcomes +
             ", requireOther=" + requireOther +
             ", isLegacy=" + isLegacy +
             '}';

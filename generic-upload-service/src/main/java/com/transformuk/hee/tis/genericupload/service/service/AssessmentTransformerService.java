@@ -121,15 +121,17 @@ public class AssessmentTransformerService {
             .forEach(xls -> xls.addErrorMessage(AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED));
   }
 
-  private Set<Outcome> getAllOutcomes() {
+  public Set<Outcome> getAllOutcomes() {
     Set<Outcome> allOutcomes = Sets.newHashSet();
     String jsonAllOutcome = assessmentServiceImpl.getAllOutcomes();
+    logger.info("Outcome string: {}",jsonAllOutcome);
     try {
       if (!StringUtils.isEmpty(allOutcomes)) {
         allOutcomes = objectMapper.readValue(jsonAllOutcome, new TypeReference<Set<Outcome>>() {
         });
       }
     } catch (IOException e) {
+      logger.error(" Could not convert Json string to Outcome");
     }
     return allOutcomes;
   }
