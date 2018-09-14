@@ -49,6 +49,8 @@ public class AssessmentTransformerService {
   private static final String GIVEN_OUTCOME_IS_NOT_VALID = "Given outcome is not valid";
   private static final String OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S = "Outcome reason is required for outcome : %s";
   private static final String OTHER_REASON_IS_REQUIRED = "Other reason is required";
+  private static final String PROGRAMME_CURRICULUM_INFO_NOT_FOUND = "Programme curriculum information not found for given trainee";
+  private static final String TRAINEE_NOT_FOUND = "Trainee information not found";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -156,7 +158,7 @@ public class AssessmentTransformerService {
       }
 
       ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDTO = getProgrammeMembershipCurriculaDTO(personBasicDetailsDTO.getId(),
-              assessmentXLS.getProgrammeName(), assessmentXLS.getProgrammeNumber(), assessmentXLS.getCurriculumName(), tcsServiceImpl::getProgrammeMembershipForTrainee);
+              assessmentXLS, tcsServiceImpl::getProgrammeMembershipForTrainee);
       AssessmentDTO assessmentDTO = new AssessmentDTO();
       assessmentDTO.setFirstName(personBasicDetailsDTO.getFirstName());
       assessmentDTO.setLastName(personBasicDetailsDTO.getLastName());
@@ -369,14 +371,17 @@ public class AssessmentTransformerService {
             .collect(Collectors.toList());
   }
 
-  private ProgrammeMembershipCurriculaDTO getProgrammeMembershipCurriculaDTO(Long traineeId, String programmeName, String programmeNumber,
-                                                                             String curriculumName, Function<Long, List<ProgrammeMembershipCurriculaDTO>> getProgrammeMembershipForTrainee) {
+  private ProgrammeMembershipCurriculaDTO getProgrammeMembershipCurriculaDTO(Long traineeId, AssessmentXLS assessmentXLS, Function<Long, List<ProgrammeMembershipCurriculaDTO>> getProgrammeMembershipForTrainee) {
     ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDTO = null;
+    String programmeName = assessmentXLS.getProgrammeName();
+    String programmeNumber = assessmentXLS.getProgrammeNumber();
+    String curriculumName = assessmentXLS.getCurriculumName();
+
     if (!StringUtils.isEmpty(programmeName) || !StringUtils.isEmpty(programmeNumber)) {
       if (StringUtils.isEmpty(programmeName)) {
-        throw new IllegalArgumentException(String.format(PROGRAMME_NAME_NOT_SPECIFIED, programmeName));
+        assessmentXLS.addErrorMessage(String.format(PROGRAMME_NAME_NOT_SPECIFIED, programmeName));
       } else if (StringUtils.isEmpty(programmeNumber)) {
-        throw new IllegalArgumentException(String.format(PROGRAMME_NUMBER_NOT_SPECIFIED, programmeNumber));
+        assessmentXLS.addErrorMessage(String.format(PROGRAMME_NUMBER_NOT_SPECIFIED, programmeNumber));
       }
     }
     if (traineeId != null) {
@@ -391,10 +396,10 @@ public class AssessmentTransformerService {
           }
         }
       } else {
-        throw new IllegalArgumentException("Programme curriculum information not found for given trainee");
+        assessmentXLS.addErrorMessage(PROGRAMME_CURRICULUM_INFO_NOT_FOUND);
       }
     } else {
-      throw new IllegalArgumentException("Trainee not found");
+      assessmentXLS.addErrorMessage(TRAINEE_NOT_FOUND);
     }
     return programmeMembershipCurriculaDTO;
   }
