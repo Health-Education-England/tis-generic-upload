@@ -51,6 +51,7 @@ public class AssessmentTransformerService {
   private static final String OTHER_REASON_IS_REQUIRED = "Other reason is required";
   private static final String PROGRAMME_CURRICULUM_INFO_NOT_FOUND = "Programme curriculum information not found for given trainee";
   private static final String TRAINEE_NOT_FOUND = "Trainee information not found";
+  private static final String ASSESSMENT_TYPE_IS_REQUIRED = "Assessment type is required";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -157,6 +158,10 @@ public class AssessmentTransformerService {
         assessmentXLS.addErrorMessage(MULTIPLE_OR_NO_GRADES_FOUND_FOR + grade);
       }
 
+      if(StringUtils.isEmpty(assessmentXLS.getType())){
+        assessmentXLS.addErrorMessage(ASSESSMENT_TYPE_IS_REQUIRED);
+      }
+
       ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDTO = getProgrammeMembershipCurriculaDTO(personBasicDetailsDTO.getId(),
               assessmentXLS, tcsServiceImpl::getProgrammeMembershipForTrainee);
       AssessmentDTO assessmentDTO = new AssessmentDTO();
@@ -193,7 +198,7 @@ public class AssessmentTransformerService {
       assessmentDetailDTO.setPortfolioReviewDate(convertDate(assessmentXLS.getPortfolioReviewDate()));
       if (NumberUtils.isDigits(assessmentXLS.getDaysOutOfTraining())) {
         assessmentDetailDTO.setDaysOutOfTraining(Integer.parseInt(assessmentXLS.getDaysOutOfTraining()));
-      } else {
+      } else if (!StringUtils.isEmpty(assessmentXLS.getDaysOutOfTraining())) {
         assessmentXLS.addErrorMessage(DAYS_OUT_OF_TRAINING_SHOULD_BE_NUMERIC);
       }
       assessmentDetailDTO.setPeriodCoveredFrom(convertDate(assessmentXLS.getPeriodCoveredFrom()));
