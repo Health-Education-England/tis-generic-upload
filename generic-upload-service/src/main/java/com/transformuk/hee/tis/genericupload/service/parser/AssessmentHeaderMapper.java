@@ -46,7 +46,7 @@ public class AssessmentHeaderMapper extends ColumnMapper {
             "GMC Number",
             "GDC Number",
             "Public Health Number",
-            "Type",
+            "Type*",
             "Status",
             "Programme name*",
             "Programme number*",
