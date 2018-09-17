@@ -126,7 +126,7 @@ public class AssessmentTransformerService {
   public Set<Outcome> getAllOutcomes() {
     Set<Outcome> allOutcomes = Sets.newHashSet();
     String jsonAllOutcome = assessmentServiceImpl.getAllOutcomes();
-    logger.info("Outcome string: {}",jsonAllOutcome);
+    logger.info("Outcome string: {}", jsonAllOutcome);
     try {
       if (!StringUtils.isEmpty(allOutcomes)) {
         allOutcomes = objectMapper.readValue(jsonAllOutcome, new TypeReference<Set<Outcome>>() {
@@ -165,7 +165,7 @@ public class AssessmentTransformerService {
       assessmentDTO.setTraineeId(personBasicDetailsDTO.getId());
       assessmentDTO.setType(assessmentXLS.getType());
       if (!StringUtils.isEmpty(assessmentXLS.getStatus())) {
-        assessmentDTO.setEventStatus(EventStatus.valueOf(assessmentXLS.getStatus()));
+        assessmentDTO.setEventStatus(EventStatus.valueOf(StringUtils.capitalize(assessmentXLS.getStatus())));
       }
 
       if (programmeMembershipCurriculaDTO != null && programmeMembershipCurriculaDTO.getCurriculumMemberships() != null) {
@@ -200,7 +200,7 @@ public class AssessmentTransformerService {
       assessmentDetailDTO.setPeriodCoveredTo(convertDate(assessmentXLS.getPeriodCoveredTo()));
       if (NumberUtils.isDigits(assessmentXLS.getMonthsCountedToTraining())) {
         assessmentDetailDTO.setMonthsCountedToTraining(Integer.parseInt(assessmentXLS.getMonthsCountedToTraining()));
-      } else {
+      } else if (!StringUtils.isEmpty(assessmentXLS.getMonthsCountedToTraining())) {
         assessmentXLS.addErrorMessage(MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC);
       }
       assessmentDetailDTO.setPya(BooleanUtil.parseBooleanObject(assessmentXLS.getPya()));
