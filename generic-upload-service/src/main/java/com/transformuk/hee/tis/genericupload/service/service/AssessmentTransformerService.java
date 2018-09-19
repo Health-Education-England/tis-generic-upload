@@ -248,9 +248,9 @@ public class AssessmentTransformerService {
         if (outcome != null) {
           Set<Reason> outcomeReasons = outcome.getReasons();
 
-          if (outcomeReasons != null && StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessed())) {
+          if (!CollectionUtils.isEmpty(outcomeReasons) && StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessed())) {
             assessmentXLS.addErrorMessage(String.format(OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S, assessmentXLS.getOutcome()));
-          } else if (outcomeReasons != null) {
+          } else if (!CollectionUtils.isEmpty(outcomeReasons)) {
             Reason assessmentReason = outcomeReasons.stream().
                     filter(or -> or.getLabel().equalsIgnoreCase(assessmentXLS.getOutcomeNotAssessed())).findAny().orElse(null);
             if (assessmentReason != null) {
