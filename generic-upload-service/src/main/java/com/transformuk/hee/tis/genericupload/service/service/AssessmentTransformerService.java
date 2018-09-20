@@ -262,7 +262,7 @@ public class AssessmentTransformerService {
             String[] notAssessedReasons = assessmentXLS.getOutcomeNotAssessed().split(SEMI_COLON);
             Arrays.stream(notAssessedReasons).forEach( notAssessedReason -> {
               Reason assessmentReason = outcomeReasons.stream().
-                      filter(or -> or.getLabel().equalsIgnoreCase(notAssessedReason)).findAny().orElse(null);
+                      filter(or -> or.getLabel().equalsIgnoreCase(notAssessedReason.trim())).findAny().orElse(null);
               if (assessmentReason != null) {
                 AssessmentOutcomeReasonDTO assessmentOutcomeReasonDTO = new AssessmentOutcomeReasonDTO();
                 assessmentOutcomeReasonDTO.setReasonLabel(assessmentReason.getLabel());
