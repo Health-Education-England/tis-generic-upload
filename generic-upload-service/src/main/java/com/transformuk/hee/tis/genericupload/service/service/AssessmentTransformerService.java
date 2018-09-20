@@ -13,6 +13,7 @@ import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.*;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,9 @@ public class AssessmentTransformerService {
   private static final String PROGRAMME_CURRICULUM_INFO_NOT_FOUND = "Programme curriculum information not found for given trainee";
   private static final String TRAINEE_NOT_FOUND = "Trainee information not found";
   private static final String ASSESSMENT_TYPE_IS_REQUIRED = "Assessment type is required";
+  public static final String GIVEN_ASSESSMENT_STATUS_IS_NOT_VALID = "Given assessment status is not valid";
+  public static final String SEMI_COLON = ";";
+  public static final String GIVEN_ASSESSMENT_REASON_NOT_FOUND = "Given Assessment reason not found";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -170,7 +174,11 @@ public class AssessmentTransformerService {
       assessmentDTO.setTraineeId(personBasicDetailsDTO.getId());
       assessmentDTO.setType(assessmentXLS.getType());
       if (!StringUtils.isEmpty(assessmentXLS.getStatus())) {
-        assessmentDTO.setEventStatus(EventStatus.valueOf(StringUtils.capitalize(assessmentXLS.getStatus())));
+        if(EnumUtils.isValidEnum(EventStatus.class,assessmentXLS.getStatus().toUpperCase())){
+          assessmentDTO.setEventStatus(EventStatus.valueOf(assessmentXLS.getStatus().toUpperCase()));
+        } else {
+          assessmentXLS.addErrorMessage(GIVEN_ASSESSMENT_STATUS_IS_NOT_VALID);
+        }
       }
 
       if (programmeMembershipCurriculaDTO != null && programmeMembershipCurriculaDTO.getCurriculumMemberships() != null) {
@@ -221,7 +229,7 @@ public class AssessmentTransformerService {
         } else {
           assessmentXLS.addErrorMessage(GIVEN_OUTCOME_IS_NOT_VALID);
         }
-        assessmentOutcomeDTO.setOutcome(assessmentXLS.getOutcome());
+        assessmentOutcomeDTO.setOutcome(outcome.getLabel());
         assessmentOutcomeDTO.setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXLS.getUnderAppeal()));
         assessmentOutcomeDTO.setAcademicOutcome(assessmentXLS.getAcademicOutcome());
         assessmentOutcomeDTO.setExternalTrainer(BooleanUtil.parseBooleanObject(assessmentXLS.getExternalTrainer()));
@@ -247,28 +255,33 @@ public class AssessmentTransformerService {
         List<AssessmentOutcomeReasonDTO> assessmentOutcomeReasonDTOList = Lists.newArrayList();
         if (outcome != null) {
           Set<Reason> outcomeReasons = outcome.getReasons();
-
+          // check if selected outcome has reasons and if outcome reason missing in excel then alert it
           if (!CollectionUtils.isEmpty(outcomeReasons) && StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessed())) {
             assessmentXLS.addErrorMessage(String.format(OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S, assessmentXLS.getOutcome()));
           } else if (!CollectionUtils.isEmpty(outcomeReasons)) {
-            Reason assessmentReason = outcomeReasons.stream().
-                    filter(or -> or.getLabel().equalsIgnoreCase(assessmentXLS.getOutcomeNotAssessed())).findAny().orElse(null);
-            if (assessmentReason != null) {
-              AssessmentOutcomeReasonDTO assessmentOutcomeReasonDTO = new AssessmentOutcomeReasonDTO();
-              assessmentOutcomeReasonDTO.setReasonLabel(assessmentReason.getLabel());
-              assessmentOutcomeReasonDTO.setReasonId(assessmentReason.getId());
-              assessmentOutcomeReasonDTO.setReasonCode(assessmentReason.getCode());
-              assessmentOutcomeReasonDTO.setRequireOther(assessmentReason.isRequireOther());
-              if (assessmentReason.isRequireOther()) {
-                if (!StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessedOther())) {
-                  assessmentOutcomeReasonDTO.setOther(assessmentXLS.getOutcomeNotAssessedOther());
-                } else {
-                  assessmentXLS.addErrorMessage(OTHER_REASON_IS_REQUIRED);
+            String[] notAssessedReasons = assessmentXLS.getOutcomeNotAssessed().split(SEMI_COLON);
+            Arrays.stream(notAssessedReasons).forEach( notAssessedReason -> {
+              Reason assessmentReason = outcomeReasons.stream().
+                      filter(or -> or.getLabel().equalsIgnoreCase(notAssessedReason)).findAny().orElse(null);
+              if (assessmentReason != null) {
+                AssessmentOutcomeReasonDTO assessmentOutcomeReasonDTO = new AssessmentOutcomeReasonDTO();
+                assessmentOutcomeReasonDTO.setReasonLabel(assessmentReason.getLabel());
+                assessmentOutcomeReasonDTO.setReasonId(assessmentReason.getId());
+                assessmentOutcomeReasonDTO.setReasonCode(assessmentReason.getCode());
+                assessmentOutcomeReasonDTO.setRequireOther(assessmentReason.isRequireOther());
+                if (assessmentReason.isRequireOther()) {
+                  if (!StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessedOther())) {
+                    assessmentOutcomeReasonDTO.setOther(assessmentXLS.getOutcomeNotAssessedOther());
+                  } else {
+                    assessmentXLS.addErrorMessage(OTHER_REASON_IS_REQUIRED);
+                  }
                 }
+                assessmentOutcomeReasonDTOList.add(assessmentOutcomeReasonDTO);
+              } else {
+                assessmentXLS.addErrorMessage(GIVEN_ASSESSMENT_REASON_NOT_FOUND);
               }
+            });
 
-              assessmentOutcomeReasonDTOList.add(assessmentOutcomeReasonDTO);
-            }
           }
         }
         assessmentOutcomeDTO.setReasons(assessmentOutcomeReasonDTOList);
