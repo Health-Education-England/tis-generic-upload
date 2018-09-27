@@ -1,9 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
-import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.*;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.UploadFileResource;
 import com.transformuk.hee.tis.genericupload.service.parser.*;
@@ -69,12 +66,15 @@ public class FileValidator {
 		} else if(headers.contains("Email Address")) { //TODO do something more robust than this
 			fileType = FileType.PEOPLE;
 			validateMandatoryFieldsOrThrowException(files, fieldErrors, PersonXLS.class, excelToObjectMapper, new PersonHeaderMapper());
-		} else if(headers.contains("Placement Id*")) {
+		} else if(headers.contains("Placement Id*") && headers.contains("Placement Status*") ) {
 			fileType = FileType.PLACEMENTS_DELETE;
 			validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementDeleteXLS.class, excelToObjectMapper, new PlacementDeleteHeaderMapper());
 		} else if(headers.contains("Review date*")){
 			fileType = FileType.ASSESSMENTS;
 			validateMandatoryFieldsOrThrowException(files,fieldErrors,AssessmentXLS.class,excelToObjectMapper,new AssessmentHeaderMapper());
+		} else if(headers.contains("TIS_Placement_ID*") && headers.contains("Intrepid_Placement_ID")){
+			fileType = FileType.PLACEMENTS_UPDATE;
+			validateMandatoryFieldsOrThrowException(files,fieldErrors,PlacementUpdateXLS.class,excelToObjectMapper,new PlacementUpdateHeaderMapper());
 		}
 		else {
 			throw new InvalidFormatException("Unrecognised upload template");

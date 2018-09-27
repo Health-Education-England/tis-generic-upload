@@ -1,6 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service.supervisor;
 
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementSupervisor;
 import com.transformuk.hee.tis.genericupload.service.service.PlacementTransformerService;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetcher;
@@ -45,10 +45,10 @@ public class SupervisorRegNumberIdService {
 		this.peopleFetcher = new PeopleFetcher(tcsServiceImpl);
 	}
 
-	public RegNumberToDTOLookup getRegNumbersForSheetOrMarkAsError(List<PlacementXLS> placementXLSS){
+	public RegNumberToDTOLookup getRegNumbersForSheetOrMarkAsError(List<PlacementSupervisor> placementXLSS){
 		RegNumberToDTOLookup regNumberToDTOLookup = new RegNumberToDTOLookup();
 
-		Set<String> clinicalSupervisorsIds = getSupervisorIds(placementXLSS, PlacementXLS::getClinicalSupervisor);
+		Set<String> clinicalSupervisorsIds = getSupervisorIds(placementXLSS, PlacementSupervisor::getClinicalSupervisor);
 		regNumberToDTOLookup.setGmcDetailsMapForClinicalSupervisors(gmcDtoFetcher.findWithKeys(clinicalSupervisorsIds));
 		regNumberToDTOLookup.setGdcDetailsMapForClinicalSupervisors(gdcDtoFetcher.findWithKeys(clinicalSupervisorsIds));
 		regNumberToDTOLookup.setPhnDetailsMapForClinicalSupervisors(peopleByPHNFetcher.findWithKeys(clinicalSupervisorsIds));
@@ -57,9 +57,9 @@ public class SupervisorRegNumberIdService {
 		clinicalSupervisorKeysFoundInTIS.addAll(regNumberToDTOLookup.gmcDetailsMapForClinicalSupervisors.keySet());
 		clinicalSupervisorKeysFoundInTIS.addAll(regNumberToDTOLookup.gdcDetailsMapForClinicalSupervisors.keySet());
 		clinicalSupervisorKeysFoundInTIS.addAll(regNumberToDTOLookup.phnDetailsMapForClinicalSupervisors.keySet());
-		reportSupervisorsNotFound(placementXLSS, clinicalSupervisorsIds, clinicalSupervisorKeysFoundInTIS, PlacementTransformerService.CLINICAL_SUPERVISOR, PlacementXLS::getClinicalSupervisor);
+		reportSupervisorsNotFound(placementXLSS, clinicalSupervisorsIds, clinicalSupervisorKeysFoundInTIS, PlacementTransformerService.CLINICAL_SUPERVISOR, PlacementSupervisor::getClinicalSupervisor);
 
-		Set<String> educationalSupervisorsIds = getSupervisorIds(placementXLSS, PlacementXLS::getEducationalSupervisor);
+		Set<String> educationalSupervisorsIds = getSupervisorIds(placementXLSS, PlacementSupervisor::getEducationalSupervisor);
 		regNumberToDTOLookup.setGmcDetailsMapForEducationalSupervisors(gmcDtoFetcher.findWithKeys(educationalSupervisorsIds));
 		regNumberToDTOLookup.setGdcDetailsMapForEducationalSupervisors(gdcDtoFetcher.findWithKeys(educationalSupervisorsIds));
 		regNumberToDTOLookup.setPhnDetailsMapForEducationalSupervisors(peopleByPHNFetcher.findWithKeys(educationalSupervisorsIds));
@@ -68,7 +68,7 @@ public class SupervisorRegNumberIdService {
 		educationalSupervisorKeysFoundInTIS.addAll(regNumberToDTOLookup.gmcDetailsMapForEducationalSupervisors.keySet());
 		educationalSupervisorKeysFoundInTIS.addAll(regNumberToDTOLookup.gdcDetailsMapForEducationalSupervisors.keySet());
 		educationalSupervisorKeysFoundInTIS.addAll(regNumberToDTOLookup.phnDetailsMapForEducationalSupervisors.keySet());
-		reportSupervisorsNotFound(placementXLSS, educationalSupervisorsIds, educationalSupervisorKeysFoundInTIS, PlacementTransformerService.EDUCATIONAL_SUPERVISOR, PlacementXLS::getEducationalSupervisor);
+		reportSupervisorsNotFound(placementXLSS, educationalSupervisorsIds, educationalSupervisorKeysFoundInTIS, PlacementTransformerService.EDUCATIONAL_SUPERVISOR, PlacementSupervisor::getEducationalSupervisor);
 
 		lookupPeopleForGmcGdcDetails(regNumberToDTOLookup);
 
@@ -95,7 +95,7 @@ public class SupervisorRegNumberIdService {
 		regNumberToDTOLookup.setPersonDetailsMapForSupervisorsByGmcAndGdc(combinedGMCAndGDCPeopleList);
 	}
 
-	private void reportSupervisorsNotFound(List<PlacementXLS> placementXLSS, Set<String> supervisorsIds, Set<String> supervisorKeysFoundInTIS, String supervisorType, Function<PlacementXLS, String> extractRegistrationNumber) {
+	private void reportSupervisorsNotFound(List<PlacementSupervisor> placementXLSS, Set<String> supervisorsIds, Set<String> supervisorKeysFoundInTIS, String supervisorType, Function<PlacementSupervisor, String> extractRegistrationNumber) {
 		Collection<String> regNumbersNotInTIS = CollectionUtils.subtract(supervisorsIds, supervisorKeysFoundInTIS);
 		String errorMessage = supervisorType + SUPERVISOR_CANNOT_BE_IDENTIFIED_IN_TIS;
 		placementXLSS.forEach(placementXLS -> {
@@ -105,7 +105,7 @@ public class SupervisorRegNumberIdService {
 		});
 	}
 
-	private Set<String> getSupervisorIds(List<PlacementXLS> placementXLSS, Function<PlacementXLS, String> extractRegistrationNumber) {
+	private Set<String> getSupervisorIds(List<PlacementSupervisor> placementXLSS, Function<PlacementSupervisor, String> extractRegistrationNumber) {
 		return collectRegNumbersForPlacements(getRowsWithRegistrationNumberForPlacements(placementXLSS, extractRegistrationNumber), extractRegistrationNumber);
 	}
 
@@ -115,13 +115,13 @@ public class SupervisorRegNumberIdService {
 				.collect(Collectors.toSet());
 	}
 
-	private Set<String> collectRegNumbersForPlacements(List<PlacementXLS> placementXLSS, Function<PlacementXLS, String> extractRegistrationNumber) {
+	private Set<String> collectRegNumbersForPlacements(List<PlacementSupervisor> placementXLSS, Function<PlacementSupervisor, String> extractRegistrationNumber) {
 		return placementXLSS.stream()
 				.map(extractRegistrationNumber)
 				.collect(Collectors.toSet());
 	}
 
-	private List<PlacementXLS> getRowsWithRegistrationNumberForPlacements(List<PlacementXLS> placementXLSS, Function<PlacementXLS, String> extractRegistrationNumber) {
+	private List<PlacementSupervisor> getRowsWithRegistrationNumberForPlacements(List<PlacementSupervisor> placementXLSS, Function<PlacementSupervisor, String> extractRegistrationNumber) {
 		return placementXLSS.stream()
 				.filter(placementXLS -> !StringUtils.isEmpty(extractRegistrationNumber.apply(placementXLS)))
 				.collect(Collectors.toList());

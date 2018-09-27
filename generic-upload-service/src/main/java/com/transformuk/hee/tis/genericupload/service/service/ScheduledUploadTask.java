@@ -46,6 +46,8 @@ public class ScheduledUploadTask {
 	private PersonTransformerService personTransformerService;
 	@Autowired
 	private AssessmentTransformerService assessmentTransformerService;
+	@Autowired
+	private PlacementUpdateTransformerService placementUpdateTransformerService;
 
 	private final ApplicationTypeRepository applicationTypeRepository;
 	private final AzureProperties azureProperties;
@@ -100,6 +102,13 @@ public class ScheduledUploadTask {
 						assessmentTransformerService.processAssessmentsUpload(assessmentXLSList);
 						setJobToCompleted(applicationType, assessmentXLSList);
 						break;
+
+					case PLACEMENTS_UPDATE:
+						List<PlacementUpdateXLS> placementUpdateXLSList = excelToObjectMapper.map(PlacementUpdateXLS.class, new PlacementUpdateHeaderMapper().getFieldMap());
+						placementUpdateTransformerService.processPlacementsUpdateUpload(placementUpdateXLSList, applicationType.getUsername());
+						setJobToCompleted(applicationType, placementUpdateXLSList);
+						break;
+
 
 					default: logger.error(UNKNOWN_FILE_TYPE);
 				}
