@@ -1,5 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import com.google.common.collect.Lists;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementSupervisor;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.DTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
@@ -119,7 +121,8 @@ public class PlacementTransformerService {
 
 	void processPlacementsUpload(List<PlacementXLS> placementXLSS, String username) {
 		placementXLSS.forEach(PlacementXLS::initialiseSuccessfullyImported);
-		RegNumberToDTOLookup regNumberToDTOLookup = supervisorRegNumberIdService.getRegNumbersForSheetOrMarkAsError(placementXLSS);
+		List<PlacementSupervisor> placementSupervisorList = placementXLSS.stream().collect(Collectors.toList());
+		RegNumberToDTOLookup regNumberToDTOLookup = supervisorRegNumberIdService.getRegNumbersForSheetOrMarkAsError(placementSupervisorList);
 
 		if (!CollectionUtils.isEmpty(placementXLSS)) {
 			Map<String, PersonDTO> phnDetailsMap = buildRegNumberDetailsMap(placementXLSS, getPhNumber, peopleByPHNFetcher);

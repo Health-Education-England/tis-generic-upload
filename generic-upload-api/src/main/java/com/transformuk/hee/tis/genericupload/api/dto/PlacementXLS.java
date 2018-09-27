@@ -3,7 +3,7 @@ package com.transformuk.hee.tis.genericupload.api.dto;
 import java.util.Date;
 import java.util.Objects;
 
-public class PlacementXLS extends TemplateXLS {
+public class PlacementXLS extends TemplateXLS implements PlacementSupervisor{
 	private String surname;
 	private String gmcNumber;
 	private String gdcNumber;
