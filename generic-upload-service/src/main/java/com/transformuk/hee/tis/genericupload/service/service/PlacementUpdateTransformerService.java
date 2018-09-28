@@ -90,8 +90,8 @@ public class PlacementUpdateTransformerService {
 																										Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName,
 																										PlacementUpdateXLS placementXLS, String username) {
 
-		if (placementXLS.getPlacementId() != null) {
-			PlacementDetailsDTO dbPlacementDetailsDTO = tcsServiceImpl.getPlacementById(placementXLS.getPlacementId());
+		if (!StringUtils.isEmpty(placementXLS.getPlacementId())) {
+			PlacementDetailsDTO dbPlacementDetailsDTO = tcsServiceImpl.getPlacementById(Long.valueOf(placementXLS.getPlacementId()));
 
 			if (dbPlacementDetailsDTO != null) {
 				if (StringUtils.isEmpty(dbPlacementDetailsDTO.getIntrepidId())) {

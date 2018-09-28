@@ -60,12 +60,12 @@ public class PlacementUpdateTransformerServiceTest {
 		createSingleListWithSpecialty(specialtyByNameWithDuplicate, specialtyDTO);
 		specialtyByNameWithDuplicate.get(specialtyDTO.getName()).add(specialtyDTOWithSameName);
 
-		placementXLS = createPlacementXLS(1L, "100",  "WMD/5AT01/085/ST1/001", specialtyDTO.getName());
+		placementXLS = createPlacementXLS("1", "100",  "WMD/5AT01/085/ST1/001", specialtyDTO.getName());
 
 		placementDTO = new PlacementDetailsDTO();
 	}
 
-	public PlacementUpdateXLS createPlacementXLS(Long placementId, String intrepidId, String npn, String specialtyName) {
+	public PlacementUpdateXLS createPlacementXLS(String placementId, String intrepidId, String npn, String specialtyName) {
 		PlacementUpdateXLS placementXLS = new PlacementUpdateXLS();
 		placementXLS.setPlacementId(placementId);
 		placementXLS.setIntrepidId(intrepidId);

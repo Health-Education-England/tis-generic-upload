@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.Objects;
 
 public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervisor{
-  private Long placementId;
+  private String placementId;
   private String intrepidId;
   private String nationalPostNumber;
   private Date dateFrom;
@@ -20,11 +20,11 @@ public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervis
   private String educationalSupervisor;
   private String comments;
 
-  public Long getPlacementId() {
+  public String getPlacementId() {
     return placementId;
   }
 
-  public void setPlacementId(Long placementId) {
+  public void setPlacementId(String placementId) {
     this.placementId = placementId;
   }
 
