@@ -361,6 +361,7 @@ public class PlacementUpdateTransformerService {
 	//TODO optimise these to be Fetcher like
 	private Map<String, GradeDTO> getGradeDTOMap(List<PlacementUpdateXLS> placementXLSS) {
 		Set<String> gradeNames = placementXLSS.stream()
+				.filter(xls -> !StringUtils.isEmpty(xls.getGrade()))
 				.map(PlacementUpdateXLS::getGrade)
 				.collect(Collectors.toSet());
 		Map<String, GradeDTO> gradeMapByName = new HashMap<>();
@@ -380,8 +381,9 @@ public class PlacementUpdateTransformerService {
 
 	private Map<String, SiteDTO> getSiteDTOMap(List<PlacementUpdateXLS> placementXLSS) {
 		Set<String> siteNames = placementXLSS.stream()
-				.map(PlacementUpdateXLS::getSite)
-				.collect(Collectors.toSet());
+						.filter(xls -> !StringUtils.isEmpty(xls.getSite()))
+						.map(PlacementUpdateXLS::getSite)
+						.collect(Collectors.toSet());
 		Map<String, SiteDTO> siteMapByName = new HashMap<>();
 		for (String siteName : siteNames) {
 			List<SiteDTO> sitesByName = referenceServiceImpl.findSitesByName(siteName);
