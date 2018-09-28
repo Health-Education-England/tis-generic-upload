@@ -153,8 +153,14 @@ public class PlacementUpdateTransformerService {
 						.collect(Collectors.toSet());
 		addSupervisorsToPlacement(placementXLS, dbPlacementDetailsDTO, regNumberToDTOLookup, clinicalSupervisorRoles, educationalSupervisorRoles);
 
+		// update the post
+		if(postDTO != null) {
+			dbPlacementDetailsDTO.setPostId(postDTO.getId());
+		}
+
 		if (!placementXLS.hasErrors()) {
 			setCommentInPlacementDTO(dbPlacementDetailsDTO, placementXLS, username);
+			logger.info("dbPlacementDetailsDTO => {}",dbPlacementDetailsDTO);
 			tcsServiceImpl.updatePlacement(dbPlacementDetailsDTO);
 			placementXLS.setSuccessfullyImported(true);
 		}
