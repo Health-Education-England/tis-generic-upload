@@ -100,6 +100,20 @@ public class PlacementUpdateTransformerServiceTest {
 	}
 
 	@Test
+	public void canUpdateIntrepidIdForPlacementWhenDbIntrepidIdIsNull(){
+		placementUpdateTransformerService.updateIntrepidId(placementXLS,placementDTO);
+		assertThat(placementDTO.getIntrepidId()).isEqualToIgnoringCase(placementXLS.getIntrepidId());
+	}
+
+	@Test
+	public void canUpdateIntrepidIdForPlacementWhenDbIntrepidIdIsNotNull(){
+		String expectedIntrepidId = "222";
+		placementDTO.setIntrepidId(expectedIntrepidId);
+		placementUpdateTransformerService.updateIntrepidId(placementXLS,placementDTO);
+		assertThat(placementDTO.getIntrepidId()).isEqualToIgnoringCase(expectedIntrepidId);
+	}
+
+	@Test
 	public void doesNotBuildSpecialtiesIfDuplicatesSpecialtiesExist() {
 		placementUpdateTransformerService.setSpecialties(placementXLS, placementDTO, PlacementUpdateTransformerServiceTest::getSpecialtiesWithDuplicatesForSpecialtyName);
 		assertThat(placementDTO.getSpecialties().size()).isEqualTo(0);

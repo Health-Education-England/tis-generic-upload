@@ -94,11 +94,7 @@ public class PlacementUpdateTransformerService {
 			PlacementDetailsDTO dbPlacementDetailsDTO = tcsServiceImpl.getPlacementById(Long.valueOf(placementXLS.getPlacementId()));
 
 			if (dbPlacementDetailsDTO != null) {
-				if (StringUtils.isEmpty(dbPlacementDetailsDTO.getIntrepidId())) {
-					dbPlacementDetailsDTO.setIntrepidId(placementXLS.getIntrepidId());
-				} else if (!StringUtils.isEmpty(placementXLS.getIntrepidId())) {
-					placementXLS.addErrorMessage(INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED);
-				}
+				updateIntrepidId(placementXLS, dbPlacementDetailsDTO);
 
 				String nationalPostNumber = placementXLS.getNationalPostNumber();
 				if (isNPNValid(placementXLS, nationalPostNumber, postsMappedByNPNs, duplicateNPNKeys)) {
@@ -111,6 +107,16 @@ public class PlacementUpdateTransformerService {
 						}
 					}
 				}
+			}
+		}
+	}
+
+	public void updateIntrepidId(PlacementUpdateXLS placementXLS, PlacementDetailsDTO dbPlacementDetailsDTO) {
+		if(!StringUtils.isEmpty(placementXLS.getIntrepidId())){
+			if (!StringUtils.isEmpty(dbPlacementDetailsDTO.getIntrepidId())) {
+				placementXLS.addErrorMessage(INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED);
+			} else {
+				dbPlacementDetailsDTO.setIntrepidId(placementXLS.getIntrepidId());
 			}
 		}
 	}
