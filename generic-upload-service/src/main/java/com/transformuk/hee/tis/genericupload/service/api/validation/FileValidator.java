@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class FileValidator {
 
-	public static final String DATE_MISSING_ON_MANDATORY_FIELD  = "Date missing or incorrect format on mandatory field (%1$s)";
+	public static final String DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD = "Date missing or incorrect format on mandatory field (%1$s)";
 	public static final String FIELD_IS_REQUIRED_AT_LINE_NO = "%s Field is required at line no %d ";
 	private final Logger logger = LoggerFactory.getLogger(UploadFileResource.class);
 
@@ -133,7 +133,7 @@ public class FileValidator {
 				Date date = (Date) currentField.get(row);//TODO should throw an exception on invalid date
 				if (date == null) {
 					fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
-							String.format(DATE_MISSING_ON_MANDATORY_FIELD, columnNameToMandatoryColumnsMapKey)));
+							String.format(DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD, columnNameToMandatoryColumnsMapKey)));
 				}
 			} else if(currentField.getType() == Float.class) {
 				//TODO validate Float Fields

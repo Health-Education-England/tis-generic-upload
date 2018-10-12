@@ -23,6 +23,7 @@ import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -53,6 +54,13 @@ public class AssessmentTransformerService {
   private static final String PROGRAMME_CURRICULUM_INFO_NOT_FOUND = "Programme curriculum information not found for given trainee";
   private static final String TRAINEE_NOT_FOUND = "Trainee information not found";
   private static final String ASSESSMENT_TYPE_IS_REQUIRED = "Assessment type is required";
+  private static final String REVIEW_DATE_BEFORE_1753 = "Review date is before year 1753";
+  private static final String CURRICULUM_START_DATE_BEFORE_1753 = "Curriculum start date is below year 1753";
+  private static final String CURRICULUM_END_DATE_BEFORE_1753 = "Curriculum end date is below year 1753";
+  private static final String PORTFOLIO_REVIEW_DATE_BEFORE_1753 = "Portfolio review date is below year 1753";
+  private static final String PERIOD_COVERED_FROM_DATE_BEFORE_1753 = "Period covered from date is below year 1753";
+  private static final String PERIOD_COVERED_TO_DATE_BEFORE_1753 = "Period covered to date is below year 1753";
+  private static final String NEXT_REVIEW_DATE_BEFORE_1753 = "Next review date is below year 1753";
   public static final String GIVEN_ASSESSMENT_STATUS_IS_NOT_VALID = "Given assessment status is not valid";
   public static final String SEMI_COLON = ";";
   public static final String GIVEN_ASSESSMENT_REASON_NOT_FOUND = "Given Assessment reason not found";
@@ -189,7 +197,11 @@ public class AssessmentTransformerService {
       } else {
         assessmentXLS.addErrorMessage(DID_NOT_FIND_PROGRAMME_CURRICULUM);
       }
-      assessmentDTO.setReviewDate(convertDate(assessmentXLS.getReviewDate()));
+      try {
+        assessmentDTO.setReviewDate(convertDate(assessmentXLS.getReviewDate()));
+      } catch (final IllegalArgumentException e) {
+        assessmentXLS.addErrorMessage(REVIEW_DATE_BEFORE_1753);
+      }
 
       // Assessment Details
       AssessmentDetailDTO assessmentDetailDTO = new AssessmentDetailDTO();
@@ -197,20 +209,44 @@ public class AssessmentTransformerService {
         CurriculumDTO curriculumDTO = programmeMembershipCurriculaDTO.getCurriculumDTO();
         assessmentDetailDTO.setCurriculumId(curriculumDTO.getId());
         assessmentDetailDTO.setCurriculumName(curriculumDTO.getName());
-        assessmentDetailDTO.setCurriculumStartDate(programmeMembershipCurriculaDTO.getCurriculumMemberships().get(0).getCurriculumStartDate());
-        assessmentDetailDTO.setCurriculumEndDate(programmeMembershipCurriculaDTO.getCurriculumMemberships().get(0).getCurriculumEndDate());
+        LocalDate curriculumStartDate = programmeMembershipCurriculaDTO.getCurriculumMemberships().get(0).getCurriculumStartDate();
+        if (curriculumStartDate.getYear() < 1753) {
+          assessmentXLS.addErrorMessage(CURRICULUM_START_DATE_BEFORE_1753);
+        }
+        assessmentDetailDTO.setCurriculumStartDate(curriculumStartDate);
+        LocalDate curriculumEndDate = programmeMembershipCurriculaDTO.getCurriculumMemberships().get(0).getCurriculumEndDate();
+        if (curriculumEndDate.getYear() < 1753) {
+          assessmentXLS.addErrorMessage(CURRICULUM_END_DATE_BEFORE_1753);
+        }
+        assessmentDetailDTO.setCurriculumEndDate(curriculumEndDate);
         assessmentDetailDTO.setCurriculumSpecialtyId(String.valueOf(curriculumDTO.getSpecialty().getId()));
         assessmentDetailDTO.setCurriculumSpecialty(String.valueOf(curriculumDTO.getSpecialty().getName()));
         assessmentDetailDTO.setCurriculumSubType(curriculumDTO.getCurriculumSubType().name());
       }
-      assessmentDetailDTO.setPortfolioReviewDate(convertDate(assessmentXLS.getPortfolioReviewDate()));
+
+      try {
+        assessmentDetailDTO.setPortfolioReviewDate(convertDate(assessmentXLS.getPortfolioReviewDate()));
+      } catch (final IllegalArgumentException e) {
+        assessmentXLS.addErrorMessage(PORTFOLIO_REVIEW_DATE_BEFORE_1753);
+      }
       if (NumberUtils.isDigits(assessmentXLS.getDaysOutOfTraining())) {
         assessmentDetailDTO.setDaysOutOfTraining(Integer.parseInt(assessmentXLS.getDaysOutOfTraining()));
       } else if (!StringUtils.isEmpty(assessmentXLS.getDaysOutOfTraining())) {
         assessmentXLS.addErrorMessage(DAYS_OUT_OF_TRAINING_SHOULD_BE_NUMERIC);
       }
-      assessmentDetailDTO.setPeriodCoveredFrom(convertDate(assessmentXLS.getPeriodCoveredFrom()));
-      assessmentDetailDTO.setPeriodCoveredTo(convertDate(assessmentXLS.getPeriodCoveredTo()));
+
+      try {
+        assessmentDetailDTO.setPeriodCoveredFrom(convertDate(assessmentXLS.getPeriodCoveredFrom()));
+      } catch (final IllegalArgumentException e) {
+        assessmentXLS.addErrorMessage(PERIOD_COVERED_FROM_DATE_BEFORE_1753);
+      }
+
+      try {
+        assessmentDetailDTO.setPeriodCoveredTo(convertDate(assessmentXLS.getPeriodCoveredTo()));
+      } catch (final IllegalArgumentException e) {
+        assessmentXLS.addErrorMessage(PERIOD_COVERED_TO_DATE_BEFORE_1753);
+      }
+
       if (NumberUtils.isDigits(assessmentXLS.getMonthsCountedToTraining())) {
         assessmentDetailDTO.setMonthsCountedToTraining(Integer.parseInt(assessmentXLS.getMonthsCountedToTraining()));
       } else if (!StringUtils.isEmpty(assessmentXLS.getMonthsCountedToTraining())) {
@@ -242,7 +278,13 @@ public class AssessmentTransformerService {
           assessmentOutcomeDTO.setNextRotationGradeId(gradeDTO.getId());
         }
         assessmentOutcomeDTO.setTraineeNotifiedOfOutcome(BooleanUtil.parseBooleanObject(assessmentXLS.getTraineeNotifiedOfOutcome()));
-        assessmentOutcomeDTO.setNextReviewDate(convertDate(assessmentXLS.getNextReviewDate()));
+
+        try {
+          assessmentOutcomeDTO.setNextReviewDate(convertDate(assessmentXLS.getNextReviewDate()));
+        } catch (final IllegalArgumentException e) {
+          assessmentXLS.addErrorMessage(NEXT_REVIEW_DATE_BEFORE_1753);
+        }
+
         assessmentOutcomeDTO.setComments(assessmentXLS.getComments());
         assessmentOutcomeDTO.setTenPercentAudit(BooleanUtil.parseBooleanObject(assessmentXLS.getTenPercentAudit()));
         assessmentOutcomeDTO.setDetailedReasons(assessmentXLS.getDetailedReasons());

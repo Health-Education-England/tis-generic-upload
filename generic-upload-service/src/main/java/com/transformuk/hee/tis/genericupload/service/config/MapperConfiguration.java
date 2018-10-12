@@ -27,11 +27,17 @@ public abstract class MapperConfiguration {
         return result;
     }
 
-    public static LocalDate convertDate(Date date) {
+    public static LocalDate convertDate(Date date) throws IllegalArgumentException {
         LocalDate localDate = null;
         if (date != null) {
             final Calendar cal = Calendar.getInstance();
             cal.setTime(date);
+
+            // As agreed with TIS head business analysis, we should only allow years after 1753
+            // because the NDW uses SQL Server for which the lowest allowed date field year is 1753
+            if (cal.get(Calendar.YEAR) < 1753) {
+                throw new IllegalArgumentException("The year cannot be less than 1753");
+            }
 
             //plus 1 on month as month starts from zero in a Calendar object
             localDate = LocalDate.of(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
