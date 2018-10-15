@@ -24,9 +24,9 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 import static org.slf4j.LoggerFactory.getLogger;
 @Component
 public class PlacementUpdateTransformerService {
-  public static final String INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED = "Intrepid Id is already exists for this record and it can not be updated";
+  public static final String INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED = "Intrepid Id already exists for this record of placement and it can not be updated";
   private static final Logger logger = getLogger(PlacementUpdateTransformerService.class);
-  private static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts found for National Post Number : ";
+  private static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts were found for National Post Number : ";
   private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by National Post Number : ";
   private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER = "POST status is set to DELETE for National Post Number : ";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name : ";
