@@ -24,10 +24,10 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 import static org.slf4j.LoggerFactory.getLogger;
 @Component
 public class PlacementUpdateTransformerService {
-  public static final String INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED = "Intrepid Id already exists for this record of placement and it can not be updated";
+  public static final String INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED = "INTREPID ID already exists for this record of placement and it can not be updated";
   private static final Logger logger = getLogger(PlacementUpdateTransformerService.class);
   private static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts were found for National Post Number : ";
-  private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by National Post Number : ";
+  private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by THIS National Post Number : ";
   private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER = "POST status is set to DELETE for National Post Number : ";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name : ";
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
@@ -35,7 +35,7 @@ public class PlacementUpdateTransformerService {
   private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
   private static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : %s";
   private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
-  private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for registration number : %s";
+  private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for Registration number : %s";
   private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
   public static final String CLINICAL_SUPERVISOR = "Clinical supervisor";
   public static final String EDUCATIONAL_SUPERVISOR = "Educational supervisor";
@@ -74,15 +74,21 @@ public class PlacementUpdateTransformerService {
       if (dbPlacementDetailsDTO != null) {
         updateIntrepidId(placementXLS, dbPlacementDetailsDTO);
         String nationalPostNumber = placementXLS.getNationalPostNumber();
-        if (isNPNValid(placementXLS, nationalPostNumber, postsMappedByNPNs, duplicateNPNKeys)) {
-          PostDTO postDTO = postsMappedByNPNs.get(nationalPostNumber);
-          if (postDTO != null) {
-            if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
-              placementXLS.addErrorMessage(POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
-            } else {
-              updatePlacement(regNumberToDTOLookup,dbPlacementDetailsDTO, siteMapByName, gradeMapByName, placementXLS, postDTO, username);
+        PostDTO postDTO = null;
+        if(placementXLS.getNationalPostNumber() != null) {
+          if (isNPNValid(placementXLS, nationalPostNumber, postsMappedByNPNs, duplicateNPNKeys)) {
+            postDTO = postsMappedByNPNs.get(nationalPostNumber);
+            if (postDTO != null) {
+              if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
+                placementXLS.addErrorMessage(POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
+              } else {
+                updatePlacement(regNumberToDTOLookup, dbPlacementDetailsDTO, siteMapByName, gradeMapByName, placementXLS, postDTO, username);
+              }
             }
           }
+        }
+        else{
+          updatePlacement(regNumberToDTOLookup, dbPlacementDetailsDTO, siteMapByName, gradeMapByName, placementXLS, postDTO, username);
         }
       }
     }
