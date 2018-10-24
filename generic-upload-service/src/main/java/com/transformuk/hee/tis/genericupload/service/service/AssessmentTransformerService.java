@@ -253,7 +253,33 @@ public class AssessmentTransformerService {
         assessmentXLS.addErrorMessage(MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC);
       }
       assessmentDetailDTO.setPya(BooleanUtil.parseBooleanObject(assessmentXLS.getPya()));
+
+
+      // Get placement of trainee at time of assessment review
+      List<PlacementDetailsDTO> placementForTrainee = tcsServiceImpl.getPlacementForTrainee(assessmentDTO.getTraineeId());
+      Optional<PlacementDetailsDTO> placementAtTimeOfAssessmentReview = placementForTrainee.stream().filter(p -> {
+        LocalDate reviewDate = assessmentDTO.getReviewDate();
+        LocalDate dateFrom = p.getDateFrom();
+        LocalDate dateTo = p.getDateTo();
+        return dateFrom.isBefore(reviewDate) && dateTo.isAfter(reviewDate);
+
+      }).findFirst();
+
+      if (placementAtTimeOfAssessmentReview.isPresent()) {
+        // Get grade information from the placementAtTimeOfAssessmentReview
+        Long placementGradeId = placementAtTimeOfAssessmentReview.get().getGradeId();
+        String placementGradeName = placementAtTimeOfAssessmentReview.get().getGradeName();
+        String placementGradeAbbreviation = referenceServiceImpl.findGradesByName(placementGradeName).get(0).getAbbreviation();
+
+        // Set assessmentDTO with newly set grade information
+        assessmentDetailDTO.setGradeAbbreviation(placementGradeAbbreviation);
+        assessmentDetailDTO.setGradeId(placementGradeId);
+        assessmentDetailDTO.setGradeName(placementGradeName);
+      }
+
+      // Update assessmentDTO
       assessmentDTO.detail(assessmentDetailDTO);
+      
 
       // Outcome
       AssessmentOutcomeDTO assessmentOutcomeDTO = null;
