@@ -275,6 +275,13 @@ public class AssessmentTransformerService {
         assessmentDetailDTO.setGradeAbbreviation(placementGradeAbbreviation);
         assessmentDetailDTO.setGradeId(placementGradeId);
         assessmentDetailDTO.setGradeName(placementGradeName);
+      } else {
+
+        // Set assessmentDetail with newly set grade information
+        assessmentDetailDTO.setGradeAbbreviation("NA");
+        assessmentDetailDTO.setGradeId(null);
+        assessmentDetailDTO.setGradeName("Not Available");
+
       }
 
       // Update assessmentDTO
