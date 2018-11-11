@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile("prod")
+@Profile({"dev", "stage", "prod", "uidev"})
 public class ProdEventBusConfig {
 
   private static final Logger LOG = LoggerFactory.getLogger(ProdEventBusConfig.class);

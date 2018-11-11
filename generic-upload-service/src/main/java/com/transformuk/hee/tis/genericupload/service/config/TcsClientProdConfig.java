@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@Profile("prod")
+@Profile({"dev", "stage", "prod", "uidev"})
 public class TcsClientProdConfig extends TcsClientConfig {
   @Bean
   public RestTemplate tcsRestTemplate(Keycloak keycloak) {
