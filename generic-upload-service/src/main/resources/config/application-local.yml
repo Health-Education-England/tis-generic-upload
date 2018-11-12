@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DBHOST:localhost}:${DBPORT:3306}/${DBNAME:genericupload}?useUnicode=true&characterEncoding=utf8&useSSL=${USE_SSL:false}
+    username: ${DBUSER:root}
+    password: ${DBPASSWORD:}
+
+flyway:
+  password: ${DBPASSWORD:}
+  schemas: ${DBNAME:genericupload}
+
+kc:
+  realm: ${KC_REALM:lin}
+  master.realm: ${KC_MASTER_REALM:master}
+  client.id: ${KC_CLIENT_ID:admin-cli}
+  server.url: ${KC_SERVER_URL:https://dev-apps.tis.nhs.uk/auth/}
+  username: ${KC_USERNAME:bulk_upload}
+  password: ${KC_PASSWORD:bulk_upload}
+  timeout: ${KC_TIMEOUT:10000}
+
+logging:
+  file: ${LOG_DIR:${HOME}}/generic-upload.log
+
+# ===================================================================
+# Azure block blob storage properties
+# ===================================================================
+azure:
+  accountName: ${CLOUD_BLOB_ACCOUNT_NAME:heetisshare}
+  accountKey: ${CLOUD_BLOB_ACCOUNT_KEY:EiuyeB22bm2lgQQpBz68VKwui4Mcp0HQslF1sVaM1aL9hGSFxp9dL6+QpVSJZFdvLrRyo6CYFjwfb3ac2/399g==}
+  containerName: ${CLOUD_BLOB_CONTAINER_NAME:dev}
+  servicebus:
+    connection-string: ${SERVICE_BUS_CONNECTION_STRING:Endpoint=sb://heetisdevsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=USyHBoGzI0Q+dS0rchjGYFurWlJBe5C7omLSxo6KYeY=}
+    queue-name: ${SERVICE_BUS_QUEUE_NAME:heetisdevq}
+    queue-receive-mode: ${SERVICE_BUS_Q_RECEIVE_MODE:peeklock}
+    topic-name: ${SERVICE_BUS_TOPIC_NAME:heetisdevt}
+    subscription-name: ${SERVICE_BUS_SUBSCRIPTION_NAME:heetisdevs}
+    subscription-receive-mode: ${SERVICE_BUS_S_RECEIVE_MODE:peeklock}
+
+deadletterDirectory: ${DEADLETER_DIR:/tmp/deadletter}

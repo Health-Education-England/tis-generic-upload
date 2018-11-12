@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@Profile("dev")
+@Profile("local")
 public class TcsClientLocalConfig extends TcsClientConfig {
   @Bean
   public RestTemplate tcsRestTemplate() {
