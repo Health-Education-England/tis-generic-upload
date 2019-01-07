@@ -12,7 +12,7 @@
 
 	<groupId>com.transformuk.hee.tis</groupId>
 	<artifactId>generic-upload-service</artifactId>
-	<version>1.2.37</version>
+	<version>1.2.38</version>
 	<packaging>war</packaging>
 
 	<properties>
@@ -152,13 +152,8 @@
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee.tis</groupId>
-			<artifactId>tcs-api</artifactId>
-			<version>3.2.9</version>
-		</dependency>
-		<dependency>
-			<groupId>com.transformuk.hee.tis</groupId>
 			<artifactId>tcs-client</artifactId>
-			<version>3.0.76</version>
+			<version>4.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.transformuk.hee</groupId>
