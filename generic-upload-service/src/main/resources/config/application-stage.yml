@@ -3,6 +3,8 @@ spring:
     url: jdbc:mysql://${DBHOST}:${DBPORT}/${DBNAME}?useUnicode=true&characterEncoding=utf8&useSSL=${USE_SSL}
     username: ${DBUSER}
     password: ${DBPASSWORD}
+  jpa:
+    show-sql: false
 
 flyway:
   password: ${DBPASSWORD}
