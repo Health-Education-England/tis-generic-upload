@@ -259,10 +259,12 @@ public class AssessmentTransformerService {
       List<PlacementDetailsDTO> placementForTrainee = tcsServiceImpl.getPlacementForTrainee(assessmentDTO.getTraineeId());
       Optional<PlacementDetailsDTO> placementAtTimeOfAssessmentReview = placementForTrainee.stream().filter(p -> {
         LocalDate reviewDate = assessmentDTO.getReviewDate();
-        LocalDate dateFrom = p.getDateFrom();
-        LocalDate dateTo = p.getDateTo();
-        return dateFrom.isBefore(reviewDate) && dateTo.isAfter(reviewDate);
-
+        if(reviewDate != null) {
+          LocalDate dateFrom = p.getDateFrom();
+          LocalDate dateTo = p.getDateTo();
+          return dateFrom.isBefore(reviewDate) && dateTo.isAfter(reviewDate);
+        }
+        return false;
       }).findFirst();
 
       if (placementAtTimeOfAssessmentReview.isPresent()) {

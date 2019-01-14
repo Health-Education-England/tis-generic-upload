@@ -51,7 +51,7 @@ public class FileValidatorTest {
 			fileValidator.validate(Collections.singletonList(multipartFile), true, false);
 		} catch(ValidationException ve){
 			BindingResult bindingResult = ve.getBindingResult();
-			Assert.assertEquals(1, bindingResult.getErrorCount());
+			Assert.assertEquals(2, bindingResult.getErrorCount());
 		}
 	}
 
