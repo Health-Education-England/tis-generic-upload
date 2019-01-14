@@ -38,4 +38,21 @@ public class ExcelToObjectMapperAssessmentTest {
 		Assert.assertNull(getDate("111/11/2124"));
 	}
 
+	@Test
+	public void canParseDatesWith4CharactersInYears() throws ParseException {
+		LocalDate localDate = new LocalDate(2001, 7, 6);
+		Assert.assertEquals(localDate.toDate(), getDate("6/7/2001"));
+	}
+
+	@Test
+	public void shouldSkipEmptyRowsAgain() throws Exception {
+		Path filePath = Paths.get(getClass().getClassLoader().getResource("TIS Assessment Import Template - Test-bad-data.xlsx").toURI());
+		FileInputStream inputStream = new FileInputStream(filePath.toFile());
+		ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(inputStream, false);
+		List<AssessmentXLS> actual = excelToObjectMapper.map(AssessmentXLS.class,
+				new AssessmentHeaderMapper().getFieldMap());
+		System.out.println(actual.get(0).toString());
+		assertThat(actual.get(0).getStatus()).isNotNull();
+	}
+
 }
