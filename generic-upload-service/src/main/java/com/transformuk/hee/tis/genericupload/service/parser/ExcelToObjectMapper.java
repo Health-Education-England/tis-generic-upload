@@ -35,7 +35,12 @@ public class ExcelToObjectMapper {
 
   public static final String ROW_NUMBER = "rowNumber";
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M/yyyy");
+
+  // The valid date formats defined in DATE_REGEX are d/mm/yyyy and dd/mm/yyyy
+  private static final String DATE_REGEX = "(([1-9]|0[1-9]|[12]\\d|3[01])/([1-9]|0[1-9]|1[0-2])/[12]\\d{3})";
+
   private Workbook workbook;
+
 
   public ExcelToObjectMapper(InputStream excelFile, boolean validateDates) throws IOException, InvalidFormatException {
     workbook = createWorkBook(excelFile);
@@ -165,10 +170,14 @@ public class ExcelToObjectMapper {
     }
   }
 
+  /**
+   * getDate() receives a date input, checks if it conforms to the DATE_REGEX, returns converted date without time
+   * @param date
+   * @return
+   * @throws ParseException when date doesn't conform to DATE_REGEX
+   */
   public static Date getDate(String date) throws ParseException {
-
-    String regex = "(([1-9]|0[1-9]|[12]\\d|3[01])/([1-9]|0[1-9]|1[0-2])/[12]\\d{3})";
-    boolean matches = date.matches(regex);
+    boolean matches = date.matches(DATE_REGEX);
     if (matches) {
       return removeTime(dateFormat.parse(date));
     }
