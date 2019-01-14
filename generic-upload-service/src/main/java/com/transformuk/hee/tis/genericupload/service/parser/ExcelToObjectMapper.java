@@ -2,6 +2,7 @@ package com.transformuk.hee.tis.genericupload.service.parser;
 
 import com.transformuk.hee.tis.genericupload.service.util.POIUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -33,8 +34,13 @@ public class ExcelToObjectMapper {
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
 
   public static final String ROW_NUMBER = "rowNumber";
-  private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M/yy");
+  private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M/yyyy");
+
+  // The valid date formats defined in DATE_REGEX are d/mm/yyyy and dd/mm/yyyy
+  private static final String DATE_REGEX = "(([1-9]|0[1-9]|[12]\\d|3[01])/([1-9]|0[1-9]|1[0-2])/[12]\\d{3})";
+
   private Workbook workbook;
+
 
   public ExcelToObjectMapper(InputStream excelFile, boolean validateDates) throws IOException, InvalidFormatException {
     workbook = createWorkBook(excelFile);
@@ -70,7 +76,7 @@ public class ExcelToObjectMapper {
     for (int rowNumber = 1; rowNumber <= lastRow; rowNumber++) {
       POIUtil poiUtil = new POIUtil();
       if(sheet.getRow(rowNumber) == null || poiUtil.isEmptyRow(sheet.getRow(rowNumber))) continue;
-    	Object obj = cls.newInstance();
+        Object obj = cls.newInstance();
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
@@ -89,6 +95,8 @@ public class ExcelToObjectMapper {
           logger.info("Error while extracting cell value from object : {} ", e.getMessage());
           Method method = obj.getClass().getMethod("addErrorMessage", String.class);
           method.invoke(obj, e.getMessage());
+          Method addErrorMessageMethod = cls.getSuperclass().getDeclaredMethod("addErrorMessage", String.class);
+          addErrorMessageMethod.invoke(obj, e.getMessage());
         }
       }
       rowNumberFieldInXLS.setInt(obj, rowNumber);
@@ -162,8 +170,19 @@ public class ExcelToObjectMapper {
     }
   }
 
+  /**
+   * getDate() receives a date input, checks if it conforms to the DATE_REGEX, returns converted date without time
+   * @param date
+   * @return
+   * @throws ParseException when date doesn't conform to DATE_REGEX
+   */
   public static Date getDate(String date) throws ParseException {
-    return removeTime(dateFormat.parse(date));
+    boolean matches = date.matches(DATE_REGEX);
+    if (matches) {
+      return removeTime(dateFormat.parse(date));
+    }
+    throw new ParseException("Date is not in valid dd/mm/yyyy format",0);
+
   }
 
   public static Date removeTime(Date date) {

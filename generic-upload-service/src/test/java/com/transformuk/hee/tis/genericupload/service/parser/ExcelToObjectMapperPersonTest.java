@@ -90,15 +90,15 @@ public class ExcelToObjectMapperPersonTest {
 		Assert.assertEquals("Cardiology", personXLS.getProgrammeName());
 		Assert.assertEquals("NOR051", personXLS.getProgrammeNumber());
 		Assert.assertEquals("Substantive", personXLS.getProgrammeMembership());
-		Assert.assertEquals(getDate("27/2/19"), personXLS.getProgrammeEndDate());
+		Assert.assertEquals(getDate("27/2/1999"), personXLS.getProgrammeEndDate());
 		Assert.assertEquals("Cardiology", personXLS.getCurriculum1());
-		Assert.assertEquals(getDate("31/7/23"), personXLS.getCurriculum1EndDate());
-		Assert.assertEquals(getDate("1/8/18"), personXLS.getCurriculum1StartDate());
+		Assert.assertEquals(getDate("31/7/2023"), personXLS.getCurriculum1EndDate());
+		Assert.assertEquals(getDate("1/8/2018"), personXLS.getCurriculum1StartDate());
 		Assert.assertEquals("General (Internal) Medicine", personXLS.getCurriculum2());
-		Assert.assertEquals(getDate("31/7/23"), personXLS.getCurriculum2EndDate());
-		Assert.assertEquals(getDate("1/8/18"), personXLS.getCurriculum2StartDate());
+		Assert.assertEquals(getDate("31/7/2023"), personXLS.getCurriculum2EndDate());
+		Assert.assertEquals(getDate("1/8/2018"), personXLS.getCurriculum2StartDate());
 		Assert.assertEquals("Dr", personXLS.getTitle());
-		Assert.assertEquals(getDate("1/12/71"), personXLS.getDateOfBirth());
+		Assert.assertEquals(getDate("1/12/1971"), personXLS.getDateOfBirth());
 		Assert.assertEquals("random.guy@hotmail.co.uk", personXLS.getEmailAddress());
 		Assert.assertEquals("7483256211", personXLS.getMobile());
 		Assert.assertEquals("7483256211", personXLS.getTelephone());
@@ -114,13 +114,13 @@ public class ExcelToObjectMapperPersonTest {
 		Assert.assertEquals("MBBS", personXLS.getQualification());
 		Assert.assertEquals("University of Newcastle", personXLS.getMedicalSchool());
 		Assert.assertEquals("United Kingdom", personXLS.getCountryOfQualification());
-		Assert.assertEquals(getDate("7/9/06"), personXLS.getDateAttained());
+		Assert.assertEquals(getDate("7/9/2006"), personXLS.getDateAttained());
 	}
 
 	@Test
 	public void canParseDates() throws ParseException {
 		LocalDate localDate = new LocalDate(2001, 7, 6);
-		Assert.assertEquals(localDate.toDate(), getDate("6/7/01"));
+		Assert.assertEquals(localDate.toDate(), getDate("6/7/2001"));
 	}
 
 	@Test(expected = ParseException.class)
