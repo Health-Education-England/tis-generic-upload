@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExcelToObjectMapperAssessmentTest {
 
-	private static final String FILE_NAME = "TIS Assessment Import Template - Test-bad-data.xlsx";
+	private static final String FILE_NAME = "TIS Assessment Import Template - empty row.xlsx";
 
 	public ExcelToObjectMapper setUpExcelToObjectMapper() throws Exception {
 		Path filePath = Paths.get(getClass().getClassLoader().getResource(FILE_NAME).toURI());
@@ -45,14 +45,11 @@ public class ExcelToObjectMapperAssessmentTest {
 	}
 
 	@Test
-	public void shouldSkipEmptyRowsAgain() throws Exception {
-		Path filePath = Paths.get(getClass().getClassLoader().getResource("TIS Assessment Import Template - Test-bad-data.xlsx").toURI());
-		FileInputStream inputStream = new FileInputStream(filePath.toFile());
-		ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(inputStream, false);
-		List<AssessmentXLS> actual = excelToObjectMapper.map(AssessmentXLS.class,
+	public void shouldSkipEmptyRows() throws Exception {
+		List<AssessmentXLS> actual = setUpExcelToObjectMapper().map(AssessmentXLS.class,
 				new AssessmentHeaderMapper().getFieldMap());
-		System.out.println(actual.get(0).toString());
-		assertThat(actual.get(0).getStatus()).isNotNull();
+		assertThat(actual.size()).isEqualTo(1);
+		assertThat(actual.get(0).getSurname()).isEqualTo("O'Connor");
 	}
 
 }
