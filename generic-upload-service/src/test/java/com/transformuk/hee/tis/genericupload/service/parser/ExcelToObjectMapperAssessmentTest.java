@@ -39,12 +39,6 @@ public class ExcelToObjectMapperAssessmentTest {
 	}
 
 	@Test
-	public void canParseDatesWith4CharactersInYears() throws ParseException {
-		LocalDate localDate = new LocalDate(2001, 7, 6);
-		Assert.assertEquals(localDate.toDate(), getDate("6/7/2001"));
-	}
-
-	@Test
 	public void shouldSkipEmptyRows() throws Exception {
 		List<AssessmentXLS> actual = setUpExcelToObjectMapper().map(AssessmentXLS.class,
 				new AssessmentHeaderMapper().getFieldMap());
