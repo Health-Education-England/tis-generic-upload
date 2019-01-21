@@ -95,8 +95,8 @@ public class ExcelToObjectMapper {
           logger.info("Error while extracting cell value from object : {} ", e.getMessage());
           Method method = obj.getClass().getMethod("addErrorMessage", String.class);
           method.invoke(obj, e.getMessage());
-          Method addErrorMessageMethod = cls.getSuperclass().getDeclaredMethod("addErrorMessage", String.class);
-          addErrorMessageMethod.invoke(obj, e.getMessage());
+         // Method addErrorMessageMethod = cls.getSuperclass().getDeclaredMethod("addErrorMessage", String.class);
+          // addErrorMessageMethod.invoke(obj, e.getMessage());
         }
       }
       rowNumberFieldInXLS.setInt(obj, rowNumber);
