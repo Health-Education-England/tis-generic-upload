@@ -1,5 +1,8 @@
 package com.transformuk.hee.tis.genericupload.service.api;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.transformuk.hee.tis.genericupload.service.Application;
 import com.transformuk.hee.tis.genericupload.service.TestUtils;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
@@ -23,12 +26,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
 public class UploadFileResourceTest {
@@ -36,78 +33,80 @@ public class UploadFileResourceTest {
   public static final String DBC = "DBCs";
   public static final String USER_ID = "James H";
 
-	@Autowired
-	private ApplicationTypeRepository applicationTypeRepository;
+  @Autowired
+  private ApplicationTypeRepository applicationTypeRepository;
 
-	@Autowired
-	private FileValidator fileValidator;
+  @Autowired
+  private FileValidator fileValidator;
 
-	@Autowired
-	private ExceptionTranslator exceptionTranslator;
+  @Autowired
+  private ExceptionTranslator exceptionTranslator;
 
-	@Autowired
-	private MappingJackson2HttpMessageConverter jacksonMessageConverter;
+  @Autowired
+  private MappingJackson2HttpMessageConverter jacksonMessageConverter;
 
-	@Autowired
-	private UploadFileService uploadFileService;
+  @Autowired
+  private UploadFileService uploadFileService;
 
-	@Autowired
-	private RestTemplate restTemplate;
+  @Autowired
+  private RestTemplate restTemplate;
 
-	private MockMvc restContactDetailsMockMvc;
-	@Value("${tcs.service.url}")
-	private String serviceUrl;
+  private MockMvc restContactDetailsMockMvc;
+  @Value("${tcs.service.url}")
+  private String serviceUrl;
 
-	@Before
-	public void setup() {
-		MockitoAnnotations.initMocks(this);
-        TestUtils.mockUserprofile(USER_ID, DBC);
+  @Before
+  public void setup() {
+    MockitoAnnotations.initMocks(this);
+    TestUtils.mockUserprofile(USER_ID, DBC);
 
-		UploadFileResource uploadFileResource = new UploadFileResource(uploadFileService, fileValidator);
-		this.restContactDetailsMockMvc = MockMvcBuilders.standaloneSetup(uploadFileResource)
-				.setControllerAdvice(exceptionTranslator).setMessageConverters(jacksonMessageConverter).build();
-	}
+    UploadFileResource uploadFileResource = new UploadFileResource(uploadFileService,
+        fileValidator);
+    this.restContactDetailsMockMvc = MockMvcBuilders.standaloneSetup(uploadFileResource)
+        .setControllerAdvice(exceptionTranslator).setMessageConverters(jacksonMessageConverter)
+        .build();
+  }
 
-	@Test
-	@Transactional
-	public void uploadFile() throws Exception {
-		String FILE_NAME = "Intrepid Recruitment Import Template v9.xls";
-		String filePath = new ClassPathResource(FILE_NAME).getURI().getPath();
-		MockMultipartFile multipartFile = new MockMultipartFile("file", FILE_NAME,
-				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-				Files.readAllBytes(Paths.get(filePath)));
-		
-		MockMultipartHttpServletRequest request = new MockMultipartHttpServletRequest();
-		request.addFile(multipartFile);
+  @Test
+  @Transactional
+  public void uploadFile() throws Exception {
+    String FILE_NAME = "Intrepid Recruitment Import Template v9.xls";
+    MockMultipartFile multipartFile = new MockMultipartFile("file", FILE_NAME,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        new ClassPathResource(FILE_NAME).getInputStream());
 
-		// when & then
-		restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
-				.andExpect(status().isOk());
-	}
+    MockMultipartHttpServletRequest request = new MockMultipartHttpServletRequest();
+    request.addFile(multipartFile);
 
-	@Test
-	@Transactional
-	public void uploadFileInvalidFormat() throws Exception {
-		MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt", "text/plain",
-				"Spring Framework".getBytes());
-		MockMultipartHttpServletRequest request = new MockMultipartHttpServletRequest();
-		request.addFile(multipartFile);
+    // when & then
+    restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
+        .andExpect(status().isOk());
+  }
 
-		// when & then
-		restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
-				.andExpect(status().isUnsupportedMediaType());
-	}
+  @Test
+  @Transactional
+  public void uploadFileInvalidFormat() throws Exception {
+    MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt", "text/plain",
+        "Spring Framework".getBytes());
+    MockMultipartHttpServletRequest request = new MockMultipartHttpServletRequest();
+    request.addFile(multipartFile);
 
-	@Test
-	@Transactional
-	public void uploadFileInvalidFormatWhenContentTypeIsSame() throws Exception {
-		MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt",
-				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Spring Framework".getBytes());
-		MockMultipartHttpServletRequest request = new MockMultipartHttpServletRequest();
-		request.addFile(multipartFile);
+    // when & then
+    restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
+        .andExpect(status().isUnsupportedMediaType());
+  }
 
-		// when & then
-		restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
-				.andExpect(status().isUnsupportedMediaType());
-	}
+  @Test
+  @Transactional
+  public void uploadFileInvalidFormatWhenContentTypeIsSame() throws Exception {
+    MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Spring Framework".getBytes());
+    MockMultipartHttpServletRequest request = new MockMultipartHttpServletRequest();
+    request.addFile(multipartFile);
+
+    // when & then
+    restContactDetailsMockMvc.perform(fileUpload("/api/file").file(multipartFile))
+        .andExpect(status().isUnsupportedMediaType());
+  }
 }
