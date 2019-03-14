@@ -75,7 +75,10 @@ public class FileValidator {
 		} else if(headers.contains("TIS_Placement_ID*") && headers.contains("Intrepid_Placement_ID")){
 			fileType = FileType.PLACEMENTS_UPDATE;
 			validateMandatoryFieldsOrThrowException(files,fieldErrors,PlacementUpdateXLS.class,excelToObjectMapper,new PlacementUpdateHeaderMapper());
-		}
+		} else if(headers.contains("TIS_Post_ID*")){
+      fileType = FileType.POSTS_UPDATE;
+      validateMandatoryFieldsOrThrowException(files,fieldErrors,PostUpdateXLS.class,excelToObjectMapper,new PostUpdateHeaderMapper());
+    }
 		else {
 			throw new InvalidFormatException("Unrecognised upload template");
 		}
