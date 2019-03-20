@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.Objects;
 
 public class PostUpdateXLS extends TemplateXLS{
-  private String postTISTd;
+  private String postTISId;
   private String approvedGrade;
   private String otherGrades;
   private String specialty;
@@ -27,12 +27,12 @@ public class PostUpdateXLS extends TemplateXLS{
   private Date dateFrom;
   private Date dateTo;
 
-  public String getPostTISTd() {
-    return postTISTd;
+  public String getPostTISId() {
+    return postTISId;
   }
 
-  public void setPostTISTd(String postTISTd) {
-    this.postTISTd = postTISTd;
+  public void setPostTISId(String postTISId) {
+    this.postTISId = postTISId;
   }
 
   public String getApprovedGrade() {
@@ -208,7 +208,7 @@ public class PostUpdateXLS extends TemplateXLS{
     if (this == o) return true;
     if (!(o instanceof PostUpdateXLS)) return false;
     PostUpdateXLS that = (PostUpdateXLS) o;
-    return Objects.equals(getPostTISTd(), that.getPostTISTd()) &&
+    return Objects.equals(getPostTISId(), that.getPostTISId()) &&
         Objects.equals(getApprovedGrade(), that.getApprovedGrade()) &&
         Objects.equals(getOtherGrades(), that.getOtherGrades()) &&
         Objects.equals(getSpecialty(), that.getSpecialty()) &&
@@ -235,13 +235,13 @@ public class PostUpdateXLS extends TemplateXLS{
   @Override
   public int hashCode() {
 
-    return Objects.hash(getPostTISTd(), getApprovedGrade(), getOtherGrades(), getSpecialty(), getOtherSpecialties(), getSubSpecialties(), getTrainingDescription(), getMainSite(), getOtherSites(), getTrainingBody(), getEmployingBody(), getProgrammeName(), getProgrammeNo(), getOwner(), getRotation(), getStatus(), getOldPost(), getFundingType(), getFundingTypeOther(), getFundingBody(), getDateFrom(), getDateTo());
+    return Objects.hash(getPostTISId(), getApprovedGrade(), getOtherGrades(), getSpecialty(), getOtherSpecialties(), getSubSpecialties(), getTrainingDescription(), getMainSite(), getOtherSites(), getTrainingBody(), getEmployingBody(), getProgrammeName(), getProgrammeNo(), getOwner(), getRotation(), getStatus(), getOldPost(), getFundingType(), getFundingTypeOther(), getFundingBody(), getDateFrom(), getDateTo());
   }
 
   @Override
   public String toString() {
     return "PostUpdateXLS{" +
-        "postTISTd='" + postTISTd + '\'' +
+        "postTISId='" + postTISId + '\'' +
         ", approvedGrade='" + approvedGrade + '\'' +
         ", otherGrades='" + otherGrades + '\'' +
         ", specialty='" + specialty + '\'' +
