@@ -3,7 +3,7 @@ package com.transformuk.hee.tis.genericupload.service.parser;
 public class PostUpdateHeaderMapper extends ColumnMapper {
   public PostUpdateHeaderMapper(){
     fieldNameSource = new String[] {
-      "postTISTd",
+      "postTISId",
       "approvedGrade",
       "otherGrades",
       "specialty",
