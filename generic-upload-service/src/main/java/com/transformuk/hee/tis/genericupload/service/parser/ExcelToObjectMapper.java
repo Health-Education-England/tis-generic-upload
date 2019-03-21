@@ -222,12 +222,9 @@ public class ExcelToObjectMapper {
     for (index = 0; index < totalColumns; index++) {
       Cell cell = sheet.getRow(0).getCell(index);
       if (cell.getStringCellValue().trim().equalsIgnoreCase(headerName)) {
-        break;
+        return index;
       }
     }
-    if (index == -1) {
-      throw new NoSuchFieldException("Invalid object field name provided.");
-    }
-    return index;
+    throw new NoSuchFieldException("Invalid object field name provided.");
   }
 }
