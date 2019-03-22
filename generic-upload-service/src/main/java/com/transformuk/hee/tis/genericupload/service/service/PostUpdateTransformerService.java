@@ -155,7 +155,7 @@ public class PostUpdateTransformerService {
     if (postSpecialtyDTOOptional1.isPresent()) {
       postSpecialtyDTOS = initialiseNewPostSpecialtyDTOS(dbPostDTO);
       PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional1.get();
-      addDTOIfNotPresentAsPrimaryOrOther(postSpecialtyDTOS, postSpecialtyDTO);
+      postSpecialtyDTOS.add(postSpecialtyDTO);
     }
     String otherSpecialtiesCommaSeperated = postUpdateXLS.getOtherSpecialties();
     String[] otherSpecialties = otherSpecialtiesCommaSeperated.split(",");
@@ -163,7 +163,7 @@ public class PostUpdateTransformerService {
       Optional<PostSpecialtyDTO> postSpecialtyDTOOptional2 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, otherSpecialty, PostSpecialtyType.OTHER);
       if (postSpecialtyDTOOptional2.isPresent()) {
         PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional2.get();
-        addDTOIfNotPresentAsPrimaryOrOther(postSpecialtyDTOS, postSpecialtyDTO);
+        postSpecialtyDTOS.add(postSpecialtyDTO);
       }
     }
     String subSpecialtiesCommaSeperated = postUpdateXLS.getSubSpecialties();
@@ -172,7 +172,7 @@ public class PostUpdateTransformerService {
       Optional<PostSpecialtyDTO> postSpecialtyDTOOptional3 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, subSpecialty, PostSpecialtyType.SUB_SPECIALTY);
       if (postSpecialtyDTOOptional3.isPresent()) {
         PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional3.get();
-        addDTOIfNotPresentAsPrimaryOrOther(postSpecialtyDTOS, postSpecialtyDTO);
+        postSpecialtyDTOS.add(postSpecialtyDTO);
       }
     }
   }
@@ -181,16 +181,6 @@ public class PostUpdateTransformerService {
     Set<PostSpecialtyDTO> postSpecialtyDTOS = new HashSet<>();
     dbPostDTO.setSpecialties(postSpecialtyDTOS);
     return postSpecialtyDTOS;
-  }
-
-  private void addDTOIfNotPresentAsPrimaryOrOther(Set<PostSpecialtyDTO> postSpecialtyDTOS,
-      PostSpecialtyDTO postSpecialtyDTO) {
-    if (postSpecialtyDTOS.isEmpty()) {
-      postSpecialtyDTOS.add(postSpecialtyDTO);
-    } else if (!postSpecialtyDTOS.contains(postSpecialtyDTO)) {
-      postSpecialtyDTO.setPostSpecialtyType(PostSpecialtyType.OTHER);
-      postSpecialtyDTOS.add(postSpecialtyDTO);
-    }
   }
 
   private Optional<PostSpecialtyDTO> buildPostSpecialtyDTO(PostUpdateXLS postUpdateXLS,
