@@ -1,5 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.LocalOfficeDTO;
@@ -9,26 +11,27 @@ import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostGradeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.ArrayList;
+import java.util.StringJoiner;
 import java.util.function.Function;
-
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-
-import static org.slf4j.LoggerFactory.getLogger;
 
 @Component
 public class PostUpdateTransformerService {
@@ -36,6 +39,7 @@ public class PostUpdateTransformerService {
   private static final Logger logger = getLogger(PostUpdateTransformerService.class);
   private static final String DID_NOT_FIND_GRADE_FOR_NAME = "Did not find grade for name \"%s\".";
   private static final String FOUND_MULTIPLE_GRADES_FOR_NAME = "Found multiple grades for name \"%s\".";
+  private static final String DID_NOT_FIND_PROGRAMMES_FOR_IDS = "Did not find current programmes with IDs \"%s\".";
   private static final String DID_NOT_FIND_SITE_FOR_NAME = "Did not find site for name \"%s\".";
   private static final String FOUND_MULTIPLE_SITES_FOR_NAME = "Found multiple sites for name \"%s\".";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name \"%s\".";
@@ -80,6 +84,7 @@ public class PostUpdateTransformerService {
     updateSites(postUpdateXLS, dbPostDTO, referenceServiceImpl::findSitesByName);
     updateOwner(postUpdateXLS, dbPostDTO, referenceServiceImpl::findLocalOfficesByName);
     updateTrainingDescription(postUpdateXLS, dbPostDTO);
+    updateProgrammes(postUpdateXLS, dbPostDTO, tcsServiceImpl::findProgrammesIn);
 
     // check status
     String postStatus = postUpdateXLS.getStatus();
@@ -174,7 +179,7 @@ public class PostUpdateTransformerService {
           return Optional.of(gradeByName.get(0));
         } else {
           String errorMessage = gradeByName.isEmpty() ? DID_NOT_FIND_GRADE_FOR_NAME : FOUND_MULTIPLE_GRADES_FOR_NAME;
-          postUpdateXLS.addErrorMessage(String.format(errorMessage, gradeByName));
+          postUpdateXLS.addErrorMessage(String.format(errorMessage, gradeName));
         }
       }
     }
@@ -244,7 +249,7 @@ public class PostUpdateTransformerService {
           return Optional.of(specialtyByName.get(0));
         } else {
           String errorMessage = specialtyByName.isEmpty() ? DID_NOT_FIND_SPECIALTY_FOR_NAME : FOUND_MULTIPLE_SPECIALTIES_FOR_NAME;
-          postUpdateXLS.addErrorMessage(String.format(errorMessage, specialtyByName));
+          postUpdateXLS.addErrorMessage(String.format(errorMessage, specialtyName));
         }
       }
     }
@@ -324,7 +329,7 @@ public class PostUpdateTransformerService {
           return Optional.of(siteByName.get(0));
         } else {
           String errorMessage = siteByName.isEmpty() ? DID_NOT_FIND_SITE_FOR_NAME : FOUND_MULTIPLE_SITES_FOR_NAME;
-          postUpdateXLS.addErrorMessage(String.format(errorMessage, siteByName));
+          postUpdateXLS.addErrorMessage(String.format(errorMessage, siteName));
         }
       }
     }
@@ -374,4 +379,35 @@ public class PostUpdateTransformerService {
   }
   /******************Owner ends here*****************************/
 
+  private void updateProgrammes(PostUpdateXLS postUpdateXls, PostDTO postDto, Function<List<String>,
+      List<ProgrammeDTO>> getProgrammeById) {
+    String programmeIdsSeparated = postUpdateXls.getProgrammeTisId();
+
+    // If the field is null then there is no need to update programmes.
+    if (programmeIdsSeparated == null) {
+      return;
+    }
+
+    // Split the comma separated field and get the programmes from the IDs.
+    List<String> programmeIds = Arrays.asList(programmeIdsSeparated.split(","));
+    List<ProgrammeDTO> programmes = getProgrammeById.apply(programmeIds);
+
+    // Filter to only current programmes.
+    programmes = programmes.stream().filter(dto -> dto.getStatus().equals(Status.CURRENT))
+        .collect(Collectors.toList());
+
+    // If one or more of the programmes was not found or not current then report an error.
+    if (programmes.size() != programmeIds.size()) {
+      Set<String> currentFoundIds = programmes.stream().map(programme -> String.valueOf(programme.getId()))
+          .collect(Collectors.toSet());
+      List<String> missingIds = new ArrayList<>(programmeIds);
+      missingIds.removeAll(currentFoundIds);
+      StringJoiner joiner = new StringJoiner(", ");
+      missingIds.forEach(programmeId -> joiner.add(programmeId));
+      postUpdateXls.addErrorMessage(String.format(DID_NOT_FIND_PROGRAMMES_FOR_IDS, joiner.toString()));
+      return;
+    }
+
+    postDto.setProgrammes(new HashSet<>(programmes));
+  }
 }
