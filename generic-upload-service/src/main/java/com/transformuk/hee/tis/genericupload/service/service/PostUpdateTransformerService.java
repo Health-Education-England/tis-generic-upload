@@ -12,12 +12,16 @@ import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
+import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.function.Function;
+
+import org.apache.commons.lang3.EnumUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -31,6 +35,8 @@ public class PostUpdateTransformerService {
   private static final String FOUND_MULTIPLE_SITES_FOR_NAME = "Found multiple sites for name \"%s\".";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name \"%s\".";
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name \"%s\".";
+  private static final String GIVEN_POST_STATUS_IS_NOT_VALID = "Given post status is not valid.";
+  private static final String GIVEN_OLD_POST_IS_NOT_VALID = "Given old post is not valid.";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -66,6 +72,30 @@ public class PostUpdateTransformerService {
     setSpecialties(postUpdateXLS, dbPostDTO, tcsServiceImpl::getSpecialtyByName);
     updateSites(postUpdateXLS, dbPostDTO, referenceServiceImpl::findSitesByName);
     updateTrainingDescription(postUpdateXLS, dbPostDTO);
+
+    // check status
+    String postStatus = postUpdateXLS.getStatus();
+    if (!StringUtils.isEmpty(postStatus)) {
+      if(EnumUtils.isValidEnum(Status.class, postStatus.toUpperCase())){
+        dbPostDTO.setStatus(Status.valueOf(postStatus.toUpperCase()));
+      } else {
+        postUpdateXLS.addErrorMessage(GIVEN_POST_STATUS_IS_NOT_VALID);
+      }
+    }
+
+    // check old post
+    String oldPost = postUpdateXLS.getOldPost();
+    if (!StringUtils.isEmpty(oldPost)) {
+      List<String> npnList = new ArrayList<>();
+      npnList.add(oldPost);
+      List<PostDTO> postDTOSList = tcsServiceImpl.findPostsByNationalPostNumbersIn(npnList);
+      if (postDTOSList.size() == 0) {
+        postUpdateXLS.addErrorMessage(GIVEN_OLD_POST_IS_NOT_VALID);
+      } else {
+        PostDTO oldPostDTO = postDTOSList.get(0);
+        dbPostDTO.setOldPost(oldPostDTO);
+      }
+    }
 
     if (!postUpdateXLS.hasErrors()) {
       //logger.info("dbPlacementDetailsDTO => {}", dbPlacementDetailsDTO);
