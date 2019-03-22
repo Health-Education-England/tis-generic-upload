@@ -2,6 +2,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
+import com.transformuk.hee.tis.reference.api.dto.LocalOfficeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
@@ -37,6 +38,8 @@ public class PostUpdateTransformerService {
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name \"%s\".";
   private static final String GIVEN_POST_STATUS_IS_NOT_VALID = "Given post status is not valid.";
   private static final String GIVEN_OLD_POST_IS_NOT_VALID = "Given old post is not valid.";
+  private static final String DID_NOT_FIND_OWNER_FOR_NAME = "Owner name not found in the database \"%s\".";
+  private static final String FOUND_MULTIPLE_OWNERS_FOR_NAME = "Multiple owners are found in the database \"%s\".";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -71,6 +74,7 @@ public class PostUpdateTransformerService {
     updateGrades(postUpdateXLS, dbPostDTO, referenceServiceImpl::findGradesByName);
     setSpecialties(postUpdateXLS, dbPostDTO, tcsServiceImpl::getSpecialtyByName);
     updateSites(postUpdateXLS, dbPostDTO, referenceServiceImpl::findSitesByName);
+    updateOwner(postUpdateXLS, dbPostDTO, referenceServiceImpl::findLocalOfficesByName);
     updateTrainingDescription(postUpdateXLS, dbPostDTO);
 
     // check status
@@ -328,5 +332,47 @@ public class PostUpdateTransformerService {
     return Optional.empty();
   }
   /***************************Site ends here**********************************/
+
+  /******************Owner starts here*****************************/
+  public void updateOwner(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO, Function<String, List<LocalOfficeDTO>> getLocalOfficeDTOsForName) {
+    String localOfficeDTOS = dbPostDTO.getOwner();
+    if (localOfficeDTOS == null) {
+      localOfficeDTOS = initialiseNewLocalOfficeDTOs(dbPostDTO);
+    }
+    buildLocalOfficeDTO(postUpdateXLS, dbPostDTO, getLocalOfficeDTOsForName);
+  }
+  public String initialiseNewLocalOfficeDTOs(PostDTO postDTO) {
+    String localOfficeDTOs = new String();
+    postDTO.setOwner(localOfficeDTOs);
+    return localOfficeDTOs;
+  }
+
+  public void buildLocalOfficeDTO(PostUpdateXLS postUpdateXLS, PostDTO postDTO,
+                                                   Function<String, List<LocalOfficeDTO>> getLocalOfficeDTOsForName) {
+    Optional<LocalOfficeDTO> aSingleValidLocalOffice = getASingleValidLocalOfficeFromTheReferenceService(postUpdateXLS, getLocalOfficeDTOsForName, postUpdateXLS.getOwner());
+    if (aSingleValidLocalOffice.isPresent()) {
+      LocalOfficeDTO localOfficeDTO = aSingleValidLocalOffice.get();
+      postDTO.setOwner(localOfficeDTO.getName());
+    }
+  }
+  private Optional<LocalOfficeDTO> getASingleValidLocalOfficeFromTheReferenceService(PostUpdateXLS postUpdateXLS, Function<String,
+      List<LocalOfficeDTO>> getLocalOfficeDTOsForName, String owner) {
+    if (!StringUtils.isEmpty(owner)) {
+      List<LocalOfficeDTO> localOfficeByName = getLocalOfficeDTOsForName.apply(owner);
+      if (localOfficeByName != null) {
+        if (localOfficeByName.size() != 1) {
+          if (localOfficeByName.isEmpty()) {
+            postUpdateXLS.addErrorMessage(DID_NOT_FIND_OWNER_FOR_NAME + owner);
+          } else {
+            postUpdateXLS.addErrorMessage(FOUND_MULTIPLE_OWNERS_FOR_NAME + owner);
+          }
+        } else {
+          return Optional.of(localOfficeByName.get(0));
+        }
+      }
+    }
+    return Optional.empty();
+  }
+  /******************Owner ends here*****************************/
 
 }
