@@ -99,10 +99,9 @@ public class PostUpdateTransformerService {
             oldPostDTO = tcsServiceImpl.getPostById(oldPostL);
             dbPostDTO.setOldPost(oldPostDTO);
           } catch (ResourceAccessException e) {
-            postUpdateXLS.addErrorMessage(GIVEN_OLD_POST_IS_NOT_VALID);
             ifException = true;
           } finally {
-            if (oldPostDTO == null && ifException == false) {
+            if (oldPostDTO == null || ifException) {
               postUpdateXLS.addErrorMessage(GIVEN_OLD_POST_IS_NOT_VALID);
             }
           }
