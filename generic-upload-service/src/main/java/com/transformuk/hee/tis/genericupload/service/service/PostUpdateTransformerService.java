@@ -23,23 +23,27 @@ import java.util.ArrayList;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.EnumUtils;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 @Component
 public class PostUpdateTransformerService {
 
+  private static final Logger logger = getLogger(PostUpdateTransformerService.class);
   private static final String DID_NOT_FIND_GRADE_FOR_NAME = "Did not find grade for name \"%s\".";
   private static final String FOUND_MULTIPLE_GRADES_FOR_NAME = "Found multiple grades for name \"%s\".";
   private static final String DID_NOT_FIND_SITE_FOR_NAME = "Did not find site for name \"%s\".";
   private static final String FOUND_MULTIPLE_SITES_FOR_NAME = "Found multiple sites for name \"%s\".";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name \"%s\".";
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name \"%s\".";
-  private static final String GIVEN_POST_STATUS_IS_NOT_VALID = "Given post status is not valid.";
-  private static final String GIVEN_OLD_POST_IS_NOT_VALID = "Given old post is not valid.";
-  private static final String DID_NOT_FIND_OWNER_FOR_NAME = "Owner name not found in the database \"%s\".";
-  private static final String FOUND_MULTIPLE_OWNERS_FOR_NAME = "Multiple owners are found in the database \"%s\".";
+  private static final String GIVEN_POST_STATUS_IS_NOT_VALID = "Given post status is not valid. ";
+  private static final String GIVEN_OLD_POST_IS_NOT_VALID = "Given old post is not valid. ";
+  private static final String DID_NOT_FIND_OWNER_FOR_NAME = "Owner name not found in the database ";
+  private static final String FOUND_MULTIPLE_OWNERS_FOR_NAME = "Multiple owners are found in the database ";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -49,8 +53,8 @@ public class PostUpdateTransformerService {
   void processPostUpdateUpload(List<PostUpdateXLS> postUpdateXLSS, String username) {
     postUpdateXLSS.forEach(PostUpdateXLS::initialiseSuccessfullyImported);
     //This is where we need to extract the data from the Excel file and start building the business logic
-    //to form the PostDTO so that it can be used to call the TCS's REST end point (i.e. /api/posts)
-    //which is from TcsServiceImpl
+    //to form the PostDTO so that it can be used to call the TCS's and Reference's REST end points (e.g. /api/posts)
+    //which is from TcsServiceImpl or ReferenceServiceImpl
 
     for (PostUpdateXLS postUpdateXLS : postUpdateXLSS) {
       useMatchingCriteriaToUpdatePost(postUpdateXLS, username);
@@ -102,7 +106,7 @@ public class PostUpdateTransformerService {
     }
 
     if (!postUpdateXLS.hasErrors()) {
-      //logger.info("dbPlacementDetailsDTO => {}", dbPlacementDetailsDTO);
+      logger.info("dbPostDTO => {}", dbPostDTO);
       tcsServiceImpl.updatePost(dbPostDTO);// updatePost() method is written in TCS service
       postUpdateXLS.setSuccessfullyImported(true);
     }
@@ -254,11 +258,6 @@ public class PostUpdateTransformerService {
   private void updateTrainingDescription(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO) {
     if (!StringUtils.isEmpty(postUpdateXLS.getTrainingDescription())) {
       dbPostDTO.setTrainingDescription(postUpdateXLS.getTrainingDescription());
-      /*if (!StringUtils.isEmpty(dbPlacementDetailsDTO.getIntrepidId())) {
-        placementXLS.addErrorMessage(INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED);
-      } else {
-        dbPlacementDetailsDTO.setIntrepidId(placementXLS.getIntrepidId());
-      }*/
     }
   }
   /******************Training Description ends here*****************************/
