@@ -252,7 +252,7 @@ public class PostUpdateTransformerService {
     // Update employing body.
     String employingBody = postUpdateXls.getEmployingBody();
     Long employingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, employingBody, findTrustsByTrustKnownAs, postDto.getEmployingBodyId());
-    postDto.setTrainingBodyId(employingBodyId);
+    postDto.setEmployingBodyId(employingBodyId);
   }
 
   private Long getTrustIdFromTrustKnownAs(PostUpdateXLS postUpdateXls, String trustKnownAs, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs, long defaultValue) {
