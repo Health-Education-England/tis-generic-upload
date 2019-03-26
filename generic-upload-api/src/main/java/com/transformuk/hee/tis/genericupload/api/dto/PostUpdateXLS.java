@@ -3,7 +3,8 @@ package com.transformuk.hee.tis.genericupload.api.dto;
 import java.util.Date;
 import java.util.Objects;
 
-public class PostUpdateXLS extends TemplateXLS{
+public class PostUpdateXLS extends TemplateXLS {
+
   private String postTISId;
   private String approvedGrade;
   private String otherGrades;
@@ -15,8 +16,7 @@ public class PostUpdateXLS extends TemplateXLS{
   private String otherSites;
   private String trainingBody;
   private String employingBody;
-  private String programmeName;
-  private String programmeNo;
+  private String programmeTisId;
   private String owner;
   private String rotation;
   private String status;
@@ -115,20 +115,12 @@ public class PostUpdateXLS extends TemplateXLS{
     this.employingBody = employingBody;
   }
 
-  public String getProgrammeName() {
-    return programmeName;
+  public String getProgrammeTisId() {
+    return programmeTisId;
   }
 
-  public void setProgrammeName(String programmeName) {
-    this.programmeName = programmeName;
-  }
-
-  public String getProgrammeNo() {
-    return programmeNo;
-  }
-
-  public void setProgrammeNo(String programmeNo) {
-    this.programmeNo = programmeNo;
+  public void setProgrammeTisId(String programmeTisId) {
+    this.programmeTisId = programmeTisId;
   }
 
   public String getOwner() {
@@ -205,8 +197,12 @@ public class PostUpdateXLS extends TemplateXLS{
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof PostUpdateXLS)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof PostUpdateXLS)) {
+      return false;
+    }
     PostUpdateXLS that = (PostUpdateXLS) o;
     return Objects.equals(getPostTISId(), that.getPostTISId()) &&
         Objects.equals(getApprovedGrade(), that.getApprovedGrade()) &&
@@ -219,8 +215,7 @@ public class PostUpdateXLS extends TemplateXLS{
         Objects.equals(getOtherSites(), that.getOtherSites()) &&
         Objects.equals(getTrainingBody(), that.getTrainingBody()) &&
         Objects.equals(getEmployingBody(), that.getEmployingBody()) &&
-        Objects.equals(getProgrammeName(), that.getProgrammeName()) &&
-        Objects.equals(getProgrammeNo(), that.getProgrammeNo()) &&
+        Objects.equals(getProgrammeTisId(), that.getProgrammeTisId()) &&
         Objects.equals(getOwner(), that.getOwner()) &&
         Objects.equals(getRotation(), that.getRotation()) &&
         Objects.equals(getStatus(), that.getStatus()) &&
@@ -234,8 +229,11 @@ public class PostUpdateXLS extends TemplateXLS{
 
   @Override
   public int hashCode() {
-
-    return Objects.hash(getPostTISId(), getApprovedGrade(), getOtherGrades(), getSpecialty(), getOtherSpecialties(), getSubSpecialties(), getTrainingDescription(), getMainSite(), getOtherSites(), getTrainingBody(), getEmployingBody(), getProgrammeName(), getProgrammeNo(), getOwner(), getRotation(), getStatus(), getOldPost(), getFundingType(), getFundingTypeOther(), getFundingBody(), getDateFrom(), getDateTo());
+    return Objects.hash(getPostTISId(), getApprovedGrade(), getOtherGrades(), getSpecialty(),
+        getOtherSpecialties(), getSubSpecialties(), getTrainingDescription(), getMainSite(),
+        getOtherSites(), getTrainingBody(), getEmployingBody(), getProgrammeTisId(), getOwner(),
+        getRotation(), getStatus(), getOldPost(), getFundingType(), getFundingTypeOther(),
+        getFundingBody(), getDateFrom(), getDateTo());
   }
 
   @Override
@@ -252,8 +250,7 @@ public class PostUpdateXLS extends TemplateXLS{
     sb.append(", otherSites='").append(otherSites).append('\'');
     sb.append(", trainingBody='").append(trainingBody).append('\'');
     sb.append(", employingBody='").append(employingBody).append('\'');
-    sb.append(", programmeName='").append(programmeName).append('\'');
-    sb.append(", programmeNo='").append(programmeNo).append('\'');
+    sb.append(", programmeTisId='").append(programmeTisId).append('\'');
     sb.append(", owner='").append(owner).append('\'');
     sb.append(", rotation='").append(rotation).append('\'');
     sb.append(", status='").append(status).append('\'');
