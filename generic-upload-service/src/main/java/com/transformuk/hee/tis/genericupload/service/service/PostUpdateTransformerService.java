@@ -203,7 +203,7 @@ public class PostUpdateTransformerService {
   /*********************Grade ends here*******************************/
 
   /*********************specialty starts here*******************************/
-  private void setSpecialties(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO,
+  void setSpecialties(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO,
       Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName) {
     Set<PostSpecialtyDTO> postSpecialtyDTOS = dbPostDTO.getSpecialties();
     if (postSpecialtyDTOS == null) {
