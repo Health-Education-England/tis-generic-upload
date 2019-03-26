@@ -240,29 +240,30 @@ public class PostUpdateXLS extends TemplateXLS{
 
   @Override
   public String toString() {
-    return "PostUpdateXLS{" +
-        "postTISId='" + postTISId + '\'' +
-        ", approvedGrade='" + approvedGrade + '\'' +
-        ", otherGrades='" + otherGrades + '\'' +
-        ", specialty='" + specialty + '\'' +
-        ", otherSpecialties='" + otherSpecialties + '\'' +
-        ", subSpecialties='" + subSpecialties + '\'' +
-        ", trainingDescription='" + trainingDescription + '\'' +
-        ", mainSite='" + mainSite + '\'' +
-        ", otherSites='" + otherSites + '\'' +
-        ", trainingBody='" + trainingBody + '\'' +
-        ", employingBody='" + employingBody + '\'' +
-        ", programmeName='" + programmeName + '\'' +
-        ", programmeNo='" + programmeNo + '\'' +
-        ", owner='" + owner + '\'' +
-        ", rotation='" + rotation + '\'' +
-        ", status='" + status + '\'' +
-        ", oldPost='" + oldPost + '\'' +
-        ", fundingType='" + fundingType + '\'' +
-        ", fundingTypeOther='" + fundingTypeOther + '\'' +
-        ", fundingBody='" + fundingBody + '\'' +
-        ", dateFrom=" + dateFrom +
-        ", dateTo=" + dateTo +
-        '}';
+    final StringBuilder sb = new StringBuilder("PostUpdateXLS{");
+    sb.append("postTISId=").append(postTISId);
+    sb.append(", approvedGrade=").append(approvedGrade);
+    sb.append(", otherGrades='").append(otherGrades).append('\'');
+    sb.append(", specialty=").append(specialty);
+    sb.append(", otherSpecialties=").append(otherSpecialties);
+    sb.append(", subSpecialties='").append(subSpecialties).append('\'');
+    sb.append(", trainingDescription='").append(trainingDescription).append('\'');
+    sb.append(", mainSite='").append(mainSite).append('\'');
+    sb.append(", otherSites='").append(otherSites).append('\'');
+    sb.append(", trainingBody='").append(trainingBody).append('\'');
+    sb.append(", employingBody='").append(employingBody).append('\'');
+    sb.append(", programmeName='").append(programmeName).append('\'');
+    sb.append(", programmeNo='").append(programmeNo).append('\'');
+    sb.append(", owner='").append(owner).append('\'');
+    sb.append(", rotation='").append(rotation).append('\'');
+    sb.append(", status='").append(status).append('\'');
+    sb.append(", oldPost='").append(oldPost).append('\'');
+    sb.append(", fundingType='").append(fundingType).append('\'');
+    sb.append(", fundingTypeOther='").append(fundingTypeOther).append('\'');
+    sb.append(", fundingBody='").append(fundingBody).append('\'');
+    sb.append(", dateFrom='").append(dateFrom).append('\'');
+    sb.append(", dateTo='").append(dateTo).append('\'');
+    sb.append('}');
+    return sb.toString();
   }
 }
