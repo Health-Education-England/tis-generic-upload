@@ -4,6 +4,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.LocalOfficeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
+import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostGradeDTO;
@@ -44,6 +45,8 @@ public class PostUpdateTransformerService {
   private static final String GIVEN_OLD_POST_IS_NOT_VALID = "Given old post is not valid. ";
   private static final String DID_NOT_FIND_OWNER_FOR_NAME = "Owner name not found in the database ";
   private static final String FOUND_MULTIPLE_OWNERS_FOR_NAME = "Multiple owners are found in the database ";
+  private static final String DID_NOT_FIND_TRUST_FOR_NAME = "Did not find trust for name \"%s\".";
+  private static final String FOUND_MULTIPLE_TRUSTS_FOR_NAME = "Found multiple trusts for name \"%s\".";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -80,6 +83,7 @@ public class PostUpdateTransformerService {
     updateSites(postUpdateXLS, dbPostDTO, referenceServiceImpl::findSitesByName);
     updateOwner(postUpdateXLS, dbPostDTO, referenceServiceImpl::findLocalOfficesByName);
     updateTrainingDescription(postUpdateXLS, dbPostDTO);
+    updateTrustReferences(postUpdateXLS, dbPostDTO, referenceServiceImpl::findTrustByTrustKnownAs);
 
     // check status
     String postStatus = postUpdateXLS.getStatus();
@@ -261,6 +265,34 @@ public class PostUpdateTransformerService {
     }
   }
   /******************Training Description ends here*****************************/
+
+  private void updateTrustReferences(PostUpdateXLS postUpdateXls, PostDTO postDto, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs) {
+    // Update training body.
+    String trainingBody = postUpdateXls.getTrainingBody();
+    Long trainingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, trainingBody, findTrustsByTrustKnownAs, postDto.getTrainingBodyId());
+    postDto.setTrainingBodyId(trainingBodyId);
+
+    // Update employing body.
+    String employingBody = postUpdateXls.getEmployingBody();
+    Long employingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, employingBody, findTrustsByTrustKnownAs, postDto.getEmployingBodyId());
+    postDto.setEmployingBodyId(employingBodyId);
+  }
+
+  private Long getTrustIdFromTrustKnownAs(PostUpdateXLS postUpdateXls, String trustKnownAs, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs, long defaultValue) {
+    if (trustKnownAs == null) {
+      return defaultValue;
+    }
+
+    List<TrustDTO> trusts = findTrustsByTrustKnownAs.apply(trustKnownAs);
+
+    if (trusts.size() == 1) {
+      return trusts.get(0).getId();
+    } else {
+      String errorMessage = trusts.isEmpty() ? DID_NOT_FIND_TRUST_FOR_NAME : FOUND_MULTIPLE_TRUSTS_FOR_NAME;
+      postUpdateXls.addErrorMessage(String.format(errorMessage, trustKnownAs));
+      return defaultValue;
+    }
+  }
 
   /*********************Sites start here****************************************/
   private void updateSites(PostUpdateXLS postUpdateXLS, PostDTO postDTO,
