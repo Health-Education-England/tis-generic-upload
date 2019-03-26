@@ -1,11 +1,11 @@
 spring:
   datasource:
     url: jdbc:mysql://${DBHOST:localhost}:${DBPORT:3306}/${DBNAME:genericupload}?useUnicode=true&characterEncoding=utf8&useSSL=${USE_SSL:false}
-    username: ${DBUSER:admin}
-    password: ${DBPASSWORD:admin}
+    username: ${DBUSER:root}
+    password: ${DBPASSWORD:}
 
 flyway:
-  password: ${DBPASSWORD:admin}
+  password: ${DBPASSWORD:}
   schemas: ${DBNAME:genericupload}
 
 kc:
