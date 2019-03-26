@@ -114,6 +114,7 @@ public class ScheduledUploadTask {
           case POSTS_UPDATE:
             List<PostUpdateXLS> postUpdateXLSList = excelToObjectMapper.map(PostUpdateXLS.class, new PostUpdateHeaderMapper().getFieldMap());
             postUpdateTransformerService.processPostUpdateUpload(postUpdateXLSList, applicationType.getUsername());
+            setJobToCompleted(applicationType, postUpdateXLSList);
             break;
 
 					default: logger.error(UNKNOWN_FILE_TYPE);
