@@ -41,6 +41,7 @@ public class PostUpdateTransformerService {
   private static final String DID_NOT_FIND_GRADE_FOR_NAME = "Did not find grade for name \"%s\".";
   private static final String FOUND_MULTIPLE_GRADES_FOR_NAME = "Found multiple grades for name \"%s\".";
   private static final String DID_NOT_FIND_PROGRAMMES_FOR_IDS = "Did not find current programmes with IDs \"%s\".";
+  private static final String PROGRAMME_ID_NOT_A_NUMBER = "The programme ID \"%s\" is not a number.";
   private static final String DID_NOT_FIND_SITE_FOR_NAME = "Did not find site for name \"%s\".";
   private static final String FOUND_MULTIPLE_SITES_FOR_NAME = "Found multiple sites for name \"%s\".";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name \"%s\".";
@@ -422,6 +423,16 @@ public class PostUpdateTransformerService {
 
     // Split the comma separated field and get the programmes from the IDs.
     List<String> programmeIds = Arrays.asList(programmeIdsSeparated.split(","));
+
+    // If any programme IDs are not numeric then report an error.
+    for (String programmeId : programmeIds) {
+
+      if (!programmeId.matches("\\d+")) {
+        postUpdateXls.addErrorMessage(String.format(PROGRAMME_ID_NOT_A_NUMBER, programmeId));
+        return;
+      }
+    }
+
     List<ProgrammeDTO> programmes = getProgrammeById.apply(programmeIds);
 
     // Filter to only current programmes.
