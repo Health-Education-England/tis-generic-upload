@@ -2,6 +2,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
+import com.transformuk.hee.tis.reference.api.dto.LocalOfficeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
@@ -13,25 +14,37 @@ import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
+import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.function.Function;
+
+import org.apache.commons.lang3.EnumUtils;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 @Component
 public class PostUpdateTransformerService {
 
+  private static final Logger logger = getLogger(PostUpdateTransformerService.class);
   private static final String DID_NOT_FIND_GRADE_FOR_NAME = "Did not find grade for name \"%s\".";
   private static final String FOUND_MULTIPLE_GRADES_FOR_NAME = "Found multiple grades for name \"%s\".";
   private static final String DID_NOT_FIND_SITE_FOR_NAME = "Did not find site for name \"%s\".";
   private static final String FOUND_MULTIPLE_SITES_FOR_NAME = "Found multiple sites for name \"%s\".";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name \"%s\".";
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name \"%s\".";
+  private static final String GIVEN_POST_STATUS_IS_NOT_VALID = "Given post status is not valid. ";
+  private static final String GIVEN_OLD_POST_IS_NOT_VALID = "Given old post is not valid. ";
+  private static final String DID_NOT_FIND_OWNER_FOR_NAME = "Owner name not found in the database ";
+  private static final String FOUND_MULTIPLE_OWNERS_FOR_NAME = "Multiple owners are found in the database ";
   private static final String DID_NOT_FIND_TRUST_FOR_NAME = "Did not find trust for name \"%s\".";
   private static final String FOUND_MULTIPLE_TRUSTS_FOR_NAME = "Found multiple trusts for name \"%s\".";
 
@@ -43,8 +56,8 @@ public class PostUpdateTransformerService {
   void processPostUpdateUpload(List<PostUpdateXLS> postUpdateXLSS, String username) {
     postUpdateXLSS.forEach(PostUpdateXLS::initialiseSuccessfullyImported);
     //This is where we need to extract the data from the Excel file and start building the business logic
-    //to form the PostDTO so that it can be used to call the TCS's REST end point (i.e. /api/posts)
-    //which is from TcsServiceImpl
+    //to form the PostDTO so that it can be used to call the TCS's and Reference's REST end points (e.g. /api/posts)
+    //which is from TcsServiceImpl or ReferenceServiceImpl
 
     for (PostUpdateXLS postUpdateXLS : postUpdateXLSS) {
       useMatchingCriteriaToUpdatePost(postUpdateXLS, username);
@@ -68,11 +81,36 @@ public class PostUpdateTransformerService {
     updateGrades(postUpdateXLS, dbPostDTO, referenceServiceImpl::findGradesByName);
     setSpecialties(postUpdateXLS, dbPostDTO, tcsServiceImpl::getSpecialtyByName);
     updateSites(postUpdateXLS, dbPostDTO, referenceServiceImpl::findSitesByName);
+    updateOwner(postUpdateXLS, dbPostDTO, referenceServiceImpl::findLocalOfficesByName);
     updateTrainingDescription(postUpdateXLS, dbPostDTO);
     updateTrustReferences(postUpdateXLS, dbPostDTO, referenceServiceImpl::findTrustByTrustKnownAs);
 
+    // check status
+    String postStatus = postUpdateXLS.getStatus();
+    if (!StringUtils.isEmpty(postStatus)) {
+      if(EnumUtils.isValidEnum(Status.class, postStatus.toUpperCase())){
+        dbPostDTO.setStatus(Status.valueOf(postStatus.toUpperCase()));
+      } else {
+        postUpdateXLS.addErrorMessage(GIVEN_POST_STATUS_IS_NOT_VALID);
+      }
+    }
+
+    // check old post
+    String oldPost = postUpdateXLS.getOldPost();
+    if (!StringUtils.isEmpty(oldPost)) {
+      List<String> npnList = new ArrayList<>();
+      npnList.add(oldPost);
+      List<PostDTO> postDTOSList = tcsServiceImpl.findPostsByNationalPostNumbersIn(npnList);
+      if (postDTOSList.size() == 0) {
+        postUpdateXLS.addErrorMessage(GIVEN_OLD_POST_IS_NOT_VALID);
+      } else {
+        PostDTO oldPostDTO = postDTOSList.get(0);
+        dbPostDTO.setOldPost(oldPostDTO);
+      }
+    }
+
     if (!postUpdateXLS.hasErrors()) {
-      //logger.info("dbPlacementDetailsDTO => {}", dbPlacementDetailsDTO);
+      logger.info("dbPostDTO => {}", dbPostDTO);
       tcsServiceImpl.updatePost(dbPostDTO);// updatePost() method is written in TCS service
       postUpdateXLS.setSuccessfullyImported(true);
     }
@@ -159,7 +197,7 @@ public class PostUpdateTransformerService {
     if (postSpecialtyDTOOptional1.isPresent()) {
       postSpecialtyDTOS = initialiseNewPostSpecialtyDTOS(dbPostDTO);
       PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional1.get();
-      addDTOIfNotPresentAsPrimaryOrOther(postSpecialtyDTOS, postSpecialtyDTO);
+      postSpecialtyDTOS.add(postSpecialtyDTO);
     }
     String otherSpecialtiesCommaSeperated = postUpdateXLS.getOtherSpecialties();
     String[] otherSpecialties = otherSpecialtiesCommaSeperated.split(",");
@@ -167,7 +205,7 @@ public class PostUpdateTransformerService {
       Optional<PostSpecialtyDTO> postSpecialtyDTOOptional2 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, otherSpecialty, PostSpecialtyType.OTHER);
       if (postSpecialtyDTOOptional2.isPresent()) {
         PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional2.get();
-        addDTOIfNotPresentAsPrimaryOrOther(postSpecialtyDTOS, postSpecialtyDTO);
+        postSpecialtyDTOS.add(postSpecialtyDTO);
       }
     }
     String subSpecialtiesCommaSeperated = postUpdateXLS.getSubSpecialties();
@@ -176,7 +214,7 @@ public class PostUpdateTransformerService {
       Optional<PostSpecialtyDTO> postSpecialtyDTOOptional3 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, subSpecialty, PostSpecialtyType.SUB_SPECIALTY);
       if (postSpecialtyDTOOptional3.isPresent()) {
         PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional3.get();
-        addDTOIfNotPresentAsPrimaryOrOther(postSpecialtyDTOS, postSpecialtyDTO);
+        postSpecialtyDTOS.add(postSpecialtyDTO);
       }
     }
   }
@@ -185,16 +223,6 @@ public class PostUpdateTransformerService {
     Set<PostSpecialtyDTO> postSpecialtyDTOS = new HashSet<>();
     dbPostDTO.setSpecialties(postSpecialtyDTOS);
     return postSpecialtyDTOS;
-  }
-
-  private void addDTOIfNotPresentAsPrimaryOrOther(Set<PostSpecialtyDTO> postSpecialtyDTOS,
-      PostSpecialtyDTO postSpecialtyDTO) {
-    if (postSpecialtyDTOS.isEmpty()) {
-      postSpecialtyDTOS.add(postSpecialtyDTO);
-    } else if (!postSpecialtyDTOS.contains(postSpecialtyDTO)) {
-      postSpecialtyDTO.setPostSpecialtyType(PostSpecialtyType.OTHER);
-      postSpecialtyDTOS.add(postSpecialtyDTO);
-    }
   }
 
   private Optional<PostSpecialtyDTO> buildPostSpecialtyDTO(PostUpdateXLS postUpdateXLS,
@@ -234,11 +262,6 @@ public class PostUpdateTransformerService {
   private void updateTrainingDescription(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO) {
     if (!StringUtils.isEmpty(postUpdateXLS.getTrainingDescription())) {
       dbPostDTO.setTrainingDescription(postUpdateXLS.getTrainingDescription());
-      /*if (!StringUtils.isEmpty(dbPlacementDetailsDTO.getIntrepidId())) {
-        placementXLS.addErrorMessage(INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED);
-      } else {
-        dbPlacementDetailsDTO.setIntrepidId(placementXLS.getIntrepidId());
-      }*/
     }
   }
   /******************Training Description ends here*****************************/
@@ -340,5 +363,47 @@ public class PostUpdateTransformerService {
     return Optional.empty();
   }
   /***************************Site ends here**********************************/
+
+  /******************Owner starts here*****************************/
+  public void updateOwner(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO, Function<String, List<LocalOfficeDTO>> getLocalOfficeDTOsForName) {
+    String localOfficeDTOS = dbPostDTO.getOwner();
+    if (localOfficeDTOS == null) {
+      localOfficeDTOS = initialiseNewLocalOfficeDTOs(dbPostDTO);
+    }
+    buildLocalOfficeDTO(postUpdateXLS, dbPostDTO, getLocalOfficeDTOsForName);
+  }
+  public String initialiseNewLocalOfficeDTOs(PostDTO postDTO) {
+    String localOfficeDTOs = new String();
+    postDTO.setOwner(localOfficeDTOs);
+    return localOfficeDTOs;
+  }
+
+  public void buildLocalOfficeDTO(PostUpdateXLS postUpdateXLS, PostDTO postDTO,
+                                                   Function<String, List<LocalOfficeDTO>> getLocalOfficeDTOsForName) {
+    Optional<LocalOfficeDTO> aSingleValidLocalOffice = getASingleValidLocalOfficeFromTheReferenceService(postUpdateXLS, getLocalOfficeDTOsForName, postUpdateXLS.getOwner());
+    if (aSingleValidLocalOffice.isPresent()) {
+      LocalOfficeDTO localOfficeDTO = aSingleValidLocalOffice.get();
+      postDTO.setOwner(localOfficeDTO.getName());
+    }
+  }
+  private Optional<LocalOfficeDTO> getASingleValidLocalOfficeFromTheReferenceService(PostUpdateXLS postUpdateXLS, Function<String,
+      List<LocalOfficeDTO>> getLocalOfficeDTOsForName, String owner) {
+    if (!StringUtils.isEmpty(owner)) {
+      List<LocalOfficeDTO> localOfficeByName = getLocalOfficeDTOsForName.apply(owner);
+      if (localOfficeByName != null) {
+        if (localOfficeByName.size() != 1) {
+          if (localOfficeByName.isEmpty()) {
+            postUpdateXLS.addErrorMessage(DID_NOT_FIND_OWNER_FOR_NAME + owner);
+          } else {
+            postUpdateXLS.addErrorMessage(FOUND_MULTIPLE_OWNERS_FOR_NAME + owner);
+          }
+        } else {
+          return Optional.of(localOfficeByName.get(0));
+        }
+      }
+    }
+    return Optional.empty();
+  }
+  /******************Owner ends here*****************************/
 
 }
