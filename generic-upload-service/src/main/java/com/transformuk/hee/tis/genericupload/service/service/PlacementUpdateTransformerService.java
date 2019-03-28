@@ -154,7 +154,8 @@ public class PlacementUpdateTransformerService {
     }
 
     setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, dbPlacementDetailsDTO);
-    setSpecialties(placementXLS, dbPlacementDetailsDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
+    setSpecialties(placementXLS, dbPlacementDetailsDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here
+    // and relies on the api to assign the Id
     Set<String> clinicalSupervisorRoles = referenceServiceImpl.getRolesByCategory(1L).stream()
         .map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
         .collect(Collectors.toSet());
@@ -230,7 +231,6 @@ public class PlacementUpdateTransformerService {
     if (placementSpecialtyDTOOptional3.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
       addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
-      System.out.println();
     }
   }
 
@@ -249,7 +249,9 @@ public class PlacementUpdateTransformerService {
     }
   }
 
-  public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementUpdateXLS placementXLS, PlacementDetailsDTO placementDTO, Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName, String specialtyName, boolean primary) {
+  public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementUpdateXLS placementXLS, PlacementDetailsDTO placementDTO,
+                                                                    Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName,
+                                                                    String specialtyName, boolean primary) {
     Optional<SpecialtyDTO> aSingleValidSpecialty = getASingleValidSpecialtyFromTheReferenceService(placementXLS, getSpecialtyDTOsForName, specialtyName);
     if (aSingleValidSpecialty.isPresent()) {
       SpecialtyDTO specialtyDTO = aSingleValidSpecialty.get();
@@ -262,7 +264,8 @@ public class PlacementUpdateTransformerService {
     return Optional.empty();
   }
 
-  private Optional<SpecialtyDTO> getASingleValidSpecialtyFromTheReferenceService(PlacementUpdateXLS placementXLS, Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName, String specialtyName) {
+  private Optional<SpecialtyDTO> getASingleValidSpecialtyFromTheReferenceService(PlacementUpdateXLS placementXLS, Function<String,
+      List<SpecialtyDTO>> getSpecialtyDTOsForName, String specialtyName) {
     if (!StringUtils.isEmpty(specialtyName)) {
       List<SpecialtyDTO> specialtyByName = getSpecialtyDTOsForName.apply(specialtyName);
       if (specialtyByName != null) {
