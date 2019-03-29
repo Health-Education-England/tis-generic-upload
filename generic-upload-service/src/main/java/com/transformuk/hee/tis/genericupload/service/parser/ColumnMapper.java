@@ -1,31 +1,22 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
-import com.google.common.collect.Maps;
-
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public abstract class ColumnMapper {
-  String[] fieldNameSource;
-  String[] fieldNameTarget;
 
   public Map<String, String> getFieldMap() {
-    return createFieldMap(fieldNameSource, fieldNameTarget);
+    List<ColumnMapping> columnMappings = getColumnMappings();
+    return columnMappings.stream().collect(
+        Collectors.toMap(ColumnMapping::getTargetFieldName, ColumnMapping::getSourceFieldName));
   }
 
-  public Map<String,String> getMandatoryFieldMap(){
-    return this.getFieldMap().entrySet().stream().filter(map -> map.getValue().contains("*")).
-        collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  public Map<String, String> getMandatoryFieldMap() {
+    List<ColumnMapping> columnMappings = getColumnMappings();
+    return columnMappings.stream().filter(ColumnMapping::isRequired).collect(
+        Collectors.toMap(ColumnMapping::getTargetFieldName, ColumnMapping::getSourceFieldName));
   }
 
-
-  protected Map<String, String> createFieldMap(String[] fieldNameSource, String[] fieldNameTarget){
-    Map<String,String> fieldMap = Maps.newHashMap();
-    if(fieldNameSource != null && fieldNameTarget != null) {
-      fieldMap = IntStream.range(0, fieldNameSource.length).boxed()
-          .collect(Collectors.toMap(i -> fieldNameSource[i], i -> fieldNameTarget[i]));
-    }
-    return fieldMap;
-  }
+  abstract List<ColumnMapping> getColumnMappings();
 }

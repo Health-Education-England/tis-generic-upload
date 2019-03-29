@@ -1,52 +1,36 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class PostUpdateHeaderMapper extends ColumnMapper {
-  public PostUpdateHeaderMapper(){
-    fieldNameSource = new String[] {
-      "postTISId",
-      "approvedGrade",
-      "otherGrades",
-      "specialty",
-      "otherSpecialties",
-      "subSpecialties",
-      "trainingDescription",
-      "mainSite",
-      "otherSites",
-      "trainingBody",
-      "employingBody",
-      "programmeTisId",
-      "owner",
-      "rotation",
-      "status",
-      "oldPost",
-      "fundingType",
-      "fundingTypeOther",
-      "fundingBody",
-      "dateFrom",
-      "dateTo"
-    };
-    fieldNameTarget = new String[]{
-      "TIS_Post_ID*",
-      "Approved grade",
-      "Other grades",
-      "Specialty",
-      "Other specialties",
-      "Sub specialties",
-      "Training description",
-      "Main site",
-      "Other sites",
-      "Training body",
-      "Employing body",
-      "TIS_Programme_ID",
-      "Owner",
-      "Rotation",
-      "Status",
-      "Old Post",
-      "Funding type",
-      "Funding type - If 'Other' please specify",
-      "Funding Body",
-      "Date From",
-      "Date to"
-    };
+
+  private static final List<ColumnMapping> COLUMN_MAPPINGS = Arrays.asList(
+      new ColumnMapping("postTISId", "TIS_Post_ID*"),
+      new ColumnMapping("approvedGrade", "Approved grade"),
+      new ColumnMapping("otherGrades", "Other grades"),
+      new ColumnMapping("specialty", "Specialty"),
+      new ColumnMapping("otherSpecialties", "Other specialties"),
+      new ColumnMapping("subSpecialties", "Sub specialties"),
+      new ColumnMapping("trainingDescription", "Training description"),
+      new ColumnMapping("mainSite", "Main site"),
+      new ColumnMapping("otherSites", "Other sites"),
+      new ColumnMapping("trainingBody", "Training body"),
+      new ColumnMapping("employingBody", "Employing body"),
+      new ColumnMapping("programmeTisId", "TIS_Programme_ID"),
+      new ColumnMapping("owner", "Owner"),
+      new ColumnMapping("rotation", "Rotation"),
+      new ColumnMapping("status", "Status"),
+      new ColumnMapping("oldPost", "Old Post"),
+      new ColumnMapping("fundingType", "Funding type"),
+      new ColumnMapping("fundingTypeOther", "Funding type - If 'Other' please specify"),
+      new ColumnMapping("fundingBody", "Funding Body"),
+      new ColumnMapping("dateFrom", "Date From"),
+      new ColumnMapping("dateTo", "Date to")
+  );
+
+  @Override
+  List<ColumnMapping> getColumnMappings() {
+    return COLUMN_MAPPINGS;
   }
 }
