@@ -83,25 +83,12 @@ public class PostUpdateTransformerService {
   }
 
   private void updatePost(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO, String username){
-    logger.info(">updatePost()----before----");
-    logger.info(">postUpdateXLS: ");
-    logger.info(postUpdateXLS.toString());
-    logger.info(">dbPostDTO: ");
-    logger.info(dbPostDTO.toString());
-
     updateGrades(postUpdateXLS, dbPostDTO, referenceServiceImpl::findGradesByName);
     setSpecialties(postUpdateXLS, dbPostDTO, tcsServiceImpl::getSpecialtyByName);
     updateSites(postUpdateXLS, dbPostDTO, referenceServiceImpl::findSitesByName);
     updateOwner(postUpdateXLS, dbPostDTO, referenceServiceImpl::findLocalOfficesByName);
     updateTrainingDescription(postUpdateXLS, dbPostDTO);
     updateProgrammes(postUpdateXLS, dbPostDTO, tcsServiceImpl::findProgrammesIn);
-
-    logger.info(">updatePost()----after----");
-    logger.info(">postUpdateXLS: ", postUpdateXLS.toString());
-    logger.info(postUpdateXLS.toString());
-    logger.info(">dbPostDTO: ");
-    logger.info(dbPostDTO.toString());
-
     updateTrustReferences(postUpdateXLS, dbPostDTO, referenceServiceImpl::findTrustByTrustKnownAs);
 
     // check status
@@ -287,49 +274,22 @@ public class PostUpdateTransformerService {
 
   private void updateTrustReferences(PostUpdateXLS postUpdateXls, PostDTO postDto, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs) {
     // Update training body.
-    try {
       String trainingBody = postUpdateXls.getTrainingBody();
-      logger.info(">updateTrustReferences()");
-      logger.info(">postUpdateXls: ");
-      logger.info(postUpdateXls.toString());
-      logger.info(">trainingBody: ");
-      logger.info(trainingBody);
-      logger.info(">findTrustsByTrustKnownAs: ");
-      logger.info(findTrustsByTrustKnownAs.toString());
-      logger.info(">postDto: ");
-      logger.info(postDto.toString());
-      logger.info(">postDto.getTrainingBodyId(): ");
-      logger.info(postDto.getEmployingBodyId().toString());
-      logger.info(">going to call getTrustIdFromTrustKnownAs()");
-
       Long trainingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, trainingBody, findTrustsByTrustKnownAs, postDto.getTrainingBodyId());
-
-      logger.info(">trainingBodyId: ");
-      logger.info(trainingBodyId.toString());
-
       postDto.setTrainingBodyId(trainingBodyId);
 
       // Update employing body.
       String employingBody = postUpdateXls.getEmployingBody();
       Long employingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, employingBody, findTrustsByTrustKnownAs, postDto.getEmployingBodyId());
       postDto.setEmployingBodyId(employingBodyId);
-    }catch (Exception e) {
-      logger.info("------------this is exception message---------");
-      logger.info(e.toString());
-      logger.info(e.getMessage());
-      logger.info(e.getStackTrace().toString());
-      throw e;
-    }
   }
 
-  private Long getTrustIdFromTrustKnownAs(PostUpdateXLS postUpdateXls, String trustKnownAs, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs, long defaultValue) {
+  private Long getTrustIdFromTrustKnownAs(PostUpdateXLS postUpdateXls, String trustKnownAs, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs, Long defaultValue) {
     if (trustKnownAs == null) {
       return defaultValue;
     }
 
-    logger.info(">going to call findTrustsByTrustKnownAs()");
     List<TrustDTO> trusts = findTrustsByTrustKnownAs.apply(trustKnownAs);
-    logger.info(">finished calling findTrustsByTrustKnownAs()");
 
     if (trusts.size() == 1) {
       return trusts.get(0).getId();
