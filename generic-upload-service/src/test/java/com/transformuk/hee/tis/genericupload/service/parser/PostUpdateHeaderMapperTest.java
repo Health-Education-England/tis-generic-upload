@@ -30,7 +30,7 @@ public class PostUpdateHeaderMapperTest {
     // Perform assertions.
     MatcherAssert
         .assertThat("The number of fields did not contain the expected value.", fieldMap.size(),
-            CoreMatchers.is(21));
+            CoreMatchers.is(16));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("postTISId", "TIS_Post_ID*")));
@@ -80,22 +80,6 @@ public class PostUpdateHeaderMapperTest {
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("oldPost", "Old Post")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("fundingType", "Funding type")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("fundingTypeOther",
-                "Funding type - If 'Other' please specify")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("fundingBody", "Funding Body")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("dateFrom", "Date From")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("dateTo", "Date to")));
   }
 
   /**

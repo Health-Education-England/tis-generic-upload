@@ -21,12 +21,7 @@ public class PostUpdateHeaderMapper extends ColumnMapper {
       new ColumnMapping("owner", "Owner"),
       new ColumnMapping("rotation", "Rotation"),
       new ColumnMapping("status", "Status"),
-      new ColumnMapping("oldPost", "Old Post"),
-      new ColumnMapping("fundingType", "Funding type"),
-      new ColumnMapping("fundingTypeOther", "Funding type - If 'Other' please specify"),
-      new ColumnMapping("fundingBody", "Funding Body"),
-      new ColumnMapping("dateFrom", "Date From"),
-      new ColumnMapping("dateTo", "Date to")
+      new ColumnMapping("oldPost", "Old Post")
   );
 
   @Override
