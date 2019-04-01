@@ -6,7 +6,7 @@ import java.util.List;
 public class PostFundingUpdateHeaderMapper extends ColumnMapper {
 
   private static final List<ColumnMapping> COLUMN_MAPPINGS = Arrays.asList(
-      new ColumnMapping("postTISId", "TIS_Post_ID*"),
+      new ColumnMapping("postTisId", "TIS_Post_ID*"),
       new ColumnMapping("fundingType", "Funding type"),
       new ColumnMapping("fundingTypeOther", "Funding type - If 'Other' please specify"),
       new ColumnMapping("fundingBody", "Funding Body"),

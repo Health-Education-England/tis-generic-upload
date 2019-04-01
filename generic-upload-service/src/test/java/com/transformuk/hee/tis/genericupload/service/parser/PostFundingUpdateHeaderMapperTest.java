@@ -33,7 +33,7 @@ public class PostFundingUpdateHeaderMapperTest {
             CoreMatchers.is(6));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("postTISId", "TIS_Post_ID*")));
+            CoreMatchers.hasItem(Maps.immutableEntry("postTisId", "TIS_Post_ID*")));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("fundingType", "Funding type")));
@@ -66,6 +66,6 @@ public class PostFundingUpdateHeaderMapperTest {
             CoreMatchers.is(1));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("postTISId", "TIS_Post_ID*")));
+            CoreMatchers.hasItem(Maps.immutableEntry("postTisId", "TIS_Post_ID*")));
   }
 }
