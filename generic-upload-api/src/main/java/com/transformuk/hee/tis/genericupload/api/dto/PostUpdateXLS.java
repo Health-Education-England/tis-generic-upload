@@ -21,11 +21,6 @@ public class PostUpdateXLS extends TemplateXLS {
   private String rotation;
   private String status;
   private String oldPost;
-  private String fundingType;
-  private String fundingTypeOther;
-  private String fundingBody;
-  private Date dateFrom;
-  private Date dateTo;
 
   public String getPostTISId() {
     return postTISId;
@@ -155,46 +150,6 @@ public class PostUpdateXLS extends TemplateXLS {
     this.oldPost = oldPost;
   }
 
-  public String getFundingType() {
-    return fundingType;
-  }
-
-  public void setFundingType(String fundingType) {
-    this.fundingType = fundingType;
-  }
-
-  public String getFundingTypeOther() {
-    return fundingTypeOther;
-  }
-
-  public void setFundingTypeOther(String fundingTypeOther) {
-    this.fundingTypeOther = fundingTypeOther;
-  }
-
-  public String getFundingBody() {
-    return fundingBody;
-  }
-
-  public void setFundingBody(String fundingBody) {
-    this.fundingBody = fundingBody;
-  }
-
-  public Date getDateFrom() {
-    return dateFrom;
-  }
-
-  public void setDateFrom(Date dateFrom) {
-    this.dateFrom = dateFrom;
-  }
-
-  public Date getDateTo() {
-    return dateTo;
-  }
-
-  public void setDateTo(Date dateTo) {
-    this.dateTo = dateTo;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -219,12 +174,7 @@ public class PostUpdateXLS extends TemplateXLS {
         Objects.equals(getOwner(), that.getOwner()) &&
         Objects.equals(getRotation(), that.getRotation()) &&
         Objects.equals(getStatus(), that.getStatus()) &&
-        Objects.equals(getOldPost(), that.getOldPost()) &&
-        Objects.equals(getFundingType(), that.getFundingType()) &&
-        Objects.equals(getFundingTypeOther(), that.getFundingTypeOther()) &&
-        Objects.equals(getFundingBody(), that.getFundingBody()) &&
-        Objects.equals(getDateFrom(), that.getDateFrom()) &&
-        Objects.equals(getDateTo(), that.getDateTo());
+        Objects.equals(getOldPost(), that.getOldPost());
   }
 
   @Override
@@ -232,8 +182,7 @@ public class PostUpdateXLS extends TemplateXLS {
     return Objects.hash(getPostTISId(), getApprovedGrade(), getOtherGrades(), getSpecialty(),
         getOtherSpecialties(), getSubSpecialties(), getTrainingDescription(), getMainSite(),
         getOtherSites(), getTrainingBody(), getEmployingBody(), getProgrammeTisId(), getOwner(),
-        getRotation(), getStatus(), getOldPost(), getFundingType(), getFundingTypeOther(),
-        getFundingBody(), getDateFrom(), getDateTo());
+        getRotation(), getStatus(), getOldPost());
   }
 
   @Override
@@ -255,11 +204,6 @@ public class PostUpdateXLS extends TemplateXLS {
     sb.append(", rotation='").append(rotation).append('\'');
     sb.append(", status='").append(status).append('\'');
     sb.append(", oldPost='").append(oldPost).append('\'');
-    sb.append(", fundingType='").append(fundingType).append('\'');
-    sb.append(", fundingTypeOther='").append(fundingTypeOther).append('\'');
-    sb.append(", fundingBody='").append(fundingBody).append('\'');
-    sb.append(", dateFrom='").append(dateFrom).append('\'');
-    sb.append(", dateTo='").append(dateTo).append('\'');
     sb.append('}');
     return sb.toString();
   }
