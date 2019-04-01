@@ -279,14 +279,14 @@ public class PostUpdateTransformerService {
 
 
   /**************************Training Description starts here*******************/
-  private void updateTrainingDescription(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO) {
+  void updateTrainingDescription(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO) {
     if (!StringUtils.isEmpty(postUpdateXLS.getTrainingDescription())) {
       dbPostDTO.setTrainingDescription(postUpdateXLS.getTrainingDescription());
     }
   }
   /******************Training Description ends here*****************************/
 
-  private void updateTrustReferences(PostUpdateXLS postUpdateXls, PostDTO postDto, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs) {
+  void updateTrustReferences(PostUpdateXLS postUpdateXls, PostDTO postDto, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs) {
     // Update training body.
       String trainingBody = postUpdateXls.getTrainingBody();
       Long trainingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, trainingBody, findTrustsByTrustKnownAs, postDto.getTrainingBodyId());
