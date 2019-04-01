@@ -1,6 +1,6 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Objects;
 
 public class PostFundingUpdateXLS extends TemplateXLS {
@@ -9,8 +9,8 @@ public class PostFundingUpdateXLS extends TemplateXLS {
   private String fundingType;
   private String fundingTypeOther;
   private String fundingBody;
-  private Date dateFrom;
-  private Date dateTo;
+  private LocalDate dateFrom;
+  private LocalDate dateTo;
 
   public String getPostTisId() {
     return postTisId;
@@ -44,19 +44,19 @@ public class PostFundingUpdateXLS extends TemplateXLS {
     this.fundingBody = fundingBody;
   }
 
-  public Date getDateFrom() {
+  public LocalDate getDateFrom() {
     return dateFrom;
   }
 
-  public void setDateFrom(Date dateFrom) {
+  public void setDateFrom(LocalDate dateFrom) {
     this.dateFrom = dateFrom;
   }
 
-  public Date getDateTo() {
+  public LocalDate getDateTo() {
     return dateTo;
   }
 
-  public void setDateTo(Date dateTo) {
+  public void setDateTo(LocalDate dateTo) {
     this.dateTo = dateTo;
   }
 
