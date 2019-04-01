@@ -15,8 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PostFundingUpdateTransformerService {
 
-  public void processPostFundingUpdateUpload(List<PostFundingUpdateXLS> postFundingUpdateXlss,
-      String username) {
+  public void processPostFundingUpdateUpload(List<PostFundingUpdateXLS> postFundingUpdateXlss) {
     postFundingUpdateXlss.forEach(PostFundingUpdateXLS::initialiseSuccessfullyImported);
 
     // Group rows by ID.

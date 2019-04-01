@@ -121,7 +121,7 @@ public class ScheduledUploadTask {
 
           case POSTS_FUNDING_UPDATE:
             List<PostFundingUpdateXLS> postFundingUpdateXlsList = excelToObjectMapper.map(PostFundingUpdateXLS.class, new PostFundingUpdateHeaderMapper().getFieldMap());
-            postFundingUpdateTransformerService.processPostFundingUpdateUpload(postFundingUpdateXlsList, applicationType.getUsername());
+            postFundingUpdateTransformerService.processPostFundingUpdateUpload(postFundingUpdateXlsList);
             setJobToCompleted(applicationType, postFundingUpdateXlsList);
             break;
 
