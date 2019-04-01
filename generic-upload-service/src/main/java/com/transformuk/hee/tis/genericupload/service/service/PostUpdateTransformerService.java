@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.ResourceAccessException;
 
 @Component
 public class PostUpdateTransformerService {
@@ -52,6 +53,7 @@ public class PostUpdateTransformerService {
   private static final String FOUND_MULTIPLE_OWNERS_FOR_NAME = "Multiple owners are found in the database ";
   private static final String DID_NOT_FIND_TRUST_FOR_NAME = "Did not find trust for name \"%s\".";
   private static final String FOUND_MULTIPLE_TRUSTS_FOR_NAME = "Found multiple trusts for name \"%s\".";
+  private static final String DID_NOT_FIND_POST_FOR_ID = "Did not find the post for id \"%s\".";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -72,13 +74,19 @@ public class PostUpdateTransformerService {
 
   private void useMatchingCriteriaToUpdatePost(PostUpdateXLS postUpdateXLS, String username){
     //TIS_PostID* //Should match to one of TIS_PostID's
-    if(!StringUtils.isEmpty(postUpdateXLS.getPostTISId())){
+    String postTISId = postUpdateXLS.getPostTISId();
+    if(!StringUtils.isEmpty(postTISId)){
       //This getPostById() method is written in TCS service
-      PostDTO dbPostDTO = tcsServiceImpl.getPostById(Long.valueOf(postUpdateXLS.getPostTISId()));
-      if(dbPostDTO !=null){
-        updatePost(postUpdateXLS, dbPostDTO, username);
+      try {
+        PostDTO dbPostDTO = tcsServiceImpl.getPostById(Long.valueOf(postUpdateXLS.getPostTISId()));
+        if(dbPostDTO != null) {
+          updatePost(postUpdateXLS, dbPostDTO, username);
+        } else {
+          postUpdateXLS.addErrorMessage(String.format(DID_NOT_FIND_POST_FOR_ID, postTISId));
+        }
+      } catch (ResourceAccessException e) {
+        postUpdateXLS.addErrorMessage(String.format(DID_NOT_FIND_POST_FOR_ID, postTISId));
       }
-
     }
   }
 
@@ -137,12 +145,14 @@ public class PostUpdateTransformerService {
       addDTOIfNotPresentAsApprovedOrOther1(postGradeDTOS, postGradeDTO);
     }
     String otherGradesCommaSeparated = postUpdateXLS.getOtherGrades();
-    String[] otherGrades =  otherGradesCommaSeparated.split(",");
-    for(String otherGrade : otherGrades) {
-      Optional<PostGradeDTO> postGradeDTOOptional2 = buildPostGradeDTO(postUpdateXLS, dbPostDTO, getGradeDTOsForName, otherGrade, PostGradeType.OTHER);
-      if (postGradeDTOOptional2.isPresent()) {
-        PostGradeDTO postGradeDTO = postGradeDTOOptional2.get();
-        addDTOIfNotPresentAsApprovedOrOther1(postGradeDTOS, postGradeDTO);
+    if (otherGradesCommaSeparated != null) {
+      String[] otherGrades = otherGradesCommaSeparated.split(",");
+      for (String otherGrade : otherGrades) {
+        Optional<PostGradeDTO> postGradeDTOOptional2 = buildPostGradeDTO(postUpdateXLS, dbPostDTO, getGradeDTOsForName, otherGrade, PostGradeType.OTHER);
+        if (postGradeDTOOptional2.isPresent()) {
+          PostGradeDTO postGradeDTO = postGradeDTOOptional2.get();
+          addDTOIfNotPresentAsApprovedOrOther1(postGradeDTOS, postGradeDTO);
+        }
       }
     }
   }
@@ -206,21 +216,25 @@ public class PostUpdateTransformerService {
       postSpecialtyDTOS.add(postSpecialtyDTO);
     }
     String otherSpecialtiesCommaSeperated = postUpdateXLS.getOtherSpecialties();
-    String[] otherSpecialties = otherSpecialtiesCommaSeperated.split(",");
-    for(String otherSpecialty : otherSpecialties) {
-      Optional<PostSpecialtyDTO> postSpecialtyDTOOptional2 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, otherSpecialty, PostSpecialtyType.OTHER);
-      if (postSpecialtyDTOOptional2.isPresent()) {
-        PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional2.get();
-        postSpecialtyDTOS.add(postSpecialtyDTO);
+    if (otherSpecialtiesCommaSeperated != null) {
+      String[] otherSpecialties = otherSpecialtiesCommaSeperated.split(",");
+      for (String otherSpecialty : otherSpecialties) {
+        Optional<PostSpecialtyDTO> postSpecialtyDTOOptional2 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, otherSpecialty, PostSpecialtyType.OTHER);
+        if (postSpecialtyDTOOptional2.isPresent()) {
+          PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional2.get();
+          postSpecialtyDTOS.add(postSpecialtyDTO);
+        }
       }
     }
     String subSpecialtiesCommaSeperated = postUpdateXLS.getSubSpecialties();
-    String[] subSpecialties =  subSpecialtiesCommaSeperated.split(",");
-    for(String subSpecialty : subSpecialties) {
-      Optional<PostSpecialtyDTO> postSpecialtyDTOOptional3 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, subSpecialty, PostSpecialtyType.SUB_SPECIALTY);
-      if (postSpecialtyDTOOptional3.isPresent()) {
-        PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional3.get();
-        postSpecialtyDTOS.add(postSpecialtyDTO);
+    if (subSpecialtiesCommaSeperated != null) {
+      String[] subSpecialties = subSpecialtiesCommaSeperated.split(",");
+      for (String subSpecialty : subSpecialties) {
+        Optional<PostSpecialtyDTO> postSpecialtyDTOOptional3 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, subSpecialty, PostSpecialtyType.SUB_SPECIALTY);
+        if (postSpecialtyDTOOptional3.isPresent()) {
+          PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional3.get();
+          postSpecialtyDTOS.add(postSpecialtyDTO);
+        }
       }
     }
   }
@@ -314,12 +328,14 @@ public class PostUpdateTransformerService {
       addDTOIfNotPresentAsPrimaryOrOther1(postSiteDTOS, postSiteDTO);
     }
     String otherSitesCommaSeperated = postUpdateXLS.getOtherSites();
-    String[] otherSites =  otherSitesCommaSeperated.split(",");
-    for(String otherSite : otherSites) {
-      Optional<PostSiteDTO> postSiteDTOOptional2 = buildPostSiteDTO(postUpdateXLS, postDTO, getSiteDTOsForName, otherSite, PostSiteType.OTHER);
-      if (postSiteDTOOptional2.isPresent()) {
-        PostSiteDTO postSiteDTO = postSiteDTOOptional2.get();
-        addDTOIfNotPresentAsPrimaryOrOther1(postSiteDTOS, postSiteDTO);
+    if (otherSitesCommaSeperated != null) {
+      String[] otherSites = otherSitesCommaSeperated.split(",");
+      for (String otherSite : otherSites) {
+        Optional<PostSiteDTO> postSiteDTOOptional2 = buildPostSiteDTO(postUpdateXLS, postDTO, getSiteDTOsForName, otherSite, PostSiteType.OTHER);
+        if (postSiteDTOOptional2.isPresent()) {
+          PostSiteDTO postSiteDTO = postSiteDTOOptional2.get();
+          addDTOIfNotPresentAsPrimaryOrOther1(postSiteDTOS, postSiteDTO);
+        }
       }
     }
   }
