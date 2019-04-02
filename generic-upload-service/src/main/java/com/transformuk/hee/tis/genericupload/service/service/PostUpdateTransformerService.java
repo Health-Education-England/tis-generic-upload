@@ -132,7 +132,7 @@ public class PostUpdateTransformerService {
   }
 
   /*********************Grade starts here*******************************/
-  private void updateGrades(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO,
+  void updateGrades(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO,
       Function<String, List<GradeDTO>> getGradeDTOsForName) {
     Set<PostGradeDTO> postGradeDTOS = dbPostDTO.getGrades();
     if (postGradeDTOS == null) {
@@ -315,7 +315,7 @@ public class PostUpdateTransformerService {
   }
 
   /*********************Sites start here****************************************/
-  private void updateSites(PostUpdateXLS postUpdateXLS, PostDTO postDTO,
+  void updateSites(PostUpdateXLS postUpdateXLS, PostDTO postDTO,
       Function<String, List<SiteDTO>> getSiteDTOsForName) {
     Set<PostSiteDTO> postSiteDTOS = postDTO.getSites();
     if (postSiteDTOS == null) {
