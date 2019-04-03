@@ -2,6 +2,7 @@ package com.transformuk.hee.tis.genericupload.service.parser;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration;
 import com.transformuk.hee.tis.genericupload.service.util.POIUtil;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +11,6 @@ import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -144,7 +144,7 @@ public class ExcelToObjectMapper {
         case STRING:
           String trim = cell.getStringCellValue().trim();
           if (cls == LocalDate.class) {
-            field.set(obj, getLocalDate(trim));
+            field.set(obj, MapperConfiguration.convertDate(trim));
           } else if (cls == Date.class) {
             field.set(obj, getDate(trim));
           } else if(cls == Float.class) {
@@ -155,7 +155,11 @@ public class ExcelToObjectMapper {
           break;
         case NUMERIC:
           if (DateUtil.isCellDateFormatted(cell)) {
-            field.set(obj, cell.getDateCellValue());
+            if (cls == LocalDate.class) {
+              field.set(obj, MapperConfiguration.convertDate(cell.getDateCellValue()));
+            } else {
+              field.set(obj, cell.getDateCellValue());
+            }
           } else if(cls == Float.class) {
             field.set(obj, (float) cell.getNumericCellValue());
           } else {
@@ -185,18 +189,6 @@ public class ExcelToObjectMapper {
     }
     throw new ParseException("Date is not in valid dd/mm/yyyy format",0);
 
-  }
-
-  /**
-   * getLocalDate() receives a date input, checks if it conforms to the correct format and returns
-   * the converted local date without time.
-   * @param date
-   * @return The LocalDate representation of the string.
-   * @throws DateTimeParseException if the input was not d/M/yyyy or dd/MM/yyyy.
-   */
-  public static LocalDate getLocalDate(String date) {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d/M/yyyy");
-    return LocalDate.parse(date, formatter);
   }
 
   public static Date removeTime(Date date) {

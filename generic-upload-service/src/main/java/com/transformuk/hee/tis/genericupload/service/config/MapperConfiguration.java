@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.config;
 
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
+import java.time.ZoneId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +16,7 @@ public abstract class MapperConfiguration {
 
     private static final Logger LOG = LoggerFactory.getLogger(MapperConfiguration.class);
 
-    static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("d/MM/yyyy");
+    static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
 
     protected List<Object> existingPersons;
 
@@ -56,7 +57,7 @@ public abstract class MapperConfiguration {
     public static LocalDate convertDate(String date) {
         LocalDate localDate = null;
         if (date != null) {
-            return LocalDate.parse(date, dateTimeFormatter);
+            localDate = LocalDate.parse(date, dateTimeFormatter);
         }
         return localDate;
     }
