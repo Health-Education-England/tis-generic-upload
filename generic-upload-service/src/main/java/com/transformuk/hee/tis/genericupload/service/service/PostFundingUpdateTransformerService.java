@@ -1,11 +1,14 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
+import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
+import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostFundingDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,11 +21,22 @@ import org.springframework.web.client.RestClientException;
 @Component
 public class PostFundingUpdateTransformerService {
 
+  public static final String ERROR_INVALID_FUNDING_BODY_NAME = "Funding body could not be found for the name \"%s\".";
+
+  @Autowired
+  private ReferenceServiceImpl referenceService;
   @Autowired
   private TcsServiceImpl tcsService;
 
   public void processPostFundingUpdateUpload(List<PostFundingUpdateXLS> postFundingUpdateXlss) {
     postFundingUpdateXlss.forEach(PostFundingUpdateXLS::initialiseSuccessfullyImported);
+
+    // Get all funding bodies and retrieve matching funding body IDs.
+    Set<String> fundingBodies = postFundingUpdateXlss.stream()
+        .map(PostFundingUpdateXLS::getFundingBody).collect(Collectors.toSet());
+    List<TrustDTO> trusts = referenceService.findCurrentTrustsByTrustKnownAsIn(fundingBodies);
+    Map<String, String> fundingBodyNameToId = trusts.stream()
+        .collect(Collectors.toMap(TrustDTO::getTrustKnownAs, dto -> String.valueOf(dto.getId())));
 
     // Group rows by post ID.
     Map<String, List<PostFundingUpdateXLS>> postIdsToPostFundingUpdateXls = postFundingUpdateXlss
@@ -32,15 +46,28 @@ public class PostFundingUpdateTransformerService {
         .entrySet()) {
       String postId = postIdToPostFundingUpdateXls.getKey();
 
-      Set<PostFundingDTO> fundingDtos = buildFundingDtos(postIdToPostFundingUpdateXls.getValue());
+      Map<PostFundingDTO, PostFundingUpdateXLS> fundingDtosToSource = buildFundingDtos(
+          postIdToPostFundingUpdateXls.getValue(), fundingBodyNameToId);
       PostDTO postDto = new PostDTO();
       postDto.setId(Long.parseLong(postId));
-      postDto.setFundings(fundingDtos);
+      postDto.setFundings(fundingDtosToSource.keySet());
 
       try {
-        tcsService.updatePostFundings(postDto);
+        List<PostFundingDTO> postFundingDtos = tcsService.updatePostFundings(postDto);
+
+        for (PostFundingDTO fundingDto : postFundingDtos) {
+          List<String> errorMessages = fundingDto.getMessageList();
+
+          if (errorMessages.isEmpty()) {
+            continue;
+          }
+
+          // Get the source XLS for the DTO and add error messages.
+          fundingDto.setMessageList(new ArrayList<>());
+          PostFundingUpdateXLS postFundingUpdateXsl = fundingDtosToSource.get(fundingDto);
+          postFundingUpdateXsl.addErrorMessages(errorMessages);
+        }
       } catch (RestClientException e) {
-        // TODO: handle error messages properly.
         for (PostFundingUpdateXLS postFundingUpdateXls : postIdToPostFundingUpdateXls.getValue()) {
           postFundingUpdateXls.addErrorMessage(e.getMessage());
         }
@@ -48,21 +75,37 @@ public class PostFundingUpdateTransformerService {
     }
   }
 
-  private Set<PostFundingDTO> buildFundingDtos(
-      Collection<PostFundingUpdateXLS> postFundingUpdateXlss) {
-    Set<PostFundingDTO> postFundingDtos = new HashSet<>();
+  /**
+   * Build PostFundingDTOs from the PostFundingUpdateXLS.
+   *
+   * @param postFundingUpdateXlss The PostFundingUpdateXLS to build DTOs for.
+   * @param fundingBodyNameToId A mapping of funding body names to IDs, as required by the DTO.
+   * @return A map of built PostFundingDTOs to source PostFundingUpdateXLS.
+   */
+  private Map<PostFundingDTO, PostFundingUpdateXLS> buildFundingDtos(
+      Collection<PostFundingUpdateXLS> postFundingUpdateXlss,
+      Map<String, String> fundingBodyNameToId) {
+    Map<PostFundingDTO, PostFundingUpdateXLS> postFundingDtosToSource = new HashMap<>();
 
     for (PostFundingUpdateXLS postFundingUpdateXls : postFundingUpdateXlss) {
+      String fundingBodyName = postFundingUpdateXls.getFundingBody();
+      String fundingBodyId = fundingBodyNameToId.get(fundingBodyName);
+
+      if (fundingBodyName != null && fundingBodyId == null) {
+        postFundingUpdateXls.addErrorMessage(String.format(ERROR_INVALID_FUNDING_BODY_NAME, fundingBodyName));
+        continue;
+      }
+
       PostFundingDTO postFundingDto = new PostFundingDTO();
       postFundingDto.setFundingType(postFundingUpdateXls.getFundingType());
       postFundingDto.setInfo(postFundingUpdateXls.getFundingTypeOther());
       postFundingDto.setStartDate(postFundingUpdateXls.getDateFrom());
       postFundingDto.setEndDate(postFundingUpdateXls.getDateTo());
-      postFundingDto.setFundingBodyId(postFundingUpdateXls.getFundingBody());
+      postFundingDto.setFundingBodyId(fundingBodyId);
 
-      postFundingDtos.add(postFundingDto);
+      postFundingDtosToSource.put(postFundingDto, postFundingUpdateXls);
     }
 
-    return postFundingDtos;
+    return postFundingDtosToSource;
   }
 }
