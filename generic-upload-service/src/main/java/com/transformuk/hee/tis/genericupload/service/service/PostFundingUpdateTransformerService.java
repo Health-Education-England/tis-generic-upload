@@ -58,14 +58,15 @@ public class PostFundingUpdateTransformerService {
         for (PostFundingDTO fundingDto : postFundingDtos) {
           List<String> errorMessages = fundingDto.getMessageList();
 
-          if (errorMessages.isEmpty()) {
-            continue;
-          }
-
-          // Get the source XLS for the DTO and add error messages.
+          // Get the source XLS for the DTO and add error messages or success.
           fundingDto.setMessageList(new ArrayList<>());
           PostFundingUpdateXLS postFundingUpdateXsl = fundingDtosToSource.get(fundingDto);
-          postFundingUpdateXsl.addErrorMessages(errorMessages);
+
+          if (errorMessages.isEmpty()) {
+            postFundingUpdateXsl.setSuccessfullyImported(true);
+          } else {
+            postFundingUpdateXsl.addErrorMessages(errorMessages);
+          }
         }
       } catch (RestClientException e) {
         for (PostFundingUpdateXLS postFundingUpdateXls : postIdToPostFundingUpdateXls.getValue()) {
