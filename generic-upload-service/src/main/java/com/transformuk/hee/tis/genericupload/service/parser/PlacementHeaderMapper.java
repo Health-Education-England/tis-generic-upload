@@ -1,47 +1,33 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
-public class PlacementHeaderMapper extends ColumnMapper {
-	public PlacementHeaderMapper() {
-		fieldNameSource = new String[] {
-				"surname",
-				"gmcNumber",
-				"gdcNumber",
-				"publicHealthNumber",
-				"nationalPostNumber",
-				"dateFrom",
-				"dateTo",
-				"placementType",
-				"placementStatus",
-				"site",
-				"wte",
-				"grade",
-				"specialty1",
-				"specialty2",
-				"specialty3",
-				"clinicalSupervisor",
-				"educationalSupervisor",
-				"comments"
-		};
+import java.util.Arrays;
+import java.util.List;
 
-		fieldNameTarget = new String[] {
-				"Surname*",
-				"GMC Number",
-				"GDC Number",
-				"Public Health Number",
-				"National Post Number*",
-				"Date From*",
-				"Date To*",
-				"Placement Type*",
-				"Placement Status*",
-				"Site*",
-				"WTE*",
-				"Grade*",
-				"Specialty1",
-				"Specialty2",
-				"Specialty3",
-				"Clinical Supervisor",
-				"Educational Supervisor",
-				"Comments"
-		};
-	}
+public class PlacementHeaderMapper extends ColumnMapper {
+
+  private static final List<ColumnMapping> COLUMN_MAPPINGS = Arrays.asList(
+      new ColumnMapping("surname", "Surname*"),
+      new ColumnMapping("gmcNumber", "GMC Number"),
+      new ColumnMapping("gdcNumber", "GDC Number"),
+      new ColumnMapping("publicHealthNumber", "Public Health Number"),
+      new ColumnMapping("nationalPostNumber", "National Post Number*"),
+      new ColumnMapping("dateFrom", "Date From*"),
+      new ColumnMapping("dateTo", "Date To*"),
+      new ColumnMapping("placementType", "Placement Type*"),
+      new ColumnMapping("placementStatus", "Placement Status*"),
+      new ColumnMapping("site", "Site*"),
+      new ColumnMapping("wte", "WTE*"),
+      new ColumnMapping("grade", "Grade*"),
+      new ColumnMapping("specialty1", "Specialty1"),
+      new ColumnMapping("specialty2", "Specialty2"),
+      new ColumnMapping("specialty3", "Specialty3"),
+      new ColumnMapping("clinicalSupervisor", "Clinical Supervisor"),
+      new ColumnMapping("educationalSupervisor", "Educational Supervisor"),
+      new ColumnMapping("comments", "Comments")
+  );
+
+  @Override
+  List<ColumnMapping> getColumnMappings() {
+    return COLUMN_MAPPINGS;
+  }
 }

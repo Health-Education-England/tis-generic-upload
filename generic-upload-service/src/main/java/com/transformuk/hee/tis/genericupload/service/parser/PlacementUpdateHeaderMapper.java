@@ -1,41 +1,30 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
-public class PlacementUpdateHeaderMapper extends ColumnMapper {
-	public PlacementUpdateHeaderMapper() {
-		fieldNameSource = new String[] {
-				"placementId",
-				"intrepidId",
-				"nationalPostNumber",
-				"dateFrom",
-				"dateTo",
-				"placementType",
-				"site",
-				"wte",
-				"grade",
-				"specialty1",
-				"specialty2",
-				"specialty3",
-				"clinicalSupervisor",
-				"educationalSupervisor",
-				"comments"
-		};
+import java.util.Arrays;
+import java.util.List;
 
-		fieldNameTarget = new String[] {
-				"TIS_Placement_ID*",
-				"Intrepid_Placement_ID",
-				"National Post Number",
-				"Date From",
-				"Date To",
-				"Placement Type",
-				"Site",
-				"WTE",
-				"Grade",
-				"Specialty1",
-				"Specialty2",
-				"Specialty3",
-				"Clinical Supervisor",
-				"Educational Supervisor",
-				"Comments"
-		};
-	}
+public class PlacementUpdateHeaderMapper extends ColumnMapper {
+
+  private static final List<ColumnMapping> COLUMN_MAPPINGS = Arrays.asList(
+      new ColumnMapping("placementId", "TIS_Placement_ID*"),
+      new ColumnMapping("intrepidId", "Intrepid_Placement_ID"),
+      new ColumnMapping("nationalPostNumber", "National Post Number"),
+      new ColumnMapping("dateFrom", "Date From"),
+      new ColumnMapping("dateTo", "Date To"),
+      new ColumnMapping("placementType", "Placement Type"),
+      new ColumnMapping("site", "Site"),
+      new ColumnMapping("wte", "WTE"),
+      new ColumnMapping("grade", "Grade"),
+      new ColumnMapping("specialty1", "Specialty1"),
+      new ColumnMapping("specialty2", "Specialty2"),
+      new ColumnMapping("specialty3", "Specialty3"),
+      new ColumnMapping("clinicalSupervisor", "Clinical Supervisor"),
+      new ColumnMapping("educationalSupervisor", "Educational Supervisor"),
+      new ColumnMapping("comments", "Comments")
+  );
+
+  @Override
+  List<ColumnMapping> getColumnMappings() {
+    return COLUMN_MAPPINGS;
+  }
 }

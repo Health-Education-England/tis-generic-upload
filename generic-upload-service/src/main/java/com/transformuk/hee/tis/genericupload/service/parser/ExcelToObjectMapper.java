@@ -1,8 +1,26 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
+import com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration;
 import com.transformuk.hee.tis.genericupload.service.util.POIUtil;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -12,23 +30,6 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static org.slf4j.LoggerFactory.getLogger;
 
 public class ExcelToObjectMapper {
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
@@ -91,7 +92,7 @@ public class ExcelToObjectMapper {
         Field classField = obj.getClass().getDeclaredField(fieldName);
         try {
           setObjectFieldValueFromCell(obj, classField, cell);
-        } catch (ParseException | IllegalArgumentException e) {
+        } catch (DateTimeParseException | ParseException | IllegalArgumentException e) {
           logger.info("Error while extracting cell value from object : {} ", e.getMessage());
           Method method = obj.getClass().getMethod("addErrorMessage", String.class);
           method.invoke(obj, e.getMessage());
@@ -131,6 +132,7 @@ public class ExcelToObjectMapper {
    * @param obj   Object whom given field belong.
    * @param field Field which value need to be set.
    * @param cell  Apache POI cell from which value needs to be retrived.
+   * @throws DateTimeParseException if the input for LocalDate was not d/M/yyyy or dd/MM/yyyy.
    */
   private void setObjectFieldValueFromCell(Object obj, Field field, Cell cell) throws IllegalAccessException, ParseException {
     Class<?> cls = field.getType();
@@ -141,7 +143,9 @@ public class ExcelToObjectMapper {
       switch (cell.getCellTypeEnum()) {
         case STRING:
           String trim = cell.getStringCellValue().trim();
-          if (cls == Date.class) {
+          if (cls == LocalDate.class) {
+            field.set(obj, MapperConfiguration.convertDate(trim));
+          } else if (cls == Date.class) {
             field.set(obj, getDate(trim));
           } else if(cls == Float.class) {
             field.set(obj, Float.valueOf(trim));
@@ -151,7 +155,11 @@ public class ExcelToObjectMapper {
           break;
         case NUMERIC:
           if (DateUtil.isCellDateFormatted(cell)) {
-            field.set(obj, cell.getDateCellValue());
+            if (cls == LocalDate.class) {
+              field.set(obj, MapperConfiguration.convertDate(cell.getDateCellValue()));
+            } else {
+              field.set(obj, cell.getDateCellValue());
+            }
           } else if(cls == Float.class) {
             field.set(obj, (float) cell.getNumericCellValue());
           } else {
