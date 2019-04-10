@@ -14,7 +14,7 @@ public class PostFundingUpdateHeaderMapper extends ColumnMapper {
       new ColumnMapping("dateTo", "Date to")
   );
 
-  //@Override
+  @Override
   List<ColumnMapping> getColumnMappings() {
     return COLUMN_MAPPINGS;
   }

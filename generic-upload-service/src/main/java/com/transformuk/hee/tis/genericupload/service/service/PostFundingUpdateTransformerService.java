@@ -39,8 +39,27 @@ public class PostFundingUpdateTransformerService {
         .collect(Collectors.toMap(TrustDTO::getTrustKnownAs, dto -> String.valueOf(dto.getId())));
 
     // Group rows by post ID.
-    Map<String, List<PostFundingUpdateXLS>> postIdsToPostFundingUpdateXls = postFundingUpdateXlss
-        .stream().collect(Collectors.groupingBy(PostFundingUpdateXLS::getPostTisId));
+    // TODO: There is an issue with validating the presence of required fields, this can be
+    //  simplified again once that scenario is handled properly in FileValidator.
+    Map<String, List<PostFundingUpdateXLS>> postIdsToPostFundingUpdateXls = new HashMap<>();
+    // Map<String, List<PostFundingUpdateXLS>> postIdsToPostFundingUpdateXls = postFundingUpdateXlss
+    //     .stream()
+    //     .filter(xls -> xls.getPostTisId() != null)
+    //     .collect(Collectors.groupingBy(PostFundingUpdateXLS::getPostTisId));
+
+    for (PostFundingUpdateXLS postFundingUpdateXls : postFundingUpdateXlss) {
+      String postId = postFundingUpdateXls.getPostTisId();
+
+      if (postId != null) {
+        List<PostFundingUpdateXLS> groupedXls = postIdsToPostFundingUpdateXls
+            .getOrDefault(postId, new ArrayList<>());
+
+        groupedXls.add(postFundingUpdateXls);
+        postIdsToPostFundingUpdateXls.put(postId, groupedXls);
+      } else {
+        postFundingUpdateXls.addErrorMessage("TIS_Post_ID is a required field.");
+      }
+    }
 
     for (Entry<String, List<PostFundingUpdateXLS>> postIdToPostFundingUpdateXls : postIdsToPostFundingUpdateXls
         .entrySet()) {
@@ -93,7 +112,8 @@ public class PostFundingUpdateTransformerService {
       String fundingBodyId = fundingBodyNameToId.get(fundingBodyName);
 
       if (fundingBodyName != null && fundingBodyId == null) {
-        postFundingUpdateXls.addErrorMessage(String.format(ERROR_INVALID_FUNDING_BODY_NAME, fundingBodyName));
+        postFundingUpdateXls
+            .addErrorMessage(String.format(ERROR_INVALID_FUNDING_BODY_NAME, fundingBodyName));
         continue;
       }
 
