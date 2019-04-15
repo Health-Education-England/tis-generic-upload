@@ -11,6 +11,7 @@ public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervis
   private Date dateTo;
   private String placementType;
   private String site;
+  private String otherSites;
   private Float wte;
   private String grade;
   private String specialty1;
@@ -74,6 +75,14 @@ public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervis
 
   public void setSite(String site) {
     this.site = site;
+  }
+
+  public String getOtherSites() {
+    return otherSites;
+  }
+
+  public void setOtherSites(String otherSite) {
+    this.otherSites = otherSite;
   }
 
   public Float getWte() {
@@ -152,6 +161,7 @@ public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervis
             Objects.equals(dateTo, that.dateTo) &&
             Objects.equals(placementType, that.placementType) &&
             Objects.equals(site, that.site) &&
+            Objects.equals(otherSites, that.otherSites) &&
             Objects.equals(wte, that.wte) &&
             Objects.equals(grade, that.grade) &&
             Objects.equals(specialty1, that.specialty1) &&
@@ -178,6 +188,7 @@ public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervis
     sb.append(", dateTo=").append(dateTo);
     sb.append(", placementType='").append(placementType).append('\'');
     sb.append(", site='").append(site).append('\'');
+    sb.append(", otherSites='").append(otherSites).append('\'');
     sb.append(", wte='").append(wte).append('\'');
     sb.append(", grade='").append(grade).append('\'');
     sb.append(", specialty1='").append(specialty1).append('\'');
