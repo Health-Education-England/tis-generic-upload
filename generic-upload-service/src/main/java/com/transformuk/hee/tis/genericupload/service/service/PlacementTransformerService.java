@@ -489,6 +489,17 @@ public class PlacementTransformerService {
     Set<String> siteNames = placementXLSS.stream()
         .map(PlacementXLS::getSite)
         .collect(Collectors.toSet());
+
+    // add other sites
+    for (PlacementXLS placementXLS: placementXLSS) {
+      String otherSitesCommaSeperated = placementXLS.getOtherSites();
+      if (!StringUtils.isEmpty(otherSitesCommaSeperated)) {
+        String[] otherSites = otherSitesCommaSeperated.split(",");
+        for (String site: otherSites) {
+          siteNames.add(site);
+        }
+      }
+    }
     Map<String, SiteDTO> siteMapByName = new HashMap<>();
     for (String siteName : siteNames) {
       List<SiteDTO> sitesByName = referenceServiceImpl.findSitesByName(siteName);
