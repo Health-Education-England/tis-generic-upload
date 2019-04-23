@@ -237,7 +237,7 @@ public class PlacementTransformerService {
   public void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, boolean updatePlacement, String username) {
     setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
     setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
-    updateOtherSites(placementXLS, placementDTO, referenceServiceImpl::findSitesByName);
+    setOtherSites(placementXLS, placementDTO, referenceServiceImpl::findSitesByName);
     Set<String> clinicalSupervisorRoles = referenceServiceImpl.getRolesByCategory(1L).stream()
         .map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
         .collect(Collectors.toSet());
@@ -515,7 +515,7 @@ public class PlacementTransformerService {
   }
 
   // ***** Other Sites *****
-  void updateOtherSites(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO,
+  void setOtherSites(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO,
                    Function<String, List<SiteDTO>> getSiteDTOsForName) {
     Set<PlacementSiteDTO> placementSiteDTOS = placementDTO.getSites();
     if (placementSiteDTOS == null) {

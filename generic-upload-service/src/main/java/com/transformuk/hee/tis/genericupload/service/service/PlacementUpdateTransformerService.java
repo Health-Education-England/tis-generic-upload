@@ -11,13 +11,9 @@ import com.transformuk.hee.tis.genericupload.service.service.supervisor.Supervis
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
-import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
-import com.transformuk.hee.tis.tcs.api.dto.PlacementCommentDTO;
-import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
-import com.transformuk.hee.tis.tcs.api.dto.PlacementSpecialtyDTO;
-import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
-import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.dto.*;
 import com.transformuk.hee.tis.tcs.api.enumeration.CommentSource;
+import com.transformuk.hee.tis.tcs.api.enumeration.PlacementSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import org.slf4j.Logger;
@@ -58,6 +54,8 @@ public class PlacementUpdateTransformerService {
   private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
   public static final String CLINICAL_SUPERVISOR = "Clinical supervisor";
   public static final String EDUCATIONAL_SUPERVISOR = "Educational supervisor";
+  private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
+  private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -155,6 +153,7 @@ public class PlacementUpdateTransformerService {
 
     setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, dbPlacementDetailsDTO);
     setSpecialties(placementXLS, dbPlacementDetailsDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here
+    setOtherSites(placementXLS, dbPlacementDetailsDTO, referenceServiceImpl::findSitesByName);
     // and relies on the api to assign the Id
     Set<String> clinicalSupervisorRoles = referenceServiceImpl.getRolesByCategory(1L).stream()
         .map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
@@ -370,5 +369,69 @@ public class PlacementUpdateTransformerService {
       }
     }
     return siteMapByName;
+  }
+
+  // ***** Other Sites *****
+  void setOtherSites(PlacementUpdateXLS placementXLS, PlacementDetailsDTO placementDTO,
+                     Function<String, List<SiteDTO>> getSiteDTOsForName) {
+    Set<PlacementSiteDTO> placementSiteDTOS = placementDTO.getSites();
+    if (placementSiteDTOS == null) {
+      placementSiteDTOS = initialiseNewPlacementSiteDTOS(placementDTO);
+    }
+    String otherSitesCommaSeperated = placementXLS.getOtherSites();
+    if (otherSitesCommaSeperated != null) {
+      String[] otherSites = otherSitesCommaSeperated.split(",");
+      for (String otherSite : otherSites) {
+        Optional<PlacementSiteDTO> placementSiteDTOOptional2 = buildPlacementSiteDTO(placementXLS, placementDTO, getSiteDTOsForName, otherSite, PlacementSiteType.OTHER);
+        if (placementSiteDTOOptional2.isPresent()) {
+          PlacementSiteDTO placementSiteDTO = placementSiteDTOOptional2.get();
+          addDTOIfNotPresentAsPrimaryOrOther1(placementSiteDTOS, placementSiteDTO);
+        }
+      }
+    }
+  }
+
+  private Set<PlacementSiteDTO> initialiseNewPlacementSiteDTOS(PlacementDetailsDTO placementDTO) {
+    Set<PlacementSiteDTO> placmentSiteDTOS = new HashSet<>();
+    placementDTO.setSites(placmentSiteDTOS);
+    return placmentSiteDTOS;
+  }
+
+  private void addDTOIfNotPresentAsPrimaryOrOther1(Set<PlacementSiteDTO> placmentSiteDTOS,
+                                                   PlacementSiteDTO placmentSiteDTO) {
+    if (placmentSiteDTOS.isEmpty()) {
+      placmentSiteDTOS.add(placmentSiteDTO);
+    } else if (!placmentSiteDTOS.contains(placmentSiteDTO)) {
+      placmentSiteDTO.setPlacementSiteType(PlacementSiteType.OTHER);
+      placmentSiteDTOS.add(placmentSiteDTO);
+    }
+  }
+
+  private Optional<PlacementSiteDTO> buildPlacementSiteDTO(PlacementUpdateXLS placementXLS, PlacementDetailsDTO placementDTO,
+                                                           Function<String, List<SiteDTO>> getSiteDTOsForName,
+                                                           String siteName, PlacementSiteType siteType) {
+    Optional<SiteDTO> aSingleValidSite = getASingleValidSiteFromTheReferenceService(placementXLS, getSiteDTOsForName, siteName);
+    if (aSingleValidSite.isPresent()) {
+      SiteDTO siteDTO = aSingleValidSite.get();
+      PlacementSiteDTO placementSiteDTO = new PlacementSiteDTO(placementDTO.getId(), siteDTO.getId(), siteType);
+      return Optional.of(placementSiteDTO);
+    }
+    return Optional.empty();
+  }
+
+  private Optional<SiteDTO> getASingleValidSiteFromTheReferenceService(PlacementUpdateXLS placementXLS, Function<String,
+      List<SiteDTO>> getSiteDTOsForName, String siteName) {
+    if (!StringUtils.isEmpty(siteName)) {
+      List<SiteDTO> siteByName = getSiteDTOsForName.apply(siteName);
+      if (siteByName != null) {
+        if (siteByName.size() == 1) {
+          return Optional.of(siteByName.get(0));
+        } else {
+          String errorMessage = siteByName.isEmpty() ? DID_NOT_FIND_OTHER_SITE_FOR_NAME : FOUND_MULTIPLE_OTHER_SITES_FOR_NAME;
+          placementXLS.addErrorMessage(String.format(errorMessage, siteName));
+        }
+      }
+    }
+    return Optional.empty();
   }
 }
