@@ -16,6 +16,7 @@ import com.transformuk.hee.tis.genericupload.service.service.supervisor.RegNumbe
 import com.transformuk.hee.tis.genericupload.service.service.supervisor.SupervisorRegNumberIdService;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
+import com.transformuk.hee.tis.reference.api.enums.Status;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.*;
 import com.transformuk.hee.tis.tcs.api.enumeration.CommentSource;
@@ -73,6 +74,8 @@ public class PlacementTransformerService {
   public static final String EDUCATIONAL_SUPERVISOR = "Educational supervisor";
   private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
+  private static final String OTHER_SITE_FOR_NAME_IS_NOT_CURRENT = "Other site for name \"%s\" is not current.";
+  private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -192,7 +195,7 @@ public class PlacementTransformerService {
       LocalDate dateTo = convertDate(placementXLS.getDateTo());
       boolean existingPlacementUpdatedOrDeleted = false;
       if (!placementsByPostIdAndPersonId.isEmpty()) {
-        existingPlacementUpdatedOrDeleted = updateOrDeleteExistingPlacement(regNumberToDTOLookup, siteMapByName, gradeMapByName, placementXLS, placementsByPostIdAndPersonId, dateFrom, dateTo, existingPlacementUpdatedOrDeleted, username);
+        existingPlacementUpdatedOrDeleted = updateOrDeleteExistingPlacement(regNumberToDTOLookup, siteMapByName, gradeMapByName, placementXLS, placementsByPostIdAndPersonId, dateFrom, dateTo, existingPlacementUpdatedOrDeleted, username, postDTO);
       }
       if (placementsByPostIdAndPersonId.isEmpty() || !existingPlacementUpdatedOrDeleted) {
         PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
@@ -200,19 +203,19 @@ public class PlacementTransformerService {
         placementDTO.setPostId(postDTO.getId());
         placementDTO.setDateFrom(dateFrom);
         placementDTO.setDateTo(dateTo);
-        saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, false, username);
+        saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, false, username, postDTO);
       }
     }
   }
 
-  private boolean updateOrDeleteExistingPlacement(RegNumberToDTOLookup regNumberToDTOLookup, Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, List<PlacementDetailsDTO> placementsByPostIdAndPersonId, LocalDate dateFrom, LocalDate dateTo, boolean existingPlacementUpdatedOrDeleted, String username) {
+  private boolean updateOrDeleteExistingPlacement(RegNumberToDTOLookup regNumberToDTOLookup, Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, List<PlacementDetailsDTO> placementsByPostIdAndPersonId, LocalDate dateFrom, LocalDate dateTo, boolean existingPlacementUpdatedOrDeleted, String username, PostDTO postDTO) {
     for (PlacementDetailsDTO placementDTO : placementsByPostIdAndPersonId) {
       if (dateFrom.equals(placementDTO.getDateFrom()) && dateTo.equals(placementDTO.getDateTo())) {
         if ("DELETE".equalsIgnoreCase(placementXLS.getPlacementStatus())) {
           tcsServiceImpl.deletePlacement(placementDTO.getId());
           placementXLS.setSuccessfullyImported(true);
         } else {
-          saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, true, username);
+          saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXLS, placementDTO, regNumberToDTOLookup, true, username, postDTO);
         }
         existingPlacementUpdatedOrDeleted = true;
         break;
@@ -234,10 +237,10 @@ public class PlacementTransformerService {
     return true;
   }
 
-  public void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, boolean updatePlacement, String username) {
+  private void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS, PlacementDetailsDTO placementDTO, RegNumberToDTOLookup regNumberToDTOLookup, boolean updatePlacement, String username, PostDTO postDTO) {
     setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, placementDTO);
     setSpecialties(placementXLS, placementDTO, tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
-    setOtherSites(placementXLS, placementDTO, referenceServiceImpl::findSitesByName);
+    setOtherSites(placementXLS, placementDTO, referenceServiceImpl::findSitesByName, postDTO);
     Set<String> clinicalSupervisorRoles = referenceServiceImpl.getRolesByCategory(1L).stream()
         .map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
         .collect(Collectors.toSet());
@@ -516,7 +519,7 @@ public class PlacementTransformerService {
 
   // ***** Other Sites *****
   void setOtherSites(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO,
-                   Function<String, List<SiteDTO>> getSiteDTOsForName) {
+                   Function<String, List<SiteDTO>> getSiteDTOsForName, PostDTO postDTO) {
     Set<PlacementSiteDTO> placementSiteDTOS = placementDTO.getSites();
     if (placementSiteDTOS == null) {
       placementSiteDTOS = initialiseNewPlacementSiteDTOS(placementDTO);
@@ -525,7 +528,7 @@ public class PlacementTransformerService {
     if (otherSitesCommaSeperated != null) {
       String[] otherSites = otherSitesCommaSeperated.split(",");
       for (String otherSite : otherSites) {
-        Optional<PlacementSiteDTO> placementSiteDTOOptional2 = buildPlacementSiteDTO(placementXLS, placementDTO, getSiteDTOsForName, otherSite, PlacementSiteType.OTHER);
+        Optional<PlacementSiteDTO> placementSiteDTOOptional2 = buildPlacementSiteDTO(placementXLS, placementDTO, getSiteDTOsForName, otherSite, PlacementSiteType.OTHER, postDTO);
         if (placementSiteDTOOptional2.isPresent()) {
           PlacementSiteDTO placementSiteDTO = placementSiteDTOOptional2.get();
           addDTOIfNotPresentAsPrimaryOrOther1(placementSiteDTOS, placementSiteDTO);
@@ -552,8 +555,8 @@ public class PlacementTransformerService {
 
   private Optional<PlacementSiteDTO> buildPlacementSiteDTO(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO,
                                                  Function<String, List<SiteDTO>> getSiteDTOsForName,
-                                                 String siteName, PlacementSiteType siteType) {
-    Optional<SiteDTO> aSingleValidSite = getASingleValidSiteFromTheReferenceService(placementXLS, getSiteDTOsForName, siteName);
+                                                 String siteName, PlacementSiteType siteType, PostDTO postDTO) {
+    Optional<SiteDTO> aSingleValidSite = getASingleValidSiteFromTheReferenceService(placementXLS, getSiteDTOsForName, siteName, postDTO);
     if (aSingleValidSite.isPresent()) {
       SiteDTO siteDTO = aSingleValidSite.get();
       PlacementSiteDTO placementSiteDTO = new PlacementSiteDTO(placementDTO.getId(), siteDTO.getId(), siteType);
@@ -563,12 +566,28 @@ public class PlacementTransformerService {
   }
 
   private Optional<SiteDTO> getASingleValidSiteFromTheReferenceService(PlacementXLS placementXLS, Function<String,
-      List<SiteDTO>> getSiteDTOsForName, String siteName) {
+      List<SiteDTO>> getSiteDTOsForName, String siteName, PostDTO postDTO) {
     if (!StringUtils.isEmpty(siteName)) {
       List<SiteDTO> siteByName = getSiteDTOsForName.apply(siteName);
       if (siteByName != null) {
         if (siteByName.size() == 1) {
-          return Optional.of(siteByName.get(0));
+          // identify if site is current
+          if (siteByName.get(0).getStatus() != Status.CURRENT)
+          {
+            placementXLS.addErrorMessage(String.format(OTHER_SITE_FOR_NAME_IS_NOT_CURRENT, siteName));
+          } else {
+            // identify if the siteId exists in parent Post
+            Set<PostSiteDTO> parentPostSites = postDTO.getSites();
+            long siteId = siteByName.get(0).getId();
+            long count = parentPostSites.stream()
+                .filter(s -> s.getSiteId() == siteId)
+                .count();
+            if (count <= 0) {
+              placementXLS.addErrorMessage(String.format(DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME, siteName));
+            } else {
+              return Optional.of(siteByName.get(0));
+            }
+          }
         } else {
           String errorMessage = siteByName.isEmpty() ? DID_NOT_FIND_OTHER_SITE_FOR_NAME : FOUND_MULTIPLE_OTHER_SITES_FOR_NAME;
           placementXLS.addErrorMessage(String.format(errorMessage, siteName));
