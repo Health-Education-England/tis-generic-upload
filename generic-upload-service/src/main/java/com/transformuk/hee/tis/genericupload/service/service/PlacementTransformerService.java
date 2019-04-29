@@ -74,7 +74,6 @@ public class PlacementTransformerService {
   public static final String EDUCATIONAL_SUPERVISOR = "Educational supervisor";
   private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
-  private static final String OTHER_SITE_FOR_NAME_IS_NOT_CURRENT = "Other site for name \"%s\" is not current.";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
 
   @Autowired
@@ -570,23 +569,18 @@ public class PlacementTransformerService {
     if (!StringUtils.isEmpty(siteName)) {
       List<SiteDTO> siteByName = getSiteDTOsForName.apply(siteName);
       if (siteByName != null) {
+        siteByName = siteByName.stream().filter(site -> site.getStatus() == Status.CURRENT).collect(Collectors.toList());
         if (siteByName.size() == 1) {
-          // identify if site is current
-          if (siteByName.get(0).getStatus() != Status.CURRENT)
-          {
-            placementXLS.addErrorMessage(String.format(OTHER_SITE_FOR_NAME_IS_NOT_CURRENT, siteName));
+          // identify if the siteId exists in parent Post
+          Set<PostSiteDTO> parentPostSites = postDTO.getSites();
+          long siteId = siteByName.get(0).getId();
+          long count = parentPostSites.stream()
+              .filter(s -> s.getSiteId() == siteId)
+              .count();
+          if (count <= 0) {
+            placementXLS.addErrorMessage(String.format(DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME, siteName));
           } else {
-            // identify if the siteId exists in parent Post
-            Set<PostSiteDTO> parentPostSites = postDTO.getSites();
-            long siteId = siteByName.get(0).getId();
-            long count = parentPostSites.stream()
-                .filter(s -> s.getSiteId() == siteId)
-                .count();
-            if (count <= 0) {
-              placementXLS.addErrorMessage(String.format(DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME, siteName));
-            } else {
-              return Optional.of(siteByName.get(0));
-            }
+            return Optional.of(siteByName.get(0));
           }
         } else {
           String errorMessage = siteByName.isEmpty() ? DID_NOT_FIND_OTHER_SITE_FOR_NAME : FOUND_MULTIPLE_OTHER_SITES_FOR_NAME;
