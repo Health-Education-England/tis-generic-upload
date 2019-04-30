@@ -175,7 +175,7 @@ public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervis
   @Override
   public int hashCode() {
 
-    return Objects.hash(placementId, intrepidId, nationalPostNumber, dateFrom, dateTo, placementType, site, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
+    return Objects.hash(placementId, intrepidId, nationalPostNumber, dateFrom, dateTo, placementType, site, otherSites, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
   }
 
   @Override
