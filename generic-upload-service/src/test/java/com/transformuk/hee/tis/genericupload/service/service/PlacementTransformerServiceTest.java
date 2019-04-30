@@ -1,9 +1,9 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
-import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
-import com.transformuk.hee.tis.tcs.api.dto.PlacementSpecialtyDTO;
-import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
+import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
+import com.transformuk.hee.tis.tcs.api.dto.*;
+import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import org.junit.Before;
@@ -16,6 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PlacementTransformerServiceTest {
 	public static final String ANOTHER = "12345another";
 	PlacementTransformerService placementTransformerService;
+	private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name";
+	private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name";
+	private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name";
 
 	@Before
 	public void initialise() throws Exception {
@@ -25,8 +28,12 @@ public class PlacementTransformerServiceTest {
 
 	static Map<String, List<SpecialtyDTO>> specialtyByName, specialtyByNameWithDuplicate;
 
+	static Map<String, List<SiteDTO>> siteByName;
+
 	private PlacementXLS placementXLS;
 	PlacementDetailsDTO placementDTO;
+
+	private PostDTO postDTO;
 
 	private static SpecialtyDTO createSpeciltyDTO(Long id, String intrepidId, String name, String college, String specialtyCode, Status status ){
 		SpecialtyDTO specialtyDTO = new SpecialtyDTO();
@@ -39,12 +46,29 @@ public class PlacementTransformerServiceTest {
 		return specialtyDTO;
 	}
 
+	private static SiteDTO createSiteDTO(Long id, String siteKnownAs, com.transformuk.hee.tis.reference.api.enums.Status status) {
+		SiteDTO siteDTO = new SiteDTO();
+		siteDTO.setId(id);
+		siteDTO.setSiteKnownAs(siteKnownAs);
+		siteDTO.setStatus(status);
+		return siteDTO;
+	}
+
 	public static List<SpecialtyDTO> getSpecialtiesForString(String specialtyName) {
 		return specialtyByName.get(specialtyName);
 	}
 
 	public static List<SpecialtyDTO> getSpecialtiesWithDuplicatesForSpecialtyName(String specialtyName) {
 		return specialtyByNameWithDuplicate.get(specialtyName);
+	}
+
+	public static List<SiteDTO> getSitesForString(String siteName) {
+		List<SiteDTO> ret = siteByName.get(siteName);
+		if (ret == null) {
+			return new ArrayList<SiteDTO>();
+		} else {
+			return ret;
+		}
 	}
 
 	public void initialiseData() throws Exception {
@@ -63,6 +87,16 @@ public class PlacementTransformerServiceTest {
 		placementXLS = createPlacementXLS("forename", "surname", "7000010", "WMD/5AT01/085/ST1/001", specialtyDTO.getName());
 
 		placementDTO = new PlacementDetailsDTO();
+
+		SiteDTO siteDTO = createSiteDTO(1L, "mockedSite", com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+		siteByName = new HashMap<>();
+		addSitesList(siteByName, siteDTO);
+
+		// initialise postDTO
+		Set<PostSiteDTO> sites = new HashSet<>();
+		sites.add(new PostSiteDTO(1L, 1L, PostSiteType.OTHER));
+		postDTO = new PostDTO();
+		postDTO.setSites(sites);
 	}
 
 	public PlacementXLS createPlacementXLS(String forename, String surname, String gmcNumber, String npn, String specialtyName) {
@@ -81,6 +115,13 @@ public class PlacementTransformerServiceTest {
 		} else {
 			throw new Exception("Duplicated specialtyDTO : " + specialtyDTO.getName());
 		}
+	}
+
+	public void addSitesList(Map<String, List<SiteDTO>> siteByName, SiteDTO siteDTO){
+		if(siteByName.get(siteDTO.getSiteKnownAs()) == null) {
+			siteByName.put(siteDTO.getSiteKnownAs(), new ArrayList<>());
+		}
+		siteByName.get(siteDTO.getSiteKnownAs()).add(siteDTO);
 	}
 
 	@Test
@@ -168,5 +209,46 @@ public class PlacementTransformerServiceTest {
 				assertThat(placementSpecialtyDTOFromPlacement.getPlacementSpecialtyType()).isEqualTo(PostSpecialtyType.PRIMARY);
 			}
 		}
+	}
+
+	@Test
+	public void shouldNotSetAnUnknownOtherSites() {
+		placementXLS.setOtherSites("Unknown");
+		placementTransformerService.setOtherSites(placementXLS, placementDTO, PlacementTransformerServiceTest::getSitesForString, postDTO);
+		assertThat(placementDTO.getSites().size()).isEqualTo(0);
+		assertThat(placementXLS.getErrorMessage()).contains(DID_NOT_FIND_OTHER_SITE_FOR_NAME);
+	}
+
+	@Test
+	public void ShouldSetOtherSitesOnParentPost() {
+		placementXLS.setOtherSites("mockedSite");
+		placementTransformerService.setOtherSites(placementXLS, placementDTO, PlacementTransformerServiceTest::getSitesForString, postDTO);
+		assertThat(placementDTO.getSites().size()).isEqualTo(1);
+		assertThat(placementXLS.getErrorMessage()).isNull();
+	}
+
+	@Test
+	public void ShouldNotSetOtherSitesNotOnParentPost() {
+		placementXLS.setOtherSites("mockedSite");
+
+		Set<PostSiteDTO> sites = new HashSet<>();
+		sites.add(new PostSiteDTO(1L, 2L, PostSiteType.OTHER));
+		postDTO = new PostDTO();
+		postDTO.setSites(sites);
+
+		placementTransformerService.setOtherSites(placementXLS, placementDTO, PlacementTransformerServiceTest::getSitesForString, postDTO);
+		assertThat(placementDTO.getSites().size()).isEqualTo(0);
+		assertThat(placementXLS.getErrorMessage()).contains(DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME);
+	}
+
+	@Test
+	public void ShouldNotSetOtherSitesWhenMultipleFound() {
+		placementXLS.setOtherSites("mockedSite");
+
+		SiteDTO siteDTO = createSiteDTO(2L, "mockedSite", com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+		addSitesList(siteByName, siteDTO);
+		placementTransformerService.setOtherSites(placementXLS, placementDTO, PlacementTransformerServiceTest::getSitesForString, postDTO);
+		assertThat(placementDTO.getSites().size()).isEqualTo(0);
+		assertThat(placementXLS.getErrorMessage()).contains(FOUND_MULTIPLE_OTHER_SITES_FOR_NAME);
 	}
 }

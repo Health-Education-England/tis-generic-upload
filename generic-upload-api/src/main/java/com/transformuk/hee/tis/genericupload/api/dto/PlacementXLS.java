@@ -14,6 +14,7 @@ public class PlacementXLS extends TemplateXLS implements PlacementSupervisor{
 	private String placementType;
 	private String placementStatus;
 	private String site;
+	private String otherSites;
 	private Float wte;
 	private String grade;
 	private String specialty1;
@@ -103,6 +104,14 @@ public class PlacementXLS extends TemplateXLS implements PlacementSupervisor{
 		this.site = site;
 	}
 
+	public String getOtherSites() {
+		return otherSites;
+	}
+
+	public void setOtherSites(String otherSites) {
+		this.otherSites = otherSites;
+	}
+
 	public Float getWte() {
 		return wte;
 	}
@@ -182,6 +191,7 @@ public class PlacementXLS extends TemplateXLS implements PlacementSupervisor{
 				Objects.equals(placementType, that.placementType) &&
 				Objects.equals(placementStatus, that.placementStatus) &&
 				Objects.equals(site, that.site) &&
+				Objects.equals(otherSites, that.otherSites) &&
 				Objects.equals(wte, that.wte) &&
 				Objects.equals(grade, that.grade) &&
 				Objects.equals(specialty1, that.specialty1) &&
@@ -194,7 +204,7 @@ public class PlacementXLS extends TemplateXLS implements PlacementSupervisor{
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(surname, gmcNumber, gdcNumber, publicHealthNumber, nationalPostNumber, dateFrom, dateTo, placementType, placementStatus, site, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
+		return Objects.hash(surname, gmcNumber, gdcNumber, publicHealthNumber, nationalPostNumber, dateFrom, dateTo, placementType, placementStatus, site, otherSites, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
 	}
 
 	@Override
@@ -210,6 +220,7 @@ public class PlacementXLS extends TemplateXLS implements PlacementSupervisor{
 		sb.append(", placementType='").append(placementType).append('\'');
 		sb.append(", placementStatus='").append(placementStatus).append('\'');
 		sb.append(", site='").append(site).append('\'');
+		sb.append(", otherSite='").append(otherSites).append('\'');
 		sb.append(", wte='").append(wte).append('\'');
 		sb.append(", grade='").append(grade).append('\'');
 		sb.append(", specialty1='").append(specialty1).append('\'');

@@ -30,7 +30,7 @@ public class PlacementHeaderMapperTest {
     // Perform assertions.
     MatcherAssert
         .assertThat("The number of fields did not contain the expected value.", fieldMap.size(),
-            CoreMatchers.is(18));
+            CoreMatchers.is(19));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("surname", "Surname*")));
@@ -63,6 +63,9 @@ public class PlacementHeaderMapperTest {
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("site", "Site*")));
+    MatcherAssert
+        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
+            CoreMatchers.hasItem(Maps.immutableEntry("otherSites", "Other Sites")));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("wte", "WTE*")));

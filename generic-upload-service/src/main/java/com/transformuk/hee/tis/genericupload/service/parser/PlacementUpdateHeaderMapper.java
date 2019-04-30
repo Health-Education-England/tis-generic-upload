@@ -13,6 +13,7 @@ public class PlacementUpdateHeaderMapper extends ColumnMapper {
       new ColumnMapping("dateTo", "Date To"),
       new ColumnMapping("placementType", "Placement Type"),
       new ColumnMapping("site", "Site"),
+      new ColumnMapping("otherSites", "Other Sites"),
       new ColumnMapping("wte", "WTE"),
       new ColumnMapping("grade", "Grade"),
       new ColumnMapping("specialty1", "Specialty1"),
