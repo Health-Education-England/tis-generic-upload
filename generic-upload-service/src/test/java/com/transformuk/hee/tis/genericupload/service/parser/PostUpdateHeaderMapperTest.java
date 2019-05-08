@@ -73,7 +73,7 @@ public class PostUpdateHeaderMapperTest {
             CoreMatchers.hasItem(Maps.immutableEntry("owner", "Owner")));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("rotation", "Rotation")));
+            CoreMatchers.hasItem(Maps.immutableEntry("rotations", "Rotations")));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("status", "Status")));

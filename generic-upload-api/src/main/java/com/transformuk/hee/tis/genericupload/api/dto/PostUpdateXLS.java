@@ -1,6 +1,5 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
-import java.util.Date;
 import java.util.Objects;
 
 public class PostUpdateXLS extends TemplateXLS {
@@ -18,7 +17,7 @@ public class PostUpdateXLS extends TemplateXLS {
   private String employingBody;
   private String programmeTisId;
   private String owner;
-  private String rotation;
+  private String rotations;
   private String status;
   private String oldPost;
 
@@ -126,12 +125,12 @@ public class PostUpdateXLS extends TemplateXLS {
     this.owner = owner;
   }
 
-  public String getRotation() {
-    return rotation;
+  public String getRotations() {
+    return rotations;
   }
 
-  public void setRotation(String rotation) {
-    this.rotation = rotation;
+  public void setRotations(String rotations) {
+    this.rotations = rotations;
   }
 
   public String getStatus() {
@@ -172,7 +171,7 @@ public class PostUpdateXLS extends TemplateXLS {
         Objects.equals(getEmployingBody(), that.getEmployingBody()) &&
         Objects.equals(getProgrammeTisId(), that.getProgrammeTisId()) &&
         Objects.equals(getOwner(), that.getOwner()) &&
-        Objects.equals(getRotation(), that.getRotation()) &&
+        Objects.equals(getRotations(), that.getRotations()) &&
         Objects.equals(getStatus(), that.getStatus()) &&
         Objects.equals(getOldPost(), that.getOldPost());
   }
@@ -182,7 +181,7 @@ public class PostUpdateXLS extends TemplateXLS {
     return Objects.hash(getPostTISId(), getApprovedGrade(), getOtherGrades(), getSpecialty(),
         getOtherSpecialties(), getSubSpecialties(), getTrainingDescription(), getMainSite(),
         getOtherSites(), getTrainingBody(), getEmployingBody(), getProgrammeTisId(), getOwner(),
-        getRotation(), getStatus(), getOldPost());
+        getRotations(), getStatus(), getOldPost());
   }
 
   @Override
@@ -201,7 +200,7 @@ public class PostUpdateXLS extends TemplateXLS {
     sb.append(", employingBody='").append(employingBody).append('\'');
     sb.append(", programmeTisId='").append(programmeTisId).append('\'');
     sb.append(", owner='").append(owner).append('\'');
-    sb.append(", rotation='").append(rotation).append('\'');
+    sb.append(", rotations='").append(rotations).append('\'');
     sb.append(", status='").append(status).append('\'');
     sb.append(", oldPost='").append(oldPost).append('\'');
     sb.append('}');

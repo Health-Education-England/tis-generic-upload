@@ -13,6 +13,8 @@ import com.transformuk.hee.tis.tcs.api.dto.PostGradeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
+import com.transformuk.hee.tis.tcs.api.dto.RotationDTO;
+import com.transformuk.hee.tis.tcs.api.dto.RotationPostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -39,10 +42,14 @@ import org.springframework.web.client.ResourceAccessException;
 public class PostUpdateTransformerService {
 
   private static final Logger logger = getLogger(PostUpdateTransformerService.class);
+  private static final String SEPARATOR = ";";
+
   private static final String DID_NOT_FIND_GRADE_FOR_NAME = "Did not find grade for name \"%s\".";
   private static final String FOUND_MULTIPLE_GRADES_FOR_NAME = "Found multiple grades for name \"%s\".";
   private static final String DID_NOT_FIND_PROGRAMMES_FOR_IDS = "Did not find current programmes with IDs \"%s\".";
   private static final String PROGRAMME_ID_NOT_A_NUMBER = "The programme ID \"%s\" is not a number.";
+  private static final String DID_NOT_FIND_ROTATION_FOR_NAME = "Did not find rotation for name \"%s\".";
+  private static final String FOUND_MULTIPLE_ROTATIONS_FOR_NAME = "Found multiple rotations for name \"%s\".";
   private static final String DID_NOT_FIND_SITE_FOR_NAME = "Did not find site for name \"%s\".";
   private static final String FOUND_MULTIPLE_SITES_FOR_NAME = "Found multiple sites for name \"%s\".";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name \"%s\".";
@@ -72,14 +79,14 @@ public class PostUpdateTransformerService {
 
   }
 
-  private void useMatchingCriteriaToUpdatePost(PostUpdateXLS postUpdateXLS, String username){
+  private void useMatchingCriteriaToUpdatePost(PostUpdateXLS postUpdateXLS, String username) {
     //TIS_PostID* //Should match to one of TIS_PostID's
     String postTISId = postUpdateXLS.getPostTISId();
-    if(!StringUtils.isEmpty(postTISId)){
+    if (!StringUtils.isEmpty(postTISId)) {
       //This getPostById() method is written in TCS service
       try {
         PostDTO dbPostDTO = tcsServiceImpl.getPostById(Long.valueOf(postUpdateXLS.getPostTISId()));
-        if(dbPostDTO != null) {
+        if (dbPostDTO != null) {
           updatePost(postUpdateXLS, dbPostDTO, username);
         } else {
           postUpdateXLS.addErrorMessage(String.format(DID_NOT_FIND_POST_FOR_ID, postTISId));
@@ -90,7 +97,7 @@ public class PostUpdateTransformerService {
     }
   }
 
-  private void updatePost(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO, String username){
+  private void updatePost(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO, String username) {
     updateGrades(postUpdateXLS, dbPostDTO, referenceServiceImpl::findGradesByName);
     setSpecialties(postUpdateXLS, dbPostDTO, tcsServiceImpl::getSpecialtyByName);
     updateSites(postUpdateXLS, dbPostDTO, referenceServiceImpl::findSitesByName);
@@ -98,11 +105,12 @@ public class PostUpdateTransformerService {
     updateTrainingDescription(postUpdateXLS, dbPostDTO);
     updateProgrammes(postUpdateXLS, dbPostDTO, tcsServiceImpl::findProgrammesIn);
     updateTrustReferences(postUpdateXLS, dbPostDTO, referenceServiceImpl::findTrustByTrustKnownAs);
+    updateRotations(postUpdateXLS, dbPostDTO);
 
     // check status
     String postStatus = postUpdateXLS.getStatus();
     if (!StringUtils.isEmpty(postStatus)) {
-      if(EnumUtils.isValidEnum(Status.class, postStatus.toUpperCase())){
+      if (EnumUtils.isValidEnum(Status.class, postStatus.toUpperCase())) {
         dbPostDTO.setStatus(Status.valueOf(postStatus.toUpperCase()));
       } else {
         postUpdateXLS.addErrorMessage(GIVEN_POST_STATUS_IS_NOT_VALID);
@@ -138,7 +146,8 @@ public class PostUpdateTransformerService {
     if (postGradeDTOS == null) {
       postGradeDTOS = initialiseNewPostGradeDTOS(dbPostDTO);
     }
-    Optional<PostGradeDTO> postGradeDTOOptional1 = buildPostGradeDTO(postUpdateXLS, dbPostDTO, getGradeDTOsForName, postUpdateXLS.getApprovedGrade(), PostGradeType.APPROVED);
+    Optional<PostGradeDTO> postGradeDTOOptional1 = buildPostGradeDTO(postUpdateXLS, dbPostDTO,
+        getGradeDTOsForName, postUpdateXLS.getApprovedGrade(), PostGradeType.APPROVED);
     if (postGradeDTOOptional1.isPresent()) {
       postGradeDTOS = initialiseNewPostGradeDTOS(dbPostDTO);
       PostGradeDTO postGradeDTO = postGradeDTOOptional1.get();
@@ -148,7 +157,8 @@ public class PostUpdateTransformerService {
     if (otherGradesCommaSeparated != null) {
       String[] otherGrades = otherGradesCommaSeparated.split(",");
       for (String otherGrade : otherGrades) {
-        Optional<PostGradeDTO> postGradeDTOOptional2 = buildPostGradeDTO(postUpdateXLS, dbPostDTO, getGradeDTOsForName, otherGrade, PostGradeType.OTHER);
+        Optional<PostGradeDTO> postGradeDTOOptional2 = buildPostGradeDTO(postUpdateXLS, dbPostDTO,
+            getGradeDTOsForName, otherGrade, PostGradeType.OTHER);
         if (postGradeDTOOptional2.isPresent()) {
           PostGradeDTO postGradeDTO = postGradeDTOOptional2.get();
           addDTOIfNotPresentAsApprovedOrOther1(postGradeDTOS, postGradeDTO);
@@ -176,7 +186,8 @@ public class PostUpdateTransformerService {
   private Optional<PostGradeDTO> buildPostGradeDTO(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO,
       Function<String, List<GradeDTO>> getGradeDTOsForName,
       String gradeName, PostGradeType gradeType) {
-    Optional<GradeDTO> aSingleValidGrade = getASingleValidGradeFromTheReferenceService(postUpdateXLS, getGradeDTOsForName, gradeName);
+    Optional<GradeDTO> aSingleValidGrade = getASingleValidGradeFromTheReferenceService(
+        postUpdateXLS, getGradeDTOsForName, gradeName);
     if (aSingleValidGrade.isPresent()) {
       GradeDTO gradeDTO = aSingleValidGrade.get();
       PostGradeDTO postGradeDTO = new PostGradeDTO(dbPostDTO.getId(), gradeDTO.getId(), gradeType);
@@ -185,7 +196,9 @@ public class PostUpdateTransformerService {
     return Optional.empty();
   }
 
-  private Optional<GradeDTO> getASingleValidGradeFromTheReferenceService(PostUpdateXLS postUpdateXLS, Function<String, List<GradeDTO>> getGradeDTOsForName, String gradeName) {
+  private Optional<GradeDTO> getASingleValidGradeFromTheReferenceService(
+      PostUpdateXLS postUpdateXLS, Function<String, List<GradeDTO>> getGradeDTOsForName,
+      String gradeName) {
     if (!StringUtils.isEmpty(gradeName)) {
       List<GradeDTO> gradeByName = getGradeDTOsForName.apply(gradeName);
       if (gradeByName != null) {
@@ -193,7 +206,8 @@ public class PostUpdateTransformerService {
         if (gradeByName.size() == 1) {
           return Optional.of(gradeByName.get(0));
         } else {
-          String errorMessage = gradeByName.isEmpty() ? DID_NOT_FIND_GRADE_FOR_NAME : FOUND_MULTIPLE_GRADES_FOR_NAME;
+          String errorMessage =
+              gradeByName.isEmpty() ? DID_NOT_FIND_GRADE_FOR_NAME : FOUND_MULTIPLE_GRADES_FOR_NAME;
           postUpdateXLS.addErrorMessage(String.format(errorMessage, gradeName));
         }
       }
@@ -209,7 +223,9 @@ public class PostUpdateTransformerService {
     if (postSpecialtyDTOS == null) {
       postSpecialtyDTOS = initialiseNewPostSpecialtyDTOS(dbPostDTO);
     }
-    Optional<PostSpecialtyDTO> postSpecialtyDTOOptional1 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, postUpdateXLS.getSpecialty(), PostSpecialtyType.PRIMARY);
+    Optional<PostSpecialtyDTO> postSpecialtyDTOOptional1 = buildPostSpecialtyDTO(postUpdateXLS,
+        dbPostDTO, getSpecialtyDTOsForName, postUpdateXLS.getSpecialty(),
+        PostSpecialtyType.PRIMARY);
     if (postSpecialtyDTOOptional1.isPresent()) {
       postSpecialtyDTOS = initialiseNewPostSpecialtyDTOS(dbPostDTO);
       PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional1.get();
@@ -219,7 +235,8 @@ public class PostUpdateTransformerService {
     if (otherSpecialtiesCommaSeperated != null) {
       String[] otherSpecialties = otherSpecialtiesCommaSeperated.split(",");
       for (String otherSpecialty : otherSpecialties) {
-        Optional<PostSpecialtyDTO> postSpecialtyDTOOptional2 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, otherSpecialty, PostSpecialtyType.OTHER);
+        Optional<PostSpecialtyDTO> postSpecialtyDTOOptional2 = buildPostSpecialtyDTO(postUpdateXLS,
+            dbPostDTO, getSpecialtyDTOsForName, otherSpecialty, PostSpecialtyType.OTHER);
         if (postSpecialtyDTOOptional2.isPresent()) {
           PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional2.get();
           postSpecialtyDTOS.add(postSpecialtyDTO);
@@ -230,7 +247,8 @@ public class PostUpdateTransformerService {
     if (subSpecialtiesCommaSeperated != null) {
       String[] subSpecialties = subSpecialtiesCommaSeperated.split(",");
       for (String subSpecialty : subSpecialties) {
-        Optional<PostSpecialtyDTO> postSpecialtyDTOOptional3 = buildPostSpecialtyDTO(postUpdateXLS, dbPostDTO, getSpecialtyDTOsForName, subSpecialty, PostSpecialtyType.SUB_SPECIALTY);
+        Optional<PostSpecialtyDTO> postSpecialtyDTOOptional3 = buildPostSpecialtyDTO(postUpdateXLS,
+            dbPostDTO, getSpecialtyDTOsForName, subSpecialty, PostSpecialtyType.SUB_SPECIALTY);
         if (postSpecialtyDTOOptional3.isPresent()) {
           PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional3.get();
           postSpecialtyDTOS.add(postSpecialtyDTO);
@@ -249,16 +267,19 @@ public class PostUpdateTransformerService {
       PostDTO dbPostDTO,
       Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName,
       String specialtyName, PostSpecialtyType specialityType) {
-    Optional<SpecialtyDTO> aSingleValidSpecialty = getASingleValidSpecialtyFromTheReferenceService(postUpdateXLS, getSpecialtyDTOsForName, specialtyName);
+    Optional<SpecialtyDTO> aSingleValidSpecialty = getASingleValidSpecialtyFromTheReferenceService(
+        postUpdateXLS, getSpecialtyDTOsForName, specialtyName);
     if (aSingleValidSpecialty.isPresent()) {
       SpecialtyDTO specialtyDTO = aSingleValidSpecialty.get();
-      PostSpecialtyDTO postSpecialtyDTO = new PostSpecialtyDTO(dbPostDTO.getId(), specialtyDTO, specialityType);
+      PostSpecialtyDTO postSpecialtyDTO = new PostSpecialtyDTO(dbPostDTO.getId(), specialtyDTO,
+          specialityType);
       return Optional.of(postSpecialtyDTO);
     }
     return Optional.empty();
   }
 
-  private Optional<SpecialtyDTO> getASingleValidSpecialtyFromTheReferenceService(PostUpdateXLS postUpdateXLS, Function<String,
+  private Optional<SpecialtyDTO> getASingleValidSpecialtyFromTheReferenceService(
+      PostUpdateXLS postUpdateXLS, Function<String,
       List<SpecialtyDTO>> getSpecialtyDTOsForName, String specialtyName) {
     if (!StringUtils.isEmpty(specialtyName)) {
       List<SpecialtyDTO> specialtyByName = getSpecialtyDTOsForName.apply(specialtyName);
@@ -267,7 +288,8 @@ public class PostUpdateTransformerService {
         if (specialtyByName.size() == 1) {
           return Optional.of(specialtyByName.get(0));
         } else {
-          String errorMessage = specialtyByName.isEmpty() ? DID_NOT_FIND_SPECIALTY_FOR_NAME : FOUND_MULTIPLE_SPECIALTIES_FOR_NAME;
+          String errorMessage = specialtyByName.isEmpty() ? DID_NOT_FIND_SPECIALTY_FOR_NAME
+              : FOUND_MULTIPLE_SPECIALTIES_FOR_NAME;
           postUpdateXLS.addErrorMessage(String.format(errorMessage, specialtyName));
         }
       }
@@ -284,21 +306,26 @@ public class PostUpdateTransformerService {
       dbPostDTO.setTrainingDescription(postUpdateXLS.getTrainingDescription());
     }
   }
+
   /******************Training Description ends here*****************************/
 
-  void updateTrustReferences(PostUpdateXLS postUpdateXls, PostDTO postDto, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs) {
+  void updateTrustReferences(PostUpdateXLS postUpdateXls, PostDTO postDto,
+      Function<String, List<TrustDTO>> findTrustsByTrustKnownAs) {
     // Update training body.
-      String trainingBody = postUpdateXls.getTrainingBody();
-      Long trainingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, trainingBody, findTrustsByTrustKnownAs, postDto.getTrainingBodyId());
-      postDto.setTrainingBodyId(trainingBodyId);
+    String trainingBody = postUpdateXls.getTrainingBody();
+    Long trainingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, trainingBody,
+        findTrustsByTrustKnownAs, postDto.getTrainingBodyId());
+    postDto.setTrainingBodyId(trainingBodyId);
 
-      // Update employing body.
-      String employingBody = postUpdateXls.getEmployingBody();
-      Long employingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, employingBody, findTrustsByTrustKnownAs, postDto.getEmployingBodyId());
-      postDto.setEmployingBodyId(employingBodyId);
+    // Update employing body.
+    String employingBody = postUpdateXls.getEmployingBody();
+    Long employingBodyId = getTrustIdFromTrustKnownAs(postUpdateXls, employingBody,
+        findTrustsByTrustKnownAs, postDto.getEmployingBodyId());
+    postDto.setEmployingBodyId(employingBodyId);
   }
 
-  private Long getTrustIdFromTrustKnownAs(PostUpdateXLS postUpdateXls, String trustKnownAs, Function<String, List<TrustDTO>> findTrustsByTrustKnownAs, Long defaultValue) {
+  private Long getTrustIdFromTrustKnownAs(PostUpdateXLS postUpdateXls, String trustKnownAs,
+      Function<String, List<TrustDTO>> findTrustsByTrustKnownAs, Long defaultValue) {
     if (trustKnownAs == null) {
       return defaultValue;
     }
@@ -308,7 +335,8 @@ public class PostUpdateTransformerService {
     if (trusts.size() == 1) {
       return trusts.get(0).getId();
     } else {
-      String errorMessage = trusts.isEmpty() ? DID_NOT_FIND_TRUST_FOR_NAME : FOUND_MULTIPLE_TRUSTS_FOR_NAME;
+      String errorMessage =
+          trusts.isEmpty() ? DID_NOT_FIND_TRUST_FOR_NAME : FOUND_MULTIPLE_TRUSTS_FOR_NAME;
       postUpdateXls.addErrorMessage(String.format(errorMessage, trustKnownAs));
       return defaultValue;
     }
@@ -321,7 +349,8 @@ public class PostUpdateTransformerService {
     if (postSiteDTOS == null) {
       postSiteDTOS = initialiseNewPostSiteDTOS(postDTO);
     }
-    Optional<PostSiteDTO> postSiteDTOOptional1 = buildPostSiteDTO(postUpdateXLS, postDTO, getSiteDTOsForName, postUpdateXLS.getMainSite(), PostSiteType.PRIMARY);
+    Optional<PostSiteDTO> postSiteDTOOptional1 = buildPostSiteDTO(postUpdateXLS, postDTO,
+        getSiteDTOsForName, postUpdateXLS.getMainSite(), PostSiteType.PRIMARY);
     if (postSiteDTOOptional1.isPresent()) {
       postSiteDTOS = initialiseNewPostSiteDTOS(postDTO);
       PostSiteDTO postSiteDTO = postSiteDTOOptional1.get();
@@ -331,7 +360,8 @@ public class PostUpdateTransformerService {
     if (otherSitesCommaSeperated != null) {
       String[] otherSites = otherSitesCommaSeperated.split(",");
       for (String otherSite : otherSites) {
-        Optional<PostSiteDTO> postSiteDTOOptional2 = buildPostSiteDTO(postUpdateXLS, postDTO, getSiteDTOsForName, otherSite, PostSiteType.OTHER);
+        Optional<PostSiteDTO> postSiteDTOOptional2 = buildPostSiteDTO(postUpdateXLS, postDTO,
+            getSiteDTOsForName, otherSite, PostSiteType.OTHER);
         if (postSiteDTOOptional2.isPresent()) {
           PostSiteDTO postSiteDTO = postSiteDTOOptional2.get();
           addDTOIfNotPresentAsPrimaryOrOther1(postSiteDTOS, postSiteDTO);
@@ -359,7 +389,8 @@ public class PostUpdateTransformerService {
   private Optional<PostSiteDTO> buildPostSiteDTO(PostUpdateXLS postUpdateXLS, PostDTO postDTO,
       Function<String, List<SiteDTO>> getSiteDTOsForName,
       String siteName, PostSiteType siteType) {
-    Optional<SiteDTO> aSingleValidSite = getASingleValidSiteFromTheReferenceService(postUpdateXLS, getSiteDTOsForName, siteName);
+    Optional<SiteDTO> aSingleValidSite = getASingleValidSiteFromTheReferenceService(postUpdateXLS,
+        getSiteDTOsForName, siteName);
     if (aSingleValidSite.isPresent()) {
       SiteDTO siteDTO = aSingleValidSite.get();
       PostSiteDTO postSiteDTO = new PostSiteDTO(postDTO.getId(), siteDTO.getId(), siteType);
@@ -368,8 +399,9 @@ public class PostUpdateTransformerService {
     return Optional.empty();
   }
 
-  private Optional<SiteDTO> getASingleValidSiteFromTheReferenceService(PostUpdateXLS postUpdateXLS, Function<String,
-      List<SiteDTO>> getSiteDTOsForName, String siteName) {
+  private Optional<SiteDTO> getASingleValidSiteFromTheReferenceService(PostUpdateXLS postUpdateXLS,
+      Function<String,
+          List<SiteDTO>> getSiteDTOsForName, String siteName) {
     if (!StringUtils.isEmpty(siteName)) {
       List<SiteDTO> siteByName = getSiteDTOsForName.apply(siteName);
       if (siteByName != null) {
@@ -377,7 +409,8 @@ public class PostUpdateTransformerService {
         if (siteByName.size() == 1) {
           return Optional.of(siteByName.get(0));
         } else {
-          String errorMessage = siteByName.isEmpty() ? DID_NOT_FIND_SITE_FOR_NAME : FOUND_MULTIPLE_SITES_FOR_NAME;
+          String errorMessage =
+              siteByName.isEmpty() ? DID_NOT_FIND_SITE_FOR_NAME : FOUND_MULTIPLE_SITES_FOR_NAME;
           postUpdateXLS.addErrorMessage(String.format(errorMessage, siteName));
         }
       }
@@ -387,28 +420,33 @@ public class PostUpdateTransformerService {
   /***************************Site ends here**********************************/
 
   /******************Owner starts here*****************************/
-  public void updateOwner(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO, Function<String, List<LocalOfficeDTO>> getLocalOfficeDTOsForName) {
+  public void updateOwner(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO,
+      Function<String, List<LocalOfficeDTO>> getLocalOfficeDTOsForName) {
     String localOfficeDTOS = dbPostDTO.getOwner();
     if (localOfficeDTOS == null) {
       localOfficeDTOS = initialiseNewLocalOfficeDTOs(dbPostDTO);
     }
     buildLocalOfficeDTO(postUpdateXLS, dbPostDTO, getLocalOfficeDTOsForName);
   }
+
   public String initialiseNewLocalOfficeDTOs(PostDTO postDTO) {
-    String localOfficeDTOs = new String();
+    String localOfficeDTOs = "";
     postDTO.setOwner(localOfficeDTOs);
     return localOfficeDTOs;
   }
 
   public void buildLocalOfficeDTO(PostUpdateXLS postUpdateXLS, PostDTO postDTO,
-                                                   Function<String, List<LocalOfficeDTO>> getLocalOfficeDTOsForName) {
-    Optional<LocalOfficeDTO> aSingleValidLocalOffice = getASingleValidLocalOfficeFromTheReferenceService(postUpdateXLS, getLocalOfficeDTOsForName, postUpdateXLS.getOwner());
+      Function<String, List<LocalOfficeDTO>> getLocalOfficeDTOsForName) {
+    Optional<LocalOfficeDTO> aSingleValidLocalOffice = getASingleValidLocalOfficeFromTheReferenceService(
+        postUpdateXLS, getLocalOfficeDTOsForName, postUpdateXLS.getOwner());
     if (aSingleValidLocalOffice.isPresent()) {
       LocalOfficeDTO localOfficeDTO = aSingleValidLocalOffice.get();
       postDTO.setOwner(localOfficeDTO.getName());
     }
   }
-  private Optional<LocalOfficeDTO> getASingleValidLocalOfficeFromTheReferenceService(PostUpdateXLS postUpdateXLS, Function<String,
+
+  private Optional<LocalOfficeDTO> getASingleValidLocalOfficeFromTheReferenceService(
+      PostUpdateXLS postUpdateXLS, Function<String,
       List<LocalOfficeDTO>> getLocalOfficeDTOsForName, String owner) {
     if (!StringUtils.isEmpty(owner)) {
       List<LocalOfficeDTO> localOfficeByName = getLocalOfficeDTOsForName.apply(owner);
@@ -426,6 +464,7 @@ public class PostUpdateTransformerService {
     }
     return Optional.empty();
   }
+
   /******************Owner ends here*****************************/
 
   private void updateProgrammes(PostUpdateXLS postUpdateXls, PostDTO postDto, Function<List<String>,
@@ -457,16 +496,69 @@ public class PostUpdateTransformerService {
 
     // If one or more of the programmes was not found or not current then report an error.
     if (programmes.size() != programmeIds.size()) {
-      Set<String> currentFoundIds = programmes.stream().map(programme -> String.valueOf(programme.getId()))
+      Set<String> currentFoundIds = programmes.stream()
+          .map(programme -> String.valueOf(programme.getId()))
           .collect(Collectors.toSet());
       List<String> missingIds = new ArrayList<>(programmeIds);
       missingIds.removeAll(currentFoundIds);
       StringJoiner joiner = new StringJoiner(", ");
-      missingIds.forEach(programmeId -> joiner.add(programmeId));
-      postUpdateXls.addErrorMessage(String.format(DID_NOT_FIND_PROGRAMMES_FOR_IDS, joiner.toString()));
+      missingIds.forEach(joiner::add);
+      postUpdateXls
+          .addErrorMessage(String.format(DID_NOT_FIND_PROGRAMMES_FOR_IDS, joiner.toString()));
       return;
     }
 
     postDto.setProgrammes(new HashSet<>(programmes));
+  }
+
+  private void updateRotations(PostUpdateXLS postUpdateXls, PostDTO postDto) {
+    String rotationsString = postUpdateXls.getRotations();
+
+    if (StringUtils.isEmpty(rotationsString)) {
+      return;
+    }
+
+    List<Long> programmeIds = postDto.getProgrammes().stream()
+        .map(ProgrammeDTO::getId)
+        .collect(Collectors.toList());
+    Set<RotationDTO> rotationDtos = new HashSet<>();
+
+    for (Long programmeId : programmeIds) {
+      rotationDtos.addAll(tcsServiceImpl.getRotationByProgrammeId(programmeId));
+    }
+
+    List<String> rotationNames = Arrays.asList(rotationsString.split(SEPARATOR));
+    List<String> errorMessages = new ArrayList<>();
+
+    Map<String, RotationDTO> rotationNameToDto = rotationDtos.stream()
+        .filter(dto -> rotationNames.contains(dto.getName()))
+        .collect(Collectors.toMap(RotationDTO::getName, dto -> dto, (o1, o2) -> {
+          errorMessages.add(String.format(FOUND_MULTIPLE_ROTATIONS_FOR_NAME, o1.getName()));
+          return o1;
+        }));
+
+    List<RotationPostDTO> rotationPostDtos = new ArrayList<>();
+
+    for (String rotationName : rotationNames) {
+      RotationDTO rotationDto = rotationNameToDto.get(rotationName);
+
+      if (rotationDto == null) {
+        errorMessages.add(String.format(DID_NOT_FIND_ROTATION_FOR_NAME, rotationName));
+        continue;
+      }
+
+      if (errorMessages.isEmpty()) {
+        RotationPostDTO rotationPostDto = new RotationPostDTO(rotationDto.getId(), postDto.getId());
+        rotationPostDtos.add(rotationPostDto);
+      }
+    }
+
+    if (errorMessages.isEmpty()) {
+      // Since rotations are not directly tied to the post the existing rotations must be deleted.
+      tcsServiceImpl.deleteRotationsForPostId(postDto.getId());
+      tcsServiceImpl.createRotationsForPost(rotationPostDtos);
+    } else {
+      postUpdateXls.addErrorMessages(errorMessages);
+    }
   }
 }
