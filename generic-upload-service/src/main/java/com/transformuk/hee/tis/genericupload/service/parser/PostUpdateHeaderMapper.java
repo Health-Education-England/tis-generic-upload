@@ -19,7 +19,7 @@ public class PostUpdateHeaderMapper extends ColumnMapper {
       new ColumnMapping("employingBody", "Employing body"),
       new ColumnMapping("programmeTisId", "TIS_Programme_ID"),
       new ColumnMapping("owner", "Owner"),
-      new ColumnMapping("rotation", "Rotation"),
+      new ColumnMapping("rotations", "Rotations"),
       new ColumnMapping("status", "Status"),
       new ColumnMapping("oldPost", "Old Post")
   );
