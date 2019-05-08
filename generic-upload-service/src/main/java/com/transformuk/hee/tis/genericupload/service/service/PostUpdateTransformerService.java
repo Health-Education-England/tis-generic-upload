@@ -521,11 +521,9 @@ public class PostUpdateTransformerService {
     List<Long> programmeIds = postDto.getProgrammes().stream()
         .map(ProgrammeDTO::getId)
         .collect(Collectors.toList());
-    Set<RotationDTO> rotationDtos = new HashSet<>();
 
-    for (Long programmeId : programmeIds) {
-      rotationDtos.addAll(tcsServiceImpl.getRotationByProgrammeId(programmeId));
-    }
+    Set<RotationDTO> rotationDtos = new HashSet<>(
+        tcsServiceImpl.getRotationByProgrammeIdsIn(programmeIds));
 
     List<String> rotationNames = Arrays.asList(rotationsString.split(SEPARATOR));
     List<String> errorMessages = new ArrayList<>();

@@ -309,7 +309,7 @@ public class PostUpdateTransformerServiceTest {
 
     // Record expectations.
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
-    when(tcsServiceImpl.getRotationByProgrammeId(2L))
+    when(tcsServiceImpl.getRotationByProgrammeIdsIn(Collections.singletonList(2L)))
         .thenReturn(Collections.singletonList(rotation1));
 
     // Call the code under test.
@@ -368,10 +368,8 @@ public class PostUpdateTransformerServiceTest {
 
     // Record expectations.
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
-    when(tcsServiceImpl.getRotationByProgrammeId(2L))
-        .thenReturn(Collections.singletonList(rotation1));
-    when(tcsServiceImpl.getRotationByProgrammeId(3L))
-        .thenReturn(Arrays.asList(rotation2, rotation3));
+    when(tcsServiceImpl.getRotationByProgrammeIdsIn(Arrays.asList(2L, 3L)))
+        .thenReturn(Arrays.asList(rotation1, rotation2, rotation3));
 
     // Call the code under test.
     postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
@@ -441,9 +439,8 @@ public class PostUpdateTransformerServiceTest {
 
     // Record expectations.
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
-    when(tcsServiceImpl.getRotationByProgrammeId(2L))
+    when(tcsServiceImpl.getRotationByProgrammeIdsIn(Arrays.asList(2L, 3L)))
         .thenReturn(Collections.singletonList(rotation1));
-    when(tcsServiceImpl.getRotationByProgrammeId(3L)).thenReturn(Collections.emptyList());
 
     // Call the code under test.
     postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
@@ -487,10 +484,8 @@ public class PostUpdateTransformerServiceTest {
 
     // Record expectations.
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
-    when(tcsServiceImpl.getRotationByProgrammeId(2L))
-        .thenReturn(Collections.singletonList(rotation1));
-    when(tcsServiceImpl.getRotationByProgrammeId(3L))
-        .thenReturn(Collections.singletonList(rotation2));
+    when(tcsServiceImpl.getRotationByProgrammeIdsIn(Arrays.asList(2L, 3L)))
+        .thenReturn(Arrays.asList(rotation1, rotation2));
 
     // Call the code under test.
     postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
