@@ -1,6 +1,8 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
+import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,5 +60,12 @@ public class ExcelToObjectMapperPlacementTest {
         .map(PlacementXLS::getNationalPostNumber)
         .collect(Collectors.toSet());
     assertThat(placementNPNs.size()).isEqualTo(9);
+  }
+
+  @Test
+  public void shouldEscapeForJson() throws Exception {
+    List<PlacementXLS> actual = excelToObjectMapper.map(PlacementXLS.class,
+        new PlacementHeaderMapper().getFieldMap());
+    Assert.assertThat("Should escape for Json", actual.get(0).getSite(), CoreMatchers.equalTo("This is for \\\"test\\\\"));
   }
 }
