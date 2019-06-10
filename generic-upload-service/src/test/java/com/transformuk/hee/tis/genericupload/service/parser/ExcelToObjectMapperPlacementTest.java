@@ -66,6 +66,6 @@ public class ExcelToObjectMapperPlacementTest {
   public void shouldEscapeForJson() throws Exception {
     List<PlacementXLS> actual = excelToObjectMapper.map(PlacementXLS.class,
         new PlacementHeaderMapper().getFieldMap());
-    Assert.assertThat("Should escape for Json", actual.get(0).getSite(), CoreMatchers.equalTo("This is for \\\"test\\\\"));
+    Assert.assertThat("Should escape for Json", actual.get(9).getSite(), CoreMatchers.equalTo("This is for \\\"test\\\\"));
   }
 }

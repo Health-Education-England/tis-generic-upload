@@ -148,7 +148,7 @@ public class UploadFileResource {
 	})
 	@GetMapping("/status")
 	@Timed
-	public ResponseEntity getBulkUploadStatus(@ApiParam Pageable pageable,
+	public ResponseEntity<List<ApplicationType>> getBulkUploadStatus(@ApiParam Pageable pageable,
 	                                                                 @ApiParam(value = "any wildcard string to be searched") @RequestParam(value = "searchQuery", required = false) String searchQuery,
 	                                                                 @ApiParam(value = "date string any substring of the format YYYY-MM-DD") @RequestParam(value = "uploadedDate", required = false) String uploadedDate,
 	                                                                 @ApiParam(value = "file") @RequestParam(value = "file", required = false) String file,
