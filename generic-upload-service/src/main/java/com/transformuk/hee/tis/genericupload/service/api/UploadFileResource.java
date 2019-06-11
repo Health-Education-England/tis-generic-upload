@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import static uk.nhs.tis.StringConverter.getConverter;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
@@ -154,10 +155,11 @@ public class UploadFileResource {
 	                                                                 @ApiParam(value = "user") @RequestParam(value = "user", required = false) String user) {
 		log.debug("request for bulk upload status received.");
 		Page<ApplicationType> page;
-		searchQuery = sanitize(searchQuery);
-		file = sanitize(file);
-		user = sanitize(user);
-		uploadedDate = sanitize(uploadedDate);
+		// sanitize the specifications of query
+		searchQuery = getConverter(searchQuery).escapeForSql().toString();
+		file = getConverter(file).escapeForSql().toString();
+		user = getConverter(user).escapeForSql().toString();
+		uploadedDate = getConverter(uploadedDate).toString();
 
 		if(!StringUtils.isBlank(uploadedDate) || !StringUtils.isBlank(file) || !StringUtils.isBlank(user)) {
 			page = uploadFileService.searchUploads(StringUtils.isBlank(uploadedDate) ? null : convertToLocalDateTime(uploadedDate, dateTimeFormatter), file, user, pageable);
@@ -189,12 +191,5 @@ public class UploadFileResource {
 			log.error("Unexpected error building template with errors : {} ", logId);
 			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-	}
-
-	private static String sanitize(String str) {
-		if (str == null) {
-			return null;
-		}
-		return str.replaceAll("[^a-zA-Z0-9\\s,/\\-\\(\\)]", "").trim();
 	}
 }

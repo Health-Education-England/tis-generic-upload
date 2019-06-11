@@ -30,6 +30,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
+import uk.nhs.tis.StringConverter;
 
 public class ExcelToObjectMapper {
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
@@ -150,7 +151,8 @@ public class ExcelToObjectMapper {
           } else if(cls == Float.class) {
             field.set(obj, Float.valueOf(trim));
           } else {
-            field.set(obj, trim);
+            String setStr = StringConverter.getConverter(trim).escapeForJson().toString();
+            field.set(obj, setStr);
           }
           break;
         case NUMERIC:
