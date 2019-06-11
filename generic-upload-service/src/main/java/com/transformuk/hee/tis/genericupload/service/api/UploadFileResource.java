@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
-import uk.nhs.tis.StringConverter;
+import static uk.nhs.tis.StringConverter.getConverter;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
@@ -156,10 +156,10 @@ public class UploadFileResource {
 		log.debug("request for bulk upload status received.");
 		Page<ApplicationType> page;
 		// sanitize the specifications of query
-		searchQuery = StringConverter.getConverter(searchQuery).escapeForSql().toString();
-		file = StringConverter.getConverter(file).escapeForSql().toString();
-		user = StringConverter.getConverter(user).escapeForSql().toString();
-		uploadedDate = StringConverter.getConverter(uploadedDate).toString();
+		searchQuery = getConverter(searchQuery).escapeForSql().toString();
+		file = getConverter(file).escapeForSql().toString();
+		user = getConverter(user).escapeForSql().toString();
+		uploadedDate = getConverter(uploadedDate).toString();
 
 		if(!StringUtils.isBlank(uploadedDate) || !StringUtils.isBlank(file) || !StringUtils.isBlank(user)) {
 			page = uploadFileService.searchUploads(StringUtils.isBlank(uploadedDate) ? null : convertToLocalDateTime(uploadedDate, dateTimeFormatter), file, user, pageable);
