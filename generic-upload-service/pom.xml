@@ -46,6 +46,7 @@
     <node.version>v6.11.4</node.version>
     <problem-spring-web.version>0.21.0</problem-spring-web.version>
     <profile.swagger/>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <prometheus-simpleclient.version>0.0.20</prometheus-simpleclient.version>
     <!-- Sonar properties -->
     <project.build.finalName>generic-upload</project.build.finalName>
@@ -632,6 +633,33 @@
         </configuration>
       </plugin>
       <!-- jhipster-needle-maven-add-plugin -->
+
+      <!-- Checkstyle can be provided by shared-modules but this module requires migration. -->
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+        <version>3.0.0</version>
+        <configuration>
+          <configLocation>google_checks.xml</configLocation>
+          <consoleOutput>true</consoleOutput>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>8.22</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <profiles>
