@@ -1,17 +1,16 @@
 package com.transformuk.hee.tis.genericupload.service;
 
 
+import static org.mockito.internal.util.collections.Sets.newSet;
+
 import com.transformuk.hee.tis.security.model.AuthenticatedUser;
 import com.transformuk.hee.tis.security.model.UserProfile;
-import org.mockito.internal.util.collections.Sets;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import static org.mockito.internal.util.collections.Sets.newSet;
+import org.mockito.internal.util.collections.Sets;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 public class TestUtils {
 
@@ -21,7 +20,8 @@ public class TestUtils {
     UserProfile userProfile = new UserProfile();
     userProfile.setUserName(userName);
     userProfile.setDesignatedBodyCodes(Sets.newSet(designatedBodyCodes));
-    AuthenticatedUser authenticatedUser = new AuthenticatedUser(userName, "dummyToekn", userProfile, null);
+    AuthenticatedUser authenticatedUser = new AuthenticatedUser(userName, "dummyToekn", userProfile,
+        null);
     UsernamePasswordAuthenticationToken authenticationToken = new
         UsernamePasswordAuthenticationToken(authenticatedUser, null);
 

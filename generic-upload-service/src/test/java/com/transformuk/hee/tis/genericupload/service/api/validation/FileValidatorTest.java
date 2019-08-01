@@ -1,5 +1,10 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Collections;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.junit.Assert;
@@ -15,110 +20,118 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Collections;
-
-import static org.slf4j.LoggerFactory.getLogger;
-
 @ContextConfiguration(classes = FileValidator.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 public class FileValidatorTest {
-	private static final Logger logger = getLogger(FileValidatorTest.class);
 
-	@Autowired
-	FileValidator fileValidator;
+  private static final Logger logger = getLogger(FileValidatorTest.class);
 
-	@Test(expected = ValidationException.class)
-	public void shouldValidateMandatoryFields() throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
-		String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
-		String filePath = new ClassPathResource(filename).getURI().getPath();
-		FileInputStream inputStream = new FileInputStream(filePath);
-		MultipartFile multipartFile = new MockMultipartFile("file",
-				filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n", IOUtils.toByteArray(inputStream));
+  @Autowired
+  FileValidator fileValidator;
 
-		fileValidator.validate(Collections.singletonList(multipartFile), true, false);
-	}
+  @Test(expected = ValidationException.class)
+  public void shouldValidateMandatoryFields()
+      throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
+    String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
+    String filePath = new ClassPathResource(filename).getURI().getPath();
+    FileInputStream inputStream = new FileInputStream(filePath);
+    MultipartFile multipartFile = new MockMultipartFile("file",
+        filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n",
+        IOUtils.toByteArray(inputStream));
 
-	@Test
-	public void shouldErrorWithMessage() throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
-		String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
-		String filePath = new ClassPathResource(filename).getURI().getPath();
-		FileInputStream inputStream = new FileInputStream(filePath);
-		MultipartFile multipartFile = new MockMultipartFile("file",
-				filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n", IOUtils.toByteArray(inputStream));
-		try {
-			fileValidator.validate(Collections.singletonList(multipartFile), true, false);
-		} catch(ValidationException ve){
-			BindingResult bindingResult = ve.getBindingResult();
-			Assert.assertEquals(2, bindingResult.getErrorCount());
-		}
-	}
+    fileValidator.validate(Collections.singletonList(multipartFile), true, false);
+  }
 
-	@Test
-	public void shouldErrorForIncorrectDatesOnMandatoryDateFieldsWithMessage() throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
-		String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
-		String filePath = new ClassPathResource(filename).getURI().getPath();
-		FileInputStream inputStream = new FileInputStream(filePath);
-		MultipartFile multipartFile = new MockMultipartFile("file",
-				filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n", IOUtils.toByteArray(inputStream));
-		try {
-			fileValidator.validate(Collections.singletonList(multipartFile), true, true);
-		} catch(ValidationException ve){
-			Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
-		}
-	}
+  @Test
+  public void shouldErrorWithMessage()
+      throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
+    String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
+    String filePath = new ClassPathResource(filename).getURI().getPath();
+    FileInputStream inputStream = new FileInputStream(filePath);
+    MultipartFile multipartFile = new MockMultipartFile("file",
+        filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n",
+        IOUtils.toByteArray(inputStream));
+    try {
+      fileValidator.validate(Collections.singletonList(multipartFile), true, false);
+    } catch (ValidationException ve) {
+      BindingResult bindingResult = ve.getBindingResult();
+      Assert.assertEquals(2, bindingResult.getErrorCount());
+    }
+  }
 
-	@Test
-	public void shouldErrorForIncorrectDatesOnAssessmentMandatoryDateFieldsWithMessage() throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
-		String filename = "TIS Assessment Import Template - Step 2.xlsx";
-		String filePath = new ClassPathResource(filename).getURI().getPath();
-		FileInputStream inputStream = new FileInputStream(filePath);
-		MultipartFile multipartFile = new MockMultipartFile("file",
-						filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n", IOUtils.toByteArray(inputStream));
-		try {
-			fileValidator.validate(Collections.singletonList(multipartFile), true, true);
-		} catch(ValidationException ve){
-			Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
-		}
-	}
+  @Test
+  public void shouldErrorForIncorrectDatesOnMandatoryDateFieldsWithMessage()
+      throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
+    String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
+    String filePath = new ClassPathResource(filename).getURI().getPath();
+    FileInputStream inputStream = new FileInputStream(filePath);
+    MultipartFile multipartFile = new MockMultipartFile("file",
+        filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n",
+        IOUtils.toByteArray(inputStream));
+    try {
+      fileValidator.validate(Collections.singletonList(multipartFile), true, true);
+    } catch (ValidationException ve) {
+      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+    }
+  }
 
-	@Test
-	public void shouldErrorForIncorrectDatesOnPlacementUpdateMandatoryIdWithMessage() throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
-		String filename = "TIS Placement Update Template - IntrepidId's only.xls";
-		String filePath = new ClassPathResource(filename).getURI().getPath();
-		FileInputStream inputStream = new FileInputStream(filePath);
-		MultipartFile multipartFile = new MockMultipartFile("file",
-						filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n", IOUtils.toByteArray(inputStream));
-		try {
-			fileValidator.validate(Collections.singletonList(multipartFile), true, true);
-		} catch(ValidationException ve){
-			Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "PlacementId missing"));
-		}
-	}
+  @Test
+  public void shouldErrorForIncorrectDatesOnAssessmentMandatoryDateFieldsWithMessage()
+      throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
+    String filename = "TIS Assessment Import Template - Step 2.xlsx";
+    String filePath = new ClassPathResource(filename).getURI().getPath();
+    FileInputStream inputStream = new FileInputStream(filePath);
+    MultipartFile multipartFile = new MockMultipartFile("file",
+        filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n",
+        IOUtils.toByteArray(inputStream));
+    try {
+      fileValidator.validate(Collections.singletonList(multipartFile), true, true);
+    } catch (ValidationException ve) {
+      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+    }
+  }
 
-	private boolean oneOfTheFieldErrorsIs(BindingResult bindingResult, String subStringErrorToLookFor) {
-		logger.info(bindingResult.getFieldErrors().toString());
+  @Test
+  public void shouldErrorForIncorrectDatesOnPlacementUpdateMandatoryIdWithMessage()
+      throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
+    String filename = "TIS Placement Update Template - IntrepidId's only.xls";
+    String filePath = new ClassPathResource(filename).getURI().getPath();
+    FileInputStream inputStream = new FileInputStream(filePath);
+    MultipartFile multipartFile = new MockMultipartFile("file",
+        filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n",
+        IOUtils.toByteArray(inputStream));
+    try {
+      fileValidator.validate(Collections.singletonList(multipartFile), true, true);
+    } catch (ValidationException ve) {
+      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "PlacementId missing"));
+    }
+  }
 
-		for(FieldError fieldError : bindingResult.getFieldErrors()) {
-			if(fieldError.toString().contains(subStringErrorToLookFor)) {
-				return true;
-			}
-		}
-		return false;
-	}
+  private boolean oneOfTheFieldErrorsIs(BindingResult bindingResult,
+      String subStringErrorToLookFor) {
+    logger.info(bindingResult.getFieldErrors().toString());
 
-	@Test
-	public void shouldErrorForMissingDatesOnMandatoryDateFieldsWithMessage() throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
-		String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
-		String filePath = new ClassPathResource(filename).getURI().getPath();
-		FileInputStream inputStream = new FileInputStream(filePath);
-		MultipartFile multipartFile = new MockMultipartFile("file",
-				filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n", IOUtils.toByteArray(inputStream));
-		try {
-			fileValidator.validate(Collections.singletonList(multipartFile), true, true);
-		} catch(ValidationException ve){
-			Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
-		}
-	}
+    for (FieldError fieldError : bindingResult.getFieldErrors()) {
+      if (fieldError.toString().contains(subStringErrorToLookFor)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Test
+  public void shouldErrorForMissingDatesOnMandatoryDateFieldsWithMessage()
+      throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
+    String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
+    String filePath = new ClassPathResource(filename).getURI().getPath();
+    FileInputStream inputStream = new FileInputStream(filePath);
+    MultipartFile multipartFile = new MockMultipartFile("file",
+        filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n",
+        IOUtils.toByteArray(inputStream));
+    try {
+      fileValidator.validate(Collections.singletonList(multipartFile), true, true);
+    } catch (ValidationException ve) {
+      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+    }
+  }
 }

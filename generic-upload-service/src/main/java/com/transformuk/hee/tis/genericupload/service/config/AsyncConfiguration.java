@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.config;
 
 import io.github.jhipster.config.JHipsterProperties;
+import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
@@ -13,8 +14,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.DefaultManagedTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
-
-import java.util.concurrent.Executor;
 
 @Configuration
 @EnableAsync

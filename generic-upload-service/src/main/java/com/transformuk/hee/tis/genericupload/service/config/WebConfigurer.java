@@ -7,6 +7,14 @@ import io.github.jhipster.config.JHipsterConstants;
 import io.github.jhipster.config.JHipsterProperties;
 import io.github.jhipster.web.filter.CachingHttpHeadersFilter;
 import io.undertow.UndertowOptions;
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.EnumSet;
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,16 +30,12 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-import javax.servlet.*;
-import java.io.File;
-import java.nio.file.Paths;
-import java.util.EnumSet;
-
 /**
  * Configuration of web application with Servlet 3.0 APIs.
  */
 @Configuration
-public class WebConfigurer implements ServletContextInitializer, EmbeddedServletContainerCustomizer {
+public class WebConfigurer implements ServletContextInitializer,
+    EmbeddedServletContainerCustomizer {
 
   private final Logger log = LoggerFactory.getLogger(WebConfigurer.class);
 
@@ -50,9 +54,11 @@ public class WebConfigurer implements ServletContextInitializer, EmbeddedServlet
   @Override
   public void onStartup(ServletContext servletContext) throws ServletException {
     if (env.getActiveProfiles().length != 0) {
-      log.info("Web application configuration, using profiles: {}", (Object[]) env.getActiveProfiles());
+      log.info("Web application configuration, using profiles: {}",
+          (Object[]) env.getActiveProfiles());
     }
-    EnumSet<DispatcherType> disps = EnumSet.of(DispatcherType.REQUEST, DispatcherType.FORWARD, DispatcherType.ASYNC);
+    EnumSet<DispatcherType> disps = EnumSet
+        .of(DispatcherType.REQUEST, DispatcherType.FORWARD, DispatcherType.ASYNC);
     initMetrics(servletContext, disps);
     if (env.acceptsProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION)) {
       initCachingHttpHeadersFilter(servletContext, disps);
@@ -74,12 +80,12 @@ public class WebConfigurer implements ServletContextInitializer, EmbeddedServlet
     // When running in an IDE or with ./mvnw spring-boot:run, set location of the static web assets.
     setLocationForStaticAssets(container);
 
-        /*
-         * Enable HTTP/2 for Undertow - https://twitter.com/ankinson/status/829256167700492288
-         * HTTP/2 requires HTTPS, so HTTP requests will fallback to HTTP/1.1.
-         * See the JHipsterProperties class and your application-*.yml configuration files
-         * for more information.
-         */
+    /*
+     * Enable HTTP/2 for Undertow - https://twitter.com/ankinson/status/829256167700492288
+     * HTTP/2 requires HTTPS, so HTTP requests will fallback to HTTP/1.1.
+     * See the JHipsterProperties class and your application-*.yml configuration files
+     * for more information.
+     */
     if (jHipsterProperties.getHttp().getVersion().equals(JHipsterProperties.Http.Version.V_2_0) &&
         container instanceof UndertowEmbeddedServletContainerFactory) {
 
@@ -116,7 +122,7 @@ public class WebConfigurer implements ServletContextInitializer, EmbeddedServlet
    * Initializes the caching HTTP Headers Filter.
    */
   private void initCachingHttpHeadersFilter(ServletContext servletContext,
-                                            EnumSet<DispatcherType> disps) {
+      EnumSet<DispatcherType> disps) {
     log.debug("Registering Caching HTTP Headers Filter");
     FilterRegistration.Dynamic cachingHttpHeadersFilter =
         servletContext.addFilter("cachingHttpHeadersFilter",

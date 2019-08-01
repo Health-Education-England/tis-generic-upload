@@ -10,7 +10,8 @@ public class FileRecordEvent {
   private String action;
   private Exception exception;
 
-  public FileRecordEvent(Object dto, Date date, String classType, String action, Exception exception) {
+  public FileRecordEvent(Object dto, Date date, String classType, String action,
+      Exception exception) {
     this.dto = dto;
     this.date = date;
     this.type = classType;

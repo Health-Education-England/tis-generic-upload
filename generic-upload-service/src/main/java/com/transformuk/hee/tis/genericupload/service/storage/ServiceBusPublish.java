@@ -5,6 +5,7 @@ import com.transformuk.hee.tis.genericupload.service.exception.FileRecordStorage
 
 public interface ServiceBusPublish {
 
-  void sendMessage(String queueOrTopicName,FileRecordEvent fileRecordEvent) throws FileRecordStorageException;
+  void sendMessage(String queueOrTopicName, FileRecordEvent fileRecordEvent)
+      throws FileRecordStorageException;
 
 }

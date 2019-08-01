@@ -1,13 +1,34 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
-import com.transformuk.hee.tis.genericupload.api.dto.*;
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
-import com.transformuk.hee.tis.genericupload.service.parser.*;
+import com.transformuk.hee.tis.genericupload.service.parser.AssessmentHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementDeleteHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementUpdateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PostFundingUpdateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PostUpdateHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,19 +37,13 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-
-import static org.slf4j.LoggerFactory.getLogger;
-
 @Component
 public class ScheduledUploadTask {
+
   private static final Logger logger = getLogger(ScheduledUploadTask.class);
 
-  private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+  private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter
+      .ofPattern("HH:mm:ss");
   private static final int HOURS_TO_WAIT_BEFORE_RESTARTING = 3; //TODO externalise
 
   private static final String FILE_IMPORT_SUCCESS_AND_ERROR_COUNTS_DON_T_MATCH_INPUT_NUMBER_OF_ROWS = "File import success and error counts don't match input number of rows";
@@ -36,8 +51,9 @@ public class ScheduledUploadTask {
   private static final String ERROR_WHILE_READING_EXCEL_FILE = "Error while reading excel file : {}";
   private static final String ERROR_WHILE_PROCESSING_EXCEL_FILE = "Error while processing excel file : {}";
   private static final String UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE = "Unknown Error while processing excel file : {}";
-
-
+  private final ApplicationTypeRepository applicationTypeRepository;
+  private final AzureProperties azureProperties;
+  private final FileStorageRepository fileStorageRepository;
   @Autowired
   private PlacementTransformerService placementTransformerService;
   @Autowired
@@ -53,10 +69,6 @@ public class ScheduledUploadTask {
   @Autowired
   private PostFundingUpdateTransformerService postFundingUpdateTransformerService;
 
-  private final ApplicationTypeRepository applicationTypeRepository;
-  private final AzureProperties azureProperties;
-  private final FileStorageRepository fileStorageRepository;
-
   @Autowired
   public ScheduledUploadTask(FileStorageRepository fileStorageRepository,
       ApplicationTypeRepository applicationTypeRepository,
@@ -68,64 +80,80 @@ public class ScheduledUploadTask {
 
   @Scheduled(fixedDelay = 1000, initialDelay = 2000) //TODO externalise this wait interval,
   public void scheduleTaskWithFixedDelay() {
-    if(logger.isDebugEnabled()) {
-      logger.debug("Fixed Delay Task :: Execution Time - {}", dateTimeFormatter.format(LocalDateTime.now()));
+    if (logger.isDebugEnabled()) {
+      logger.debug("Fixed Delay Task :: Execution Time - {}",
+          dateTimeFormatter.format(LocalDateTime.now()));
     }
     //TODO circuit-break on tcs/profile/reference/mysql connectivity
-    ApplicationType applicationType = applicationTypeRepository.findFirstByFileStatusOrderByUploadedDate(FileStatus.PENDING);
-    if(applicationType != null) {
+    ApplicationType applicationType = applicationTypeRepository
+        .findFirstByFileStatusOrderByUploadedDate(FileStatus.PENDING);
+    if (applicationType != null) {
       applicationType.setFileStatus(FileStatus.IN_PROGRESS);
       applicationType.setJobStartTime(LocalDateTime.now());
       applicationTypeRepository.save(applicationType);
 
-      try (InputStream bis = new ByteArrayInputStream(fileStorageRepository.download(applicationType.getLogId(), azureProperties.getContainerName(), applicationType.getFileName()))) {
+      try (InputStream bis = new ByteArrayInputStream(fileStorageRepository
+          .download(applicationType.getLogId(), azureProperties.getContainerName(),
+              applicationType.getFileName()))) {
         ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis, true);
 
         switch (applicationType.getFileType()) {
 
           case PEOPLE:
-            List<PersonXLS> personXLSS = excelToObjectMapper.map(PersonXLS.class, new PersonHeaderMapper().getFieldMap());
+            List<PersonXLS> personXLSS = excelToObjectMapper
+                .map(PersonXLS.class, new PersonHeaderMapper().getFieldMap());
             personTransformerService.processPeopleUpload(personXLSS);
             setJobToCompleted(applicationType, personXLSS);
             break;
 
           case PLACEMENTS:
-            List<PlacementXLS> placementXLSS = excelToObjectMapper.map(PlacementXLS.class, new PlacementHeaderMapper().getFieldMap());
-            placementTransformerService.processPlacementsUpload(placementXLSS, applicationType.getUsername());
+            List<PlacementXLS> placementXLSS = excelToObjectMapper
+                .map(PlacementXLS.class, new PlacementHeaderMapper().getFieldMap());
+            placementTransformerService
+                .processPlacementsUpload(placementXLSS, applicationType.getUsername());
             setJobToCompleted(applicationType, placementXLSS);
             break;
 
           case PLACEMENTS_DELETE:
-            List<PlacementDeleteXLS> placementDeleteXLSS = excelToObjectMapper.map(PlacementDeleteXLS.class, new PlacementDeleteHeaderMapper().getFieldMap());
+            List<PlacementDeleteXLS> placementDeleteXLSS = excelToObjectMapper
+                .map(PlacementDeleteXLS.class, new PlacementDeleteHeaderMapper().getFieldMap());
             placementDeleteService.processPlacementsDeleteUpload(placementDeleteXLSS);
             setJobToCompleted(applicationType, placementDeleteXLSS);
             break;
 
           case ASSESSMENTS:
-            List<AssessmentXLS> assessmentXLSList = excelToObjectMapper.map(AssessmentXLS.class, new AssessmentHeaderMapper().getFieldMap());
+            List<AssessmentXLS> assessmentXLSList = excelToObjectMapper
+                .map(AssessmentXLS.class, new AssessmentHeaderMapper().getFieldMap());
             assessmentTransformerService.processAssessmentsUpload(assessmentXLSList);
             setJobToCompleted(applicationType, assessmentXLSList);
             break;
 
           case PLACEMENTS_UPDATE:
-            List<PlacementUpdateXLS> placementUpdateXLSList = excelToObjectMapper.map(PlacementUpdateXLS.class, new PlacementUpdateHeaderMapper().getFieldMap());
-            placementUpdateTransformerService.processPlacementsUpdateUpload(placementUpdateXLSList, applicationType.getUsername());
+            List<PlacementUpdateXLS> placementUpdateXLSList = excelToObjectMapper
+                .map(PlacementUpdateXLS.class, new PlacementUpdateHeaderMapper().getFieldMap());
+            placementUpdateTransformerService.processPlacementsUpdateUpload(placementUpdateXLSList,
+                applicationType.getUsername());
             setJobToCompleted(applicationType, placementUpdateXLSList);
             break;
 
           case POSTS_UPDATE:
-            List<PostUpdateXLS> postUpdateXLSList = excelToObjectMapper.map(PostUpdateXLS.class, new PostUpdateHeaderMapper().getFieldMap());
-            postUpdateTransformerService.processPostUpdateUpload(postUpdateXLSList, applicationType.getUsername());
+            List<PostUpdateXLS> postUpdateXLSList = excelToObjectMapper
+                .map(PostUpdateXLS.class, new PostUpdateHeaderMapper().getFieldMap());
+            postUpdateTransformerService
+                .processPostUpdateUpload(postUpdateXLSList, applicationType.getUsername());
             setJobToCompleted(applicationType, postUpdateXLSList);
             break;
 
           case POSTS_FUNDING_UPDATE:
-            List<PostFundingUpdateXLS> postFundingUpdateXlsList = excelToObjectMapper.map(PostFundingUpdateXLS.class, new PostFundingUpdateHeaderMapper().getFieldMap());
-            postFundingUpdateTransformerService.processPostFundingUpdateUpload(postFundingUpdateXlsList);
+            List<PostFundingUpdateXLS> postFundingUpdateXlsList = excelToObjectMapper
+                .map(PostFundingUpdateXLS.class, new PostFundingUpdateHeaderMapper().getFieldMap());
+            postFundingUpdateTransformerService
+                .processPostFundingUpdateUpload(postFundingUpdateXlsList);
             setJobToCompleted(applicationType, postFundingUpdateXlsList);
             break;
 
-          default: logger.error(UNKNOWN_FILE_TYPE);
+          default:
+            logger.error(UNKNOWN_FILE_TYPE);
         }
       } catch (InvalidFormatException e) {
         logger.error(ERROR_WHILE_READING_EXCEL_FILE, e.getMessage(), e);
@@ -144,21 +172,26 @@ public class ScheduledUploadTask {
     resetJobsInProgressIfOverHours(HOURS_TO_WAIT_BEFORE_RESTARTING);
   }
 
-  /** Iterate through the jobs in progress (for over 3 hours) and set them to be restarted;
-   *   - This is needed if the application terminates abruptly while a job is in progress;
-   *   - Also caters for multiple instances of bulk uploads
+  /**
+   * Iterate through the jobs in progress (for over 3 hours) and set them to be restarted; - This is
+   * needed if the application terminates abruptly while a job is in progress; - Also caters for
+   * multiple instances of bulk uploads
    */
   private void resetJobsInProgressIfOverHours(int hours) {
-    for(ApplicationType inProgressApplicationType : applicationTypeRepository.findByFileStatusOrderByUploadedDate(FileStatus.IN_PROGRESS)) {
-      if(inProgressApplicationType.getJobStartTime().plusHours(hours).isBefore(LocalDateTime.now())) {
-        logger.info("Resetting status on job for file {} with log id {}", inProgressApplicationType.getFileName(), inProgressApplicationType.getLogId());
+    for (ApplicationType inProgressApplicationType : applicationTypeRepository
+        .findByFileStatusOrderByUploadedDate(FileStatus.IN_PROGRESS)) {
+      if (inProgressApplicationType.getJobStartTime().plusHours(hours)
+          .isBefore(LocalDateTime.now())) {
+        logger.info("Resetting status on job for file {} with log id {}",
+            inProgressApplicationType.getFileName(), inProgressApplicationType.getLogId());
         inProgressApplicationType.setFileStatus(FileStatus.PENDING);
         applicationTypeRepository.save(inProgressApplicationType);
       }
     }
   }
 
-  private void setJobToCompleted(ApplicationType applicationType, List<? extends TemplateXLS> templateXLSS) {
+  private void setJobToCompleted(ApplicationType applicationType,
+      List<? extends TemplateXLS> templateXLSS) {
     FileImportResults fir = new FileImportResults();
     int errorCount = 0;
     int successCount = 0;
@@ -171,7 +204,7 @@ public class ScheduledUploadTask {
       }
     }
 
-    if(errorCount + successCount != templateXLSS.size()) {
+    if (errorCount + successCount != templateXLSS.size()) {
       logger.warn(FILE_IMPORT_SUCCESS_AND_ERROR_COUNTS_DON_T_MATCH_INPUT_NUMBER_OF_ROWS);
     }
 
@@ -180,6 +213,7 @@ public class ScheduledUploadTask {
     applicationType.setErrorJson(fir.toJson());
     applicationType.setProcessedDate(LocalDateTime.now());
     applicationType.setFileStatus(FileStatus.COMPLETED);
-    logger.info("Job completed for file {} with log id {}", applicationType.getFileName(), applicationType.getLogId());
+    logger.info("Job completed for file {} with log id {}", applicationType.getFileName(),
+        applicationType.getLogId());
   }
 }

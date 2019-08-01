@@ -1,40 +1,41 @@
 package com.transformuk.hee.tis.genericupload.service.util;
 
-import org.slf4j.Logger;
+import static org.slf4j.LoggerFactory.getLogger;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
-
-import static org.slf4j.LoggerFactory.getLogger;
+import org.slf4j.Logger;
 
 public class ReflectionUtil {
-	private static final Logger logger = getLogger(ReflectionUtil.class);
 
-	ReflectionUtil() {
-		super();
-	}
+  private static final Logger logger = getLogger(ReflectionUtil.class);
 
-	public static void copyIfNotNullOrEmpty(Object from, Object to, String... fieldNames) {
-		for(String fieldName : fieldNames) {
-			copyIfNotNullOrEmpty(from, to, fieldName);
-		}
-	}
+  ReflectionUtil() {
+    super();
+  }
 
-	public static void copyIfNotNullOrEmpty(Object from, Object to, String fieldName) {
-		try {
-			Field field = from.getClass().getDeclaredField(fieldName);
-			boolean originalAccessibleState = field.isAccessible();
-			field.setAccessible(true);
+  public static void copyIfNotNullOrEmpty(Object from, Object to, String... fieldNames) {
+    for (String fieldName : fieldNames) {
+      copyIfNotNullOrEmpty(from, to, fieldName);
+    }
+  }
 
-			Object value = field.get(from);
-			Optional<Object> objectOptional = Optional.ofNullable(value);
-			if(objectOptional.isPresent() && (objectOptional.get().getClass() != String.class || (objectOptional.get().getClass() == String.class && !objectOptional.get().equals("")))) {
-				field.set(to, value);
-			}
+  public static void copyIfNotNullOrEmpty(Object from, Object to, String fieldName) {
+    try {
+      Field field = from.getClass().getDeclaredField(fieldName);
+      boolean originalAccessibleState = field.isAccessible();
+      field.setAccessible(true);
 
-			field.setAccessible(originalAccessibleState);
-		} catch (NoSuchFieldException | IllegalAccessException e) {
-			logger.error(e.getMessage());
-		}
-	}
+      Object value = field.get(from);
+      Optional<Object> objectOptional = Optional.ofNullable(value);
+      if (objectOptional.isPresent() && (objectOptional.get().getClass() != String.class || (
+          objectOptional.get().getClass() == String.class && !objectOptional.get().equals("")))) {
+        field.set(to, value);
+      }
+
+      field.setAccessible(originalAccessibleState);
+    } catch (NoSuchFieldException | IllegalAccessException e) {
+      logger.error(e.getMessage());
+    }
+  }
 }

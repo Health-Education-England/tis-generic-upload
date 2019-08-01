@@ -4,14 +4,6 @@ import com.google.common.eventbus.Subscribe;
 import com.google.gson.Gson;
 import com.transformuk.hee.tis.genericupload.service.event.FileRecordEvent;
 import com.transformuk.hee.tis.genericupload.service.exception.FileRecordStorageException;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -21,9 +13,17 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
- * Writer that takes messages off the event bus and writes it to a file under the deadletter directory
+ * Writer that takes messages off the event bus and writes it to a file under the deadletter
+ * directory
  */
 public class FileRecordStorageInFile implements FileRecordStorage {
 
@@ -34,6 +34,16 @@ public class FileRecordStorageInFile implements FileRecordStorage {
   private String deadletterDirectory;
 
   private BufferedWriter bufferedWriter;
+
+  /**
+   * Create a json string out the the dead letter event
+   *
+   * @param fileRecordEvent The Pojo representing the dead letter event
+   * @return Json string
+   */
+  private static String deadLetterEventMessage(FileRecordEvent fileRecordEvent) {
+    return GSON.toJson(fileRecordEvent);
+  }
 
   @PostConstruct
   public void init() throws IOException {
@@ -80,15 +90,5 @@ public class FileRecordStorageInFile implements FileRecordStorage {
     } catch (IOException e) {
       throw new FileRecordStorageException("DeadLetter queue write error" + e);
     }
-  }
-
-  /**
-   * Create a json string out the the dead letter event
-   *
-   * @param fileRecordEvent The Pojo representing the dead letter event
-   * @return Json string
-   */
-  private static String deadLetterEventMessage(FileRecordEvent fileRecordEvent) {
-    return GSON.toJson(fileRecordEvent);
   }
 }

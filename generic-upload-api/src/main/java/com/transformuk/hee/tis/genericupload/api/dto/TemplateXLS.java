@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.util.StringUtils;
 
 public class TemplateXLS {
+
   private int rowNumber;
   private String errorMessage;
   private boolean successfullyImported;
@@ -25,7 +26,8 @@ public class TemplateXLS {
   }
 
   public void addErrorMessage(String errorMessage) {
-    this.errorMessage = this.errorMessage == null ? errorMessage : this.errorMessage + System.lineSeparator() + errorMessage;
+    this.errorMessage = this.errorMessage == null ? errorMessage
+        : this.errorMessage + System.lineSeparator() + errorMessage;
   }
 
   public void addErrorMessages(List<String> errorMessages) {
@@ -46,5 +48,7 @@ public class TemplateXLS {
     this.successfullyImported = successfullyImported;
   }
 
-  public void initialiseSuccessfullyImported() { this.successfullyImported = false; }
+  public void initialiseSuccessfullyImported() {
+    this.successfullyImported = false;
+  }
 }

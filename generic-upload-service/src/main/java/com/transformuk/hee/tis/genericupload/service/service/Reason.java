@@ -2,7 +2,6 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 
 import io.swagger.annotations.ApiModelProperty;
-
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Set;
@@ -115,12 +114,12 @@ public class Reason implements Serializable {
   @Override
   public String toString() {
     return "Reason{" +
-            "id=" + id +
-            ", code='" + code + '\'' +
-            ", label='" + label + '\'' +
-            ", outcomes=" + outcomes +
-            ", requireOther=" + requireOther +
-            ", isLegacy=" + isLegacy +
-            '}';
+        "id=" + id +
+        ", code='" + code + '\'' +
+        ", label='" + label + '\'' +
+        ", outcomes=" + outcomes +
+        ", requireOther=" + requireOther +
+        ", isLegacy=" + isLegacy +
+        '}';
   }
 }

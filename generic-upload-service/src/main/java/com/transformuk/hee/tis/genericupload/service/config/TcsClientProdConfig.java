@@ -10,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 @Profile({"dev", "stage", "prod", "uidev"})
 public class TcsClientProdConfig extends TcsClientConfig {
+
   @Bean
   public RestTemplate tcsRestTemplate(Keycloak keycloak) {
     return super.prodTcsRestTemplate(keycloak);

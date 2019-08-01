@@ -1,20 +1,21 @@
 package com.transformuk.hee.tis.genericupload.service.service.supervisor;
 
 public abstract class RegNumberDTO<T> {
-	private T dto;
-	protected RegNumberType regNumberType;
 
-	public RegNumberType getRegNumberType() {
-		return regNumberType;
-	}
+  protected RegNumberType regNumberType;
+  private T dto;
 
-	public T getRegNumberDTO() {
-		return dto;
-	}
+  public RegNumberType getRegNumberType() {
+    return regNumberType;
+  }
 
-	public void setRegNumberDTO(T regNumberDTO) {
-		this.dto = regNumberDTO;
-	}
+  public T getRegNumberDTO() {
+    return dto;
+  }
 
-	public abstract Long getId();
+  public void setRegNumberDTO(T regNumberDTO) {
+    this.dto = regNumberDTO;
+  }
+
+  public abstract Long getId();
 }
