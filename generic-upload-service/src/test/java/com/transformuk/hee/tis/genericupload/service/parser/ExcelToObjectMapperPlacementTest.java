@@ -1,25 +1,22 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
-import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
+import java.io.FileInputStream;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 
-import java.io.FileInputStream;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 public class ExcelToObjectMapperPlacementTest {
 
-  private ExcelToObjectMapper excelToObjectMapper;
-
   private static final String FILE_NAME = "TIS Placement Import Template - Test.xlsx";
+  private ExcelToObjectMapper excelToObjectMapper;
 
   @Before
   public void setUp() throws Exception {
@@ -31,7 +28,7 @@ public class ExcelToObjectMapperPlacementTest {
   @Test
   public void shouldReturnParseObject() throws Exception {
     List<PlacementXLS> actual = excelToObjectMapper.map(PlacementXLS.class,
-            new PlacementHeaderMapper().getFieldMap());
+        new PlacementHeaderMapper().getFieldMap());
     Assert.assertNotNull(actual);
   }
 
@@ -66,6 +63,7 @@ public class ExcelToObjectMapperPlacementTest {
   public void shouldEscapeForJson() throws Exception {
     List<PlacementXLS> actual = excelToObjectMapper.map(PlacementXLS.class,
         new PlacementHeaderMapper().getFieldMap());
-    Assert.assertThat("Should escape for Json", actual.get(9).getSite(), CoreMatchers.equalTo("This is for \\\"test\\\\"));
+    Assert.assertThat("Should escape for Json", actual.get(9).getSite(),
+        CoreMatchers.equalTo("This is for \\\"test\\\\"));
   }
 }

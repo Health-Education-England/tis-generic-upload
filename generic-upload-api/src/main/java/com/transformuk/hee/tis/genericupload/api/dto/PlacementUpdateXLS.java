@@ -3,7 +3,8 @@ package com.transformuk.hee.tis.genericupload.api.dto;
 import java.util.Date;
 import java.util.Objects;
 
-public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervisor{
+public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervisor {
+
   private String placementId;
   private String intrepidId;
   private String nationalPostNumber;
@@ -151,31 +152,38 @@ public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervis
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     PlacementUpdateXLS that = (PlacementUpdateXLS) o;
     return Objects.equals(placementId, that.placementId) &&
-            Objects.equals(intrepidId, that.intrepidId) &&
-            Objects.equals(nationalPostNumber, that.nationalPostNumber) &&
-            Objects.equals(dateFrom, that.dateFrom) &&
-            Objects.equals(dateTo, that.dateTo) &&
-            Objects.equals(placementType, that.placementType) &&
-            Objects.equals(site, that.site) &&
-            Objects.equals(otherSites, that.otherSites) &&
-            Objects.equals(wte, that.wte) &&
-            Objects.equals(grade, that.grade) &&
-            Objects.equals(specialty1, that.specialty1) &&
-            Objects.equals(specialty2, that.specialty2) &&
-            Objects.equals(specialty3, that.specialty3) &&
-            Objects.equals(clinicalSupervisor, that.clinicalSupervisor) &&
-            Objects.equals(educationalSupervisor, that.educationalSupervisor) &&
-            Objects.equals(comments, that.comments);
+        Objects.equals(intrepidId, that.intrepidId) &&
+        Objects.equals(nationalPostNumber, that.nationalPostNumber) &&
+        Objects.equals(dateFrom, that.dateFrom) &&
+        Objects.equals(dateTo, that.dateTo) &&
+        Objects.equals(placementType, that.placementType) &&
+        Objects.equals(site, that.site) &&
+        Objects.equals(otherSites, that.otherSites) &&
+        Objects.equals(wte, that.wte) &&
+        Objects.equals(grade, that.grade) &&
+        Objects.equals(specialty1, that.specialty1) &&
+        Objects.equals(specialty2, that.specialty2) &&
+        Objects.equals(specialty3, that.specialty3) &&
+        Objects.equals(clinicalSupervisor, that.clinicalSupervisor) &&
+        Objects.equals(educationalSupervisor, that.educationalSupervisor) &&
+        Objects.equals(comments, that.comments);
   }
 
   @Override
   public int hashCode() {
 
-    return Objects.hash(placementId, intrepidId, nationalPostNumber, dateFrom, dateTo, placementType, site, otherSites, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
+    return Objects
+        .hash(placementId, intrepidId, nationalPostNumber, dateFrom, dateTo, placementType, site,
+            otherSites, wte, grade, specialty1, specialty2, specialty3, clinicalSupervisor,
+            educationalSupervisor, comments);
   }
 
   @Override

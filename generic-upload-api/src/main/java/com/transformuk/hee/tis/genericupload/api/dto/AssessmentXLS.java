@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.Objects;
 
 public class AssessmentXLS extends TemplateXLS {
+
   private String surname;
   private String gmcNumber;
   private String gdcNumber;
@@ -331,51 +332,63 @@ public class AssessmentXLS extends TemplateXLS {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     AssessmentXLS that = (AssessmentXLS) o;
     return Objects.equals(surname, that.surname) &&
-            Objects.equals(gmcNumber, that.gmcNumber) &&
-            Objects.equals(gdcNumber, that.gdcNumber) &&
-            Objects.equals(publicHealthNumber, that.publicHealthNumber) &&
-            Objects.equals(type, that.type) &&
-            Objects.equals(status, that.status) &&
-            Objects.equals(programmeName, that.programmeName) &&
-            Objects.equals(programmeNumber, that.programmeNumber) &&
-            Objects.equals(reviewDate, that.reviewDate) &&
-            Objects.equals(curriculumName, that.curriculumName) &&
-            Objects.equals(portfolioReviewDate, that.portfolioReviewDate) &&
-            Objects.equals(daysOutOfTraining, that.daysOutOfTraining) &&
-            Objects.equals(periodCoveredFrom, that.periodCoveredFrom) &&
-            Objects.equals(periodCoveredTo, that.periodCoveredTo) &&
-            Objects.equals(monthsCountedToTraining, that.monthsCountedToTraining) &&
-            Objects.equals(pya, that.pya) &&
-            Objects.equals(outcome, that.outcome) &&
-            Objects.equals(underAppeal, that.underAppeal) &&
-            Objects.equals(outcomeNotAssessed, that.outcomeNotAssessed) &&
-            Objects.equals(outcomeNotAssessedOther, that.outcomeNotAssessedOther) &&
-            Objects.equals(academicOutcome, that.academicOutcome) &&
-            Objects.equals(externalTrainer, that.externalTrainer) &&
-            Objects.equals(nextRotationGradeName, that.nextRotationGradeName) &&
-            Objects.equals(traineeNotifiedOfOutcome, that.traineeNotifiedOfOutcome) &&
-            Objects.equals(nextReviewDate, that.nextReviewDate) &&
-            Objects.equals(comments, that.comments) &&
-            Objects.equals(tenPercentAudit, that.tenPercentAudit) &&
-            Objects.equals(detailedReasons, that.detailedReasons) &&
-            Objects.equals(mitigatingCircumstances, that.mitigatingCircumstances) &&
-            Objects.equals(competencesToBeDeveloped, that.competencesToBeDeveloped) &&
-            Objects.equals(otherRecommendedActions, that.otherRecommendedActions) &&
-            Objects.equals(recommendedAdditionalTrainingTime, that.recommendedAdditionalTrainingTime) &&
-            Objects.equals(additionalCommentsFromPanel, that.additionalCommentsFromPanel) &&
-            Objects.equals(knownConcerns, that.knownConcerns) &&
-            Objects.equals(concernSummary, that.concernSummary) &&
-            Objects.equals(responsibleOfficerComments, that.responsibleOfficerComments);
+        Objects.equals(gmcNumber, that.gmcNumber) &&
+        Objects.equals(gdcNumber, that.gdcNumber) &&
+        Objects.equals(publicHealthNumber, that.publicHealthNumber) &&
+        Objects.equals(type, that.type) &&
+        Objects.equals(status, that.status) &&
+        Objects.equals(programmeName, that.programmeName) &&
+        Objects.equals(programmeNumber, that.programmeNumber) &&
+        Objects.equals(reviewDate, that.reviewDate) &&
+        Objects.equals(curriculumName, that.curriculumName) &&
+        Objects.equals(portfolioReviewDate, that.portfolioReviewDate) &&
+        Objects.equals(daysOutOfTraining, that.daysOutOfTraining) &&
+        Objects.equals(periodCoveredFrom, that.periodCoveredFrom) &&
+        Objects.equals(periodCoveredTo, that.periodCoveredTo) &&
+        Objects.equals(monthsCountedToTraining, that.monthsCountedToTraining) &&
+        Objects.equals(pya, that.pya) &&
+        Objects.equals(outcome, that.outcome) &&
+        Objects.equals(underAppeal, that.underAppeal) &&
+        Objects.equals(outcomeNotAssessed, that.outcomeNotAssessed) &&
+        Objects.equals(outcomeNotAssessedOther, that.outcomeNotAssessedOther) &&
+        Objects.equals(academicOutcome, that.academicOutcome) &&
+        Objects.equals(externalTrainer, that.externalTrainer) &&
+        Objects.equals(nextRotationGradeName, that.nextRotationGradeName) &&
+        Objects.equals(traineeNotifiedOfOutcome, that.traineeNotifiedOfOutcome) &&
+        Objects.equals(nextReviewDate, that.nextReviewDate) &&
+        Objects.equals(comments, that.comments) &&
+        Objects.equals(tenPercentAudit, that.tenPercentAudit) &&
+        Objects.equals(detailedReasons, that.detailedReasons) &&
+        Objects.equals(mitigatingCircumstances, that.mitigatingCircumstances) &&
+        Objects.equals(competencesToBeDeveloped, that.competencesToBeDeveloped) &&
+        Objects.equals(otherRecommendedActions, that.otherRecommendedActions) &&
+        Objects.equals(recommendedAdditionalTrainingTime, that.recommendedAdditionalTrainingTime) &&
+        Objects.equals(additionalCommentsFromPanel, that.additionalCommentsFromPanel) &&
+        Objects.equals(knownConcerns, that.knownConcerns) &&
+        Objects.equals(concernSummary, that.concernSummary) &&
+        Objects.equals(responsibleOfficerComments, that.responsibleOfficerComments);
   }
 
   @Override
   public int hashCode() {
 
-    return Objects.hash(surname, gmcNumber, gdcNumber, publicHealthNumber, type, status, programmeName, programmeNumber, reviewDate, curriculumName, portfolioReviewDate, daysOutOfTraining, periodCoveredFrom, periodCoveredTo, monthsCountedToTraining, pya, outcome, underAppeal, outcomeNotAssessed, outcomeNotAssessedOther, academicOutcome, externalTrainer, nextRotationGradeName, traineeNotifiedOfOutcome, nextReviewDate, comments, tenPercentAudit, detailedReasons, mitigatingCircumstances, competencesToBeDeveloped, otherRecommendedActions, recommendedAdditionalTrainingTime, additionalCommentsFromPanel, knownConcerns, concernSummary, responsibleOfficerComments);
+    return Objects
+        .hash(surname, gmcNumber, gdcNumber, publicHealthNumber, type, status, programmeName,
+            programmeNumber, reviewDate, curriculumName, portfolioReviewDate, daysOutOfTraining,
+            periodCoveredFrom, periodCoveredTo, monthsCountedToTraining, pya, outcome, underAppeal,
+            outcomeNotAssessed, outcomeNotAssessedOther, academicOutcome, externalTrainer,
+            nextRotationGradeName, traineeNotifiedOfOutcome, nextReviewDate, comments,
+            tenPercentAudit, detailedReasons, mitigatingCircumstances, competencesToBeDeveloped,
+            otherRecommendedActions, recommendedAdditionalTrainingTime, additionalCommentsFromPanel,
+            knownConcerns, concernSummary, responsibleOfficerComments);
   }
 
   @Override
@@ -412,7 +425,8 @@ public class AssessmentXLS extends TemplateXLS {
     sb.append(",mitigatingCircumstances='").append(mitigatingCircumstances).append('\'');
     sb.append(",competencesToBeDeveloped='").append(competencesToBeDeveloped).append('\'');
     sb.append(",otherRecommendedActions='").append(otherRecommendedActions).append('\'');
-    sb.append(",recommendedAdditionalTrainingTime='").append(recommendedAdditionalTrainingTime).append('\'');
+    sb.append(",recommendedAdditionalTrainingTime='").append(recommendedAdditionalTrainingTime)
+        .append('\'');
     sb.append(",additionalCommentsFromPanel='").append(additionalCommentsFromPanel).append('\'');
     sb.append(",knownConcerns='").append(knownConcerns).append('\'');
     sb.append(",concernSummary='").append(concernSummary).append('\'');

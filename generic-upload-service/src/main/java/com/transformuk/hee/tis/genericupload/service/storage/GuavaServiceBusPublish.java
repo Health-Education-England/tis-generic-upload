@@ -12,7 +12,8 @@ public class GuavaServiceBusPublish implements ServiceBusPublish {
 
 
   @Override
-  public void sendMessage(String queueName, FileRecordEvent fileRecordEvent) throws FileRecordStorageException {
+  public void sendMessage(String queueName, FileRecordEvent fileRecordEvent)
+      throws FileRecordStorageException {
     eventBus.post(fileRecordEvent);
 
   }

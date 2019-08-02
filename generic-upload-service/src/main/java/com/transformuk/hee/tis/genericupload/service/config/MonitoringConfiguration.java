@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 public class MonitoringConfiguration {
 
   @Bean
-  public Endpoint healthz(){
+  public Endpoint healthz() {
     return new HealthEndpoint();
   }
 }

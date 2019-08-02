@@ -9,6 +9,7 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 @Profile("local")
 public class AssessmentClientLocalConfig extends AssessmentClientConfig {
+
   @Bean
   public RestTemplate tcsRestTemplate() {
     return super.defaultAssessmentRestTemplate();

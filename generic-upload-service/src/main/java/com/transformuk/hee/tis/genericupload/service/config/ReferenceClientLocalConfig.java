@@ -9,6 +9,7 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 @Profile("local")
 public class ReferenceClientLocalConfig extends ReferenceClientConfig {
+
   @Bean
   public RestTemplate tcsRestTemplate() {
     return super.defaultReferenceRestTemplate();

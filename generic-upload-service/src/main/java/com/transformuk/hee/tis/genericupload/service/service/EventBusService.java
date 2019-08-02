@@ -4,10 +4,9 @@ import com.google.common.eventbus.EventBus;
 import com.transformuk.hee.tis.genericupload.service.event.FileRecordEvent;
 import com.transformuk.hee.tis.genericupload.service.event.FileRecordServiceFactory;
 import com.transformuk.hee.tis.genericupload.service.storage.FileRecordStorage;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.annotation.PostConstruct;
 import java.util.List;
+import javax.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * service that is in charge of placing objects on a queue for processing when file process
@@ -29,7 +28,8 @@ public class EventBusService {
   }
 
   /**
-   * Create a file record event object using the data, action and exception and post it to the event queue
+   * Create a file record event object using the data, action and exception and post it to the event
+   * queue
    *
    * @param dto    The data that was sent to the service
    * @param action The action which was attempted

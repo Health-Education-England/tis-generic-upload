@@ -33,9 +33,9 @@ import org.slf4j.Logger;
 import uk.nhs.tis.StringConverter;
 
 public class ExcelToObjectMapper {
-  private static final Logger logger = getLogger(ExcelToObjectMapper.class);
 
   public static final String ROW_NUMBER = "rowNumber";
+  private static final Logger logger = getLogger(ExcelToObjectMapper.class);
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M/yyyy");
 
   // The valid date formats defined in DATE_REGEX are d/mm/yyyy and dd/mm/yyyy
@@ -44,9 +44,37 @@ public class ExcelToObjectMapper {
   private Workbook workbook;
 
 
-  public ExcelToObjectMapper(InputStream excelFile, boolean validateDates) throws IOException, InvalidFormatException {
+  public ExcelToObjectMapper(InputStream excelFile, boolean validateDates)
+      throws IOException, InvalidFormatException {
     workbook = createWorkBook(excelFile);
     dateFormat.setLenient(!validateDates);
+  }
+
+  /**
+   * getDate() receives a date input, checks if it conforms to the DATE_REGEX, returns converted
+   * date without time
+   *
+   * @param date
+   * @return
+   * @throws ParseException when date doesn't conform to DATE_REGEX
+   */
+  public static Date getDate(String date) throws ParseException {
+    boolean matches = date.matches(DATE_REGEX);
+    if (matches) {
+      return removeTime(dateFormat.parse(date));
+    }
+    throw new ParseException("Date is not in valid dd/mm/yyyy format", 0);
+
+  }
+
+  public static Date removeTime(Date date) {
+    Calendar cal = Calendar.getInstance();
+    cal.setTime(date);
+    cal.set(Calendar.HOUR_OF_DAY, 0);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    return cal.getTime();
   }
 
   /**
@@ -56,7 +84,8 @@ public class ExcelToObjectMapper {
    * @return
    * @throws IOException
    */
-  private Workbook createWorkBook(InputStream excelFile) throws IOException, InvalidFormatException {
+  private Workbook createWorkBook(InputStream excelFile)
+      throws IOException, InvalidFormatException {
     return WorkbookFactory.create(excelFile);
   }
 
@@ -68,7 +97,8 @@ public class ExcelToObjectMapper {
    * @return List of object of type T.
    * @throws Exception if failed to generate mapping.
    */
-  public <T> List<T> map(Class<T> cls, Map<String, String> columnMap) throws ReflectiveOperationException {
+  public <T> List<T> map(Class<T> cls, Map<String, String> columnMap)
+      throws ReflectiveOperationException {
     List<T> list = new ArrayList();
 
     Field rowNumberFieldInXLS = cls.getSuperclass().getDeclaredField(ROW_NUMBER);
@@ -77,8 +107,10 @@ public class ExcelToObjectMapper {
     int lastRow = sheet.getLastRowNum();
     for (int rowNumber = 1; rowNumber <= lastRow; rowNumber++) {
       POIUtil poiUtil = new POIUtil();
-      if(sheet.getRow(rowNumber) == null || poiUtil.isEmptyRow(sheet.getRow(rowNumber))) continue;
-        Object obj = cls.newInstance();
+      if (sheet.getRow(rowNumber) == null || poiUtil.isEmptyRow(sheet.getRow(rowNumber))) {
+        continue;
+      }
+      Object obj = cls.newInstance();
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
@@ -100,8 +132,9 @@ public class ExcelToObjectMapper {
         }
       }
       rowNumberFieldInXLS.setInt(obj, rowNumber);
-      if(!isAllBlanks(obj))
+      if (!isAllBlanks(obj)) {
         list.add((T) obj);
+      }
     }
     return list;
   }
@@ -117,25 +150,27 @@ public class ExcelToObjectMapper {
   private boolean isAllBlanks(Object obj) throws IllegalAccessException {
     boolean allBlanks = true;
     for (Field f : obj.getClass().getDeclaredFields()) {
-    	  if(f.getName().startsWith("$")) //skip surefire jacoco fields
-    	    continue;
-        f.setAccessible(true);
-        allBlanks = allBlanks && org.springframework.util.StringUtils.isEmpty(f.get(obj));
+      if (f.getName().startsWith("$")) //skip surefire jacoco fields
+      {
+        continue;
+      }
+      f.setAccessible(true);
+      allBlanks = allBlanks && org.springframework.util.StringUtils.isEmpty(f.get(obj));
     }
     return allBlanks;
   }
 
-
   /**
-   * Read value from Cell and set it to given field of given object.
-   * Note: supported data Type: String, Date, int, long, float, double and boolean.
+   * Read value from Cell and set it to given field of given object. Note: supported data Type:
+   * String, Date, int, long, float, double and boolean.
    *
    * @param obj   Object whom given field belong.
    * @param field Field which value need to be set.
    * @param cell  Apache POI cell from which value needs to be retrived.
    * @throws DateTimeParseException if the input for LocalDate was not d/M/yyyy or dd/MM/yyyy.
    */
-  private void setObjectFieldValueFromCell(Object obj, Field field, Cell cell) throws IllegalAccessException, ParseException {
+  private void setObjectFieldValueFromCell(Object obj, Field field, Cell cell)
+      throws IllegalAccessException, ParseException {
     Class<?> cls = field.getType();
     field.setAccessible(true);
     if (cell == null) {
@@ -148,7 +183,7 @@ public class ExcelToObjectMapper {
             field.set(obj, MapperConfiguration.convertDate(trim));
           } else if (cls == Date.class) {
             field.set(obj, getDate(trim));
-          } else if(cls == Float.class) {
+          } else if (cls == Float.class) {
             field.set(obj, Float.valueOf(trim));
           } else {
             String setStr = StringConverter.getConverter(trim).escapeForJson().toString();
@@ -162,7 +197,7 @@ public class ExcelToObjectMapper {
             } else {
               field.set(obj, cell.getDateCellValue());
             }
-          } else if(cls == Float.class) {
+          } else if (cls == Float.class) {
             field.set(obj, (float) cell.getNumericCellValue());
           } else {
             cell.setCellType(CellType.STRING);
@@ -179,32 +214,8 @@ public class ExcelToObjectMapper {
   }
 
   /**
-   * getDate() receives a date input, checks if it conforms to the DATE_REGEX, returns converted date without time
-   * @param date
-   * @return
-   * @throws ParseException when date doesn't conform to DATE_REGEX
-   */
-  public static Date getDate(String date) throws ParseException {
-    boolean matches = date.matches(DATE_REGEX);
-    if (matches) {
-      return removeTime(dateFormat.parse(date));
-    }
-    throw new ParseException("Date is not in valid dd/mm/yyyy format",0);
-
-  }
-
-  public static Date removeTime(Date date) {
-    Calendar cal = Calendar.getInstance();
-    cal.setTime(date);
-    cal.set(Calendar.HOUR_OF_DAY, 0);
-    cal.set(Calendar.MINUTE, 0);
-    cal.set(Calendar.SECOND, 0);
-    cal.set(Calendar.MILLISECOND, 0);
-    return cal.getTime();
-  }
-
-  /**
    * set null value if the value is not found
+   *
    * @param obj
    * @param field
    */

@@ -1,22 +1,23 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
 public class PlacementDeleteXLS extends TemplateXLS {
-	private String placementId;
-	private String placementStatus;
 
-	public String getPlacementId() {
-		return placementId;
-	}
+  private String placementId;
+  private String placementStatus;
 
-	public void setPlacementId(String placementId) {
-		this.placementId = placementId;
-	}
+  public String getPlacementId() {
+    return placementId;
+  }
 
-	public String getPlacementStatus() {
-		return placementStatus;
-	}
+  public void setPlacementId(String placementId) {
+    this.placementId = placementId;
+  }
 
-	public void setPlacementStatus(String placementStatus) {
-		this.placementStatus = placementStatus;
-	}
+  public String getPlacementStatus() {
+    return placementStatus;
+  }
+
+  public void setPlacementStatus(String placementStatus) {
+    this.placementStatus = placementStatus;
+  }
 }
