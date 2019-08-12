@@ -1,9 +1,21 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
+import com.transformuk.hee.tis.tcs.api.dto.ContactDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
+import com.transformuk.hee.tis.tcs.api.dto.GdcDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PersonalDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
+import com.transformuk.hee.tis.tcs.api.dto.RightToWorkDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
+import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,16 +23,25 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.test.context.junit4.SpringRunner;
 
+@RunWith(SpringRunner.class)
 public class PersonTransformerServiceTest {
 
-  PersonTransformerService personTransformerService;
   Map<Pair<String, String>, List<ProgrammeDTO>> programmeDTOS;
   Map<String, List<CurriculumDTO>> curriculumDTOS;
 
+  @InjectMocks
+  private PersonTransformerService personTransformerService;
+
+  @Mock
+  private TcsServiceImpl tcsServiceImpl;
+
   @Before
   public void initialise() {
-    personTransformerService = new PersonTransformerService();
     programmeDTOS = new HashMap<>();
     ProgrammeDTO programmeDTO = PersonDTOHelper.createProgrammeDTO("A_PROG", "A_PROG_NUM");
     List<ProgrammeDTO> programmeDTOs = new ArrayList<>();
@@ -111,5 +132,82 @@ public class PersonTransformerServiceTest {
   @Test(expected = IllegalArgumentException.class)
   public void shouldThrowAnExceptionWhenCurriculumNameDoesNotMatch() {
     personTransformerService.getCurriculumDTO("A_CURR", this::getCurriculumDTOByName);
+  }
+
+  /**
+   * Test that the original National Insurance number is used when no new NI number is given.
+   */
+  @Test
+  public void testUpdateDatastoreWithRowsFromXLS_noNewNiNumber_originalNiNumber() {
+    // Set up test data.
+    String regNumber = "regNumber";
+
+    PersonDTO personXlsDto = new PersonDTO();
+    personXlsDto.setContactDetails(new ContactDetailsDTO());
+    personXlsDto.setGdcDetails(new GdcDetailsDTO());
+    personXlsDto.setGmcDetails(new GmcDetailsDTO());
+    personXlsDto.setRightToWork(new RightToWorkDTO());
+
+    PersonalDetailsDTO personalDetailsXlsDto = new PersonalDetailsDTO();
+    personXlsDto.setPersonalDetails(personalDetailsXlsDto);
+    Map<String, PersonDTO> regNumberToXlsDto = Collections.singletonMap(regNumber, personXlsDto);
+
+    PersonDTO personDbDto = new PersonDTO();
+    PersonalDetailsDTO personalDetailsDbDto = new PersonalDetailsDTO();
+    personalDetailsDbDto.setNationalInsuranceNumber("originalNiNumber");
+    personDbDto.setPersonalDetails(personalDetailsDbDto);
+    Map<String, PersonDTO> regNumberToDbDto = Collections.singletonMap(regNumber, personDbDto);
+
+    PersonXLS personXls = new PersonXLS();
+    Map<String, PersonXLS> regNumberToXls = Collections.singletonMap(regNumber, personXls);
+
+    // Call code under test.
+    personTransformerService
+        .updateDatastoreWithRowsFromXLS(regNumberToXlsDto, regNumberToDbDto, regNumberToXls);
+
+    // Perform assertions.
+    PersonalDetailsDTO personalDetails = personDbDto.getPersonalDetails();
+    String nationalInsuranceNumber = personalDetails.getNationalInsuranceNumber();
+    assertThat("The national insurance number did not match the expected value.",
+        nationalInsuranceNumber, is("originalNiNumber"));
+  }
+
+  /**
+   * Test that the new National Insurance number is used when a new NI number is given.
+   */
+  @Test
+  public void testUpdateDatastoreWithRowsFromXLS_newNiNumber_newNiNumber() {
+    // Set up test data.
+    String regNumber = "regNumber";
+
+    PersonDTO personXlsDto = new PersonDTO();
+    personXlsDto.setContactDetails(new ContactDetailsDTO());
+    personXlsDto.setGdcDetails(new GdcDetailsDTO());
+    personXlsDto.setGmcDetails(new GmcDetailsDTO());
+    personXlsDto.setRightToWork(new RightToWorkDTO());
+
+    PersonalDetailsDTO personalDetailsXlsDto = new PersonalDetailsDTO();
+    personalDetailsXlsDto.setNationalInsuranceNumber("newNiNumber");
+    personXlsDto.setPersonalDetails(personalDetailsXlsDto);
+    Map<String, PersonDTO> regNumberToXlsDto = Collections.singletonMap(regNumber, personXlsDto);
+
+    PersonDTO personDbDto = new PersonDTO();
+    PersonalDetailsDTO personalDetailsDbDto = new PersonalDetailsDTO();
+    personalDetailsDbDto.setNationalInsuranceNumber("originalNiNumber");
+    personDbDto.setPersonalDetails(personalDetailsDbDto);
+    Map<String, PersonDTO> regNumberToDbDto = Collections.singletonMap(regNumber, personDbDto);
+
+    PersonXLS personXls = new PersonXLS();
+    Map<String, PersonXLS> regNumberToXls = Collections.singletonMap(regNumber, personXls);
+
+    // Call code under test.
+    personTransformerService
+        .updateDatastoreWithRowsFromXLS(regNumberToXlsDto, regNumberToDbDto, regNumberToXls);
+
+    // Perform assertions.
+    PersonalDetailsDTO personalDetails = personDbDto.getPersonalDetails();
+    String nationalInsuranceNumber = personalDetails.getNationalInsuranceNumber();
+    assertThat("The national insurance number did not match the expected value.",
+        nationalInsuranceNumber, is("newNiNumber"));
   }
 }

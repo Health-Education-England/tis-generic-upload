@@ -387,7 +387,7 @@ public class PersonTransformerService {
     copyIfNotNullOrEmpty(personDTOFromXLS.getPersonalDetails(),
         personDTOFromDB.getPersonalDetails(),
         "maritalStatus", "dateOfBirth", "disability", "disabilityDetails", "nationality", "gender",
-        "ethnicOrigin", "sexualOrientation", "religiousBelief");
+        "ethnicOrigin", "sexualOrientation", "religiousBelief", "nationalInsuranceNumber");
     copyIfNotNullOrEmpty(personDTOFromXLS.getGmcDetails(), personDTOFromDB.getGmcDetails(),
         "gmcNumber");
     copyIfNotNullOrEmpty(personDTOFromXLS.getGdcDetails(), personDTOFromDB.getGdcDetails(),
