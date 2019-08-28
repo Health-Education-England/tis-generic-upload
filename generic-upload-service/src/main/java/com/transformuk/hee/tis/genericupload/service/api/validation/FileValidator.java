@@ -1,23 +1,10 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
-import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.*;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.UploadFileResource;
-import com.transformuk.hee.tis.genericupload.service.parser.AssessmentHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementDeleteHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementUpdateHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PostFundingUpdateHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PostUpdateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.*;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -105,6 +92,10 @@ public class FileValidator {
       fileType = FileType.POSTS_UPDATE;
       validateMandatoryFieldsOrThrowException(files, fieldErrors, PostUpdateXLS.class,
           excelToObjectMapper, new PostUpdateHeaderMapper());
+    } else if (headers.contains("TIS_PostFunding_ID*")) {
+      fileType = FileType.FUNDING_UPDATE;
+      validateMandatoryFieldsOrThrowException(files, fieldErrors, FundingUpdateXLS.class,
+          excelToObjectMapper, new FundingUpdateHeaderMapper());
     } else {
       throw new InvalidFormatException("Unrecognised upload template");
     }
