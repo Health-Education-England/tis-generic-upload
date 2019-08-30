@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
+import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostFundingDTO;
@@ -30,6 +31,9 @@ public class FundingUpdateTransformServiceTest {
 
   private static final String DID_NOT_FIND_POST_FUNDING_FOR_ID = "Did not find the postFunding for id";
   private static final String ERROR_INVALID_FUNDING_BODY_NAME = "Funding body could not be found for the name";
+  private static final String ERROR_INVALID_FUNDING_TYPE = "Funding type could not be found for the label";
+  private static final String FUNDING_TYPE_IS_NOT_OTHER = "Funding type specified filled although type is not Other.";
+  private static final String UPDATE_FAILED = "Update failed.";
 
   @InjectMocks
   private FundingUpdateTransformerService fundingUpdateTransformerService;
@@ -52,8 +56,8 @@ public class FundingUpdateTransformServiceTest {
     // initialise fundingUpdateXLS
     fundingUpdateXLS = new FundingUpdateXLS();
     fundingUpdateXLS.setPostFundingTisId("1");
-    fundingUpdateXLS.setFundingType("Other");
-    fundingUpdateXLS.setFundingTypeOther("Arbitrary");
+    fundingUpdateXLS.setFundingType("Academic");
+    fundingUpdateXLS.setFundingTypeOther(null);
     fundingUpdateXLS.setFundingBody("validFundingBody");
     Calendar cFrom = Calendar.getInstance();
     cFrom.set(2019, 8, 1); // 2019-09-01
@@ -68,15 +72,22 @@ public class FundingUpdateTransformServiceTest {
     trustDTO.setTrustKnownAs("validFundingBody");
     trustDTO.setId(1L);
     trusts.add(trustDTO);
-
     when(referenceServiceImpl.findCurrentTrustsByTrustKnownAsIn(new HashSet<>(Arrays.asList("validFundingBody"))))
         .thenReturn(trusts);
+
+    // initialise fundingTypeLabels
+    List<FundingTypeDTO> fundingTypes = new ArrayList<>();
+    FundingTypeDTO fundingTypeDTO = new FundingTypeDTO();
+    fundingTypeDTO.setLabel("Academic");
+    fundingTypes.add(fundingTypeDTO);
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(new HashSet<>(Arrays.asList("Academic"))))
+        .thenReturn(fundingTypes);
 
     // initialise postFundingDTO
     postFundingDTO = new PostFundingDTO();
     postFundingDTO.setFundingBodyId("2");
     postFundingDTO.setFundingType("originalType");
-    postFundingDTO.setInfo("originalInfo");
+    postFundingDTO.setInfo(null);
     postFundingDTO.setStartDate(LocalDate.now());
     postFundingDTO.setEndDate(LocalDate.now().plusDays(1));
     postFundingDTO.setPostId(1L);
@@ -116,9 +127,34 @@ public class FundingUpdateTransformServiceTest {
     List<FundingUpdateXLS> fundingUpdateXLSList = Arrays.asList(fundingUpdateXLS);
     fundingUpdateTransformerService.processFundingUpdateUpload(fundingUpdateXLSList);
 
-    MatcherAssert.assertThat("Can handle non-number post funding id",
+    MatcherAssert.assertThat("Can handle unknown funding body",
         fundingUpdateXLS.getErrorMessage(),
         CoreMatchers.containsString(ERROR_INVALID_FUNDING_BODY_NAME));
+  }
+
+  @Test
+  public void canHandleUnknownFundingType() {
+    fundingUpdateXLS.setFundingType("Unknown");
+
+    List<FundingUpdateXLS> fundingUpdateXLSList = Arrays.asList(fundingUpdateXLS);
+    fundingUpdateTransformerService.processFundingUpdateUpload(fundingUpdateXLSList);
+
+    MatcherAssert.assertThat("Can handle unknown funding type",
+        fundingUpdateXLS.getErrorMessage(),
+        CoreMatchers.containsString(ERROR_INVALID_FUNDING_TYPE));
+  }
+
+  @Test
+  public void canHandleSpecifiedFundingTypeWhenNotOther() {
+    fundingUpdateXLS.setFundingType("Academic");
+    fundingUpdateXLS.setFundingTypeOther("other type");
+
+    List<FundingUpdateXLS> fundingUpdateXLSList = Arrays.asList(fundingUpdateXLS);
+    fundingUpdateTransformerService.processFundingUpdateUpload(fundingUpdateXLSList);
+
+    MatcherAssert.assertThat("Can handle specified funding type when type is not Other",
+        fundingUpdateXLS.getErrorMessage(),
+        CoreMatchers.containsString(FUNDING_TYPE_IS_NOT_OTHER));
   }
 
   @Test
@@ -133,6 +169,34 @@ public class FundingUpdateTransformServiceTest {
     MatcherAssert.assertThat("Should update fundingType",
         postFundingDTOArgumentCaptorValue.getFundingType(),
         CoreMatchers.equalTo(fundingUpdateXLS.getFundingType()));
+    MatcherAssert.assertThat("Should update fundingTypeOther",
+        postFundingDTOArgumentCaptorValue.getInfo(),
+        CoreMatchers.nullValue());
+    MatcherAssert.assertThat("Should update fundingBody",
+        postFundingDTOArgumentCaptorValue.getFundingBodyId(),
+        CoreMatchers.equalTo("1"));
+    MatcherAssert.assertThat("Should update dateFrom",
+        postFundingDTOArgumentCaptorValue.getStartDate(),
+        CoreMatchers.equalTo(convertDate(fundingUpdateXLS.getDateFrom())));
+    MatcherAssert.assertThat("Should update dateTo",
+        postFundingDTOArgumentCaptorValue.getEndDate(),
+        CoreMatchers.equalTo(convertDate(fundingUpdateXLS.getDateTo())));
+  }
+
+  @Test
+  public void canUpdateFieldsWhenFundingTypeIsOther() {
+    fundingUpdateXLS.setFundingType("Other");
+    fundingUpdateXLS.setFundingTypeOther("other type");
+    List<FundingUpdateXLS> fundingUpdateXLSList = Arrays.asList(fundingUpdateXLS);
+    when(tcsServiceImpl.updateFunding(postFundingDTOArgumentCaptor.capture()))
+        .thenReturn(null);
+    fundingUpdateTransformerService.processFundingUpdateUpload(fundingUpdateXLSList);
+
+    PostFundingDTO postFundingDTOArgumentCaptorValue = postFundingDTOArgumentCaptor.getValue();
+
+    MatcherAssert.assertThat("Should update fundingType",
+        postFundingDTOArgumentCaptorValue.getFundingType(),
+        CoreMatchers.equalTo("Other"));
     MatcherAssert.assertThat("Should update fundingTypeOther",
         postFundingDTOArgumentCaptorValue.getInfo(),
         CoreMatchers.equalTo(fundingUpdateXLS.getFundingTypeOther()));
