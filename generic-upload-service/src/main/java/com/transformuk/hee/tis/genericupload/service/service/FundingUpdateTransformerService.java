@@ -50,10 +50,10 @@ public class FundingUpdateTransformerService {
     Set<String> fundingTypeLabels = fundingUpdateXlSs.stream()
         .map(FundingUpdateXLS::getFundingType).collect(Collectors.toSet());
     List<FundingTypeDTO> fundingTypes = referenceService.findCurrentFundingTypesByLabelIn(fundingTypeLabels);
-    Set<String> fundingTypeLableSet = fundingTypes.stream().map(dto -> dto.getLabel()).collect(Collectors.toSet());
+    Set<String> fundingTypeLabelSet = fundingTypes.stream().map(dto -> dto.getLabel()).collect(Collectors.toSet());
 
     for (FundingUpdateXLS fundingUpdateXlS : fundingUpdateXlSs) {
-      useMatchingCriteriaToUpdatePostFunding(fundingUpdateXlS, fundingBodyNameToId, fundingTypeLableSet);
+      useMatchingCriteriaToUpdatePostFunding(fundingUpdateXlS, fundingBodyNameToId, fundingTypeLabelSet);
     }
   }
 
@@ -62,18 +62,19 @@ public class FundingUpdateTransformerService {
    *
    * @param fundingUpdateXLS    The FundingUpdateXLS to be verified.
    * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference service.
+   * @param fundingTypeLabelSet A set which contains all the fundingTypeLabels got from reference service.
    */
   private void useMatchingCriteriaToUpdatePostFunding(
       FundingUpdateXLS fundingUpdateXLS,
       Map<String, String> fundingBodyNameToId,
-      Set<String> fundingTypeLableSet) {
+      Set<String> fundingTypeLabelSet) {
 
     String postFundingId = fundingUpdateXLS.getPostFundingTisId();
     if (!StringUtils.isEmpty(postFundingId)) {
       try {
         PostFundingDTO postFundingDTO = tcsService.getPostFundingById(Long.valueOf(postFundingId));
         if (postFundingDTO != null) {
-          updatePostFundingDto(fundingUpdateXLS, postFundingDTO, fundingBodyNameToId, fundingTypeLableSet);
+          updatePostFundingDto(fundingUpdateXLS, postFundingDTO, fundingBodyNameToId, fundingTypeLabelSet);
         } else {
           fundingUpdateXLS
               .addErrorMessage(String.format(DID_NOT_FIND_POST_FUNDING_FOR_ID, postFundingId));
@@ -95,7 +96,7 @@ public class FundingUpdateTransformerService {
    * @param postFundingDTO      The PostFundingDTO got from tcs service.
    *                            and is also used to update the entity in database.
    * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference service.
-   * @param fundingTypeLabelSet A set which contains all the fundingTypelable got from reference service.
+   * @param fundingTypeLabelSet A set which contains all the fundingTypeLabels got from reference service.
    */
   private void updatePostFundingDto(
       FundingUpdateXLS fundingUpdateXLS,
