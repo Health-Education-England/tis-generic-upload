@@ -206,6 +206,7 @@ public class ScheduledUploadTask {
     }
 
     applicationType.setNumberOfErrors(errorCount);
+    logger.info("Success count or number imported {}", successCount);
     applicationType.setNumberImported(successCount);
     applicationType.setErrorJson(fir.toJson());
     applicationType.setProcessedDate(LocalDateTime.now());

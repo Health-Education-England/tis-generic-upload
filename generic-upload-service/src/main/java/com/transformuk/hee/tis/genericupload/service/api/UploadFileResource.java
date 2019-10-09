@@ -62,7 +62,8 @@ public class UploadFileResource {
     this.fileValidator = fileValidator;
   }
 
-  @ApiOperation(value = "Upload a file", notes = "Although this interface supports multiple file uploads, at the time of development the Angular client only supports a single upload")
+  @ApiOperation(value = "Upload a file", notes = "Although this interface supports multiple file uploads, "
+      + "at the time of development the Angular client only supports a single upload")
   @ApiResponses(value = {
       @ApiResponse(code = 202, message = "Uploaded given files successfully with logId", response = ApplicationType.class),
       @ApiResponse(code = 400, message = "The error message will be in the body of the response", response = String.class),

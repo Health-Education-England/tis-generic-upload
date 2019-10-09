@@ -19,7 +19,7 @@ public class PlacementHeaderMapper extends ColumnMapper {
       new ColumnMapping("otherSites", "Other Sites"),
       new ColumnMapping("wte", "WTE*"),
       new ColumnMapping("grade", "Grade*"),
-      new ColumnMapping("specialty1", "Specialty1"),
+      new ColumnMapping("specialty1", "Specialty1*"),
       new ColumnMapping("specialty2", "Specialty2"),
       new ColumnMapping("specialty3", "Specialty3"),
       new ColumnMapping("clinicalSupervisor", "Clinical Supervisor"),
