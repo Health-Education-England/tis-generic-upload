@@ -70,6 +70,7 @@ public class PlacementTransformerService {
   private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by National Post Number : ";
   private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER = "POST status is set to DELETE for National Post Number : ";
   private static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER = "Did not find a person for registration number : ";
+  private static final String SPECIALTY1_IS_MANDATORY = "Specialty1 field is required";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name : ";
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
   private static final String PLACEMENT_FROM_DATE_IS_MANDATORY = "Placement from date is mandatory";
@@ -217,7 +218,7 @@ public class PlacementTransformerService {
     Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = getPersonBasicDetailsDTOFromRegNumber(
         phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC,
         placementXLS);
-    if (personBasicDetailsDTOOptional.isPresent()) {
+    if (personBasicDetailsDTOOptional.isPresent() && checkSpecialty1ExistsOrRecordError(placementXLS)) {
       PersonBasicDetailsDTO personBasicDetailsDTO = personBasicDetailsDTOOptional.get();
       if (!placementXLS.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
         placementXLS
@@ -535,6 +536,16 @@ public class PlacementTransformerService {
     setWTEOrRecordError(placementXLS, placementDTO);
     setSiteOrRecordError(siteMapByName, placementXLS, placementDTO);
     setGradeOrRecordError(gradeMapByName, placementXLS, placementDTO);
+  }
+
+  private boolean checkSpecialty1ExistsOrRecordError(PlacementXLS placementXLS) {
+    if (StringUtils.isEmpty(placementXLS.getSpecialty1())) {
+      placementXLS.addErrorMessage(SPECIALTY1_IS_MANDATORY);
+      return false;
+    }
+    else {
+      return true;
+    }
   }
 
   private void setSiteOrRecordError(Map<String, SiteDTO> siteMapByName, PlacementXLS placementXLS,
