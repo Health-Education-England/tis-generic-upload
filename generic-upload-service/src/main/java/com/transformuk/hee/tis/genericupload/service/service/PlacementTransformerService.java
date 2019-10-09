@@ -543,8 +543,9 @@ public class PlacementTransformerService {
       placementXLS.addErrorMessage(SPECIALTY1_IS_MANDATORY);
       return false;
     }
-    else
+    else {
       return true;
+    }
   }
 
   private void setSiteOrRecordError(Map<String, SiteDTO> siteMapByName, PlacementXLS placementXLS,
