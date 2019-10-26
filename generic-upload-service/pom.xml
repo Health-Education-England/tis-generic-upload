@@ -12,7 +12,7 @@
 
   <groupId>com.transformuk.hee.tis</groupId>
   <artifactId>generic-upload-service</artifactId>
-  <version>1.8.2</version>
+  <version>1.9.0</version>
   <packaging>war</packaging>
 
   <properties>
@@ -179,7 +179,7 @@
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
       <artifactId>generic-upload-api</artifactId>
-      <version>1.4.0</version>
+      <version>1.5.0</version>
     </dependency>
     <dependency>
       <groupId>uk.nhs.tis</groupId>
@@ -627,9 +627,9 @@
           <executable>true</executable>
           <fork>true</fork>
           <!--
-          Enable the line below to have remote debugging of your application on port 5005
-          <jvmArguments>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</jvmArguments>
-          -->
+          Enable the line below to have remote debugging of your application on port 5007-->
+          <jvmArguments>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007</jvmArguments>
+
         </configuration>
       </plugin>
       <!-- jhipster-needle-maven-add-plugin -->

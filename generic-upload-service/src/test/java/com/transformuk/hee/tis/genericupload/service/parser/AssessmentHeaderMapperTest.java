@@ -30,7 +30,7 @@ public class AssessmentHeaderMapperTest {
     // Perform assertions.
     MatcherAssert
         .assertThat("The number of fields did not contain the expected value.", fieldMap.size(),
-            CoreMatchers.is(36));
+            CoreMatchers.is(33));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("surname", "Trainee Surname*")));
@@ -49,9 +49,6 @@ public class AssessmentHeaderMapperTest {
             CoreMatchers.hasItem(Maps.immutableEntry("type", "Type*")));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("status", "Status")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("programmeName", "Programme name*")));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
@@ -62,10 +59,6 @@ public class AssessmentHeaderMapperTest {
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("curriculumName", "Curriculum name*")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers
-                .hasItem(Maps.immutableEntry("portfolioReviewDate", "Portfolio review date")));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("daysOutOfTraining", "Days out of training")));
@@ -106,10 +99,6 @@ public class AssessmentHeaderMapperTest {
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers
                 .hasItem(Maps.immutableEntry("nextRotationGradeName", "Grade at next rotation")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(
-                Maps.immutableEntry("traineeNotifiedOfOutcome", "Trainee notified of outcome")));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("nextReviewDate", "Next review date")));

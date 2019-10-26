@@ -10,12 +10,10 @@ public class AssessmentXLS extends TemplateXLS {
   private String gdcNumber;
   private String publicHealthNumber;
   private String type;
-  private String status;
   private String programmeName;
   private String programmeNumber;
   private Date reviewDate;
   private String curriculumName;
-  private Date portfolioReviewDate;
   private String daysOutOfTraining;
   private Date periodCoveredFrom;
   private Date periodCoveredTo;
@@ -28,7 +26,6 @@ public class AssessmentXLS extends TemplateXLS {
   private String academicOutcome;
   private String externalTrainer;
   private String nextRotationGradeName;
-  private String traineeNotifiedOfOutcome;
   private Date nextReviewDate;
   private String comments;
   private String tenPercentAudit;
@@ -82,14 +79,6 @@ public class AssessmentXLS extends TemplateXLS {
     this.type = type;
   }
 
-  public String getStatus() {
-    return status;
-  }
-
-  public void setStatus(String status) {
-    this.status = status;
-  }
-
   public String getProgrammeName() {
     return programmeName;
   }
@@ -120,14 +109,6 @@ public class AssessmentXLS extends TemplateXLS {
 
   public void setCurriculumName(String curriculumName) {
     this.curriculumName = curriculumName;
-  }
-
-  public Date getPortfolioReviewDate() {
-    return portfolioReviewDate;
-  }
-
-  public void setPortfolioReviewDate(Date portfolioReviewDate) {
-    this.portfolioReviewDate = portfolioReviewDate;
   }
 
   public String getDaysOutOfTraining() {
@@ -224,14 +205,6 @@ public class AssessmentXLS extends TemplateXLS {
 
   public void setNextRotationGradeName(String nextRotationGradeName) {
     this.nextRotationGradeName = nextRotationGradeName;
-  }
-
-  public String getTraineeNotifiedOfOutcome() {
-    return traineeNotifiedOfOutcome;
-  }
-
-  public void setTraineeNotifiedOfOutcome(String traineeNotifiedOfOutcome) {
-    this.traineeNotifiedOfOutcome = traineeNotifiedOfOutcome;
   }
 
   public Date getNextReviewDate() {
@@ -344,12 +317,10 @@ public class AssessmentXLS extends TemplateXLS {
         Objects.equals(gdcNumber, that.gdcNumber) &&
         Objects.equals(publicHealthNumber, that.publicHealthNumber) &&
         Objects.equals(type, that.type) &&
-        Objects.equals(status, that.status) &&
         Objects.equals(programmeName, that.programmeName) &&
         Objects.equals(programmeNumber, that.programmeNumber) &&
         Objects.equals(reviewDate, that.reviewDate) &&
         Objects.equals(curriculumName, that.curriculumName) &&
-        Objects.equals(portfolioReviewDate, that.portfolioReviewDate) &&
         Objects.equals(daysOutOfTraining, that.daysOutOfTraining) &&
         Objects.equals(periodCoveredFrom, that.periodCoveredFrom) &&
         Objects.equals(periodCoveredTo, that.periodCoveredTo) &&
@@ -362,7 +333,6 @@ public class AssessmentXLS extends TemplateXLS {
         Objects.equals(academicOutcome, that.academicOutcome) &&
         Objects.equals(externalTrainer, that.externalTrainer) &&
         Objects.equals(nextRotationGradeName, that.nextRotationGradeName) &&
-        Objects.equals(traineeNotifiedOfOutcome, that.traineeNotifiedOfOutcome) &&
         Objects.equals(nextReviewDate, that.nextReviewDate) &&
         Objects.equals(comments, that.comments) &&
         Objects.equals(tenPercentAudit, that.tenPercentAudit) &&
@@ -381,11 +351,11 @@ public class AssessmentXLS extends TemplateXLS {
   public int hashCode() {
 
     return Objects
-        .hash(surname, gmcNumber, gdcNumber, publicHealthNumber, type, status, programmeName,
-            programmeNumber, reviewDate, curriculumName, portfolioReviewDate, daysOutOfTraining,
+        .hash(surname, gmcNumber, gdcNumber, publicHealthNumber, type, programmeName,
+            programmeNumber, reviewDate, curriculumName, daysOutOfTraining,
             periodCoveredFrom, periodCoveredTo, monthsCountedToTraining, pya, outcome, underAppeal,
             outcomeNotAssessed, outcomeNotAssessedOther, academicOutcome, externalTrainer,
-            nextRotationGradeName, traineeNotifiedOfOutcome, nextReviewDate, comments,
+            nextRotationGradeName, nextReviewDate, comments,
             tenPercentAudit, detailedReasons, mitigatingCircumstances, competencesToBeDeveloped,
             otherRecommendedActions, recommendedAdditionalTrainingTime, additionalCommentsFromPanel,
             knownConcerns, concernSummary, responsibleOfficerComments);
@@ -399,12 +369,10 @@ public class AssessmentXLS extends TemplateXLS {
     sb.append(",gdcNumber='" + gdcNumber).append('\'');
     sb.append(",publicHealthNumber='").append(publicHealthNumber).append('\'');
     sb.append(",type='").append(type).append('\'');
-    sb.append(",status='").append(status).append('\'');
     sb.append(",programmeName='").append(programmeName).append('\'');
     sb.append(",programmeNumber='").append(programmeNumber).append('\'');
     sb.append(",reviewDate='").append(reviewDate).append('\'');
     sb.append(",curriculumName='").append(curriculumName).append('\'');
-    sb.append(",portfolioReviewDate='").append(portfolioReviewDate).append('\'');
     sb.append(",daysOutOfTraining='").append(daysOutOfTraining).append('\'');
     sb.append(",periodCoveredFrom='").append(periodCoveredFrom).append('\'');
     sb.append(",periodCoveredTo='").append(periodCoveredTo).append('\'');
@@ -417,7 +385,6 @@ public class AssessmentXLS extends TemplateXLS {
     sb.append(",academicOutcome='").append(academicOutcome).append('\'');
     sb.append(",externalTrainer='").append(externalTrainer).append('\'');
     sb.append(",nextRotationGradeName='").append(nextRotationGradeName).append('\'');
-    sb.append(",traineeNotifiedOfOutcome='").append(traineeNotifiedOfOutcome).append('\'');
     sb.append(",nextReviewDate='").append(nextReviewDate).append('\'');
     sb.append(",comments='").append(comments).append('\'');
     sb.append(",tenPercentAudit='").append(tenPercentAudit).append('\'');
