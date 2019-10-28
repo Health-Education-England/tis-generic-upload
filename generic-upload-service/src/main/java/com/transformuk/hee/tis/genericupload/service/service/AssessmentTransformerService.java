@@ -53,7 +53,6 @@ import org.springframework.util.StringUtils;
 @Component
 public class AssessmentTransformerService {
 
-  public static final String GIVEN_ASSESSMENT_STATUS_IS_NOT_VALID = "Given assessment status is not valid";
   public static final String SEMI_COLON = ";";
   public static final String GIVEN_ASSESSMENT_REASON_NOT_FOUND = "Given Assessment reason not found";
   private static final Logger logger = getLogger(AssessmentTransformerService.class);
@@ -77,7 +76,6 @@ public class AssessmentTransformerService {
   private static final String REVIEW_DATE_BEFORE_1753 = "Review date is before year 1753";
   private static final String CURRICULUM_START_DATE_BEFORE_1753 = "Curriculum start date is below year 1753";
   private static final String CURRICULUM_END_DATE_BEFORE_1753 = "Curriculum end date is below year 1753";
-  private static final String PORTFOLIO_REVIEW_DATE_BEFORE_1753 = "Portfolio review date is below year 1753";
   private static final String PERIOD_COVERED_FROM_DATE_BEFORE_1753 = "Period covered from date is below year 1753";
   private static final String PERIOD_COVERED_TO_DATE_BEFORE_1753 = "Period covered to date is below year 1753";
   private static final String NEXT_REVIEW_DATE_BEFORE_1753 = "Next review date is below year 1753";
@@ -212,14 +210,6 @@ public class AssessmentTransformerService {
       assessmentDTO.setLastName(personBasicDetailsDTO.getLastName());
       assessmentDTO.setTraineeId(personBasicDetailsDTO.getId());
       assessmentDTO.setType(assessmentXLS.getType());
-      if (!StringUtils.isEmpty(assessmentXLS.getStatus())) {
-        if (EnumUtils.isValidEnum(EventStatus.class, assessmentXLS.getStatus().toUpperCase())) {
-          assessmentDTO
-              .setEventStatus(EventStatus.valueOf(assessmentXLS.getStatus().toUpperCase()));
-        } else {
-          assessmentXLS.addErrorMessage(GIVEN_ASSESSMENT_STATUS_IS_NOT_VALID);
-        }
-      }
 
       if (programmeMembershipCurriculaDTO != null
           && programmeMembershipCurriculaDTO.getCurriculumMemberships() != null) {
@@ -263,12 +253,6 @@ public class AssessmentTransformerService {
         assessmentDetailDTO.setCurriculumSubType(curriculumDTO.getCurriculumSubType().name());
       }
 
-      try {
-        assessmentDetailDTO
-            .setPortfolioReviewDate(convertDate(assessmentXLS.getPortfolioReviewDate()));
-      } catch (final IllegalArgumentException e) {
-        assessmentXLS.addErrorMessage(PORTFOLIO_REVIEW_DATE_BEFORE_1753);
-      }
       if (NumberUtils.isDigits(assessmentXLS.getDaysOutOfTraining())) {
         assessmentDetailDTO
             .setDaysOutOfTraining(Integer.parseInt(assessmentXLS.getDaysOutOfTraining()));
@@ -359,8 +343,6 @@ public class AssessmentTransformerService {
           assessmentOutcomeDTO.setNextRotationGradeAbbr(gradeDTO.getAbbreviation());
           assessmentOutcomeDTO.setNextRotationGradeId(gradeDTO.getId());
         }
-        assessmentOutcomeDTO.setTraineeNotifiedOfOutcome(
-            BooleanUtil.parseBooleanObject(assessmentXLS.getTraineeNotifiedOfOutcome()));
 
         try {
           assessmentOutcomeDTO.setNextReviewDate(convertDate(assessmentXLS.getNextReviewDate()));
