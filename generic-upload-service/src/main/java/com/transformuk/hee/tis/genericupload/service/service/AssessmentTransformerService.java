@@ -209,6 +209,9 @@ public class AssessmentTransformerService {
       assessmentDTO.setFirstName(personBasicDetailsDTO.getFirstName());
       assessmentDTO.setLastName(personBasicDetailsDTO.getLastName());
       assessmentDTO.setTraineeId(personBasicDetailsDTO.getId());
+      assessmentDTO.setGmcNumber(personBasicDetailsDTO.getGmcNumber());
+      assessmentDTO.setGdcNumber(personBasicDetailsDTO.getGdcNumber());
+      assessmentDTO.setPublicHealthNumber(personBasicDetailsDTO.getPublicHealthNumber());
       assessmentDTO.setType(assessmentXLS.getType());
 
       if (programmeMembershipCurriculaDTO != null

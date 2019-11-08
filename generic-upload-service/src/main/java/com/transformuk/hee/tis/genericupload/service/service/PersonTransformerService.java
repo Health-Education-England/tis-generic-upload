@@ -19,6 +19,7 @@ import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonBasicDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonalDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.ProgrammeCurriculumDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.dto.QualificationDTO;
@@ -504,7 +505,7 @@ public class PersonTransformerService {
   }
 
   private PersonDTO getPersonDTO(PersonXLS personXLS) {
-    Set<CurriculumDTO> curricula = new HashSet<>();
+    Set<ProgrammeCurriculumDTO> curricula = new HashSet<>();
     PersonDTO personDTO = null;
     try {
       CurriculumDTO curriculumDTO1 = getCurriculumDTO(personXLS.getCurriculum1());
