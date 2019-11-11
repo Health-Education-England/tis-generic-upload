@@ -7,6 +7,7 @@ import com.transformuk.hee.tis.tcs.api.dto.GdcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonalDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.ProgrammeCurriculumDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipCurriculaDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
@@ -194,19 +195,25 @@ public class PeopleMapperConfiguration extends MapperConfiguration {
         new AbstractConverter<PersonXLS, ProgrammeDTO>() {
           @Override
           protected ProgrammeDTO convert(PersonXLS source) {
-            Set<CurriculumDTO> curricula = new HashSet<>();
+            Set<ProgrammeCurriculumDTO> curricula = new HashSet<>();
 
             CurriculumDTO curriculumDTO1 = new CurriculumDTO();
             curriculumDTO1.setName(source.getCurriculum1());
-            curricula.add(curriculumDTO1);
+            ProgrammeCurriculumDTO programmCurriculumDTO1 = new ProgrammeCurriculumDTO();
+            programmCurriculumDTO1.setCurriculum(curriculumDTO1);
+            curricula.add(programmCurriculumDTO1);
 
             CurriculumDTO curriculumDTO2 = new CurriculumDTO();
             curriculumDTO2.setName(source.getCurriculum2());
-            curricula.add(curriculumDTO2);
+            ProgrammeCurriculumDTO programmCurriculumDTO2 = new ProgrammeCurriculumDTO();
+            programmCurriculumDTO2.setCurriculum(curriculumDTO2);
+            curricula.add(programmCurriculumDTO2);
 
             CurriculumDTO curriculumDTO3 = new CurriculumDTO();
             curriculumDTO3.setName(source.getCurriculum3());
-            curricula.add(curriculumDTO3);
+            ProgrammeCurriculumDTO programmCurriculumDTO3 = new ProgrammeCurriculumDTO();
+            programmCurriculumDTO3.setCurriculum(curriculumDTO3);
+            curricula.add(programmCurriculumDTO3);
 
             ProgrammeDTO programmeDTO = new ProgrammeDTO();
             programmeDTO.setProgrammeName(source.getProgrammeName());
