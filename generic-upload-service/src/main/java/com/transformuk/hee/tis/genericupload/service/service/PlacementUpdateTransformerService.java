@@ -24,6 +24,7 @@ import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.CommentSource;
+import com.transformuk.hee.tis.tcs.api.enumeration.LifecycleState;
 import com.transformuk.hee.tis.tcs.api.enumeration.PlacementSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
@@ -197,6 +198,7 @@ public class PlacementUpdateTransformerService {
       dbPlacementDetailsDTO.setPostId(postDTO.getId());
     }
     if (!placementXLS.hasErrors()) {
+      dbPlacementDetailsDTO.setLifecycleState(LifecycleState.APPROVED);
       setCommentInPlacementDTO(dbPlacementDetailsDTO, placementXLS, username);
       logger.info("dbPlacementDetailsDTO => {}", dbPlacementDetailsDTO);
       tcsServiceImpl.updatePlacement(dbPlacementDetailsDTO);

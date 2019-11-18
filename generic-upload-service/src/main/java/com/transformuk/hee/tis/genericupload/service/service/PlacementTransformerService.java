@@ -33,10 +33,7 @@ import com.transformuk.hee.tis.tcs.api.dto.PlacementSupervisorDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
-import com.transformuk.hee.tis.tcs.api.enumeration.CommentSource;
-import com.transformuk.hee.tis.tcs.api.enumeration.PlacementSiteType;
-import com.transformuk.hee.tis.tcs.api.enumeration.PlacementStatus;
-import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
+import com.transformuk.hee.tis.tcs.api.enumeration.*;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -357,6 +354,7 @@ public class PlacementTransformerService {
     addSupervisorsToPlacement(placementXLS, placementDTO, regNumberToDTOLookup,
         clinicalSupervisorRoles, educationalSupervisorRoles);
     if (!placementXLS.hasErrors()) {
+      placementDTO.setLifecycleState(LifecycleState.APPROVED);
       setCommentInPlacementDTO(placementDTO, placementXLS, username);
       if (updatePlacement) {
         tcsServiceImpl.updatePlacement(placementDTO);
