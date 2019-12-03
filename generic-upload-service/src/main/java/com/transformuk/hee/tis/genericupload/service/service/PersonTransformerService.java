@@ -3,7 +3,6 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDateTime;
 import static com.transformuk.hee.tis.genericupload.service.util.ReflectionUtil.copyIfNotNullOrEmpty;
-
 import com.google.common.collect.Lists;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
@@ -57,13 +56,20 @@ import org.springframework.web.client.ResourceAccessException;
 @Component
 public class PersonTransformerService {
 
-  private static final String REG_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE = "Registration number (%s) identified as duplicate in uploaded file";
-  private static final String REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS = "Person record for %s Number does not match surname in TIS";
-  private static final String REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS = "Registration number (%s) exists on multiple records in TIS";
-  private static final String PROGRAMME_NOT_FOUND = "Programme not found for programme name (%1$s) and programme number (%2$s)";
-  private static final String PROGRAMME_NAME_NOT_SPECIFIED = "Programme name (%s) has not been specified. Both programme name and number are needed to identify the programme";
-  private static final String PROGRAMME_NUMBER_NOT_SPECIFIED = "Programme number (%s) has not been specified. Both programme name and number are needed to identify the programme";
-  private static final String MULTIPLE_PROGRAMME_FOUND_FOR = "Multiple programmes found for programme name (%1$s) and programme number (%2$s)";
+  private static final String REG_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE =
+      "Registration number (%s) identified as duplicate in uploaded file";
+  private static final String REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS =
+      "Person record for %s Number does not match surname in TIS";
+  private static final String REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS =
+      "Registration number (%s) exists on multiple records in TIS";
+  private static final String PROGRAMME_NOT_FOUND =
+      "Programme not found for programme name (%1$s) and programme number (%2$s)";
+  private static final String PROGRAMME_NAME_NOT_SPECIFIED =
+      "Programme name (%s) has not been specified. Both programme name and number are needed to identify the programme";
+  private static final String PROGRAMME_NUMBER_NOT_SPECIFIED =
+      "Programme number (%s) has not been specified. Both programme name and number are needed to identify the programme";
+  private static final String MULTIPLE_PROGRAMME_FOUND_FOR =
+      "Multiple programmes found for programme name (%1$s) and programme number (%2$s)";
   private static final String CURRICULUM_NOT_FOUND = "Curriculum not found : ";
   private static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for : ";
 
@@ -71,12 +77,19 @@ public class PersonTransformerService {
   private static final String GMC = "GMC";
   private static final String PHN = "PHN";
   private static final String UNKNOWN = "unknown";
+  public static final String CCT = "CCT";
+  public static final String CESR = "CESR";
+  public static final String N_A = "N/A";
 
-  private static final String PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA = "Programme should have at least one curricula";
-  private static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED = "At least one of the three registration numbers needs to be specified";
-  private static final String CAN_ONLY_ADD_TO_A_ROTATION_LINKED_TO_THE_PROGRAMME_MEMBERSHIP_YOU_ARE_ADDING = "Can only add to a Rotation linked to the programme membership you are adding";
-  private static final String MULTIPLE_ROTATIONS_EXIST_FOR_PERSON_CANNOT_IDENTIFY_A_ROTATION_TO_UPDATE = "Multiple rotations exist for person. Cannot identify a rotation to update";
-  private static final String A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION = "A valid programme membership is needed to add a rotation";
+
+  private static final String PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA =
+      "Programme should have at least one curricula";
+  private static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED =
+      "At least one of the three registration numbers needs to be specified";
+  private static final String CAN_ONLY_ADD_TO_A_ROTATION_LINKED_TO_THE_PROGRAMME_MEMBERSHIP_YOU_ARE_ADDING =
+      "Can only add to a Rotation linked to the programme membership you are adding";
+  private static final String A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION =
+      "A valid programme membership is needed to add a rotation";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -107,21 +120,18 @@ public class PersonTransformerService {
   }
 
   private Set<PersonXLS> getPersonsWithUnknownRegNumbers(List<PersonXLS> personXLSS) {
-    //deal with unknowns - add all unknown as a new record - ignore duplicates
+    // deal with unknowns - add all unknown as a new record - ignore duplicates
     return personXLSS.stream()
-        .filter(personXLS ->
-            UNKNOWN.equalsIgnoreCase(personXLS.getGmcNumber()) ||
-                UNKNOWN.equalsIgnoreCase(personXLS.getGdcNumber()) ||
-                UNKNOWN.equalsIgnoreCase(personXLS.getPublicHealthNumber()))
+        .filter(personXLS -> UNKNOWN.equalsIgnoreCase(personXLS.getGmcNumber())
+            || UNKNOWN.equalsIgnoreCase(personXLS.getGdcNumber())
+            || UNKNOWN.equalsIgnoreCase(personXLS.getPublicHealthNumber()))
         .collect(Collectors.toSet());
   }
 
   private void markRowsWithoutRegistrationNumbers(List<PersonXLS> personXLSS) {
     personXLSS.stream()
-        .filter(personXLS ->
-            personXLS.getGmcNumber() == null &&
-                personXLS.getGdcNumber() == null &&
-                personXLS.getPublicHealthNumber() == null)
+        .filter(personXLS -> personXLS.getGmcNumber() == null && personXLS.getGdcNumber() == null
+            && personXLS.getPublicHealthNumber() == null)
         .forEach(personXLS -> personXLS
             .addErrorMessage(AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED));
   }
@@ -135,10 +145,8 @@ public class PersonTransformerService {
   }
 
   <DTO> Set<PersonXLS> getKnownRegNumbersInTIS(List<PersonXLS> rowsWithRegNumbers,
-      Function<PersonXLS, String> getRegNumberFunction,
-      Map<String, DTO> regNumberMap,
-      Map<Long, PersonBasicDetailsDTO> pbdMapByRegNumber,
-      Function<DTO, Long> getIdFunction,
+      Function<PersonXLS, String> getRegNumberFunction, Map<String, DTO> regNumberMap,
+      Map<Long, PersonBasicDetailsDTO> pbdMapByRegNumber, Function<DTO, Long> getIdFunction,
       String registrationNumberString) {
     Set<PersonXLS> knownRegNumbersInTIS = new HashSet<>();
     for (PersonXLS personXLS : rowsWithRegNumbers) {
@@ -173,10 +181,10 @@ public class PersonTransformerService {
   }
 
   private void addOrUpdatePHRecords(List<PersonXLS> personXLSS) {
-    //check whether a PH record exists in TIS
+    // check whether a PH record exists in TIS
     Function<PersonXLS, String> getPhNumber = PersonXLS::getPublicHealthNumber;
-    List<PersonXLS> rowsWithPHNumbers = getRowsWithRegistrationNumberForPeople(personXLSS,
-        getPhNumber);
+    List<PersonXLS> rowsWithPHNumbers =
+        getRowsWithRegistrationNumberForPeople(personXLSS, getPhNumber);
     flagAndEliminateDuplicates(rowsWithPHNumbers, getPhNumber, PHN);
 
     Set<String> phNumbers = collectRegNumbers(rowsWithPHNumbers, getPhNumber);
@@ -193,10 +201,10 @@ public class PersonTransformerService {
       Set<PersonXLS> knownPHsInTIS = getKnownRegNumbersInTIS(rowsWithPHNumbers, getPhNumber,
           phnDetailsMap, pbdMapByPH, PersonDTO::getId, "Public Health");
 
-      Map<String, PersonDTO> phNumberToPersonDTOFromXLSMap = getRegNumberToPersonDTOFromXLSMap(
-          personDTOToPHNID, knownPHsInTIS);
-      Map<String, PersonXLS> phnToPersonXLSMap = getRegNumberToPersonXLSMap(getPhNumber,
-          knownPHsInTIS);
+      Map<String, PersonDTO> phNumberToPersonDTOFromXLSMap =
+          getRegNumberToPersonDTOFromXLSMap(personDTOToPHNID, knownPHsInTIS);
+      Map<String, PersonXLS> phnToPersonXLSMap =
+          getRegNumberToPersonXLSMap(getPhNumber, knownPHsInTIS);
 
       updateDatastoreWithRowsFromXLS(phNumberToPersonDTOFromXLSMap, phnDetailsMap,
           phnToPersonXLSMap);
@@ -206,10 +214,10 @@ public class PersonTransformerService {
   }
 
   private void addOrUpdateGDCRecords(List<PersonXLS> personXLSS) {
-    //check whether a GDC record exists in TIS
+    // check whether a GDC record exists in TIS
     Function<PersonXLS, String> getGdcNumber = PersonXLS::getGdcNumber;
-    List<PersonXLS> rowsWithGDCNumbers = getRowsWithRegistrationNumberForPeople(personXLSS,
-        getGdcNumber);
+    List<PersonXLS> rowsWithGDCNumbers =
+        getRowsWithRegistrationNumberForPeople(personXLSS, getGdcNumber);
     flagAndEliminateDuplicates(rowsWithGDCNumbers, getGdcNumber, GDC);
 
     Set<String> gdcNumbers = collectRegNumbers(rowsWithGDCNumbers, getGdcNumber);
@@ -219,25 +227,25 @@ public class PersonTransformerService {
         String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, GDC));
 
     if (!gdcDetailsMap.isEmpty()) {
-      Set<Long> personIdsFromGDCDetailsTable = gdcDtoFetcher
-          .extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
-      Map<Long, PersonBasicDetailsDTO> pbdMapByGDC = pbdDtoFetcher
-          .findWithKeys(personIdsFromGDCDetailsTable);
+      Set<Long> personIdsFromGDCDetailsTable =
+          gdcDtoFetcher.extractIds(gdcDetailsMap, GdcDetailsDTO::getId);
+      Map<Long, PersonBasicDetailsDTO> pbdMapByGDC =
+          pbdDtoFetcher.findWithKeys(personIdsFromGDCDetailsTable);
       Set<PersonXLS> knownGDCsInTIS = getKnownRegNumbersInTIS(rowsWithGDCNumbers, getGdcNumber,
           gdcDetailsMap, pbdMapByGDC, GdcDetailsDTO::getId, GDC);
 
-      //deep compare and update if necessary
-      Function<PersonDTO, String> personDTOToGdcID = personDTO -> personDTO.getGdcDetails()
-          .getGdcNumber();
-      Map<String, PersonDTO> gdcNumberToPersonDTOFromXLSMap = getRegNumberToPersonDTOFromXLSMap(
-          personDTOToGdcID, knownGDCsInTIS);
+      // deep compare and update if necessary
+      Function<PersonDTO, String> personDTOToGdcID =
+          personDTO -> personDTO.getGdcDetails().getGdcNumber();
+      Map<String, PersonDTO> gdcNumberToPersonDTOFromXLSMap =
+          getRegNumberToPersonDTOFromXLSMap(personDTOToGdcID, knownGDCsInTIS);
 
       Set<Long> personIds = getIdsFromRegNumberDTOsMap(knownGDCsInTIS, gdcDetailsMap, getGdcNumber,
           GdcDetailsDTO::getId);
-      Map<Long, PersonDTO> personDTOMapFromTCS = peopleFetcher
-          .setIdMappingFunction(personDTOToGdcID).findWithKeys(personIds);
-      Map<String, PersonXLS> gdcToPersonXLSMap = getRegNumberToPersonXLSMap(getGdcNumber,
-          knownGDCsInTIS);
+      Map<Long, PersonDTO> personDTOMapFromTCS =
+          peopleFetcher.setIdMappingFunction(personDTOToGdcID).findWithKeys(personIds);
+      Map<String, PersonXLS> gdcToPersonXLSMap =
+          getRegNumberToPersonXLSMap(getGdcNumber, knownGDCsInTIS);
 
       updateDatastoreWithRowsFromXLS(gdcNumberToPersonDTOFromXLSMap, personDTOMapFromTCS,
           gdcToPersonXLSMap);
@@ -247,10 +255,10 @@ public class PersonTransformerService {
   }
 
   private void addOrUpdateGMCRecords(List<PersonXLS> personXLSS) {
-    //check whether a GMC record exists in TIS
+    // check whether a GMC record exists in TIS
     Function<PersonXLS, String> getGmcNumber = PersonXLS::getGmcNumber;
-    List<PersonXLS> rowsWithGMCNumbers = getRowsWithRegistrationNumberForPeople(personXLSS,
-        getGmcNumber);
+    List<PersonXLS> rowsWithGMCNumbers =
+        getRowsWithRegistrationNumberForPeople(personXLSS, getGmcNumber);
     flagAndEliminateDuplicates(rowsWithGMCNumbers, getGmcNumber, GMC);
 
     Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
@@ -260,27 +268,27 @@ public class PersonTransformerService {
         String.format(REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS, GMC));
 
     if (!gmcDetailsMap.isEmpty()) {
-      Set<Long> personIdsFromGMCDetailsTable = gmcDtoFetcher
-          .extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
-      Map<Long, PersonBasicDetailsDTO> pbdMapByGMC = pbdDtoFetcher
-          .findWithKeys(personIdsFromGMCDetailsTable);
+      Set<Long> personIdsFromGMCDetailsTable =
+          gmcDtoFetcher.extractIds(gmcDetailsMap, GmcDetailsDTO::getId);
+      Map<Long, PersonBasicDetailsDTO> pbdMapByGMC =
+          pbdDtoFetcher.findWithKeys(personIdsFromGMCDetailsTable);
       Set<PersonXLS> knownGMCsInTIS = getKnownRegNumbersInTIS(rowsWithGMCNumbers, getGmcNumber,
           gmcDetailsMap, pbdMapByGMC, GmcDetailsDTO::getId, GMC);
 
-      //deep compare and update if necessary
-      Function<PersonDTO, String> personDTOToGmcID = personDTO -> personDTO.getGmcDetails()
-          .getGmcNumber();
-      Map<String, PersonDTO> gmcNumberToPersonDTOFromXLSMap = getRegNumberToPersonDTOFromXLSMap(
-          personDTOToGmcID, knownGMCsInTIS);
+      // deep compare and update if necessary
+      Function<PersonDTO, String> personDTOToGmcID =
+          personDTO -> personDTO.getGmcDetails().getGmcNumber();
+      Map<String, PersonDTO> gmcNumberToPersonDTOFromXLSMap =
+          getRegNumberToPersonDTOFromXLSMap(personDTOToGmcID, knownGMCsInTIS);
 
       Set<Long> personIds = getIdsFromRegNumberDTOsMap(knownGMCsInTIS, gmcDetailsMap, getGmcNumber,
           GmcDetailsDTO::getId);
-      Map<Long, PersonDTO> personDTOMapFromTCS = peopleFetcher
-          .setIdMappingFunction(personDTOToGmcID).findWithKeys(personIds);
-      Map<String, PersonXLS> gmcToPersonXLSMap = getRegNumberToPersonXLSMap(getGmcNumber,
-          knownGMCsInTIS);
+      Map<Long, PersonDTO> personDTOMapFromTCS =
+          peopleFetcher.setIdMappingFunction(personDTOToGmcID).findWithKeys(personIds);
+      Map<String, PersonXLS> gmcToPersonXLSMap =
+          getRegNumberToPersonXLSMap(getGmcNumber, knownGMCsInTIS);
 
-      //now that we have both lets copy updated data
+      // now that we have both lets copy updated data
       updateDatastoreWithRowsFromXLS(gmcNumberToPersonDTOFromXLSMap, personDTOMapFromTCS,
           gmcToPersonXLSMap);
     }
@@ -344,7 +352,7 @@ public class PersonTransformerService {
   private void setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(
       List<PersonXLS> personXLSList, Function<PersonXLS, String> extractRegistrationNumber,
       Set<String> regNumbersDuplicatesSet, String errorMessage) {
-    for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext(); ) {
+    for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext();) {
       PersonXLS personXLS = iterator.next();
       if (regNumbersDuplicatesSet.contains(extractRegistrationNumber.apply(personXLS))) {
         personXLS.addErrorMessage(errorMessage);
@@ -362,33 +370,29 @@ public class PersonTransformerService {
 
   private Set<String> collectRegNumbers(List<PersonXLS> personXLSS,
       Function<PersonXLS, String> extractRegistrationNumber) {
-    return personXLSS.stream()
-        .map(extractRegistrationNumber::apply)
-        .collect(Collectors.toSet());
+    return personXLSS.stream().map(extractRegistrationNumber::apply).collect(Collectors.toSet());
   }
 
   private List<PersonXLS> getRowsWithRegistrationNumberForPeople(List<PersonXLS> personXLSS,
       Function<PersonXLS, String> extractRegistrationNumber) {
-    return personXLSS.stream()
-        .filter(personXLS -> {
-          String regNumber = extractRegistrationNumber.apply(personXLS);
-          return !UNKNOWN.equalsIgnoreCase(regNumber) && !StringUtils.isEmpty(regNumber);
-        })
-        .collect(Collectors.toList());
+    return personXLSS.stream().filter(personXLS -> {
+      String regNumber = extractRegistrationNumber.apply(personXLS);
+      return !UNKNOWN.equalsIgnoreCase(regNumber) && !StringUtils.isEmpty(regNumber);
+    }).collect(Collectors.toList());
   }
 
   private void overwriteDBValuesFromNonEmptyExcelValues(PersonDTO personDTOFromDB,
       PersonDTO personDTOFromXLS) {
     personDTOFromDB.setRole(mergeRoles(personDTOFromXLS, personDTOFromDB));
-    copyIfNotNullOrEmpty(personDTOFromXLS, personDTOFromDB,
-        "addedDate", "inactiveDate", "publicHealthNumber", "status");
+    copyIfNotNullOrEmpty(personDTOFromXLS, personDTOFromDB, "addedDate", "inactiveDate",
+        "publicHealthNumber", "status");
     copyIfNotNullOrEmpty(personDTOFromXLS.getContactDetails(), personDTOFromDB.getContactDetails(),
         "surname", "forenames", "knownAs", "title", "telephoneNumber", "mobileNumber", "email",
         "address1", "address2", "address3", "postCode");
     copyIfNotNullOrEmpty(personDTOFromXLS.getPersonalDetails(),
-        personDTOFromDB.getPersonalDetails(),
-        "maritalStatus", "dateOfBirth", "disability", "disabilityDetails", "nationality", "gender",
-        "ethnicOrigin", "sexualOrientation", "religiousBelief", "nationalInsuranceNumber");
+        personDTOFromDB.getPersonalDetails(), "maritalStatus", "dateOfBirth", "disability",
+        "disabilityDetails", "nationality", "gender", "ethnicOrigin", "sexualOrientation",
+        "religiousBelief", "nationalInsuranceNumber");
     copyIfNotNullOrEmpty(personDTOFromXLS.getGmcDetails(), personDTOFromDB.getGmcDetails(),
         "gmcNumber");
     copyIfNotNullOrEmpty(personDTOFromXLS.getGdcDetails(), personDTOFromDB.getGdcDetails(),
@@ -446,8 +450,8 @@ public class PersonTransformerService {
     }
 
     if (!personDTO.getProgrammeMemberships().isEmpty()) {
-      Optional<RotationDTO> rotationNameOptional = getRotationDTO(personXLS, personDTO,
-          savedPersonDTO);
+      Optional<RotationDTO> rotationNameOptional =
+          getRotationDTO(personXLS, personDTO, savedPersonDTO);
 
       for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
         programmeMembershipDTO.setPerson(savedPersonDTO);
@@ -466,8 +470,7 @@ public class PersonTransformerService {
     if (!StringUtils.isEmpty(programmeMembershipDTO.getRotation())) {
       savedPersonDTO.getProgrammeMemberships().stream()
           .filter(programmeMembershipDTO1 -> programmeMembershipDTO1.equals(programmeMembershipDTO))
-          .findFirst()
-          .ifPresent(savedProgrammeMembershipDTO -> {
+          .findFirst().ifPresent(savedProgrammeMembershipDTO -> {
             if (!Objects.equals(programmeMembershipDTO.getRotation(),
                 savedProgrammeMembershipDTO.getRotation())) {
               savedProgrammeMembershipDTO.setRotation(programmeMembershipDTO.getRotation());
@@ -485,12 +488,11 @@ public class PersonTransformerService {
         personXLS.addErrorMessage(A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION);
       } else {
         Long programmeId = personDTO.getProgrammeMemberships().iterator().next().getProgrammeId();
-        List<RotationDTO> rotationByProgrammeId = tcsServiceImpl
-            .getRotationByProgrammeId(programmeId);
+        List<RotationDTO> rotationByProgrammeId =
+            tcsServiceImpl.getRotationByProgrammeId(programmeId);
 
         RotationDTO rotationDTOWithRotationName = rotationByProgrammeId.stream()
-            .filter(rotationDTO -> rotationDTO.getName().equalsIgnoreCase(rotationName))
-            .findFirst()
+            .filter(rotationDTO -> rotationDTO.getName().equalsIgnoreCase(rotationName)).findFirst()
             .orElse(null);
 
         if (rotationDTOWithRotationName != null) {
@@ -512,13 +514,13 @@ public class PersonTransformerService {
       CurriculumDTO curriculumDTO2 = getCurriculumDTO(personXLS.getCurriculum2());
       CurriculumDTO curriculumDTO3 = getCurriculumDTO(personXLS.getCurriculum3());
 
-      ProgrammeDTO programmeDTO = getProgrammeDTO(personXLS.getProgrammeName(),
-          personXLS.getProgrammeNumber());
+      ProgrammeDTO programmeDTO =
+          getProgrammeDTO(personXLS.getProgrammeName(), personXLS.getProgrammeNumber());
       if (programmeDTO != null) {
         programmeDTO.setCurricula(curricula);
       }
-      personDTO = getPersonDTO(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3,
-          programmeDTO);
+      personDTO =
+          getPersonDTO(personXLS, curriculumDTO1, curriculumDTO2, curriculumDTO3, programmeDTO);
     } catch (IllegalArgumentException e) {
       personXLS.addErrorMessage(e.getMessage());
     }
@@ -553,8 +555,8 @@ public class PersonTransformerService {
   private ProgrammeDTO getProgrammeDTOForNameAndNumber(String programmeName, String programmeNumber,
       BiFunction<String, String, List<ProgrammeDTO>> getProgrammeByNameAndNumber,
       ProgrammeDTO programmeDTO) {
-    List<ProgrammeDTO> programmeDTOs = getProgrammeByNameAndNumber
-        .apply(programmeName, programmeNumber);
+    List<ProgrammeDTO> programmeDTOs =
+        getProgrammeByNameAndNumber.apply(programmeName, programmeNumber);
     if (!CollectionUtils.isEmpty(programmeDTOs)) {
       if (programmeDTOs.size() == 1) {
         programmeDTO = programmeDTOs.get(0);
@@ -625,8 +627,8 @@ public class PersonTransformerService {
               : personXLS.getCurriculum1StartDate().toInstant().atZone(ZoneId.systemDefault())
                   .toLocalDate();
 
-      ProgrammeMembershipType programmeMembershipType = ProgrammeMembershipType
-          .fromString(personXLS.getProgrammeMembership());
+      ProgrammeMembershipType programmeMembershipType =
+          ProgrammeMembershipType.fromString(personXLS.getProgrammeMembership());
 
       TrainingNumberDTO trainingNumberDTO = null;
       if (!StringUtils.isEmpty(personXLS.getNtnProgramme())) {
@@ -671,6 +673,36 @@ public class PersonTransformerService {
           programmeMembershipType, personXLS.getCurriculum3StartDate(),
           personXLS.getCurriculum3EndDate());
     }
+    for (ProgrammeMembershipDTO programmeMembershipDTO : programmeMembershipDTOS) {
+      evaluateTrainingPathway(programmeMembershipDTO, curriculumDTO1, curriculumDTO2,
+          curriculumDTO3);
+    }
+  }
+
+  /**
+   * Calculate and apply the training pathway of the programme membership. N.B. Currently assume
+   * that these curricula have already been added
+   * 
+   * @param programmeMembershipDTO - The subject of this call
+   * @param curricula - The curricula associated with the programme.
+   * @return The training pathway because I don't know whether
+   */
+  public void evaluateTrainingPathway(ProgrammeMembershipDTO programmeMembershipDTO,
+      CurriculumDTO... curricula) {
+    if (curricula == null || curricula.length < 1) {
+      throw new IllegalArgumentException("Curricula from Programme Membership must be provided.");
+    } else if (CESR.equals(programmeMembershipDTO.getTrainingPathway())) {
+      return;
+    }
+
+    String trainingPathway = N_A;
+    for (CurriculumDTO curriculumDTO : curricula) {
+      if (curriculumDTO != null && curriculumDTO.getDoesThisCurriculumLeadToCct()) {
+        trainingPathway = CCT;
+        break;
+      }
+    }
+    programmeMembershipDTO.setTrainingPathway(trainingPathway);
   }
 
   private QualificationDTO getQualificationDTO(PersonXLS personXLS) {
@@ -729,16 +761,10 @@ public class PersonTransformerService {
   }
 
   private void addOrUpdateCurriculumToProgrammeMemberships(
-      Set<ProgrammeMembershipDTO> programmeMembershipDTOs,
-      TrainingNumberDTO trainingNumberDTO,
-      LocalDate programmeStartDate,
-      LocalDate programmeEndDate,
-      ProgrammeDTO programmeDTO,
-      CurriculumDTO curriculumDTO,
-      ProgrammeMembershipType programmeMembershipType,
-      Date curriculumStartDate,
-      Date curriculumEndDate
-  ) {
+      Set<ProgrammeMembershipDTO> programmeMembershipDTOs, TrainingNumberDTO trainingNumberDTO,
+      LocalDate programmeStartDate, LocalDate programmeEndDate, ProgrammeDTO programmeDTO,
+      CurriculumDTO curriculumDTO, ProgrammeMembershipType programmeMembershipType,
+      Date curriculumStartDate, Date curriculumEndDate) {
     ProgrammeMembershipDTO programmeMembershipDTO = new ProgrammeMembershipDTO();
     programmeMembershipDTO.setProgrammeMembershipType(programmeMembershipType);
     programmeMembershipDTO.setProgrammeStartDate(programmeStartDate);
@@ -753,8 +779,7 @@ public class PersonTransformerService {
 
     if (programmeMembershipDTOs.contains(programmeMembershipDTO)) {
       programmeMembershipDTOs.stream()
-          .filter(eachPmd -> Objects.equals(eachPmd, programmeMembershipDTO))
-          .findFirst()
+          .filter(eachPmd -> Objects.equals(eachPmd, programmeMembershipDTO)).findFirst()
           .ifPresent(pmd -> pmd.getCurriculumMemberships().add(curriculumMembershipDTO));
     } else {
       programmeMembershipDTO.setCurriculumMemberships(Lists.newArrayList());
