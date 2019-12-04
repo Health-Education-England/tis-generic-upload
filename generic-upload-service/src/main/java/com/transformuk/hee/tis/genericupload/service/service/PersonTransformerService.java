@@ -455,6 +455,11 @@ public class PersonTransformerService {
 
       for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
         programmeMembershipDTO.setPerson(savedPersonDTO);
+        //Get curricula
+        CurriculumDTO tcsCurriculum1 = getCurriculumDtoFromTcs(personXLS.getCurriculum1());
+        CurriculumDTO tcsCurriculum2 = getCurriculumDtoFromTcs(personXLS.getCurriculum2());
+        CurriculumDTO tcsCurriculum3 = getCurriculumDtoFromTcs(personXLS.getCurriculum3());
+        evaluateTrainingPathway(programmeMembershipDTO, tcsCurriculum1, tcsCurriculum2, tcsCurriculum3);
         rotationNameOptional.ifPresent(programmeMembershipDTO::setRotation);
         if (savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
           updateRotationInExistingProgrammeMemberships(savedPersonDTO, programmeMembershipDTO);
@@ -510,9 +515,9 @@ public class PersonTransformerService {
     Set<ProgrammeCurriculumDTO> curricula = new HashSet<>();
     PersonDTO personDTO = null;
     try {
-      CurriculumDTO curriculumDTO1 = getCurriculumDTO(personXLS.getCurriculum1());
-      CurriculumDTO curriculumDTO2 = getCurriculumDTO(personXLS.getCurriculum2());
-      CurriculumDTO curriculumDTO3 = getCurriculumDTO(personXLS.getCurriculum3());
+      CurriculumDTO curriculumDTO1 = getCurriculumDtoFromTcs(personXLS.getCurriculum1());
+      CurriculumDTO curriculumDTO2 = getCurriculumDtoFromTcs(personXLS.getCurriculum2());
+      CurriculumDTO curriculumDTO3 = getCurriculumDtoFromTcs(personXLS.getCurriculum3());
 
       ProgrammeDTO programmeDTO =
           getProgrammeDTO(personXLS.getProgrammeName(), personXLS.getProgrammeNumber());
@@ -571,7 +576,7 @@ public class PersonTransformerService {
     return programmeDTO;
   }
 
-  private CurriculumDTO getCurriculumDTO(String curriculumName) {
+  private CurriculumDTO getCurriculumDtoFromTcs(String curriculumName) {
     return getCurriculumDTO(curriculumName, tcsServiceImpl::getCurriculaByName);
   }
 
