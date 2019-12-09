@@ -185,6 +185,12 @@ jhipster:
       queue-size: 512
 
 
+logging:
+  file: ${LOG_DIR:${HOME}}/generic-upload.log
+  level:
+    ROOT: ${LOG_LEVEL_ROOT:${LOG_LEVEL:WARN}}
+    com.transformuk.hee: ${LOG_LEVEL_TIS:${LOG_LEVEL:INFO}}
+
 
 # ===================================================================
 # Application specific properties
