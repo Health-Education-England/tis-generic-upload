@@ -54,8 +54,6 @@ public class PersonXLS extends TemplateXLS {
   private Date visaValidTo;
   private String visaDetails;
   private String maritalStatus;
-  private String recordStatus;
-  private Date inactiveDate;
   private String publicHealthNumber;
 
   public String getTitle() {
@@ -450,21 +448,6 @@ public class PersonXLS extends TemplateXLS {
     this.maritalStatus = maritalStatus;
   }
 
-  public String getRecordStatus() {
-    return recordStatus;
-  }
-
-  public void setRecordStatus(String recordStatus) {
-    this.recordStatus = recordStatus;
-  }
-
-  public Date getInactiveDate() {
-    return inactiveDate;
-  }
-
-  public void setInactiveDate(Date inactiveDate) {
-    this.inactiveDate = inactiveDate;
-  }
 
   public String getPublicHealthNumber() {
     return publicHealthNumber;
@@ -532,8 +515,6 @@ public class PersonXLS extends TemplateXLS {
         Objects.equals(visaValidTo, personXLS.visaValidTo) &&
         Objects.equals(visaDetails, personXLS.visaDetails) &&
         Objects.equals(maritalStatus, personXLS.maritalStatus) &&
-        Objects.equals(recordStatus, personXLS.recordStatus) &&
-        Objects.equals(inactiveDate, personXLS.inactiveDate) &&
         Objects.equals(publicHealthNumber, personXLS.publicHealthNumber);
   }
 
@@ -548,8 +529,7 @@ public class PersonXLS extends TemplateXLS {
             ntnProgramme, curriculum1, curriculum1StartDate, curriculum1EndDate, curriculum2,
             curriculum2StartDate, curriculum2EndDate, curriculum3, curriculum3StartDate,
             curriculum3EndDate, programmeEndDate, role, knownAs, permitToWork, settled, visaIssued,
-            visaValidTo, visaDetails, maritalStatus, recordStatus, inactiveDate,
-            publicHealthNumber);
+            visaValidTo, visaDetails, maritalStatus, publicHealthNumber);
   }
 
   @Override
@@ -604,8 +584,6 @@ public class PersonXLS extends TemplateXLS {
     sb.append(", visaValidTo='").append(visaValidTo).append('\'');
     sb.append(", visaDetails='").append(visaDetails).append('\'');
     sb.append(", maritalStatus='").append(maritalStatus).append('\'');
-    sb.append(", recordStatus='").append(recordStatus).append('\'');
-    sb.append(", inactiveDate=").append(inactiveDate);
     sb.append(", publicHealthNumber='").append(publicHealthNumber).append('\'');
     sb.append('}');
     return sb.toString();

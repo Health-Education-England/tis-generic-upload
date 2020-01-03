@@ -71,8 +71,7 @@ public class PersonTransformerServiceIntTest {
         PersonDTOHelper
             .createProgrammeDTO(personXLS.getProgrammeName(), personXLS.getProgrammeNumber()));
     Assert.assertEquals(personDTO.getContactDetails().getForenames(), personXLS.getForenames());
-    Assert
-        .assertEquals(personDTO.getStatus().toString(), personXLS.getRecordStatus().toLowerCase());
+    Assert.assertEquals(Status.INACTIVE, personDTO.getStatus().toString());
   }
 
   @Test

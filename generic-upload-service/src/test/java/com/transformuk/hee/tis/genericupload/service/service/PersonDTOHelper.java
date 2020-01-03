@@ -32,7 +32,6 @@ public class PersonDTOHelper {
     personXLS.setForenames("Namis");
     personXLS.setSurname("Ahmed");
     personXLS.setGmcNumber("6127800");
-    personXLS.setRecordStatus("Current");
 
     personXLS.setProgrammeName("Cardiology");
     personXLS.setProgrammeNumber("NOR051");

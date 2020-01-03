@@ -51,11 +51,11 @@ public class PeopleMapperConfiguration extends MapperConfiguration {
       @Override
       protected PersonDTO convert(PersonXLS source) {
         final PersonDTO personDTO = new PersonDTO();
+        //TODO How does this differ from 1 call to LocalDateTime?
         LocalDateTime addedDate = LocalDateTime.now();
         personDTO.setAddedDate(addedDate == null ? LocalDateTime.now() : addedDate);
-        personDTO.setInactiveDate(convertDateTime(source.getInactiveDate()));
         personDTO.setPublicHealthNumber(source.getPublicHealthNumber());
-        personDTO.setStatus(Status.fromString(source.getRecordStatus()));
+        personDTO.setStatus(Status.INACTIVE);
         personDTO.setRole(source.getRole());
         return personDTO;
       }
@@ -224,6 +224,7 @@ public class PeopleMapperConfiguration extends MapperConfiguration {
             ProgrammeMembershipType programmeMembershipType = ProgrammeMembershipType
                 .fromString(source.getProgrammeMembership());
 
+            //TODO Get rid of this block if it's not doing anything.
             ProgrammeMembershipDTO programmeMembershipDTO1 = new ProgrammeMembershipDTO();
             programmeMembershipDTO1.setProgrammeMembershipType(programmeMembershipType);
             programmeMembershipDTO1.setProgrammeEndDate(programmeEndDate);

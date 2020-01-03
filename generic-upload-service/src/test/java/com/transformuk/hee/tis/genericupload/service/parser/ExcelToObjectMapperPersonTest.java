@@ -33,13 +33,6 @@ public class ExcelToObjectMapperPersonTest {
   }
 
   @Test
-  public void shouldMapRecordStatus() throws Exception {
-    List<PersonXLS> actual = setUpExcelToObjectMapper().map(PersonXLS.class,
-        new PersonHeaderMapper().getFieldMap());
-    assertThat(actual.get(0).getRecordStatus()).isNotNull();
-  }
-
-  @Test
   public void shouldMapProgrammeMembershipType() throws Exception {
     List<PersonXLS> actual = setUpExcelToObjectMapper().map(PersonXLS.class,
         new PersonHeaderMapper().getFieldMap());
@@ -86,7 +79,6 @@ public class ExcelToObjectMapperPersonTest {
     Assert.assertEquals("Random", personXLS.getForenames());
     Assert.assertEquals("Guy", personXLS.getSurname());
     Assert.assertEquals("1234567", personXLS.getGmcNumber());
-    Assert.assertEquals("Current", personXLS.getRecordStatus());
     Assert.assertEquals("Cardiology", personXLS.getProgrammeName());
     Assert.assertEquals("NOR051", personXLS.getProgrammeNumber());
     Assert.assertEquals("Substantive", personXLS.getProgrammeMembership());

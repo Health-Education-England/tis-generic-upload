@@ -387,8 +387,7 @@ public class PersonTransformerService {
   private void overwriteDBValuesFromNonEmptyExcelValues(PersonDTO personDTOFromDB,
       PersonDTO personDTOFromXLS) {
     personDTOFromDB.setRole(mergeRoles(personDTOFromXLS, personDTOFromDB));
-    copyIfNotNullOrEmpty(personDTOFromXLS, personDTOFromDB, "addedDate", "inactiveDate",
-        "publicHealthNumber");
+    copyIfNotNullOrEmpty(personDTOFromXLS, personDTOFromDB, "addedDate", "publicHealthNumber");
     if (StringUtils.isEmpty(personDTOFromDB.getStatus())) {
       personDTOFromDB.setStatus(personDTOFromXLS.getStatus());
     }
@@ -612,7 +611,6 @@ public class PersonTransformerService {
       CurriculumDTO curriculumDTO2, CurriculumDTO curriculumDTO3, ProgrammeDTO programmeDTO) {
     PersonDTO personDTO = new PersonDTO();
     personDTO.setAddedDate(LocalDateTime.now());
-    personDTO.setInactiveDate(convertDateTime(personXLS.getInactiveDate()));
     personDTO.setPublicHealthNumber(personXLS.getPublicHealthNumber());
     //Status will be updated on ProgrammeMembership CRUD operations
     personDTO.setStatus(Status.INACTIVE);

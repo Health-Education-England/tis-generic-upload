@@ -31,7 +31,7 @@ public class PersonHeaderMapperTest {
     // Perform assertions.
     MatcherAssert
         .assertThat("The number of fields did not contain the expected value.", fieldMap.size(),
-            CoreMatchers.is(52));
+            CoreMatchers.is(50));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("title", "Title")));
@@ -187,12 +187,6 @@ public class PersonHeaderMapperTest {
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers.hasItem(Maps.immutableEntry("maritalStatus", "Marital Status")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("recordStatus", "Record Status")));
-    MatcherAssert
-        .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
-            CoreMatchers.hasItem(Maps.immutableEntry("inactiveDate", "Inactive Date")));
     MatcherAssert
         .assertThat("The field map did not contain the expected value.", fieldMap.entrySet(),
             CoreMatchers
