@@ -55,8 +55,6 @@ public class PersonHeaderMapper extends ColumnMapper {
       new ColumnMapping("visaValidTo", "Visa Valid To"),
       new ColumnMapping("visaDetails", "Visa Details/Number"),
       new ColumnMapping("maritalStatus", "Marital Status"),
-      new ColumnMapping("recordStatus", "Record Status"),
-      new ColumnMapping("inactiveDate", "Inactive Date"),
       new ColumnMapping("publicHealthNumber", "Public Health Number")
   );
 

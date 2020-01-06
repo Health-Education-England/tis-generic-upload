@@ -46,6 +46,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -90,6 +92,7 @@ public class PersonTransformerService {
       "Can only add to a Rotation linked to the programme membership you are adding";
   private static final String A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION =
       "A valid programme membership is needed to add a rotation";
+  private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -384,8 +387,10 @@ public class PersonTransformerService {
   private void overwriteDBValuesFromNonEmptyExcelValues(PersonDTO personDTOFromDB,
       PersonDTO personDTOFromXLS) {
     personDTOFromDB.setRole(mergeRoles(personDTOFromXLS, personDTOFromDB));
-    copyIfNotNullOrEmpty(personDTOFromXLS, personDTOFromDB, "addedDate", "inactiveDate",
-        "publicHealthNumber", "status");
+    copyIfNotNullOrEmpty(personDTOFromXLS, personDTOFromDB, "addedDate", "publicHealthNumber");
+    if (StringUtils.isEmpty(personDTOFromDB.getStatus())) {
+      personDTOFromDB.setStatus(personDTOFromXLS.getStatus());
+    }
     copyIfNotNullOrEmpty(personDTOFromXLS.getContactDetails(), personDTOFromDB.getContactDetails(),
         "surname", "forenames", "knownAs", "title", "telephoneNumber", "mobileNumber", "email",
         "address1", "address2", "address3", "postCode");
@@ -455,11 +460,15 @@ public class PersonTransformerService {
 
       for (ProgrammeMembershipDTO programmeMembershipDTO : personDTO.getProgrammeMemberships()) {
         programmeMembershipDTO.setPerson(savedPersonDTO);
-        //Get curricula
+        // Get curricula
         CurriculumDTO tcsCurriculum1 = getCurriculumDtoFromTcs(personXLS.getCurriculum1());
         CurriculumDTO tcsCurriculum2 = getCurriculumDtoFromTcs(personXLS.getCurriculum2());
         CurriculumDTO tcsCurriculum3 = getCurriculumDtoFromTcs(personXLS.getCurriculum3());
-        evaluateTrainingPathway(programmeMembershipDTO, tcsCurriculum1, tcsCurriculum2, tcsCurriculum3);
+        log.debug(
+            "Evaluating pathway for Programme={}, curriculum1={}, curriculum2={}, curriculum3={}",
+            programmeMembershipDTO, tcsCurriculum1, tcsCurriculum2, tcsCurriculum3);
+        evaluateTrainingPathway(programmeMembershipDTO, tcsCurriculum1, tcsCurriculum2,
+            tcsCurriculum3);
         rotationNameOptional.ifPresent(programmeMembershipDTO::setRotation);
         if (savedPersonDTO.getProgrammeMemberships().contains(programmeMembershipDTO)) {
           updateRotationInExistingProgrammeMemberships(savedPersonDTO, programmeMembershipDTO);
@@ -602,13 +611,9 @@ public class PersonTransformerService {
       CurriculumDTO curriculumDTO2, CurriculumDTO curriculumDTO3, ProgrammeDTO programmeDTO) {
     PersonDTO personDTO = new PersonDTO();
     personDTO.setAddedDate(LocalDateTime.now());
-    personDTO.setInactiveDate(convertDateTime(personXLS.getInactiveDate()));
     personDTO.setPublicHealthNumber(personXLS.getPublicHealthNumber());
-    if (!StringUtils.isEmpty(personXLS.getRecordStatus())) {
-      personDTO.setStatus(Status.fromString(personXLS.getRecordStatus()));
-    } else {
-      personDTO.setStatus(Status.CURRENT);
-    }
+    //Status will be updated on ProgrammeMembership CRUD operations
+    personDTO.setStatus(Status.INACTIVE);
     personDTO.setRole(personXLS.getRole());
 
     personDTO.setContactDetails(getContactDetailsDTO(personXLS));
