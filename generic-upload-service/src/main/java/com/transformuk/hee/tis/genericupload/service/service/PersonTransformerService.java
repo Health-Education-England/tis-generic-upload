@@ -64,6 +64,8 @@ public class PersonTransformerService {
       "Person record for %s Number does not match surname in TIS";
   private static final String REG_NUMBER_EXISTS_ON_MULTIPLE_RECORDS_IN_TIS =
       "Registration number (%s) exists on multiple records in TIS";
+  private static final String REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES =
+      "Registration number (%s) should not contain whitespaces";
   private static final String PROGRAMME_NOT_FOUND =
       "Programme not found for programme name (%1$s) and programme number (%2$s)";
   private static final String PROGRAMME_NAME_NOT_SPECIFIED =
@@ -188,6 +190,7 @@ public class PersonTransformerService {
     Function<PersonXLS, String> getPhNumber = PersonXLS::getPublicHealthNumber;
     List<PersonXLS> rowsWithPHNumbers =
         getRowsWithRegistrationNumberForPeople(personXLSS, getPhNumber);
+    flagAndEliminateWhitespacesRecords(rowsWithPHNumbers, getPhNumber, PHN);
     flagAndEliminateDuplicates(rowsWithPHNumbers, getPhNumber, PHN);
 
     Set<String> phNumbers = collectRegNumbers(rowsWithPHNumbers, getPhNumber);
@@ -221,6 +224,7 @@ public class PersonTransformerService {
     Function<PersonXLS, String> getGdcNumber = PersonXLS::getGdcNumber;
     List<PersonXLS> rowsWithGDCNumbers =
         getRowsWithRegistrationNumberForPeople(personXLSS, getGdcNumber);
+    flagAndEliminateWhitespacesRecords(rowsWithGDCNumbers, getGdcNumber, GDC);
     flagAndEliminateDuplicates(rowsWithGDCNumbers, getGdcNumber, GDC);
 
     Set<String> gdcNumbers = collectRegNumbers(rowsWithGDCNumbers, getGdcNumber);
@@ -262,6 +266,7 @@ public class PersonTransformerService {
     Function<PersonXLS, String> getGmcNumber = PersonXLS::getGmcNumber;
     List<PersonXLS> rowsWithGMCNumbers =
         getRowsWithRegistrationNumberForPeople(personXLSS, getGmcNumber);
+    flagAndEliminateWhitespacesRecords(rowsWithGMCNumbers, getGmcNumber, GMC);
     flagAndEliminateDuplicates(rowsWithGMCNumbers, getGmcNumber, GMC);
 
     Set<String> gmcNumbers = collectRegNumbers(rowsWithGMCNumbers, getGmcNumber);
@@ -334,6 +339,20 @@ public class PersonTransformerService {
     return regNumberToPersonDTOFromXLSMap;
   }
 
+  private void flagAndEliminateWhitespacesRecords(List<PersonXLS> personXLSList,
+                                                  Function<PersonXLS, String> extractRegistrationNumber, String regNumberString) {
+    Set<String> regNumbersWhitespacesSet = new HashSet<>();
+
+    for (PersonXLS personXLS : personXLSList) {
+      if (org.apache.commons.lang3.StringUtils.containsWhitespace(extractRegistrationNumber.apply(personXLS))) {
+        regNumbersWhitespacesSet.add(extractRegistrationNumber.apply(personXLS));
+      }
+    }
+
+    setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(personXLSList,
+            extractRegistrationNumber, regNumbersWhitespacesSet,
+            String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, regNumberString));
+  }
 
   private void flagAndEliminateDuplicates(List<PersonXLS> personXLSList,
       Function<PersonXLS, String> extractRegistrationNumber, String regNumberString) {
