@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -7,6 +8,9 @@ import static com.transformuk.hee.tis.genericupload.service.service.PersonTransf
 import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.CESR;
 import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.N_A;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
 import com.transformuk.hee.tis.tcs.api.dto.ContactDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
 import com.transformuk.hee.tis.tcs.api.dto.GdcDetailsDTO;
@@ -35,6 +39,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 public class PersonTransformerServiceTest {
 
+  private static final String REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES =
+          "Registration number (%s) should not contain whitespaces";
+
   Map<Pair<String, String>, List<ProgrammeDTO>> programmeDTOS;
   Map<String, List<CurriculumDTO>> curriculumDTOS;
 
@@ -43,6 +50,15 @@ public class PersonTransformerServiceTest {
 
   @Mock
   private TcsServiceImpl tcsServiceImpl;
+
+  @Mock
+  private GMCDTOFetcher gmcDtoFetcher;
+
+  @Mock
+  private GDCDTOFetcher gdcDtoFetcher;
+
+  @Mock
+  private PeopleByPHNFetcher peopleByPHNFetcher;
 
   @Before
   public void initialise() {
@@ -243,5 +259,30 @@ public class PersonTransformerServiceTest {
     // Then
     assertEquals(N_A, cctProgramme.getTrainingPathway());
 
+  }
+
+  @Test
+  public void shouldValidateWhitespacesInRegNumbers() {
+    // initialize personXLSS
+    List<PersonXLS> personXLSS = new ArrayList<>();
+    PersonXLS personXLS = new PersonXLS();
+    personXLS.setForenames("John");
+    personXLS.setSurname("Smith");
+    personXLS.setGmcNumber(" 12345678");
+    personXLS.setGdcNumber("12345678 ");
+    personXLS.setPublicHealthNumber("1234 5678");
+    personXLSS.add(personXLS);
+
+    // call through
+    personTransformerService.processPeopleUpload(personXLSS);
+
+    // assert
+    String message = personXLSS.get(0).getErrorMessage();
+    assertThat("Should validate the whitespaces in GMC number",
+            message, containsString(String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, "GMC")));
+    assertThat("Should validate the whitespaces in GDC number",
+            message, containsString(String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, "GDC")));
+    assertThat("Should validate the whitespaces in Public Health number",
+            message, containsString(String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, "PHN")));
   }
 }
