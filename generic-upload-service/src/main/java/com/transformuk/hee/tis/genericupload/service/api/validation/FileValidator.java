@@ -1,10 +1,27 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
-import com.transformuk.hee.tis.genericupload.api.dto.*;
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
+import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.UploadFileResource;
-import com.transformuk.hee.tis.genericupload.service.parser.*;
-
+import com.transformuk.hee.tis.genericupload.service.parser.AssessmentHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.FundingUpdateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementDeleteHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementUpdateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PostCreateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PostFundingUpdateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PostUpdateHeaderMapper;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -28,7 +45,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 public class FileValidator {
 
-  public static final String DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD = "Date missing or incorrect format on mandatory field (%1$s)";
+  public static final String DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD =
+      "Date missing or incorrect format on mandatory field (%1$s)";
   public static final String FIELD_IS_REQUIRED_AT_LINE_NO = "%s Field is required at line no %d ";
   private final Logger logger = LoggerFactory.getLogger(UploadFileResource.class);
 
@@ -88,6 +106,10 @@ public class FileValidator {
       fileType = FileType.POSTS_FUNDING_UPDATE;
       validateMandatoryFieldsOrThrowException(files, fieldErrors, PostFundingUpdateXLS.class,
           excelToObjectMapper, new PostFundingUpdateHeaderMapper());
+    } else if (headers.contains("National Post Number*")) {
+      fileType = FileType.POSTS_CREATE;
+      validateMandatoryFieldsOrThrowException(files, fieldErrors, PostCreateXls.class,
+          excelToObjectMapper, new PostCreateHeaderMapper());
     } else if (headers.contains("TIS_Post_ID*")) {
       fileType = FileType.POSTS_UPDATE;
       validateMandatoryFieldsOrThrowException(files, fieldErrors, PostUpdateXLS.class,

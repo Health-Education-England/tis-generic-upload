@@ -1,27 +1,57 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.spy;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
+import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
+import com.transformuk.hee.tis.genericupload.service.Application;
+import com.transformuk.hee.tis.genericupload.service.parser.AssessmentHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.FundingUpdateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementDeleteHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PlacementUpdateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PostCreateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PostFundingUpdateHeaderMapper;
+import com.transformuk.hee.tis.genericupload.service.parser.PostUpdateHeaderMapper;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.multipart.MultipartFile;
 
-@ContextConfiguration(classes = FileValidator.class)
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Application.class)
 public class FileValidatorTest {
 
   private static final Logger logger = getLogger(FileValidatorTest.class);
@@ -149,5 +179,221 @@ public class FileValidatorTest {
     } catch (ValidationException ve) {
       Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Field is required"));
     }
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyAssessmentsTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<ColumnMapper> mapperCaptor = ArgumentCaptor.forClass(ColumnMapper.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any(),
+            mapperCaptor.capture());
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null, Collections.singleton("Review date*"));
+
+    // Then.
+    assertThat(fileType, is(FileType.ASSESSMENTS));
+    assertThat(xlsCaptor.getValue(), is((Object) AssessmentXLS.class));
+    assertThat(mapperCaptor.getValue(), instanceOf(AssessmentHeaderMapper.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyFundingUpdateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<ColumnMapper> mapperCaptor = ArgumentCaptor.forClass(ColumnMapper.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any(),
+            mapperCaptor.capture());
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null, Collections.singleton("TIS_PostFunding_ID*"));
+
+    // Then.
+    assertThat(fileType, is(FileType.FUNDING_UPDATE));
+    assertThat(xlsCaptor.getValue(), is((Object) FundingUpdateXLS.class));
+    assertThat(mapperCaptor.getValue(), instanceOf(FundingUpdateHeaderMapper.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyPeopleTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<ColumnMapper> mapperCaptor = ArgumentCaptor.forClass(ColumnMapper.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any(),
+            mapperCaptor.capture());
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null, Collections.singleton("Email Address"));
+
+    // Then.
+    assertThat(fileType, is(FileType.PEOPLE));
+    assertThat(xlsCaptor.getValue(), is((Object) PersonXLS.class));
+    assertThat(mapperCaptor.getValue(), instanceOf(PersonHeaderMapper.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyPlacementsTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<ColumnMapper> mapperCaptor = ArgumentCaptor.forClass(ColumnMapper.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any(),
+            mapperCaptor.capture());
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null, Collections.singleton("Placement Type*"));
+
+    // Then.
+    assertThat(fileType, is(FileType.PLACEMENTS));
+    assertThat(xlsCaptor.getValue(), is((Object) PlacementXLS.class));
+    assertThat(mapperCaptor.getValue(), instanceOf(PlacementHeaderMapper.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyPlacementsDeleteTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<ColumnMapper> mapperCaptor = ArgumentCaptor.forClass(ColumnMapper.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any(),
+            mapperCaptor.capture());
+
+    Set<String> headers = new HashSet<>();
+    headers.add("Placement Id*");
+    headers.add("Placement Status*");
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null, headers);
+
+    // Then.
+    assertThat(fileType, is(FileType.PLACEMENTS_DELETE));
+    assertThat(xlsCaptor.getValue(), is((Object) PlacementDeleteXLS.class));
+    assertThat(mapperCaptor.getValue(), instanceOf(PlacementDeleteHeaderMapper.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyPlacementsUpdateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<ColumnMapper> mapperCaptor = ArgumentCaptor.forClass(ColumnMapper.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any(),
+            mapperCaptor.capture());
+
+    Set<String> headers = new HashSet<>();
+    headers.add("TIS_Placement_ID*");
+    headers.add("Intrepid_Placement_ID");
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null, headers);
+
+    // Then.
+    assertThat(fileType, is(FileType.PLACEMENTS_UPDATE));
+    assertThat(xlsCaptor.getValue(), is((Object) PlacementUpdateXLS.class));
+    assertThat(mapperCaptor.getValue(), instanceOf(PlacementUpdateHeaderMapper.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyPostsCreateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<ColumnMapper> mapperCaptor = ArgumentCaptor.forClass(ColumnMapper.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any(),
+            mapperCaptor.capture());
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null, Collections.singleton("National Post Number*"));
+
+    // Then.
+    assertThat(fileType, is(FileType.POSTS_CREATE));
+    assertThat(xlsCaptor.getValue(), is((Object) PostCreateXls.class));
+    assertThat(mapperCaptor.getValue(), instanceOf(PostCreateHeaderMapper.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyPostsUpdateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<ColumnMapper> mapperCaptor = ArgumentCaptor.forClass(ColumnMapper.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any(),
+            mapperCaptor.capture());
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null, Collections.singleton("TIS_Post_ID*"));
+
+    // Then.
+    assertThat(fileType, is(FileType.POSTS_UPDATE));
+    assertThat(xlsCaptor.getValue(), is((Object) PostUpdateXLS.class));
+    assertThat(mapperCaptor.getValue(), instanceOf(PostUpdateHeaderMapper.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyPostsFundingUpdateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<ColumnMapper> mapperCaptor = ArgumentCaptor.forClass(ColumnMapper.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any(),
+            mapperCaptor.capture());
+
+    Set<String> headers = new HashSet<>();
+    headers.add("TIS_Post_ID*");
+    headers.add("Funding type");
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null, headers);
+
+    // Then.
+    assertThat(fileType, is(FileType.POSTS_FUNDING_UPDATE));
+    assertThat(xlsCaptor.getValue(), is((Object) PostFundingUpdateXLS.class));
+    assertThat(mapperCaptor.getValue(), instanceOf(PostFundingUpdateHeaderMapper.class));
+  }
+
+  @Test(expected = InvalidFormatException.class)
+  public void getFileTypeShouldThrowExceptionIfTemplateNotIdentifiable() throws Exception {
+    // When.
+    fileValidator.getFileType(null, null, null, Collections.emptySet());
   }
 }
