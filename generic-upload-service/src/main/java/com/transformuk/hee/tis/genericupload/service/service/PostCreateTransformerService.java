@@ -150,13 +150,15 @@ public class PostCreateTransformerService {
     }
 
     String oldPost = xls.getOldPost();
-    updateExistingPostCache(oldPost);
+    if (oldPost != null) {
+      updateExistingPostCache(oldPost);
 
-    if (postNpnToDto.containsKey(oldPost)) {
-      postDto.setOldPost(postNpnToDto.get(oldPost));
-    } else {
-      String errorMessage = String.format("Old post not found with the NPN '%s'.", oldPost);
-      throw new IllegalArgumentException(errorMessage);
+      if (postNpnToDto.containsKey(oldPost)) {
+        postDto.setOldPost(postNpnToDto.get(oldPost));
+      } else {
+        String errorMessage = String.format("Old post not found with the NPN '%s'.", oldPost);
+        throw new IllegalArgumentException(errorMessage);
+      }
     }
 
     // Default the post to CURRENT.
