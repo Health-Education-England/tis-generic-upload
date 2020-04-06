@@ -404,7 +404,10 @@ public class PostCreateTransformerService {
 
   private List<String> splitMultiValueField(String valueToSplit) {
     if (valueToSplit != null && !valueToSplit.isEmpty()) {
-      return Arrays.asList(valueToSplit.split(";"));
+      String[] splitValues = valueToSplit.split(";");
+      return Arrays.stream(splitValues)
+          .map(String::trim)
+          .collect(Collectors.toList());
     }
 
     return Collections.emptyList();
