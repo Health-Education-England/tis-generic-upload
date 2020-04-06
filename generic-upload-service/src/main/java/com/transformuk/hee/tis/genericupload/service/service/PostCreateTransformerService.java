@@ -16,6 +16,7 @@ import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
+import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -156,6 +157,9 @@ public class PostCreateTransformerService {
       String errorMessage = String.format("Old post not found with the NPN '%s'.", oldPost);
       throw new IllegalArgumentException(errorMessage);
     }
+
+    // Default the post to CURRENT.
+    postDto.status(Status.CURRENT);
 
     return postDto;
   }
