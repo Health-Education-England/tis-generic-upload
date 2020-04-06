@@ -65,12 +65,21 @@ public class PostCreateTransformerService {
     postNpnToDto = new HashMap<>();
 
     List<PostDTO> postDtos = new ArrayList<>();
+    Map<String, Long> npnToXls = xlsList.stream().collect(
+        Collectors.groupingBy(PostCreateXls::getNationalPostNumber, Collectors.counting()));
 
     for (PostCreateXls xls : xlsList) {
-      PostDTO postDto = buildPostDto(xls);
+      try {
+        String npn = xls.getNationalPostNumber();
 
-      if (!xls.hasErrors()) {
-        postDtos.add(postDto);
+        if (npnToXls.get(npn) > 1) {
+          String errorMessage = String.format("Duplicate NPN '%s' in upload.", npn);
+          throw new IllegalArgumentException(errorMessage);
+        }
+
+        postDtos.add(buildPostDto(xls));
+      } catch (IllegalArgumentException e) {
+        xls.addErrorMessage(e.getMessage());
       }
     }
 
@@ -81,9 +90,20 @@ public class PostCreateTransformerService {
     }
   }
 
-  private PostDTO buildPostDto(PostCreateXls xls) {
+  private PostDTO buildPostDto(PostCreateXls xls) throws IllegalArgumentException {
     PostDTO postDto = new PostDTO();
-    postDto.setNationalPostNumber(xls.getNationalPostNumber());
+
+    // Check if NPN already exists.
+    String npn = xls.getNationalPostNumber();
+    updateExistingPostCache(npn);
+
+    if (!postNpnToDto.containsKey(npn)) {
+      postDto.setNationalPostNumber(npn);
+    } else {
+      String errorMessage = String.format("Post already exists with the NPN '%s'.", npn);
+      throw new IllegalArgumentException(errorMessage);
+    }
+
     postDto.setGrades(buildPostGrades(xls));
     postDto.setSpecialties(buildPostSpecialties(xls));
     postDto.setTrainingDescription(xls.getTrainingDescription());
@@ -100,8 +120,9 @@ public class PostCreateTransformerService {
     if (employingBodyId != null) {
       postDto.setEmployingBodyId(employingBodyId);
     } else {
-      xls.addErrorMessage(String
-          .format("Current employing body not found with the name '%s'.", xls.getEmployingBody()));
+      String errorMessage = String
+          .format("Current employing body not found with the name '%s'.", xls.getEmployingBody());
+      throw new IllegalArgumentException(errorMessage);
     }
 
     Long trainingBodyId = trustNameToId.get(xls.getTrainingBody());
@@ -109,11 +130,12 @@ public class PostCreateTransformerService {
     if (trainingBodyId != null) {
       postDto.setTrainingBodyId(trainingBodyId);
     } else {
-      xls.addErrorMessage(String
-          .format("Current training body not found with the name '%s'.", xls.getTrainingBody()));
+      String errorMessage = String
+          .format("Current training body not found with the name '%s'.", xls.getTrainingBody());
+      throw new IllegalArgumentException(errorMessage);
     }
 
-    postDto.setProgrammes(buildPostProgrammes(xls));
+    postDto.setProgrammes(buildPostProgrammes(xls.getProgrammeTisId()));
 
     String owner = xls.getOwner();
     updateLocalOfficeCache(owner);
@@ -121,7 +143,8 @@ public class PostCreateTransformerService {
     if (validLocalOffices.contains(owner)) {
       postDto.setOwner(owner);
     } else {
-      xls.addErrorMessage(String.format("Current owner not found with the name '%s'.", owner));
+      String errorMessage = String.format("Current owner not found with the name '%s'.", owner);
+      throw new IllegalArgumentException(errorMessage);
     }
 
     String oldPost = xls.getOldPost();
@@ -130,7 +153,8 @@ public class PostCreateTransformerService {
     if (postNpnToDto.containsKey(oldPost)) {
       postDto.setOldPost(postNpnToDto.get(oldPost));
     } else {
-      xls.addErrorMessage(String.format("Old post not found with the NPN '%s'.", oldPost));
+      String errorMessage = String.format("Old post not found with the NPN '%s'.", oldPost);
+      throw new IllegalArgumentException(errorMessage);
     }
 
     return postDto;
@@ -152,10 +176,10 @@ public class PostCreateTransformerService {
     updateGradeCache(namesToCache);
 
     Set<PostGradeDTO> builtDtos = new HashSet<>();
-    addPostGrade(xls, xls.getApprovedGrade(), PostGradeType.APPROVED, builtDtos);
+    addPostGrade(xls.getApprovedGrade(), PostGradeType.APPROVED, builtDtos);
 
     for (String name : otherGrades) {
-      addPostGrade(xls, name, PostGradeType.OTHER, builtDtos);
+      addPostGrade(name, PostGradeType.OTHER, builtDtos);
     }
 
     return builtDtos;
@@ -182,22 +206,22 @@ public class PostCreateTransformerService {
   }
 
   /**
-   * Create a {@link PostGradeDTO} if the grade name exists in the cache, otherwise add an error to
-   * the XLS.
+   * Create a {@link PostGradeDTO} if the grade name exists in the cache.
    *
-   * @param xls  The XLS to add any error messages to.
    * @param name The name of the grade.
    * @param type The type of the grade.
    * @param dtos The collection to add new PostGradeDTOs to.
+   * @throws IllegalArgumentException If the given grade does not exist.
    */
-  private void addPostGrade(PostCreateXls xls, String name, PostGradeType type,
-      Set<PostGradeDTO> dtos) {
+  private void addPostGrade(String name, PostGradeType type, Set<PostGradeDTO> dtos)
+      throws IllegalArgumentException {
     GradeDTO cachedDto = gradeNameToDto.get(name);
 
     if (cachedDto != null) {
       dtos.add(new PostGradeDTO(null, cachedDto.getId(), type));
     } else {
-      xls.addErrorMessage(String.format("Current grade not found with the name '%s'.", name));
+      String errorMessage = String.format("Current grade not found with the name '%s'.", name);
+      throw new IllegalArgumentException(errorMessage);
     }
   }
 
@@ -213,14 +237,14 @@ public class PostCreateTransformerService {
     updateSpecialtyCache(namesToCache);
 
     Set<PostSpecialtyDTO> builtDtos = new HashSet<>();
-    addPostSpecialty(xls, xls.getSpecialty(), PostSpecialtyType.PRIMARY, builtDtos);
+    addPostSpecialty(xls.getSpecialty(), PostSpecialtyType.PRIMARY, builtDtos);
 
     for (String name : subSpecialties) {
-      addPostSpecialty(xls, name, PostSpecialtyType.SUB_SPECIALTY, builtDtos);
+      addPostSpecialty(name, PostSpecialtyType.SUB_SPECIALTY, builtDtos);
     }
 
     for (String name : otherSpecialties) {
-      addPostSpecialty(xls, name, PostSpecialtyType.OTHER, builtDtos);
+      addPostSpecialty(name, PostSpecialtyType.OTHER, builtDtos);
     }
 
     return builtDtos;
@@ -240,14 +264,15 @@ public class PostCreateTransformerService {
     }
   }
 
-  private void addPostSpecialty(PostCreateXls xls, String name, PostSpecialtyType type,
-      Set<PostSpecialtyDTO> dtos) {
+  private void addPostSpecialty(String name, PostSpecialtyType type, Set<PostSpecialtyDTO> dtos)
+      throws IllegalArgumentException {
     SpecialtyDTO cachedDto = specialtyNameToDto.get(name);
 
     if (cachedDto != null) {
       dtos.add(new PostSpecialtyDTO(null, cachedDto, type));
     } else {
-      xls.addErrorMessage(String.format("Current specialty not found with the name '%s'.", name));
+      String errorMessage = String.format("Current specialty not found with the name '%s'.", name);
+      throw new IllegalArgumentException(errorMessage);
     }
   }
 
@@ -261,10 +286,10 @@ public class PostCreateTransformerService {
     updateSiteCache(namesToCache);
 
     Set<PostSiteDTO> builtDtos = new HashSet<>();
-    addPostSite(xls, xls.getMainSite(), PostSiteType.PRIMARY, builtDtos);
+    addPostSite(xls.getMainSite(), PostSiteType.PRIMARY, builtDtos);
 
     for (String name : otherSites) {
-      addPostSite(xls, name, PostSiteType.OTHER, builtDtos);
+      addPostSite(name, PostSiteType.OTHER, builtDtos);
     }
 
     return builtDtos;
@@ -284,14 +309,15 @@ public class PostCreateTransformerService {
     }
   }
 
-  private void addPostSite(PostCreateXls xls, String name, PostSiteType type,
-      Set<PostSiteDTO> dtos) {
+  private void addPostSite(String name, PostSiteType type, Set<PostSiteDTO> dtos)
+      throws IllegalArgumentException {
     SiteDTO cachedDto = siteNameToDto.get(name);
 
     if (cachedDto != null) {
       dtos.add(new PostSiteDTO(null, cachedDto.getId(), type));
     } else {
-      xls.addErrorMessage(String.format("Current site not found with the name '%s'.", name));
+      String errorMessage = String.format("Current site not found with the name '%s'.", name);
+      throw new IllegalArgumentException(errorMessage);
     }
   }
 
@@ -308,8 +334,9 @@ public class PostCreateTransformerService {
     }
   }
 
-  private Set<ProgrammeDTO> buildPostProgrammes(PostCreateXls xls) {
-    List<String> programmeIds = splitMultiValueField(xls.getProgrammeTisId());
+  private Set<ProgrammeDTO> buildPostProgrammes(String programmeTisId)
+      throws IllegalArgumentException {
+    List<String> programmeIds = splitMultiValueField(programmeTisId);
 
     // Update the cache with any new ids.
     updateProgrammeCache(new HashSet<>(programmeIds));
@@ -322,7 +349,8 @@ public class PostCreateTransformerService {
       if (cachedDto != null) {
         dtos.add(cachedDto);
       } else {
-        xls.addErrorMessage(String.format("Current programme not found with the ID '%s'.", id));
+        String errorMessage = String.format("Current programme not found with the ID '%s'.", id);
+        throw new IllegalArgumentException(errorMessage);
       }
     }
 
