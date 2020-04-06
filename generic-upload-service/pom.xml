@@ -12,7 +12,7 @@
 
   <groupId>com.transformuk.hee.tis</groupId>
   <artifactId>generic-upload-service</artifactId>
-  <version>1.12.0</version>
+  <version>1.13.0</version>
   <packaging>war</packaging>
 
   <properties>
@@ -143,7 +143,7 @@
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
       <artifactId>generic-upload-api</artifactId>
-      <version>1.6.0</version>
+      <version>1.7.0</version>
     </dependency>
     <dependency>
       <groupId>uk.nhs.tis</groupId>
