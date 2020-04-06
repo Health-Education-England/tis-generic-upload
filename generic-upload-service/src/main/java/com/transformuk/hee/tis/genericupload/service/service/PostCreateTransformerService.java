@@ -6,6 +6,7 @@ import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.LocalOfficeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
+import com.transformuk.hee.tis.reference.api.enums.Status;
 import com.transformuk.hee.tis.reference.client.ReferenceService;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostGradeDTO;
@@ -16,7 +17,6 @@ import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
-import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,9 +43,9 @@ public class PostCreateTransformerService {
   private Map<String, GradeDTO> gradeNameToDto = Collections.emptyMap();
   private Map<String, SiteDTO> siteNameToDto = Collections.emptyMap();
   private Map<String, SpecialtyDTO> specialtyNameToDto = Collections.emptyMap();
-  private Map<String, Long> trustNameToId = Collections.emptyMap();
+  private Map<String, TrustDTO> trustNameToDto = Collections.emptyMap();
   private Map<String, ProgrammeDTO> programmeIdToDto = Collections.emptyMap();
-  private Set<String> validLocalOffices = Collections.emptySet();
+  private Map<String, LocalOfficeDTO> localOfficeNameToDto = Collections.emptyMap();
   private Map<String, PostDTO> postNpnToDto = Collections.emptyMap();
 
   PostCreateTransformerService(ReferenceService referenceService, TcsServiceImpl tcsService) {
@@ -60,9 +60,9 @@ public class PostCreateTransformerService {
     gradeNameToDto = new HashMap<>();
     siteNameToDto = new HashMap<>();
     specialtyNameToDto = new HashMap<>();
-    trustNameToId = new HashMap<>();
+    trustNameToDto = new HashMap<>();
     programmeIdToDto = new HashMap<>();
-    validLocalOffices = new HashSet<>();
+    localOfficeNameToDto = new HashMap<>();
     postNpnToDto = new HashMap<>();
 
     List<PostDTO> postDtos = new ArrayList<>();
@@ -116,20 +116,20 @@ public class PostCreateTransformerService {
     namesToCache.add(xls.getTrainingBody());
     updateTrustCache(namesToCache);
 
-    Long employingBodyId = trustNameToId.get(xls.getEmployingBody());
+    TrustDTO trustDto = trustNameToDto.get(xls.getEmployingBody());
 
-    if (employingBodyId != null) {
-      postDto.setEmployingBodyId(employingBodyId);
+    if (trustDto != null && trustDto.getStatus().equals(Status.CURRENT)) {
+      postDto.setEmployingBodyId(trustDto.getId());
     } else {
       String errorMessage = String
           .format("Current employing body not found with the name '%s'.", xls.getEmployingBody());
       throw new IllegalArgumentException(errorMessage);
     }
 
-    Long trainingBodyId = trustNameToId.get(xls.getTrainingBody());
+    trustDto = trustNameToDto.get(xls.getTrainingBody());
 
-    if (trainingBodyId != null) {
-      postDto.setTrainingBodyId(trainingBodyId);
+    if (trustDto != null && trustDto.getStatus().equals(Status.CURRENT)) {
+      postDto.setTrainingBodyId(trustDto.getId());
     } else {
       String errorMessage = String
           .format("Current training body not found with the name '%s'.", xls.getTrainingBody());
@@ -140,8 +140,9 @@ public class PostCreateTransformerService {
 
     String owner = xls.getOwner();
     updateLocalOfficeCache(owner);
+    LocalOfficeDTO localOfficeDto = localOfficeNameToDto.get(owner);
 
-    if (validLocalOffices.contains(owner)) {
+    if (localOfficeDto != null && localOfficeDto.getStatus().equals(Status.CURRENT)) {
       postDto.setOwner(owner);
     } else {
       String errorMessage = String.format("Current owner not found with the name '%s'.", owner);
@@ -159,7 +160,7 @@ public class PostCreateTransformerService {
     }
 
     // Default the post to CURRENT.
-    postDto.status(Status.CURRENT);
+    postDto.status(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
 
     return postDto;
   }
@@ -221,7 +222,7 @@ public class PostCreateTransformerService {
       throws IllegalArgumentException {
     GradeDTO cachedDto = gradeNameToDto.get(name);
 
-    if (cachedDto != null) {
+    if (cachedDto != null && cachedDto.getStatus().equals(Status.CURRENT)) {
       dtos.add(new PostGradeDTO(null, cachedDto.getId(), type));
     } else {
       String errorMessage = String.format("Current grade not found with the name '%s'.", name);
@@ -272,7 +273,8 @@ public class PostCreateTransformerService {
       throws IllegalArgumentException {
     SpecialtyDTO cachedDto = specialtyNameToDto.get(name);
 
-    if (cachedDto != null) {
+    if (cachedDto != null && cachedDto.getStatus()
+        .equals(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT)) {
       dtos.add(new PostSpecialtyDTO(null, cachedDto, type));
     } else {
       String errorMessage = String.format("Current specialty not found with the name '%s'.", name);
@@ -317,7 +319,7 @@ public class PostCreateTransformerService {
       throws IllegalArgumentException {
     SiteDTO cachedDto = siteNameToDto.get(name);
 
-    if (cachedDto != null) {
+    if (cachedDto != null && cachedDto.getStatus().equals(Status.CURRENT)) {
       dtos.add(new PostSiteDTO(null, cachedDto.getId(), type));
     } else {
       String errorMessage = String.format("Current site not found with the name '%s'.", name);
@@ -327,13 +329,14 @@ public class PostCreateTransformerService {
 
   private void updateTrustCache(Set<String> names) {
     Set<String> namesToFind =
-        names.stream().filter(name -> !trustNameToId.containsKey(name)).collect(Collectors.toSet());
+        names.stream().filter(name -> !trustNameToDto.containsKey(name))
+            .collect(Collectors.toSet());
 
     if (!namesToFind.isEmpty()) {
       List<TrustDTO> dtos = referenceService.findCurrentTrustsByTrustKnownAsIn(namesToFind);
 
       for (TrustDTO dto : dtos) {
-        trustNameToId.put(dto.getTrustKnownAs(), dto.getId());
+        trustNameToDto.put(dto.getTrustKnownAs(), dto);
       }
     }
   }
@@ -350,7 +353,8 @@ public class PostCreateTransformerService {
     for (String id : programmeIds) {
       ProgrammeDTO cachedDto = programmeIdToDto.get(id);
 
-      if (cachedDto != null) {
+      if (cachedDto != null && cachedDto.getStatus()
+          .equals(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT)) {
         dtos.add(cachedDto);
       } else {
         String errorMessage = String.format("Current programme not found with the ID '%s'.", id);
@@ -376,11 +380,11 @@ public class PostCreateTransformerService {
   }
 
   private void updateLocalOfficeCache(String name) {
-    if (!validLocalOffices.contains(name)) {
+    if (!localOfficeNameToDto.containsKey(name)) {
       List<LocalOfficeDTO> dtos = referenceService.findLocalOfficesByName(name);
 
       for (LocalOfficeDTO dto : dtos) {
-        validLocalOffices.add(dto.getName());
+        localOfficeNameToDto.put(dto.getName(), dto);
       }
     }
   }
