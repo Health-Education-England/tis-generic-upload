@@ -87,7 +87,7 @@ public class PostCreateTransformerService {
     if (!postDtos.isEmpty()) {
       // TODO: create endpoint
       tcsService.bulkCreateDto(postDtos, "/api/bulk-posts", PostDTO.class);
-      xlsList.forEach(x -> x.setSuccessfullyImported(true));
+      xlsList.forEach(x -> x.setSuccessfullyImported(!x.hasErrors()));
     }
   }
 
