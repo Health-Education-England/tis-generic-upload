@@ -53,6 +53,8 @@ public class ScheduledUploadTask {
   @Autowired
   private PlacementUpdateTransformerService placementUpdateTransformerService;
   @Autowired
+  private PostCreateTransformerService postCreateTransformerService;
+  @Autowired
   private PostUpdateTransformerService postUpdateTransformerService;
   @Autowired
   private PostFundingUpdateTransformerService postFundingUpdateTransformerService;
@@ -124,6 +126,13 @@ public class ScheduledUploadTask {
             placementUpdateTransformerService.processPlacementsUpdateUpload(placementUpdateXLSList,
                 applicationType.getUsername());
             setJobToCompleted(applicationType, placementUpdateXLSList);
+            break;
+
+          case POSTS_CREATE:
+            List<PostCreateXls> postCreateXslList = excelToObjectMapper
+                .map(PostCreateXls.class, new PostCreateHeaderMapper().getFieldMap());
+            postCreateTransformerService.processUpload(postCreateXslList);
+            setJobToCompleted(applicationType, postCreateXslList);
             break;
 
           case POSTS_UPDATE:
