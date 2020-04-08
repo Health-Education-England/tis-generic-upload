@@ -28,18 +28,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-// TODO: Add logging throughout.
-// TODO: Graceful handling of empty uploads (generic solution).
-// TODO: Handle errors from tcs/reference better to avoid "Internal Server Error" results.
 @Component
 public class PostCreateTransformerService {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(PostCreateTransformerService.class);
 
   private TcsServiceImpl tcsService;
 
   private ReferenceService referenceService;
 
+  // TODO: Use a more universal caching solution.
   private Map<String, GradeDTO> gradeNameToDto = Collections.emptyMap();
   private Map<String, SiteDTO> siteNameToDto = Collections.emptyMap();
   private Map<String, SpecialtyDTO> specialtyNameToDto = Collections.emptyMap();
@@ -54,6 +56,7 @@ public class PostCreateTransformerService {
   }
 
   void processUpload(List<PostCreateXls> xlsList) {
+    LOGGER.info("Processing upload for post create with {} rows.", xlsList.size());
     xlsList.forEach(TemplateXLS::initialiseSuccessfullyImported);
 
     // Initialize cache maps.
@@ -74,8 +77,7 @@ public class PostCreateTransformerService {
         String npn = xls.getNationalPostNumber();
 
         if (npnToXls.get(npn) > 1) {
-          String errorMessage = String.format("Duplicate NPN '%s' in upload.", npn);
-          throw new IllegalArgumentException(errorMessage);
+          validationError(String.format("Duplicate NPN '%s' in upload.", npn));
         }
 
         postDtos.add(buildPostDto(xls));
@@ -85,13 +87,17 @@ public class PostCreateTransformerService {
     }
 
     if (!postDtos.isEmpty()) {
-      // TODO: create endpoint
-      tcsService.bulkCreateDto(postDtos, "/api/bulk-posts", PostDTO.class);
+      List<PostDTO> createdPostDtos =
+          tcsService.bulkCreateDto(postDtos, "/api/bulk-posts", PostDTO.class);
       xlsList.forEach(x -> x.setSuccessfullyImported(!x.hasErrors()));
+
+      LOGGER.info("Finished processing upload {} new posts created.", createdPostDtos.size());
+    } else {
+      LOGGER.info("No valid posts to create.");
     }
   }
 
-  private PostDTO buildPostDto(PostCreateXls xls) throws IllegalArgumentException {
+  private PostDTO buildPostDto(PostCreateXls xls) {
     PostDTO postDto = new PostDTO();
 
     // Check if NPN already exists.
@@ -101,8 +107,7 @@ public class PostCreateTransformerService {
     if (!postNpnToDto.containsKey(npn)) {
       postDto.setNationalPostNumber(npn);
     } else {
-      String errorMessage = String.format("Post already exists with the NPN '%s'.", npn);
-      throw new IllegalArgumentException(errorMessage);
+      validationError(String.format("Post already exists with the NPN '%s'.", npn));
     }
 
     postDto.setGrades(buildPostGrades(xls));
@@ -121,9 +126,8 @@ public class PostCreateTransformerService {
     if (trustDto != null && trustDto.getStatus().equals(Status.CURRENT)) {
       postDto.setEmployingBodyId(trustDto.getId());
     } else {
-      String errorMessage = String
-          .format("Current employing body not found with the name '%s'.", xls.getEmployingBody());
-      throw new IllegalArgumentException(errorMessage);
+      validationError(String
+          .format("Current employing body not found with the name '%s'.", xls.getEmployingBody()));
     }
 
     trustDto = trustNameToDto.get(xls.getTrainingBody());
@@ -131,9 +135,8 @@ public class PostCreateTransformerService {
     if (trustDto != null && trustDto.getStatus().equals(Status.CURRENT)) {
       postDto.setTrainingBodyId(trustDto.getId());
     } else {
-      String errorMessage = String
-          .format("Current training body not found with the name '%s'.", xls.getTrainingBody());
-      throw new IllegalArgumentException(errorMessage);
+      validationError(String
+          .format("Current training body not found with the name '%s'.", xls.getTrainingBody()));
     }
 
     postDto.setProgrammes(buildPostProgrammes(xls.getProgrammeTisId()));
@@ -145,8 +148,7 @@ public class PostCreateTransformerService {
     if (localOfficeDto != null && localOfficeDto.getStatus().equals(Status.CURRENT)) {
       postDto.setOwner(owner);
     } else {
-      String errorMessage = String.format("Current owner not found with the name '%s'.", owner);
-      throw new IllegalArgumentException(errorMessage);
+      validationError(String.format("Current owner not found with the name '%s'.", owner));
     }
 
     String oldPost = xls.getOldPost();
@@ -156,8 +158,7 @@ public class PostCreateTransformerService {
       if (postNpnToDto.containsKey(oldPost)) {
         postDto.setOldPost(postNpnToDto.get(oldPost));
       } else {
-        String errorMessage = String.format("Old post not found with the NPN '%s'.", oldPost);
-        throw new IllegalArgumentException(errorMessage);
+        validationError(String.format("Old post not found with the NPN '%s'.", oldPost));
       }
     }
 
@@ -220,15 +221,13 @@ public class PostCreateTransformerService {
    * @param dtos The collection to add new PostGradeDTOs to.
    * @throws IllegalArgumentException If the given grade does not exist.
    */
-  private void addPostGrade(String name, PostGradeType type, Set<PostGradeDTO> dtos)
-      throws IllegalArgumentException {
+  private void addPostGrade(String name, PostGradeType type, Set<PostGradeDTO> dtos) {
     GradeDTO cachedDto = gradeNameToDto.get(name);
 
     if (cachedDto != null && cachedDto.getStatus().equals(Status.CURRENT)) {
       dtos.add(new PostGradeDTO(null, cachedDto.getId(), type));
     } else {
-      String errorMessage = String.format("Current grade not found with the name '%s'.", name);
-      throw new IllegalArgumentException(errorMessage);
+      validationError(String.format("Current grade not found with the name '%s'.", name));
     }
   }
 
@@ -271,16 +270,14 @@ public class PostCreateTransformerService {
     }
   }
 
-  private void addPostSpecialty(String name, PostSpecialtyType type, Set<PostSpecialtyDTO> dtos)
-      throws IllegalArgumentException {
+  private void addPostSpecialty(String name, PostSpecialtyType type, Set<PostSpecialtyDTO> dtos) {
     SpecialtyDTO cachedDto = specialtyNameToDto.get(name);
 
     if (cachedDto != null && cachedDto.getStatus()
         .equals(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT)) {
       dtos.add(new PostSpecialtyDTO(null, cachedDto, type));
     } else {
-      String errorMessage = String.format("Current specialty not found with the name '%s'.", name);
-      throw new IllegalArgumentException(errorMessage);
+      validationError(String.format("Current specialty not found with the name '%s'.", name));
     }
   }
 
@@ -317,15 +314,13 @@ public class PostCreateTransformerService {
     }
   }
 
-  private void addPostSite(String name, PostSiteType type, Set<PostSiteDTO> dtos)
-      throws IllegalArgumentException {
+  private void addPostSite(String name, PostSiteType type, Set<PostSiteDTO> dtos) {
     SiteDTO cachedDto = siteNameToDto.get(name);
 
     if (cachedDto != null && cachedDto.getStatus().equals(Status.CURRENT)) {
       dtos.add(new PostSiteDTO(null, cachedDto.getId(), type));
     } else {
-      String errorMessage = String.format("Current site not found with the name '%s'.", name);
-      throw new IllegalArgumentException(errorMessage);
+      validationError(String.format("Current site not found with the name '%s'.", name));
     }
   }
 
@@ -343,9 +338,15 @@ public class PostCreateTransformerService {
     }
   }
 
-  private Set<ProgrammeDTO> buildPostProgrammes(String programmeTisId)
-      throws IllegalArgumentException {
+  private Set<ProgrammeDTO> buildPostProgrammes(String programmeTisId) {
     List<String> programmeIds = splitMultiValueField(programmeTisId);
+
+    // Verify that programme IDs are numeric.
+    for (String id : programmeIds) {
+      if (!StringUtils.isNumeric(id)) {
+        validationError(String.format("Programme ID '%s' is not a number.", id));
+      }
+    }
 
     // Update the cache with any new ids.
     updateProgrammeCache(new HashSet<>(programmeIds));
@@ -359,8 +360,7 @@ public class PostCreateTransformerService {
           .equals(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT)) {
         dtos.add(cachedDto);
       } else {
-        String errorMessage = String.format("Current programme not found with the ID '%s'.", id);
-        throw new IllegalArgumentException(errorMessage);
+        validationError(String.format("Current programme not found with the ID '%s'.", id));
       }
     }
 
@@ -372,7 +372,6 @@ public class PostCreateTransformerService {
         ids.stream().filter(id -> !programmeIdToDto.containsKey(id)).collect(Collectors.toList());
 
     if (!idsToFind.isEmpty()) {
-      // TODO: handle non-numeric values.
       List<ProgrammeDTO> dtos = tcsService.findProgrammesIn(idsToFind);
 
       for (ProgrammeDTO dto : dtos) {
@@ -402,7 +401,7 @@ public class PostCreateTransformerService {
     }
   }
 
-  private List<String> splitMultiValueField(String valueToSplit) {
+  private static List<String> splitMultiValueField(String valueToSplit) {
     if (valueToSplit != null && !valueToSplit.isEmpty()) {
       String[] splitValues = valueToSplit.split(";");
       return Arrays.stream(splitValues)
@@ -411,5 +410,10 @@ public class PostCreateTransformerService {
     }
 
     return Collections.emptyList();
+  }
+
+  private static void validationError(String errorMessage) {
+    LOGGER.error(errorMessage);
+    throw new IllegalArgumentException(errorMessage);
   }
 }
