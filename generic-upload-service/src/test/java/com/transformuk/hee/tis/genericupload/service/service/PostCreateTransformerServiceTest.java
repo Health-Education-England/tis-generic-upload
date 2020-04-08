@@ -1,11 +1,9 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
@@ -19,9 +17,7 @@ import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -29,7 +25,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.OngoingStubbing;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PostCreateTransformerServiceTest {
@@ -154,15 +149,19 @@ public class PostCreateTransformerServiceTest {
   public void shouldFailValidationWhenNpnDuplicated() {
     // Given.
     xls2.setNationalPostNumber("npn1");
-    
+
     // When.
     service.processUpload(xlsList);
-    
+
     // Then.
-    assertThat("The error did not match the expected value.", xls1.getErrorMessage(), is("Duplicate NPN 'npn1' in upload."));
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Duplicate NPN 'npn1' in upload."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Duplicate NPN 'npn1' in upload."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Duplicate NPN 'npn1' in upload."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -180,10 +179,14 @@ public class PostCreateTransformerServiceTest {
     service.processUpload(xlsList);
 
     // Then.
-    assertThat("The error did not match the expected value.", xls1.getErrorMessage(), is("Post already exists with the NPN 'npn1'."));
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Post already exists with the NPN 'npn2'."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Post already exists with the NPN 'npn1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Post already exists with the NPN 'npn2'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -196,16 +199,21 @@ public class PostCreateTransformerServiceTest {
     grade3.setName("grade3");
     grade3.setStatus(Status.CURRENT);
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2, grade3));
+    when(referenceService.findGradesByName(any()))
+        .thenReturn(Arrays.asList(grade1, grade2, grade3));
 
     // When.
     service.processUpload(xlsList);
 
     // Then.
-    assertThat("The error did not match the expected value.", xls1.getErrorMessage(), is("Current grade not found with the name 'grade1'."));
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Current grade not found with the name 'grade4'."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Current grade not found with the name 'grade1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Current grade not found with the name 'grade4'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -227,18 +235,25 @@ public class PostCreateTransformerServiceTest {
     specialty5.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
 
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2, specialty3, specialty5));
+    when(tcsService.getSpecialtyByName(any()))
+        .thenReturn(Arrays.asList(specialty1, specialty2, specialty3, specialty5));
 
     // When.
     service.processUpload(Arrays.asList(xls1, xls2, xls3));
 
     // Then.
-    assertThat("The error did not match the expected value.", xls1.getErrorMessage(), is("Current specialty not found with the name 'specialty1'."));
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Current specialty not found with the name 'specialty4'."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls3.getErrorMessage(), is("Current specialty not found with the name 'specialty6'."));
-    assertThat("The success flag did not match the expected value.", xls3.isSuccessfullyImported(), is(false));
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Current specialty not found with the name 'specialty1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Current specialty not found with the name 'specialty4'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls3.getErrorMessage(),
+        is("Current specialty not found with the name 'specialty6'."));
+    assertThat("The success flag did not match the expected value.", xls3.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -259,10 +274,14 @@ public class PostCreateTransformerServiceTest {
     service.processUpload(xlsList);
 
     // Then.
-    assertThat("The error did not match the expected value.", xls1.getErrorMessage(), is("Current site not found with the name 'site1'."));
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Current site not found with the name 'site4'."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Current site not found with the name 'site1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Current site not found with the name 'site4'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -273,16 +292,21 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
     when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
-    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any())).thenReturn(Arrays.asList(trainingBody1, employingBody1, employingBody2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, employingBody1, employingBody2));
 
     // When.
     service.processUpload(xlsList);
 
     // Then.
-    assertThat("The error did not match the expected value.", xls1.getErrorMessage(), is("Current training body not found with the name 'trainingBody1'."));
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Current training body not found with the name 'trainingBody2'."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Current training body not found with the name 'trainingBody1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Current training body not found with the name 'trainingBody2'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -293,16 +317,21 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
     when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
-    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any())).thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1));
 
     // When.
     service.processUpload(xlsList);
 
     // Then.
-    assertThat("The error did not match the expected value.", xls1.getErrorMessage(), is("Current employing body not found with the name 'employingBody1'."));
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Current employing body not found with the name 'employingBody2'."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Current employing body not found with the name 'employingBody1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Current employing body not found with the name 'employingBody2'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -313,17 +342,23 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
     when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
-    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any())).thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
-    when(tcsService.findProgrammesIn(any())).thenReturn(Arrays.asList(programme1, programme2, programme3));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3));
 
     // When.
     service.processUpload(xlsList);
 
     // Then.
-    assertThat("The error did not match the expected value.", xls1.getErrorMessage(), is("Current programme not found with the ID '1'."));
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Current programme not found with the ID '4'."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Current programme not found with the ID '1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Current programme not found with the ID '4'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -335,18 +370,24 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
     when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
-    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any())).thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
-    when(tcsService.findProgrammesIn(any())).thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
 
     // When.
     service.processUpload(xlsList);
 
     // Then.
-    assertThat("The error did not match the expected value.", xls1.getErrorMessage(), is("Current owner not found with the name 'owner1'."));
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(false));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Current owner not found with the name 'owner2'."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Current owner not found with the name 'owner1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Current owner not found with the name 'owner2'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -362,19 +403,25 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
     when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
-    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any())).thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
-    when(tcsService.findProgrammesIn(any())).thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
-    when(tcsService.findPostsByNationalPostNumbersIn(any())).thenReturn(Collections.singletonList(post1));
+    when(tcsService.findPostsByNationalPostNumbersIn(any()))
+        .thenReturn(Collections.singletonList(post1));
 
     // When.
     service.processUpload(xlsList);
 
     // Then.
     assertThat("The error did not match the expected value.", xls1.getErrorMessage(), nullValue());
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(true));
-    assertThat("The error did not match the expected value.", xls2.getErrorMessage(), is("Old post not found with the NPN 'oldPost2'."));
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(false));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(true));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Old post not found with the NPN 'oldPost2'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
   }
 
   @Test
@@ -383,8 +430,10 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
     when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
-    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any())).thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
-    when(tcsService.findProgrammesIn(any())).thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
 
     // When.
@@ -392,8 +441,10 @@ public class PostCreateTransformerServiceTest {
 
     // Then.
     assertThat("The error did not match the expected value.", xls1.getErrorMessage(), nullValue());
-    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(), is(true));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(true));
     assertThat("The error did not match the expected value.", xls2.getErrorMessage(), nullValue());
-    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(), is(true));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(true));
   }
 }

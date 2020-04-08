@@ -88,7 +88,8 @@ public class PostCreateTransformerService {
     }
 
     if (!postDtos.isEmpty()) {
-      List<PostDTO> createdPostDtos = tcsService.bulkCreateDto(postDtos, "/api/bulk-posts", PostDTO.class);
+      List<PostDTO> createdPostDtos =
+          tcsService.bulkCreateDto(postDtos, "/api/bulk-posts", PostDTO.class);
       xlsList.forEach(x -> x.setSuccessfullyImported(!x.hasErrors()));
 
       if (LOGGER.isInfoEnabled()) {
