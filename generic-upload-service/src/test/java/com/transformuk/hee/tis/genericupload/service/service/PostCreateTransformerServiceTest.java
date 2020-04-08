@@ -335,6 +335,34 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
+  public void shouldFailValidationWhenProgrammeIdNotNumeric() {
+    // Given.
+    xls1.setProgrammeTisId("id1");
+    xls2.setProgrammeTisId("id2");
+
+    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3));
+
+    // When.
+    service.processUpload(xlsList);
+
+    // Then.
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Programme ID 'id1' is not a number."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("Programme ID 'id2' is not a number."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
+  }
+
+  @Test
   public void shouldFailValidationWhenCurrentProgrammeNotFound() {
     // Given.
     programme1.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.INACTIVE);

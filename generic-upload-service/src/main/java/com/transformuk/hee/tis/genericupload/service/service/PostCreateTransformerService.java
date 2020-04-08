@@ -351,7 +351,7 @@ public class PostCreateTransformerService {
     // Verify that programme IDs are numeric.
     for (String id : programmeIds) {
       if (!NumberUtils.isParsable(id)) {
-        validationError(String.format("Programme ID %s is not a number.", id));
+        validationError(String.format("Programme ID '%s' is not a number.", id));
       }
     }
 
