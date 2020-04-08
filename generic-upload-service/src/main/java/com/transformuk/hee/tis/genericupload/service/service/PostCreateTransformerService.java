@@ -57,7 +57,9 @@ public class PostCreateTransformerService {
   }
 
   void processUpload(List<PostCreateXls> xlsList) {
-    LOGGER.info("Processing upload for post create with " + xlsList.size() + " rows.");
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info(String.format("Processing upload for post create with %d rows.", xlsList.size()));
+    }
     xlsList.forEach(TemplateXLS::initialiseSuccessfullyImported);
 
     // Initialize cache maps.
@@ -93,14 +95,15 @@ public class PostCreateTransformerService {
       xlsList.forEach(x -> x.setSuccessfullyImported(!x.hasErrors()));
 
       if (LOGGER.isInfoEnabled()) {
-        LOGGER.info("Finished processing upload " + createdPostDtos.size() + " new posts created.");
+        LOGGER.info(String
+            .format("Finished processing upload %d new posts created.", createdPostDtos.size()));
       }
     } else {
       LOGGER.info("No valid posts to create.");
     }
   }
 
-  private PostDTO buildPostDto(PostCreateXls xls) throws IllegalArgumentException {
+  private PostDTO buildPostDto(PostCreateXls xls) {
     PostDTO postDto = new PostDTO();
 
     // Check if NPN already exists.
@@ -224,8 +227,7 @@ public class PostCreateTransformerService {
    * @param dtos The collection to add new PostGradeDTOs to.
    * @throws IllegalArgumentException If the given grade does not exist.
    */
-  private void addPostGrade(String name, PostGradeType type, Set<PostGradeDTO> dtos)
-      throws IllegalArgumentException {
+  private void addPostGrade(String name, PostGradeType type, Set<PostGradeDTO> dtos) {
     GradeDTO cachedDto = gradeNameToDto.get(name);
 
     if (cachedDto != null && cachedDto.getStatus().equals(Status.CURRENT)) {
@@ -274,8 +276,7 @@ public class PostCreateTransformerService {
     }
   }
 
-  private void addPostSpecialty(String name, PostSpecialtyType type, Set<PostSpecialtyDTO> dtos)
-      throws IllegalArgumentException {
+  private void addPostSpecialty(String name, PostSpecialtyType type, Set<PostSpecialtyDTO> dtos) {
     SpecialtyDTO cachedDto = specialtyNameToDto.get(name);
 
     if (cachedDto != null && cachedDto.getStatus()
@@ -319,8 +320,7 @@ public class PostCreateTransformerService {
     }
   }
 
-  private void addPostSite(String name, PostSiteType type, Set<PostSiteDTO> dtos)
-      throws IllegalArgumentException {
+  private void addPostSite(String name, PostSiteType type, Set<PostSiteDTO> dtos) {
     SiteDTO cachedDto = siteNameToDto.get(name);
 
     if (cachedDto != null && cachedDto.getStatus().equals(Status.CURRENT)) {
@@ -344,8 +344,7 @@ public class PostCreateTransformerService {
     }
   }
 
-  private Set<ProgrammeDTO> buildPostProgrammes(String programmeTisId)
-      throws IllegalArgumentException {
+  private Set<ProgrammeDTO> buildPostProgrammes(String programmeTisId) {
     List<String> programmeIds = splitMultiValueField(programmeTisId);
 
     // Verify that programme IDs are numeric.
@@ -419,7 +418,7 @@ public class PostCreateTransformerService {
     return Collections.emptyList();
   }
 
-  private static void validationError(String errorMessage) throws IllegalArgumentException {
+  private static void validationError(String errorMessage) {
     LOGGER.error(errorMessage);
     throw new IllegalArgumentException(errorMessage);
   }
