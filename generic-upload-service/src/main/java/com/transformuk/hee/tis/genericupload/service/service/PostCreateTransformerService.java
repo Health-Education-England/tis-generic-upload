@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -57,9 +56,7 @@ public class PostCreateTransformerService {
   }
 
   void processUpload(List<PostCreateXls> xlsList) {
-    if (LOGGER.isInfoEnabled()) {
-      LOGGER.info(String.format("Processing upload for post create with %d rows.", xlsList.size()));
-    }
+    LOGGER.info("Processing upload for post create with {} rows.", xlsList.size());
     xlsList.forEach(TemplateXLS::initialiseSuccessfullyImported);
 
     // Initialize cache maps.
@@ -94,10 +91,7 @@ public class PostCreateTransformerService {
           tcsService.bulkCreateDto(postDtos, "/api/bulk-posts", PostDTO.class);
       xlsList.forEach(x -> x.setSuccessfullyImported(!x.hasErrors()));
 
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info(String
-            .format("Finished processing upload %d new posts created.", createdPostDtos.size()));
-      }
+      LOGGER.info("Finished processing upload {} new posts created.", createdPostDtos.size());
     } else {
       LOGGER.info("No valid posts to create.");
     }
@@ -349,7 +343,7 @@ public class PostCreateTransformerService {
 
     // Verify that programme IDs are numeric.
     for (String id : programmeIds) {
-      if (!NumberUtils.isParsable(id)) {
+      if (!StringUtils.isNumeric(id)) {
         validationError(String.format("Programme ID '%s' is not a number.", id));
       }
     }

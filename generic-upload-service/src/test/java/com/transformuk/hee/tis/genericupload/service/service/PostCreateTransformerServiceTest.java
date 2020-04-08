@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -14,15 +15,24 @@ import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.api.enums.Status;
 import com.transformuk.hee.tis.reference.client.ReferenceService;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PostGradeDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PostSiteDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PostSpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
+import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
+import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -63,6 +73,9 @@ public class PostCreateTransformerServiceTest {
   private LocalOfficeDTO owner1;
   private LocalOfficeDTO owner2;
 
+  @Captor
+  private ArgumentCaptor<List<PostDTO>> dtoCaptor;
+
   @Before
   public void setUp() {
     service = new PostCreateTransformerService(referenceService, tcsService);
@@ -90,9 +103,11 @@ public class PostCreateTransformerServiceTest {
     xlsList = Arrays.asList(xls1, xls2);
 
     grade1 = new GradeDTO();
+    grade1.setId(1L);
     grade1.setName("grade1");
     grade1.setStatus(Status.CURRENT);
     grade2 = new GradeDTO();
+    grade2.setId(2L);
     grade2.setName("grade2");
     grade2.setStatus(Status.CURRENT);
 
@@ -104,23 +119,29 @@ public class PostCreateTransformerServiceTest {
     specialty2.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
 
     site1 = new SiteDTO();
+    site1.setId(1L);
     site1.setSiteKnownAs("site1");
     site1.setStatus(Status.CURRENT);
     site2 = new SiteDTO();
+    site2.setId(2L);
     site2.setSiteKnownAs("site2");
     site2.setStatus(Status.CURRENT);
 
     trainingBody1 = new TrustDTO();
+    trainingBody1.setId(1L);
     trainingBody1.setTrustKnownAs("trainingBody1");
     trainingBody1.setStatus(Status.CURRENT);
     trainingBody2 = new TrustDTO();
+    trainingBody2.setId(2L);
     trainingBody2.setTrustKnownAs("trainingBody2");
     trainingBody2.setStatus(Status.CURRENT);
 
     employingBody1 = new TrustDTO();
     employingBody1.setTrustKnownAs("employingBody1");
+    employingBody1.setId(3L);
     employingBody1.setStatus(Status.CURRENT);
     employingBody2 = new TrustDTO();
+    employingBody2.setId(4L);
     employingBody2.setTrustKnownAs("employingBody2");
     employingBody2.setStatus(Status.CURRENT);
 
@@ -455,14 +476,35 @@ public class PostCreateTransformerServiceTest {
   @Test
   public void shouldCreatePostsWhenValidationPasses() {
     // Given.
+    xls1.setTrainingDescription("trainingDescription1");
+    xls1.setOtherGrades("grade1;grade2");
+    xls1.setOtherSpecialties("specialty1");
+    xls1.setSubSpecialties("specialty2");
+    xls1.setOtherSites("site1;site2");
+    xls1.setOldPost("oldPost1");
+
+    SpecialtyDTO specialty3 = new SpecialtyDTO();
+    specialty3.setName("specialty3");
+    specialty3.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
+
+    PostDTO post1 = new PostDTO();
+    post1.setNationalPostNumber("oldPost1");
+    post1.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
+
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
+    when(tcsService.getSpecialtyByName(any()))
+        .thenReturn(Arrays.asList(specialty1, specialty2, specialty3));
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
         .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(tcsService.findPostsByNationalPostNumbersIn(any()))
+        .thenReturn(Collections.singletonList(post1));
+
+    when(tcsService.bulkCreateDto(dtoCaptor.capture(), any(), any()))
+        .thenReturn(Collections.emptyList());
 
     // When.
     service.processUpload(xlsList);
@@ -474,5 +516,99 @@ public class PostCreateTransformerServiceTest {
     assertThat("The error did not match the expected value.", xls2.getErrorMessage(), nullValue());
     assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
         is(true));
+
+    List<PostDTO> postDtos = dtoCaptor.getValue();
+    assertThat("The number of built DTOs did not match the expected value.", postDtos.size(),
+        is(2));
+
+    PostDTO postDto = postDtos.get(0);
+    assertThat("The DTO's NPN did not match the expected value.", postDto.getNationalPostNumber(),
+        is("npn1"));
+    assertThat("The DTO's NPN did not match the expected value.", postDto.getTrainingBodyId(),
+        is(1L));
+    assertThat("The DTO's NPN did not match the expected value.", postDto.getEmployingBodyId(),
+        is(3L));
+    assertThat("The DTO's owner did not match the expected value.", postDto.getOwner(),
+        is("owner1"));
+    assertThat("The DTO's training description did not match the expected value.",
+        postDto.getTrainingDescription(), is("trainingDescription1"));
+    assertThat("The DTO's old post did not match the expected value.", postDto.getOldPost(),
+        is(post1));
+    assertThat("The DTO's status did not match the expected value.", postDto.getStatus(), is(
+        com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT));
+
+    Set<ProgrammeDTO> programmes = postDto.getProgrammes();
+    assertThat("The DTO's programmes did not contain the expected number.", programmes.size(),
+        is(2));
+    assertThat("The DTO's programmes did not match the expected values.", programmes,
+        hasItems(programme1, programme2));
+
+    Set<PostGradeDTO> postGrades = postDto.getGrades();
+    assertThat("The DTO's grades did not contain the expected number.", postGrades.size(), is(3));
+    assertThat("The DTO's grades did not match the expected values.", postGrades, hasItems(
+        new PostGradeDTO(null, 1L, PostGradeType.APPROVED),
+        new PostGradeDTO(null, 1L, PostGradeType.OTHER),
+        new PostGradeDTO(null, 2L, PostGradeType.OTHER)
+    ));
+
+    Set<PostSiteDTO> postSites = postDto.getSites();
+    assertThat("The DTO's sites did not contain the expected number.", postSites.size(), is(3));
+    assertThat("The DTO's sites did not match the expected values.", postSites, hasItems(
+        new PostSiteDTO(null, 1L, PostSiteType.PRIMARY),
+        new PostSiteDTO(null, 1L, PostSiteType.OTHER),
+        new PostSiteDTO(null, 2L, PostSiteType.OTHER)
+    ));
+
+    Set<PostSpecialtyDTO> postSpecialties = postDto.getSpecialties();
+    assertThat("The DTO's specialties did not contain the expected number.", postSpecialties.size(),
+        is(3));
+    assertThat("The DTO's specialties did not match the expected values.", postSpecialties,
+        hasItems(
+            new PostSpecialtyDTO(null, specialty1, PostSpecialtyType.PRIMARY),
+            new PostSpecialtyDTO(null, specialty1, PostSpecialtyType.OTHER),
+            new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.SUB_SPECIALTY)
+        ));
+
+    postDto = postDtos.get(1);
+    assertThat("The DTO's NPN did not match the expected value.", postDto.getNationalPostNumber(),
+        is("npn2"));
+    assertThat("The DTO's NPN did not match the expected value.", postDto.getTrainingBodyId(),
+        is(2L));
+    assertThat("The DTO's NPN did not match the expected value.", postDto.getEmployingBodyId(),
+        is(4L));
+    assertThat("The DTO's owner did not match the expected value.", postDto.getOwner(),
+        is("owner2"));
+    assertThat("The DTO's training description did not match the expected value.",
+        postDto.getTrainingDescription(), nullValue());
+    assertThat("The DTO's old post did not match the expected value.", postDto.getOldPost(),
+        nullValue());
+    assertThat("The DTO's status did not match the expected value.", postDto.getStatus(), is(
+        com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT));
+
+    programmes = postDto.getProgrammes();
+    assertThat("The DTO's programmes did not contain the expected number.", programmes.size(),
+        is(2));
+    assertThat("The DTO's programmes did not match the expected values.", programmes,
+        hasItems(programme3, programme4));
+
+    postGrades = postDto.getGrades();
+    assertThat("The DTO's grades did not contain the expected number.", postGrades.size(), is(1));
+    assertThat("The DTO's grades did not match the expected values.", postGrades, hasItems(
+        new PostGradeDTO(null, 2L, PostGradeType.APPROVED)
+    ));
+
+    postSites = postDto.getSites();
+    assertThat("The DTO's sites did not contain the expected number.", postSites.size(), is(1));
+    assertThat("The DTO's sites did not match the expected values.", postSites, hasItems(
+        new PostSiteDTO(null, 2L, PostSiteType.PRIMARY)
+    ));
+
+    postSpecialties = postDto.getSpecialties();
+    assertThat("The DTO's specialties did not contain the expected number.", postSpecialties.size(),
+        is(1));
+    assertThat("The DTO's specialties did not match the expected values.", postSpecialties,
+        hasItems(
+            new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.PRIMARY)
+        ));
   }
 }
