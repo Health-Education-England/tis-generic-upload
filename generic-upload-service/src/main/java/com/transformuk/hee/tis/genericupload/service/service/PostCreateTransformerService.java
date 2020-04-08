@@ -28,11 +28,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.stereotype.Component;
 
-// TODO: Add logging throughout.
-// TODO: Graceful handling of empty uploads (generic solution).
-// TODO: Handle errors from tcs/reference better to avoid "Internal Server Error" results.
 @Component
 public class PostCreateTransformerService {
 
@@ -40,6 +38,7 @@ public class PostCreateTransformerService {
 
   private ReferenceService referenceService;
 
+  // TODO: Use a more universal caching solution.
   private Map<String, GradeDTO> gradeNameToDto = Collections.emptyMap();
   private Map<String, SiteDTO> siteNameToDto = Collections.emptyMap();
   private Map<String, SpecialtyDTO> specialtyNameToDto = Collections.emptyMap();
@@ -85,7 +84,6 @@ public class PostCreateTransformerService {
     }
 
     if (!postDtos.isEmpty()) {
-      // TODO: create endpoint
       tcsService.bulkCreateDto(postDtos, "/api/bulk-posts", PostDTO.class);
       xlsList.forEach(x -> x.setSuccessfullyImported(!x.hasErrors()));
     }
@@ -347,6 +345,13 @@ public class PostCreateTransformerService {
       throws IllegalArgumentException {
     List<String> programmeIds = splitMultiValueField(programmeTisId);
 
+    // Verify that programme IDs are numeric.
+    for (String id : programmeIds) {
+      if (!NumberUtils.isParsable(id)) {
+        throw new IllegalArgumentException(String.format("Programme ID %s is not a number.", id));
+      }
+    }
+
     // Update the cache with any new ids.
     updateProgrammeCache(new HashSet<>(programmeIds));
 
@@ -372,7 +377,6 @@ public class PostCreateTransformerService {
         ids.stream().filter(id -> !programmeIdToDto.containsKey(id)).collect(Collectors.toList());
 
     if (!idsToFind.isEmpty()) {
-      // TODO: handle non-numeric values.
       List<ProgrammeDTO> dtos = tcsService.findProgrammesIn(idsToFind);
 
       for (ProgrammeDTO dto : dtos) {
