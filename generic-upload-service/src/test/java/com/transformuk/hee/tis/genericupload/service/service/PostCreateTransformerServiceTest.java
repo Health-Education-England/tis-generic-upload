@@ -536,6 +536,8 @@ public class PostCreateTransformerServiceTest {
         is(post1));
     assertThat("The DTO's status did not match the expected value.", postDto.getStatus(), is(
         com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT));
+    assertThat("The DTO's NPN generation flag did not match the expected value.",
+        postDto.isBypassNPNGeneration(), is(true));
 
     Set<ProgrammeDTO> programmes = postDto.getProgrammes();
     assertThat("The DTO's programmes did not contain the expected number.", programmes.size(),
@@ -584,6 +586,8 @@ public class PostCreateTransformerServiceTest {
         nullValue());
     assertThat("The DTO's status did not match the expected value.", postDto.getStatus(), is(
         com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT));
+    assertThat("The DTO's NPN generation flag did not match the expected value.",
+        postDto.isBypassNPNGeneration(), is(true));
 
     programmes = postDto.getProgrammes();
     assertThat("The DTO's programmes did not contain the expected number.", programmes.size(),
