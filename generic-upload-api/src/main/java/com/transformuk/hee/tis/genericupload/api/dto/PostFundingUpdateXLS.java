@@ -2,8 +2,10 @@ package com.transformuk.hee.tis.genericupload.api.dto;
 
 import java.time.LocalDate;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class PostFundingUpdateXLS extends TemplateXLS {
 
   private String postTisId;

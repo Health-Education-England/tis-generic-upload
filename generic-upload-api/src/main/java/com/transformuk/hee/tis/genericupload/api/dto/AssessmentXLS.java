@@ -2,8 +2,10 @@ package com.transformuk.hee.tis.genericupload.api.dto;
 
 import java.util.Date;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class AssessmentXLS extends TemplateXLS {
 
   private String surname;
