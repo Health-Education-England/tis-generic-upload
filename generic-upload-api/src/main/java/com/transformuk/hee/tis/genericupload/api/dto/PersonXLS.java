@@ -1,8 +1,9 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
 import java.util.Date;
-import java.util.Objects;
+import lombok.Data;
 
+@Data
 public class PersonXLS extends TemplateXLS {
 
   private String title;
@@ -455,137 +456,5 @@ public class PersonXLS extends TemplateXLS {
 
   public void setPublicHealthNumber(String publicHealthNumber) {
     this.publicHealthNumber = publicHealthNumber;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    PersonXLS personXLS = (PersonXLS) o;
-    return Objects.equals(title, personXLS.title) &&
-        Objects.equals(surname, personXLS.surname) &&
-        Objects.equals(forenames, personXLS.forenames) &&
-        Objects.equals(gender, personXLS.gender) &&
-        Objects.equals(dateOfBirth, personXLS.dateOfBirth) &&
-        Objects.equals(gmcNumber, personXLS.gmcNumber) &&
-        Objects.equals(niNumber, personXLS.niNumber) &&
-        Objects.equals(gdcNumber, personXLS.gdcNumber) &&
-        Objects.equals(eeaResident, personXLS.eeaResident) &&
-        Objects.equals(nationality, personXLS.nationality) &&
-        Objects.equals(ethnicOrigin, personXLS.ethnicOrigin) &&
-        Objects.equals(address1, personXLS.address1) &&
-        Objects.equals(address2, personXLS.address2) &&
-        Objects.equals(address3, personXLS.address3) &&
-        Objects.equals(postCode, personXLS.postCode) &&
-        Objects.equals(telephone, personXLS.telephone) &&
-        Objects.equals(mobile, personXLS.mobile) &&
-        Objects.equals(emailAddress, personXLS.emailAddress) &&
-        Objects.equals(medicalSchool, personXLS.medicalSchool) &&
-        Objects.equals(qualification, personXLS.qualification) &&
-        Objects.equals(dateAttained, personXLS.dateAttained) &&
-        Objects.equals(countryOfQualification, personXLS.countryOfQualification) &&
-        Objects.equals(disability, personXLS.disability) &&
-        Objects.equals(disabilityDetails, personXLS.disabilityDetails) &&
-        Objects.equals(sexualOrientation, personXLS.sexualOrientation) &&
-        Objects.equals(religiousBelief, personXLS.religiousBelief) &&
-        Objects.equals(programmeName, personXLS.programmeName) &&
-        Objects.equals(programmeNumber, personXLS.programmeNumber) &&
-        Objects.equals(programmeMembership, personXLS.programmeMembership) &&
-        Objects.equals(rotation1, personXLS.rotation1) &&
-        Objects.equals(ntnProgramme, personXLS.ntnProgramme) &&
-        Objects.equals(curriculum1, personXLS.curriculum1) &&
-        Objects.equals(curriculum1StartDate, personXLS.curriculum1StartDate) &&
-        Objects.equals(curriculum1EndDate, personXLS.curriculum1EndDate) &&
-        Objects.equals(curriculum2, personXLS.curriculum2) &&
-        Objects.equals(curriculum2StartDate, personXLS.curriculum2StartDate) &&
-        Objects.equals(curriculum2EndDate, personXLS.curriculum2EndDate) &&
-        Objects.equals(curriculum3, personXLS.curriculum3) &&
-        Objects.equals(curriculum3StartDate, personXLS.curriculum3StartDate) &&
-        Objects.equals(curriculum3EndDate, personXLS.curriculum3EndDate) &&
-        Objects.equals(programmeEndDate, personXLS.programmeEndDate) &&
-        Objects.equals(role, personXLS.role) &&
-        Objects.equals(knownAs, personXLS.knownAs) &&
-        Objects.equals(permitToWork, personXLS.permitToWork) &&
-        Objects.equals(settled, personXLS.settled) &&
-        Objects.equals(visaIssued, personXLS.visaIssued) &&
-        Objects.equals(visaValidTo, personXLS.visaValidTo) &&
-        Objects.equals(visaDetails, personXLS.visaDetails) &&
-        Objects.equals(maritalStatus, personXLS.maritalStatus) &&
-        Objects.equals(publicHealthNumber, personXLS.publicHealthNumber);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects
-        .hash(title, surname, forenames, gender, dateOfBirth, gmcNumber, niNumber, gdcNumber,
-            eeaResident, nationality, ethnicOrigin, address1, address2, address3, postCode,
-            telephone, mobile, emailAddress, medicalSchool, qualification, dateAttained,
-            countryOfQualification, disability, disabilityDetails, sexualOrientation,
-            religiousBelief, programmeName, programmeNumber, programmeMembership, rotation1,
-            ntnProgramme, curriculum1, curriculum1StartDate, curriculum1EndDate, curriculum2,
-            curriculum2StartDate, curriculum2EndDate, curriculum3, curriculum3StartDate,
-            curriculum3EndDate, programmeEndDate, role, knownAs, permitToWork, settled, visaIssued,
-            visaValidTo, visaDetails, maritalStatus, publicHealthNumber);
-  }
-
-  @Override
-  public String toString() {
-    final StringBuilder sb = new StringBuilder("PersonXLS{");
-    sb.append("title='").append(title).append('\'');
-    sb.append(", surname='").append(surname).append('\'');
-    sb.append(", forenames='").append(forenames).append('\'');
-    sb.append(", gender='").append(gender).append('\'');
-    sb.append(", dateOfBirth=").append(dateOfBirth);
-    sb.append(", gmcNumber='").append(gmcNumber).append('\'');
-    sb.append(", niNumber='").append(niNumber).append('\'');
-    sb.append(", gdcNumber='").append(gdcNumber).append('\'');
-    sb.append(", eeaResident='").append(eeaResident).append('\'');
-    sb.append(", nationality='").append(nationality).append('\'');
-    sb.append(", ethnicOrigin='").append(ethnicOrigin).append('\'');
-    sb.append(", address1='").append(address1).append('\'');
-    sb.append(", address2='").append(address2).append('\'');
-    sb.append(", address3='").append(address3).append('\'');
-    sb.append(", postCode='").append(postCode).append('\'');
-    sb.append(", telephone='").append(telephone).append('\'');
-    sb.append(", mobile='").append(mobile).append('\'');
-    sb.append(", emailAddress='").append(emailAddress).append('\'');
-    sb.append(", medicalSchool='").append(medicalSchool).append('\'');
-    sb.append(", qualification='").append(qualification).append('\'');
-    sb.append(", dateAttained=").append(dateAttained);
-    sb.append(", countryOfQualification='").append(countryOfQualification).append('\'');
-    sb.append(", disability='").append(disability).append('\'');
-    sb.append(", disabilityDetails='").append(disabilityDetails).append('\'');
-    sb.append(", sexualOrientation='").append(sexualOrientation).append('\'');
-    sb.append(", religiousBelief='").append(religiousBelief).append('\'');
-    sb.append(", programmeName='").append(programmeName).append('\'');
-    sb.append(", programmeNumber='").append(programmeNumber).append('\'');
-    sb.append(", programmeMembership='").append(programmeMembership).append('\'');
-    sb.append(", rotation1='").append(rotation1).append('\'');
-    sb.append(", ntnProgramme='").append(ntnProgramme).append('\'');
-    sb.append(", curriculum1='").append(curriculum1).append('\'');
-    sb.append(", curriculum1StartDate=").append(curriculum1StartDate);
-    sb.append(", curriculum1EndDate=").append(curriculum1EndDate);
-    sb.append(", curriculum2='").append(curriculum2).append('\'');
-    sb.append(", curriculum2StartDate=").append(curriculum2StartDate);
-    sb.append(", curriculum2EndDate=").append(curriculum2EndDate);
-    sb.append(", curriculum3='").append(curriculum3).append('\'');
-    sb.append(", curriculum3StartDate=").append(curriculum3StartDate);
-    sb.append(", curriculum3EndDate=").append(curriculum3EndDate);
-    sb.append(", programmeEndDate=").append(programmeEndDate);
-    sb.append(", role='").append(role).append('\'');
-    sb.append(", knownAs='").append(knownAs).append('\'');
-    sb.append(", permitToWork='").append(permitToWork).append('\'');
-    sb.append(", settled='").append(settled).append('\'');
-    sb.append(", visaIssued='").append(visaIssued).append('\'');
-    sb.append(", visaValidTo='").append(visaValidTo).append('\'');
-    sb.append(", visaDetails='").append(visaDetails).append('\'');
-    sb.append(", maritalStatus='").append(maritalStatus).append('\'');
-    sb.append(", publicHealthNumber='").append(publicHealthNumber).append('\'');
-    sb.append('}');
-    return sb.toString();
   }
 }

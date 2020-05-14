@@ -1,8 +1,10 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
 import java.util.List;
+import lombok.Data;
 import org.springframework.util.StringUtils;
 
+@Data
 public class TemplateXLS {
 
   private int rowNumber;

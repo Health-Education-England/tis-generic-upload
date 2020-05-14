@@ -1,8 +1,9 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
 import java.util.Date;
-import java.util.Objects;
+import lombok.Data;
 
+@Data
 public class PlacementXLS extends TemplateXLS implements PlacementSupervisor {
 
   private String surname;
@@ -175,69 +176,5 @@ public class PlacementXLS extends TemplateXLS implements PlacementSupervisor {
 
   public void setComments(String comments) {
     this.comments = comments;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    PlacementXLS that = (PlacementXLS) o;
-    return Objects.equals(surname, that.surname) &&
-        Objects.equals(gmcNumber, that.gmcNumber) &&
-        Objects.equals(gdcNumber, that.gdcNumber) &&
-        Objects.equals(publicHealthNumber, that.publicHealthNumber) &&
-        Objects.equals(nationalPostNumber, that.nationalPostNumber) &&
-        Objects.equals(dateFrom, that.dateFrom) &&
-        Objects.equals(dateTo, that.dateTo) &&
-        Objects.equals(placementType, that.placementType) &&
-        Objects.equals(placementStatus, that.placementStatus) &&
-        Objects.equals(site, that.site) &&
-        Objects.equals(otherSites, that.otherSites) &&
-        Objects.equals(wte, that.wte) &&
-        Objects.equals(grade, that.grade) &&
-        Objects.equals(specialty1, that.specialty1) &&
-        Objects.equals(specialty2, that.specialty2) &&
-        Objects.equals(specialty3, that.specialty3) &&
-        Objects.equals(clinicalSupervisor, that.clinicalSupervisor) &&
-        Objects.equals(educationalSupervisor, that.educationalSupervisor) &&
-        Objects.equals(comments, that.comments);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects
-        .hash(surname, gmcNumber, gdcNumber, publicHealthNumber, nationalPostNumber, dateFrom,
-            dateTo, placementType, placementStatus, site, otherSites, wte, grade, specialty1,
-            specialty2, specialty3, clinicalSupervisor, educationalSupervisor, comments);
-  }
-
-  @Override
-  public String toString() {
-    final StringBuilder sb = new StringBuilder("PlacementXLS{");
-    sb.append("surname='").append(surname).append('\'');
-    sb.append(", gmcNumber='").append(gmcNumber).append('\'');
-    sb.append(", gdcNumber='").append(gdcNumber).append('\'');
-    sb.append(", publicHealthNumber='").append(publicHealthNumber).append('\'');
-    sb.append(", nationalPostNumber='").append(nationalPostNumber).append('\'');
-    sb.append(", dateFrom=").append(dateFrom);
-    sb.append(", dateTo=").append(dateTo);
-    sb.append(", placementType='").append(placementType).append('\'');
-    sb.append(", placementStatus='").append(placementStatus).append('\'');
-    sb.append(", site='").append(site).append('\'');
-    sb.append(", otherSite='").append(otherSites).append('\'');
-    sb.append(", wte='").append(wte).append('\'');
-    sb.append(", grade='").append(grade).append('\'');
-    sb.append(", specialty1='").append(specialty1).append('\'');
-    sb.append(", specialty2='").append(specialty2).append('\'');
-    sb.append(", specialty3='").append(specialty3).append('\'');
-    sb.append(", clinicalSupervisor='").append(clinicalSupervisor).append('\'');
-    sb.append(", educationalSupervisor='").append(educationalSupervisor).append('\'');
-    sb.append(", comments='").append(comments).append('\'');
-    sb.append('}');
-    return sb.toString();
   }
 }
