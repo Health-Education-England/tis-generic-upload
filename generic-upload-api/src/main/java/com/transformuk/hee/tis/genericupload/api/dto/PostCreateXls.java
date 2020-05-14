@@ -1,8 +1,10 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class PostCreateXls extends TemplateXLS {
 
   private String nationalPostNumber;
