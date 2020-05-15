@@ -9,7 +9,17 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface ExcelColumn {
 
+  /**
+   * Returns the name of the column.
+   *
+   * @return the column name.
+   */
   String name();
 
+  /**
+   * Returns whether the column is a required field, default is false.
+   *
+   * @return whether the column is required.
+   */
   boolean required() default false;
 }
