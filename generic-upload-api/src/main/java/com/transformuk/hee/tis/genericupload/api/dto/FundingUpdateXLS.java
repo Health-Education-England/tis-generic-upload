@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
+import com.transformuk.hee.tis.genericupload.api.ExcelColumn;
 import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -8,10 +9,21 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class FundingUpdateXLS extends TemplateXLS {
 
+  @ExcelColumn(name = "TIS_PostFunding_ID*", required = true)
   private String postFundingTisId;
+
+  @ExcelColumn(name = "Funding type")
   private String fundingType;
+
+  @ExcelColumn(name = "Funding type - If 'Other' please specify")
   private String fundingTypeOther;
+
+  @ExcelColumn(name = "Funding Body")
   private String fundingBody;
+
+  @ExcelColumn(name = "Date From")
   private Date dateFrom;
+
+  @ExcelColumn(name = "Date to")
   private Date dateTo;
 }
