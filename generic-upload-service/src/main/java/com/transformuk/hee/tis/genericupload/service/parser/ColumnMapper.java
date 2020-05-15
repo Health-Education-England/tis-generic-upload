@@ -16,11 +16,6 @@ public class ColumnMapper {
 
   private final List<ColumnMapping> columnMappings;
 
-  // TODO: remove after refactoring individual mappers.
-  public ColumnMapper() {
-    columnMappings = Collections.emptyList();
-  }
-
   /**
    * Create a column mapper for a given XLS DTO.
    *
