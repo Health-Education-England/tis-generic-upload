@@ -2,6 +2,7 @@ package com.transformuk.hee.tis.genericupload.api.enumeration;
 
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
@@ -16,6 +17,7 @@ public enum FileType {
   ASSESSMENTS(AssessmentXLS.class),
   FUNDING_UPDATE(FundingUpdateXLS.class),
   PEOPLE(PersonXLS.class),
+  PEOPLE_UPDATE(PersonUpdateXls.class),
   PLACEMENTS(PlacementXLS.class),
   PLACEMENTS_DELETE(PlacementDeleteXLS.class),
   PLACEMENTS_UPDATE(PlacementUpdateXLS.class),
