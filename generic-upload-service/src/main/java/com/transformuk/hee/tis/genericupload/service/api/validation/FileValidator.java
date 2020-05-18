@@ -1,27 +1,10 @@
 package com.transformuk.hee.tis.genericupload.service.api.validation;
 
-import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
-import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.UploadFileResource;
-import com.transformuk.hee.tis.genericupload.service.parser.AssessmentHeaderMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.FundingUpdateHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PersonHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementDeleteHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PlacementUpdateHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PostCreateHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PostFundingUpdateHeaderMapper;
-import com.transformuk.hee.tis.genericupload.service.parser.PostUpdateHeaderMapper;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -82,54 +65,42 @@ public class FileValidator {
       ExcelToObjectMapper excelToObjectMapper, Set<String> headers)
       throws ReflectiveOperationException, ValidationException, InvalidFormatException {
     FileType fileType;
+
     if (headers.contains("Placement Type*")) {
       fileType = FileType.PLACEMENTS;
-      validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementXLS.class,
-          excelToObjectMapper, new PlacementHeaderMapper());
     } else if (headers.contains("Email Address")) { //TODO do something more robust than this
       fileType = FileType.PEOPLE;
-      validateMandatoryFieldsOrThrowException(files, fieldErrors, PersonXLS.class,
-          excelToObjectMapper, new PersonHeaderMapper());
     } else if (headers.contains("Placement Id*") && headers.contains("Placement Status*")) {
       fileType = FileType.PLACEMENTS_DELETE;
-      validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementDeleteXLS.class,
-          excelToObjectMapper, new PlacementDeleteHeaderMapper());
     } else if (headers.contains("Review date*")) {
       fileType = FileType.ASSESSMENTS;
-      validateMandatoryFieldsOrThrowException(files, fieldErrors, AssessmentXLS.class,
-          excelToObjectMapper, new AssessmentHeaderMapper());
     } else if (headers.contains("TIS_Placement_ID*") && headers.contains("Intrepid_Placement_ID")) {
       fileType = FileType.PLACEMENTS_UPDATE;
-      validateMandatoryFieldsOrThrowException(files, fieldErrors, PlacementUpdateXLS.class,
-          excelToObjectMapper, new PlacementUpdateHeaderMapper());
     } else if (headers.contains("TIS_Post_ID*") && headers.contains("Funding type")) {
       fileType = FileType.POSTS_FUNDING_UPDATE;
-      validateMandatoryFieldsOrThrowException(files, fieldErrors, PostFundingUpdateXLS.class,
-          excelToObjectMapper, new PostFundingUpdateHeaderMapper());
     } else if (headers.contains("National Post Number*")) {
       fileType = FileType.POSTS_CREATE;
-      validateMandatoryFieldsOrThrowException(files, fieldErrors, PostCreateXls.class,
-          excelToObjectMapper, new PostCreateHeaderMapper());
     } else if (headers.contains("TIS_Post_ID*")) {
       fileType = FileType.POSTS_UPDATE;
-      validateMandatoryFieldsOrThrowException(files, fieldErrors, PostUpdateXLS.class,
-          excelToObjectMapper, new PostUpdateHeaderMapper());
     } else if (headers.contains("TIS_PostFunding_ID*")) {
       fileType = FileType.FUNDING_UPDATE;
-      validateMandatoryFieldsOrThrowException(files, fieldErrors, FundingUpdateXLS.class,
-          excelToObjectMapper, new FundingUpdateHeaderMapper());
     } else {
       throw new InvalidFormatException("Unrecognised upload template");
     }
+
+    Class<? extends TemplateXLS> dtoClass = fileType.getDtoClass();
+    validateMandatoryFieldsOrThrowException(files, fieldErrors, dtoClass, excelToObjectMapper);
+
     return fileType;
   }
 
   public void validateMandatoryFieldsOrThrowException(List<MultipartFile> files,
-      List<FieldError> fieldErrors, Class templateXLS, ExcelToObjectMapper excelToObjectMapper,
-      ColumnMapper columnMapper) throws ReflectiveOperationException, ValidationException {
-    validateMandatoryFields(fieldErrors, excelToObjectMapper, templateXLS, columnMapper);
+      List<FieldError> fieldErrors, Class<? extends TemplateXLS> templateXls,
+      ExcelToObjectMapper excelToObjectMapper)
+      throws ReflectiveOperationException, ValidationException {
+    validateMandatoryFields(fieldErrors, excelToObjectMapper, templateXls);
     if (!fieldErrors.isEmpty()) {
-      BindingResult bindingResult = new BeanPropertyBindingResult(templateXLS.getSimpleName(),
+      BindingResult bindingResult = new BeanPropertyBindingResult(templateXls.getSimpleName(),
           files.get(0).getName());
       fieldErrors.forEach(bindingResult::addError);
 
@@ -137,19 +108,18 @@ public class FileValidator {
     }
   }
 
-
   /**
    * Validate mandatory fields
    *
-   * @param fieldErrors
-   * @param excelToObjectMapper
-   * @param mappedToClass
-   * @param columnMapper
-   * @throws Exception
+   * @param fieldErrors         A collection to add errors to.
+   * @param excelToObjectMapper The mapper to use to convert excel to objects.
+   * @param mappedToClass       The DTO class to use to map the columns.
+   * @throws ReflectiveOperationException If the mapper fails to process the file.
    */
   private void validateMandatoryFields(List<FieldError> fieldErrors,
-      ExcelToObjectMapper excelToObjectMapper,
-      Class mappedToClass, ColumnMapper columnMapper) throws ReflectiveOperationException {
+      ExcelToObjectMapper excelToObjectMapper, Class<? extends TemplateXLS> mappedToClass)
+      throws ReflectiveOperationException {
+    ColumnMapper columnMapper = new ColumnMapper(mappedToClass);
     Map<String, String> columnNameToMandatoryColumnsMap = columnMapper.getMandatoryFieldMap();
     List<?> result = excelToObjectMapper.map(mappedToClass, columnNameToMandatoryColumnsMap);
     AtomicInteger rowIndex = new AtomicInteger(0);
@@ -166,7 +136,8 @@ public class FileValidator {
     });
   }
 
-  private void validateField(List<FieldError> fieldErrors, Class mappedToClass,
+  private void validateField(List<FieldError> fieldErrors,
+      Class<? extends TemplateXLS> mappedToClass,
       AtomicInteger rowIndex, Object row, String columnNameToMandatoryColumnsMapKey)
       throws NoSuchFieldException, IllegalAccessException {
     Field currentField = row.getClass().getDeclaredField(columnNameToMandatoryColumnsMapKey);

@@ -5,15 +5,15 @@ package com.transformuk.hee.tis.genericupload.service.parser;
  */
 public class ColumnMapping {
 
-  private String sourceFieldName;
-  private String targetFieldName;
+  private final String sourceFieldName;
+  private final String targetFieldName;
 
-  private boolean required;
+  private final boolean required;
 
-  ColumnMapping(String targetFieldName, String sourceFieldName) {
+  ColumnMapping(String targetFieldName, String sourceFieldName, boolean required) {
     this.targetFieldName = targetFieldName;
     this.sourceFieldName = sourceFieldName;
-    this.required = sourceFieldName.endsWith("*");
+    this.required = required;
   }
 
   public String getSourceFieldName() {
