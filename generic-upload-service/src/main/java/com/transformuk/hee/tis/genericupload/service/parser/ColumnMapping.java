@@ -10,18 +10,6 @@ public class ColumnMapping {
 
   private final boolean required;
 
-  /**
-   * Create a new column mapping.
-   *
-   * @param targetFieldName The name of the target field.
-   * @param sourceFieldName The name of the source field.
-   * @deprecated To be removed in favour of using annotations to determine whether required.
-   */
-  @Deprecated
-  ColumnMapping(String targetFieldName, String sourceFieldName) {
-    this(targetFieldName, sourceFieldName, sourceFieldName.endsWith("*"));
-  }
-
   ColumnMapping(String targetFieldName, String sourceFieldName, boolean required) {
     this.targetFieldName = targetFieldName;
     this.sourceFieldName = sourceFieldName;
