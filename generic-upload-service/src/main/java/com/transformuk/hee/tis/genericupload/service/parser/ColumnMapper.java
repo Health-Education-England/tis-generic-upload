@@ -22,19 +22,19 @@ public class ColumnMapper {
    * @param dtoClass The class of the XLS DTO to create mappings for.
    */
   public ColumnMapper(Class<? extends TemplateXLS> dtoClass) {
-    List<ColumnMapping> columnMappings = new ArrayList<>();
+    List<ColumnMapping> mappings = new ArrayList<>();
 
     for (Field field : dtoClass.getDeclaredFields()) {
       ExcelColumn excelColumn = field.getAnnotation(ExcelColumn.class);
 
       if (excelColumn != null) {
-        ColumnMapping columnMapping =
+        ColumnMapping mapping =
             new ColumnMapping(field.getName(), excelColumn.name(), excelColumn.required());
-        columnMappings.add(columnMapping);
+        mappings.add(mapping);
       }
     }
 
-    this.columnMappings = Collections.unmodifiableList(columnMappings);
+    this.columnMappings = Collections.unmodifiableList(mappings);
   }
 
   List<ColumnMapping> getColumnMappings() {
@@ -47,8 +47,8 @@ public class ColumnMapper {
    * @return A map where the key is the DTO field name and the value is the Excel column name.
    */
   public Map<String, String> getFieldMap() {
-    List<ColumnMapping> columnMappings = getColumnMappings();
-    return columnMappings.stream().collect(
+    List<ColumnMapping> mappings = getColumnMappings();
+    return mappings.stream().collect(
         Collectors.toMap(ColumnMapping::getTargetFieldName, ColumnMapping::getSourceFieldName));
   }
 
@@ -58,8 +58,8 @@ public class ColumnMapper {
    * @return A map where the key is the DTO field name and the value is the Excel column name.
    */
   public Map<String, String> getMandatoryFieldMap() {
-    List<ColumnMapping> columnMappings = getColumnMappings();
-    return columnMappings.stream().filter(ColumnMapping::isRequired).collect(
+    List<ColumnMapping> mappings = getColumnMappings();
+    return mappings.stream().filter(ColumnMapping::isRequired).collect(
         Collectors.toMap(ColumnMapping::getTargetFieldName, ColumnMapping::getSourceFieldName));
   }
 }

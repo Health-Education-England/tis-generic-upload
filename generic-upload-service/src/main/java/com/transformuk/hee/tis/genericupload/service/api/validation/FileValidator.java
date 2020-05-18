@@ -95,12 +95,12 @@ public class FileValidator {
   }
 
   public void validateMandatoryFieldsOrThrowException(List<MultipartFile> files,
-      List<FieldError> fieldErrors, Class<? extends TemplateXLS> templateXLS,
+      List<FieldError> fieldErrors, Class<? extends TemplateXLS> templateXls,
       ExcelToObjectMapper excelToObjectMapper)
       throws ReflectiveOperationException, ValidationException {
-    validateMandatoryFields(fieldErrors, excelToObjectMapper, templateXLS);
+    validateMandatoryFields(fieldErrors, excelToObjectMapper, templateXls);
     if (!fieldErrors.isEmpty()) {
-      BindingResult bindingResult = new BeanPropertyBindingResult(templateXLS.getSimpleName(),
+      BindingResult bindingResult = new BeanPropertyBindingResult(templateXls.getSimpleName(),
           files.get(0).getName());
       fieldErrors.forEach(bindingResult::addError);
 
@@ -111,10 +111,10 @@ public class FileValidator {
   /**
    * Validate mandatory fields
    *
-   * @param fieldErrors
-   * @param excelToObjectMapper
-   * @param mappedToClass
-   * @throws ReflectiveOperationException
+   * @param fieldErrors         A collection to add errors to.
+   * @param excelToObjectMapper The mapper to use to convert excel to objects.
+   * @param mappedToClass       The DTO class to use to map the columns.
+   * @throws ReflectiveOperationException If the mapper fails to process the file.
    */
   private void validateMandatoryFields(List<FieldError> fieldErrors,
       ExcelToObjectMapper excelToObjectMapper, Class<? extends TemplateXLS> mappedToClass)
