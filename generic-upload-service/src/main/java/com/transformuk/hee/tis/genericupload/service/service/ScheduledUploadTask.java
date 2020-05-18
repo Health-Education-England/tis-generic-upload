@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
@@ -62,6 +63,8 @@ public class ScheduledUploadTask {
   @Autowired
   private PersonTransformerService personTransformerService;
   @Autowired
+  private PersonUpdateTransformerService personUpdateTransformerService;
+  @Autowired
   private AssessmentTransformerService assessmentTransformerService;
   @Autowired
   private PlacementUpdateTransformerService placementUpdateTransformerService;
@@ -109,6 +112,13 @@ public class ScheduledUploadTask {
                 .map(PersonXLS.class, new ColumnMapper(PersonXLS.class).getFieldMap());
             personTransformerService.processPeopleUpload(personXLSS);
             setJobToCompleted(applicationType, personXLSS);
+            break;
+
+          case PEOPLE_UPDATE:
+            List<PersonUpdateXls> personUpdateXlss = excelToObjectMapper
+                .map(PersonUpdateXls.class, new ColumnMapper(PersonUpdateXls.class).getFieldMap());
+            personUpdateTransformerService.processUpload(personUpdateXlss);
+            setJobToCompleted(applicationType, personUpdateXlss);
             break;
 
           case PLACEMENTS:

@@ -68,6 +68,8 @@ public class FileValidator {
 
     if (headers.contains("Placement Type*")) {
       fileType = FileType.PLACEMENTS;
+    } else if (headers.contains("TIS_Person_ID*")) {
+      fileType = FileType.PEOPLE_UPDATE;
     } else if (headers.contains("Email Address")) { //TODO do something more robust than this
       fileType = FileType.PEOPLE;
     } else if (headers.contains("Placement Id*") && headers.contains("Placement Status*")) {
