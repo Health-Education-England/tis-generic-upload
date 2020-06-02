@@ -117,7 +117,7 @@
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
       <artifactId>tcs-client</artifactId>
-      <version>5.4.0</version>
+      <version>5.5.0</version>
     </dependency>
     <!--TODO Get rid of transistive dependencies provided by clients -->
     <dependency>
@@ -557,9 +557,9 @@
           <executable>true</executable>
           <fork>true</fork>
           <!--
-          Enable the line below to have remote debugging of your application on port 5005
-          <jvmArguments>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</jvmArguments>
-          -->
+          Enable the line below to have remote debugging of your application on port 5005-->
+          <jvmArguments>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5009</jvmArguments>
+
         </configuration>
       </plugin>
       <plugin>
