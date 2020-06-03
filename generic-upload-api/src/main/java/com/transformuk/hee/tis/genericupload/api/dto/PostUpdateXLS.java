@@ -41,7 +41,7 @@ public class PostUpdateXLS extends TemplateXLS {
   @ExcelColumn(name = "Employing body")
   private String employingBody;
 
-  @ExcelColumn(name = "TIS_Programme_ID")
+  @ExcelColumn(name = "TIS_Programme_ID*", required = true)
   private String programmeTisId;
 
   @ExcelColumn(name = "Owner")
