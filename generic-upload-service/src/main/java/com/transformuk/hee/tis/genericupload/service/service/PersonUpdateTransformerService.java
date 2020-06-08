@@ -28,8 +28,6 @@ public class PersonUpdateTransformerService {
   public static final String PERMIT_TO_WORK_NOT_EXISTS = "Permit to work '%s' does not exist.";
   public static final String TRAINER_APPROVAL_STATUS_NOT_EXISTS = "Trainer Approval Status '%s' does not exist.";
   public static final String ROLE_ERROR_SEPARATOR = "Role '%s' should not use ',' as a separator, please use ';' instead.";
-  private static final Logger LOGGER =
-      LoggerFactory.getLogger(PersonUpdateTransformerService.class);
   private final TcsServiceImpl tcsService;
   private final PersonMapper personMapper;
   private final TrainerApprovalMapper trainerApprovalMapper;
@@ -48,7 +46,7 @@ public class PersonUpdateTransformerService {
     List<PersonDTO> personDtos = new ArrayList<>();
 
     // Use a HashMap to store all the numbers of personIds
-    HashMap<String, Integer> numberOfIds = new HashMap<String, Integer>();
+    HashMap<String, Integer> numberOfIds = new HashMap<>();
     for (PersonUpdateXls xls : xlsList) {
       String personId = xls.getTisPersonId();
       if (!numberOfIds.containsKey(personId)) {
@@ -76,14 +74,14 @@ public class PersonUpdateTransformerService {
         personDto.setTrainerApprovals(Collections.singleton(trainerApprovalDto));
       }
 
-      if (initialErrorMessages.size() != 0) {
+      if (!initialErrorMessages.isEmpty()) {
         personDto.getMessageList().addAll(initialErrorMessages);
       }
       personIdToXls.put(personDto.getId(), xls);
       personDtos.add(personDto);
     }
 
-    if (personDtos.size() == 0) {
+    if (personDtos.isEmpty()) {
       return;
     }
 
@@ -109,9 +107,9 @@ public class PersonUpdateTransformerService {
   }
 
   /**
-   * Those validation can not be handled in TCS
+   * Those validation can not be handled in TCS.
    *
-   * @param xls
+   * @param xls PersonUpdateXls to be validated
    * @return errorMessages list
    */
   List<String> initialValidate(PersonUpdateXls xls) {
