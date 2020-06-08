@@ -61,7 +61,6 @@ public class PostUpdateTransformerService {
   private static final String DID_NOT_FIND_TRUST_FOR_NAME = "Did not find trust for name \"%s\".";
   private static final String FOUND_MULTIPLE_TRUSTS_FOR_NAME = "Found multiple trusts for name \"%s\".";
   private static final String DID_NOT_FIND_POST_FOR_ID = "Did not find the post for id \"%s\".";
-  private static final String PROGRAMME_MISSING = "Programme missing in the post.";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -474,13 +473,6 @@ public class PostUpdateTransformerService {
 
     // If the field is null then there is no need to update programmes.
     if (programmeIdsSeparated == null) {
-      PostDTO dbPostDto = tcsServiceImpl.getPostById(Long.valueOf(postUpdateXls.getPostTISId()));
-      // If there is no existing programme in the post
-      // and the column of programme is null in the upload excel
-      // then report an error
-      if (dbPostDto.getProgrammes().isEmpty()) {
-        postUpdateXls.addErrorMessage(String.format(PROGRAMME_MISSING));
-      }
       return;
     }
 
