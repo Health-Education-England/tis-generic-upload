@@ -47,7 +47,7 @@ public class PersonUpdateTransformerService {
     Map<Long, PersonUpdateXls> personIdToXls = new HashMap<>();
     List<PersonDTO> personDtos = new ArrayList<>();
 
-    // Create a HashMap to store all the numbers of personIds
+    // Use a HashMap to store all the numbers of personIds
     HashMap<String, Integer> numberOfIds = new HashMap<String, Integer>();
     for (PersonUpdateXls xls : xlsList) {
       String personId = xls.getTisPersonId();
@@ -66,8 +66,7 @@ public class PersonUpdateTransformerService {
       }
 
       // Handle validation of enumerations and role.
-      List<String> initialErrorMessages = new ArrayList<>();
-      initialValidate(xls, initialErrorMessages);
+      List<String> initialErrorMessages = initialValidate(xls);
 
       PersonDTO personDto = personMapper.toDto(xls);
 
@@ -82,6 +81,10 @@ public class PersonUpdateTransformerService {
       }
       personIdToXls.put(personDto.getId(), xls);
       personDtos.add(personDto);
+    }
+
+    if (personDtos.size() == 0) {
+      return;
     }
 
     try {
@@ -108,10 +111,12 @@ public class PersonUpdateTransformerService {
   /**
    * Those validation can not be handled in TCS
    *
-   * @param xls           the current row object of the xls
-   * @param errorMessages list to add error messages
+   * @param xls
+   * @return errorMessages list
    */
-  private void initialValidate(PersonUpdateXls xls, List<String> errorMessages) {
+  List<String> initialValidate(PersonUpdateXls xls) {
+
+    List<String> errorMessages = new ArrayList<>();
 
     String permitToWork = xls.getPermitToWork();
     if (!StringUtils.isEmpty(permitToWork)) {
@@ -129,5 +134,6 @@ public class PersonUpdateTransformerService {
     if (StringUtils.contains(role, ',')) {
       errorMessages.add(String.format(ROLE_ERROR_SEPARATOR, role));
     }
+    return errorMessages;
   }
 }

@@ -562,7 +562,7 @@ public class PlacementTransformerService {
     if (placementXLS.getWte() == null) {
       placementXLS.addErrorMessage(WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY);
     } else {
-      placementDTO.setWholeTimeEquivalent(new BigDecimal(placementXLS.getWte()));
+      placementDTO.setWholeTimeEquivalent(placementXLS.getWte());
     }
   }
 
