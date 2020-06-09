@@ -1,7 +1,7 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
 import com.transformuk.hee.tis.genericupload.api.ExcelColumn;
-import java.util.Date;
+import java.time.LocalDate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -22,7 +22,7 @@ public class PersonUpdateXls extends TemplateXLS {
   private String gmcNumber;
 
   @ExcelColumn(name = "GDC Number")
-  private String gcdNumber;
+  private String gdcNumber;
 
   @ExcelColumn(name = "Public Health Number")
   private String publicHealthNumber;
@@ -31,7 +31,7 @@ public class PersonUpdateXls extends TemplateXLS {
   private String gmcStatus;
 
   @ExcelColumn(name = "GDC Status")
-  private String gcdStatus;
+  private String gdcStatus;
 
   @ExcelColumn(name = "Title")
   private String title;
@@ -40,19 +40,19 @@ public class PersonUpdateXls extends TemplateXLS {
   private String knownAs;
 
   @ExcelColumn(name = "Date of Birth")
-  private Date dateOfBirth;
+  private LocalDate dateOfBirth;
 
   @ExcelColumn(name = "NI Number")
-  private String niNumber;
+  private String nationalInsuranceNumber;
 
   @ExcelColumn(name = "Email Address")
-  private String emailAddress;
+  private String email;
 
   @ExcelColumn(name = "Mobile")
-  private String mobile;
+  private String mobileNumber;
 
   @ExcelColumn(name = "Telephone")
-  private String telephone;
+  private String telephoneNumber;
 
   @ExcelColumn(name = "Address 1")
   private String address1;
@@ -103,19 +103,19 @@ public class PersonUpdateXls extends TemplateXLS {
   private String visaDetails;
 
   @ExcelColumn(name = "Visa Issued")
-  private Date visaIssued;
+  private LocalDate visaIssued;
 
   @ExcelColumn(name = "Visa Valid To")
-  private Date visaValidTo;
+  private LocalDate visaValidTo;
 
   @ExcelColumn(name = "Role")
   private String role;
 
   @ExcelColumn(name = "Trainer Approval Start Date")
-  private Date trainerApprovalStartDate;
+  private LocalDate trainerApprovalStartDate;
 
   @ExcelColumn(name = "Trainer Approval End Date")
-  private String trainerApprovalEndDate;
+  private LocalDate trainerApprovalEndDate;
 
   @ExcelColumn(name = "Trainer Approval Status")
   private String trainerApprovalStatus;
