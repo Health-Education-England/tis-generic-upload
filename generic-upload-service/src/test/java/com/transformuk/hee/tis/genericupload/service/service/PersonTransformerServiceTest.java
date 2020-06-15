@@ -1,16 +1,25 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.CCT;
+import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.CESR;
+import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.N_A;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.CCT;
-import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.CESR;
-import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.N_A;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.google.common.collect.Lists;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
+import com.transformuk.hee.tis.reference.api.dto.RoleCategoryDTO;
+import com.transformuk.hee.tis.reference.api.dto.RoleDTO;
+import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.ContactDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
 import com.transformuk.hee.tis.tcs.api.dto.GdcDetailsDTO;
@@ -20,6 +29,8 @@ import com.transformuk.hee.tis.tcs.api.dto.PersonalDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RightToWorkDTO;
+import com.transformuk.hee.tis.tcs.api.dto.TrainerApprovalDTO;
+import com.transformuk.hee.tis.tcs.api.enumeration.ApprovalStatus;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
@@ -32,6 +43,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -40,7 +53,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class PersonTransformerServiceTest {
 
   private static final String REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES =
-          "Registration number (%s) should not contain whitespaces";
+      "Registration number (%s) should not contain whitespaces";
 
   Map<Pair<String, String>, List<ProgrammeDTO>> programmeDTOS;
   Map<String, List<CurriculumDTO>> curriculumDTOS;
@@ -52,6 +65,9 @@ public class PersonTransformerServiceTest {
   private TcsServiceImpl tcsServiceImpl;
 
   @Mock
+  private ReferenceServiceImpl referenceServiceImpl;
+
+  @Mock
   private GMCDTOFetcher gmcDtoFetcher;
 
   @Mock
@@ -59,6 +75,9 @@ public class PersonTransformerServiceTest {
 
   @Mock
   private PeopleByPHNFetcher peopleByPHNFetcher;
+
+  @Captor
+  private ArgumentCaptor<TrainerApprovalDTO> trainerApprovalDtoArgumentCaptor;
 
   @Before
   public void initialise() {
@@ -181,6 +200,8 @@ public class PersonTransformerServiceTest {
     PersonXLS personXls = new PersonXLS();
     Map<String, PersonXLS> regNumberToXls = Collections.singletonMap(regNumber, personXls);
 
+    when(tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDbDto)).thenReturn(personDbDto);
+
     // Call code under test.
     personTransformerService.updateDatastoreWithRowsFromXLS(regNumberToXlsDto, regNumberToDbDto,
         regNumberToXls);
@@ -219,6 +240,8 @@ public class PersonTransformerServiceTest {
 
     PersonXLS personXls = new PersonXLS();
     Map<String, PersonXLS> regNumberToXls = Collections.singletonMap(regNumber, personXls);
+
+    when(tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDbDto)).thenReturn(personDbDto);
 
     // Call code under test.
     personTransformerService.updateDatastoreWithRowsFromXLS(regNumberToXlsDto, regNumberToDbDto,
@@ -279,10 +302,209 @@ public class PersonTransformerServiceTest {
     // assert
     String message = personXLSS.get(0).getErrorMessage();
     assertThat("Should validate the whitespaces in GMC number",
-            message, containsString(String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, "GMC")));
+        message, containsString(String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, "GMC")));
     assertThat("Should validate the whitespaces in GDC number",
-            message, containsString(String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, "GDC")));
+        message, containsString(String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, "GDC")));
     assertThat("Should validate the whitespaces in Public Health number",
-            message, containsString(String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, "PHN")));
+        message, containsString(String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, "PHN")));
+  }
+
+  @Test
+  public void trainerApprovalShouldBeCreatedWhenRoleInSupervisorCategory() {
+    // Set up test data
+    String regNumber = "regNumber";
+    String role = "default";
+
+    PersonDTO personXlsDto = new PersonDTO();
+    personXlsDto.setRole(role);
+    personXlsDto.setContactDetails(new ContactDetailsDTO());
+    personXlsDto.setGdcDetails(new GdcDetailsDTO());
+    personXlsDto.setGmcDetails(new GmcDetailsDTO());
+    personXlsDto.setRightToWork(new RightToWorkDTO());
+    personXlsDto.setPersonalDetails(new PersonalDetailsDTO());
+    Map<String, PersonDTO> regNumberToXlsDto = Collections.singletonMap(regNumber, personXlsDto);
+
+    PersonDTO personDbDto = new PersonDTO();
+    personDbDto.setId(1L);
+    Map<String, PersonDTO> regNumberToDbDto = Collections.singletonMap(regNumber, personDbDto);
+
+    PersonXLS personXls = new PersonXLS();
+    Map<String, PersonXLS> regNumberToXls = Collections.singletonMap(regNumber, personXls);
+
+    RoleDTO roleDto = new RoleDTO();
+    roleDto.setCode(role);
+    RoleCategoryDTO roleCategoryDto = new RoleCategoryDTO();
+    roleCategoryDto.setId(2L);
+    roleDto.setRoleCategory(roleCategoryDto);
+
+    when(tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDbDto)).thenReturn(personDbDto);
+    when(referenceServiceImpl.findRolesIn(role)).thenReturn(Lists.newArrayList(roleDto));
+
+    // Call code under test.
+    personTransformerService.updateDatastoreWithRowsFromXLS(regNumberToXlsDto, regNumberToDbDto,
+        regNumberToXls);
+
+    // Verify expectations.
+    verify(tcsServiceImpl).createTrainerApproval(trainerApprovalDtoArgumentCaptor.capture());
+
+    TrainerApprovalDTO trainerApprovalDto = trainerApprovalDtoArgumentCaptor.getValue();
+    assertThat("trainerApproval should be created with the correct TrainerType",
+        trainerApprovalDto.getTrainerType(), is(role));
+    assertThat("trainerApproval should be created with the default ApprovalStatus",
+        trainerApprovalDto.getApprovalStatus(), is(ApprovalStatus.CURRENT));
+  }
+
+  @Test
+  public void trainerApprovalShouldNotBeCreatedWhenRoleInOtherCategory() {
+    // Set up test data
+    String regNumber = "regNumber";
+    String role = "default";
+
+    PersonDTO personXlsDto = new PersonDTO();
+    personXlsDto.setRole(role);
+    personXlsDto.setContactDetails(new ContactDetailsDTO());
+    personXlsDto.setGdcDetails(new GdcDetailsDTO());
+    personXlsDto.setGmcDetails(new GmcDetailsDTO());
+    personXlsDto.setRightToWork(new RightToWorkDTO());
+    personXlsDto.setPersonalDetails(new PersonalDetailsDTO());
+    Map<String, PersonDTO> regNumberToXlsDto = Collections.singletonMap(regNumber, personXlsDto);
+
+    PersonDTO personDbDto = new PersonDTO();
+    personDbDto.setId(1L);
+    Map<String, PersonDTO> regNumberToDbDto = Collections.singletonMap(regNumber, personDbDto);
+
+    PersonXLS personXls = new PersonXLS();
+    Map<String, PersonXLS> regNumberToXls = Collections.singletonMap(regNumber, personXls);
+
+    RoleDTO roleDto = new RoleDTO();
+    roleDto.setCode(role);
+    RoleCategoryDTO roleCategoryDto = new RoleCategoryDTO();
+    roleCategoryDto.setId(3L);
+    roleDto.setRoleCategory(roleCategoryDto);
+
+    when(tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDbDto)).thenReturn(personDbDto);
+    when(referenceServiceImpl.findRolesIn(role)).thenReturn(Lists.newArrayList(roleDto));
+
+    // Call code under test.
+    personTransformerService.updateDatastoreWithRowsFromXLS(regNumberToXlsDto, regNumberToDbDto,
+        regNumberToXls);
+
+    // Verify expectations.
+    verify(tcsServiceImpl, times(0))
+        .createTrainerApproval(trainerApprovalDtoArgumentCaptor.capture());
+    verify(tcsServiceImpl, times(0))
+        .updateTrainerApproval(trainerApprovalDtoArgumentCaptor.capture());
+  }
+
+  @Test
+  public void trainerApprovalShouldBeUpdatedWhenExistingAndRoleInSupervisorCategory() {
+    // Set up test data
+    String regNumber = "regNumber";
+    String role = "default";
+
+    PersonDTO personXlsDto = new PersonDTO();
+    personXlsDto.setRole(role);
+    personXlsDto.setContactDetails(new ContactDetailsDTO());
+    personXlsDto.setGdcDetails(new GdcDetailsDTO());
+    personXlsDto.setGmcDetails(new GmcDetailsDTO());
+    personXlsDto.setRightToWork(new RightToWorkDTO());
+    personXlsDto.setPersonalDetails(new PersonalDetailsDTO());
+    Map<String, PersonDTO> regNumberToXlsDto = Collections.singletonMap(regNumber, personXlsDto);
+
+    PersonDTO personDbDto = new PersonDTO();
+    personDbDto.setId(1L);
+    Map<String, PersonDTO> regNumberToDbDto = Collections.singletonMap(regNumber, personDbDto);
+
+    PersonXLS personXls = new PersonXLS();
+    Map<String, PersonXLS> regNumberToXls = Collections.singletonMap(regNumber, personXls);
+
+    RoleDTO roleDto = new RoleDTO();
+    roleDto.setCode(role);
+    RoleCategoryDTO roleCategoryDto = new RoleCategoryDTO();
+    roleCategoryDto.setId(2L);
+    roleDto.setRoleCategory(roleCategoryDto);
+
+    when(tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDbDto)).thenReturn(personDbDto);
+    when(referenceServiceImpl.findRolesIn(role)).thenReturn(Lists.newArrayList(roleDto));
+    when(tcsServiceImpl.getTrainerApprovalForPerson(1L))
+        .thenReturn(Lists.newArrayList(new TrainerApprovalDTO()));
+
+    // Call code under test.
+    personTransformerService.updateDatastoreWithRowsFromXLS(regNumberToXlsDto, regNumberToDbDto,
+        regNumberToXls);
+
+    // Verify expectations.
+    verify(tcsServiceImpl).updateTrainerApproval(trainerApprovalDtoArgumentCaptor.capture());
+
+    TrainerApprovalDTO trainerApprovalDto = trainerApprovalDtoArgumentCaptor.getValue();
+    assertThat("trainerApproval should be created with the correct TrainerType",
+        trainerApprovalDto.getTrainerType(), is(role));
+  }
+
+  @Test
+  public void trainerApprovalShouldBeCreatedWhenGmcUnknownAndRoleInSupervisorCategory() {
+    // Set up test data
+    String regNumber = "unknown";
+    String role = "default";
+
+    PersonXLS personXls = new PersonXLS();
+    personXls.setGmcNumber(regNumber);
+    personXls.setRole(role);
+
+    PersonDTO savedPersonDto = new PersonDTO();
+    savedPersonDto.setId(1L);
+    savedPersonDto.setRole(role);
+
+    RoleDTO roleDto = new RoleDTO();
+    roleDto.setCode(role);
+    RoleCategoryDTO roleCategoryDto = new RoleCategoryDTO();
+    roleCategoryDto.setId(2L);
+    roleDto.setRoleCategory(roleCategoryDto);
+
+    when(tcsServiceImpl.createPerson(any(PersonDTO.class))).thenReturn(savedPersonDto);
+    when(referenceServiceImpl.findRolesIn(role)).thenReturn(Lists.newArrayList(roleDto));
+
+    // Call code under test.
+    personTransformerService.processPeopleUpload(Lists.newArrayList(personXls));
+
+    // Verify expectations.
+    verify(tcsServiceImpl).createTrainerApproval(trainerApprovalDtoArgumentCaptor.capture());
+
+    TrainerApprovalDTO trainerApprovalDto = trainerApprovalDtoArgumentCaptor.getValue();
+    assertThat("trainerApproval should be created with the correct TrainerType",
+        trainerApprovalDto.getTrainerType(), is(role));
+    assertThat("trainerApproval should be created with the default ApprovalStatus",
+        trainerApprovalDto.getApprovalStatus(), is(ApprovalStatus.CURRENT));
+  }
+
+  @Test
+  public void trainerApprovalShouldNotBeCreatedWhenGmcUnknownAndRoleInOtherCategory() {
+    // Set up test data
+    String regNumber = "unknown";
+    String role = "default";
+
+    PersonXLS personXls = new PersonXLS();
+    personXls.setGmcNumber(regNumber);
+    personXls.setRole(role);
+
+    PersonDTO savedPersonDto = new PersonDTO();
+    savedPersonDto.setId(1L);
+    savedPersonDto.setRole(role);
+
+    RoleDTO roleDto = new RoleDTO();
+    roleDto.setCode(role);
+    RoleCategoryDTO roleCategoryDto = new RoleCategoryDTO();
+    roleCategoryDto.setId(3L);
+    roleDto.setRoleCategory(roleCategoryDto);
+
+    when(tcsServiceImpl.createPerson(any(PersonDTO.class))).thenReturn(savedPersonDto);
+    when(referenceServiceImpl.findRolesIn(role)).thenReturn(Lists.newArrayList(roleDto));
+
+    // Call code under test.
+    personTransformerService.processPeopleUpload(Lists.newArrayList(personXls));
+
+    // Verify expectations.
+    verify(tcsServiceImpl, times(0))
+        .createTrainerApproval(trainerApprovalDtoArgumentCaptor.capture());
   }
 }
