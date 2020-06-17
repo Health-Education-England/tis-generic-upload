@@ -314,6 +314,7 @@ public class PersonTransformerServiceTest {
     // Set up test data
     String regNumber = "regNumber";
     String role = "default";
+    String roleCategoryName = "Supervisors";
 
     PersonDTO personXlsDto = new PersonDTO();
     personXlsDto.setRole(role);
@@ -335,6 +336,7 @@ public class PersonTransformerServiceTest {
     roleDto.setCode(role);
     RoleCategoryDTO roleCategoryDto = new RoleCategoryDTO();
     roleCategoryDto.setId(2L);
+    roleCategoryDto.setName(roleCategoryName);
     roleDto.setRoleCategory(roleCategoryDto);
 
     when(tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDbDto)).thenReturn(personDbDto);
@@ -349,7 +351,7 @@ public class PersonTransformerServiceTest {
 
     TrainerApprovalDTO trainerApprovalDto = trainerApprovalDtoArgumentCaptor.getValue();
     assertThat("trainerApproval should be created with the correct TrainerType",
-        trainerApprovalDto.getTrainerType(), is(role));
+        trainerApprovalDto.getTrainerType(), is(roleCategoryName));
     assertThat("trainerApproval should be created with the default ApprovalStatus",
         trainerApprovalDto.getApprovalStatus(), is(ApprovalStatus.CURRENT));
   }
@@ -401,6 +403,7 @@ public class PersonTransformerServiceTest {
     // Set up test data
     String regNumber = "regNumber";
     String role = "default";
+    String roleCategoryName = "Supervisors";
 
     PersonDTO personXlsDto = new PersonDTO();
     personXlsDto.setRole(role);
@@ -422,6 +425,7 @@ public class PersonTransformerServiceTest {
     roleDto.setCode(role);
     RoleCategoryDTO roleCategoryDto = new RoleCategoryDTO();
     roleCategoryDto.setId(2L);
+    roleCategoryDto.setName(roleCategoryName);
     roleDto.setRoleCategory(roleCategoryDto);
 
     when(tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDbDto)).thenReturn(personDbDto);
@@ -438,7 +442,7 @@ public class PersonTransformerServiceTest {
 
     TrainerApprovalDTO trainerApprovalDto = trainerApprovalDtoArgumentCaptor.getValue();
     assertThat("trainerApproval should be created with the correct TrainerType",
-        trainerApprovalDto.getTrainerType(), is(role));
+        trainerApprovalDto.getTrainerType(), is(roleCategoryName));
   }
 
   @Test
@@ -446,6 +450,7 @@ public class PersonTransformerServiceTest {
     // Set up test data
     String regNumber = "unknown";
     String role = "default";
+    String roleCategoryName = "Supervisors";
 
     PersonXLS personXls = new PersonXLS();
     personXls.setGmcNumber(regNumber);
@@ -459,6 +464,7 @@ public class PersonTransformerServiceTest {
     roleDto.setCode(role);
     RoleCategoryDTO roleCategoryDto = new RoleCategoryDTO();
     roleCategoryDto.setId(2L);
+    roleCategoryDto.setName(roleCategoryName);
     roleDto.setRoleCategory(roleCategoryDto);
 
     when(tcsServiceImpl.createPerson(any(PersonDTO.class))).thenReturn(savedPersonDto);
@@ -472,7 +478,7 @@ public class PersonTransformerServiceTest {
 
     TrainerApprovalDTO trainerApprovalDto = trainerApprovalDtoArgumentCaptor.getValue();
     assertThat("trainerApproval should be created with the correct TrainerType",
-        trainerApprovalDto.getTrainerType(), is(role));
+        trainerApprovalDto.getTrainerType(), is(roleCategoryName));
     assertThat("trainerApproval should be created with the default ApprovalStatus",
         trainerApprovalDto.getApprovalStatus(), is(ApprovalStatus.CURRENT));
   }
