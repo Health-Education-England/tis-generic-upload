@@ -828,7 +828,8 @@ public class PersonTransformerService {
     List<RoleDTO> roleDtos = referenceServiceImpl.findRolesIn(role);
     return roleDtos.stream()
         .filter(roleDTO -> roleDTO.getRoleCategory().getId() != 3)
-        .map(roleDTO -> roleDTO.getCode()).collect(Collectors.joining(","));
+        .map(roleDTO -> roleDTO.getRoleCategory().getName()).distinct()
+        .collect(Collectors.joining(","));
   }
 
   private void addTrainerApproval(PersonDTO personDto) {
