@@ -1,8 +1,8 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
-import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDateTime;
 import static com.transformuk.hee.tis.genericupload.service.util.ReflectionUtil.copyIfNotNullOrEmpty;
+
 import com.google.common.collect.Lists;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
@@ -10,6 +10,8 @@ import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetch
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
+import com.transformuk.hee.tis.reference.api.dto.RoleDTO;
+import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.ContactDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumMembershipDTO;
@@ -24,7 +26,9 @@ import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.dto.QualificationDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RightToWorkDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RotationDTO;
+import com.transformuk.hee.tis.tcs.api.dto.TrainerApprovalDTO;
 import com.transformuk.hee.tis.tcs.api.dto.TrainingNumberDTO;
+import com.transformuk.hee.tis.tcs.api.enumeration.ApprovalStatus;
 import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
@@ -58,6 +62,9 @@ import org.springframework.web.client.ResourceAccessException;
 @Component
 public class PersonTransformerService {
 
+  public static final String CCT = "CCT";
+  public static final String CESR = "CESR";
+  public static final String N_A = "N/A";
   private static final String REG_NUMBER_IDENTIFIED_AS_DUPLICATE_IN_UPLOADED_FILE =
       "Registration number (%s) identified as duplicate in uploaded file";
   private static final String REG_NUMBER_DOES_NOT_MATCH_SURNAME_IN_TIS =
@@ -76,16 +83,10 @@ public class PersonTransformerService {
       "Multiple programmes found for programme name (%1$s) and programme number (%2$s)";
   private static final String CURRICULUM_NOT_FOUND = "Curriculum not found : ";
   private static final String MULTIPLE_CURRICULA_FOUND_FOR = "Multiple curricula found for : ";
-
   private static final String GDC = "GDC";
   private static final String GMC = "GMC";
   private static final String PHN = "PHN";
   private static final String UNKNOWN = "unknown";
-  public static final String CCT = "CCT";
-  public static final String CESR = "CESR";
-  public static final String N_A = "N/A";
-
-
   private static final String PROGRAMME_SHOULD_HAVE_AT_LEAST_ONE_CURRICULA =
       "Programme should have at least one curricula";
   private static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED =
@@ -98,6 +99,8 @@ public class PersonTransformerService {
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
+  @Autowired
+  private ReferenceServiceImpl referenceServiceImpl;
 
   private GMCDTOFetcher gmcDtoFetcher;
   private GDCDTOFetcher gdcDtoFetcher;
@@ -310,6 +313,8 @@ public class PersonTransformerService {
       personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
       addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTOFromXLS,
           personDTOFromDB);
+      // update TrainerApprvoal when the roles are merged
+      updateTrainerApproval(personDTOFromDB);
       if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
         personXLS.setSuccessfullyImported(true);
       }
@@ -340,18 +345,19 @@ public class PersonTransformerService {
   }
 
   private void flagAndEliminateWhitespacesRecords(List<PersonXLS> personXLSList,
-                                                  Function<PersonXLS, String> extractRegistrationNumber, String regNumberString) {
+      Function<PersonXLS, String> extractRegistrationNumber, String regNumberString) {
     Set<String> regNumbersWhitespacesSet = new HashSet<>();
 
     for (PersonXLS personXLS : personXLSList) {
-      if (org.apache.commons.lang3.StringUtils.containsWhitespace(extractRegistrationNumber.apply(personXLS))) {
+      if (org.apache.commons.lang3.StringUtils
+          .containsWhitespace(extractRegistrationNumber.apply(personXLS))) {
         regNumbersWhitespacesSet.add(extractRegistrationNumber.apply(personXLS));
       }
     }
 
     setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(personXLSList,
-            extractRegistrationNumber, regNumbersWhitespacesSet,
-            String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, regNumberString));
+        extractRegistrationNumber, regNumbersWhitespacesSet,
+        String.format(REG_NUMBER_SHOULD_NOT_CONTAIN_WHITESPACES, regNumberString));
   }
 
   private void flagAndEliminateDuplicates(List<PersonXLS> personXLSList,
@@ -374,7 +380,7 @@ public class PersonTransformerService {
   private void setErrorMessageForDuplicatesAndEliminateForFurtherProcessing(
       List<PersonXLS> personXLSList, Function<PersonXLS, String> extractRegistrationNumber,
       Set<String> regNumbersDuplicatesSet, String errorMessage) {
-    for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext();) {
+    for (Iterator<PersonXLS> iterator = personXLSList.iterator(); iterator.hasNext(); ) {
       PersonXLS personXLS = iterator.next();
       if (regNumbersDuplicatesSet.contains(extractRegistrationNumber.apply(personXLS))) {
         personXLS.addErrorMessage(errorMessage);
@@ -457,6 +463,7 @@ public class PersonTransformerService {
       try {
         PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
         addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
+        addTrainerApproval(savedPersonDTO);
       } catch (ResourceAccessException rae) {
         new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(personXLS, rae);
       }
@@ -711,9 +718,9 @@ public class PersonTransformerService {
   /**
    * Calculate and apply the training pathway of the programme membership. N.B. Currently assume
    * that these curricula have already been added
-   * 
+   *
    * @param programmeMembershipDTO - The subject of this call
-   * @param curricula - The curricula associated with the programme.
+   * @param curricula              - The curricula associated with the programme.
    * @return The training pathway because I don't know whether
    */
   public void evaluateTrainingPathway(ProgrammeMembershipDTO programmeMembershipDTO,
@@ -814,6 +821,54 @@ public class PersonTransformerService {
       programmeMembershipDTO.setCurriculumMemberships(Lists.newArrayList());
       programmeMembershipDTO.getCurriculumMemberships().add(curriculumMembershipDTO);
       programmeMembershipDTOs.add(programmeMembershipDTO);
+    }
+  }
+
+  private String getTrainerType(String role) {
+    List<RoleDTO> roleDtos = referenceServiceImpl.findRolesIn(role);
+    return roleDtos.stream()
+        .filter(roleDTO -> roleDTO.getRoleCategory().getId() != 3)
+        .map(roleDTO -> roleDTO.getCode()).collect(Collectors.joining(","));
+  }
+
+  private void addTrainerApproval(PersonDTO personDto) {
+    String role = personDto.getRole();
+    if (!StringUtils.isEmpty(role)) {
+      String trainerType = getTrainerType(role);
+      // has role in ES/CS/LM, create default TrainerApproval
+      if (!StringUtils.isEmpty(trainerType)) {
+        TrainerApprovalDTO trainerApprovalDto = new TrainerApprovalDTO();
+        trainerApprovalDto.setTrainerType(trainerType);
+        trainerApprovalDto.setApprovalStatus(ApprovalStatus.CURRENT);
+        trainerApprovalDto.setPerson(personDto);
+        tcsServiceImpl.createTrainerApproval(trainerApprovalDto);
+      }
+    }
+  }
+
+  private void updateTrainerApproval(PersonDTO personDtoFromDB) {
+    String role = personDtoFromDB.getRole();
+    if (!StringUtils.isEmpty(role)) {
+      String trainerType = getTrainerType(role);
+
+      if (!StringUtils.isEmpty(trainerType)) { // has role in ES/CS/LM
+        Long personId = personDtoFromDB.getId();
+        List<TrainerApprovalDTO> existingTrainerApprovalDtos = tcsServiceImpl
+            .getTrainerApprovalForPerson(personId);
+        if (!existingTrainerApprovalDtos.isEmpty()) {
+          // update
+          TrainerApprovalDTO trainerApprovalDto = existingTrainerApprovalDtos.get(0);
+          trainerApprovalDto.setTrainerType(trainerType);
+          tcsServiceImpl.updateTrainerApproval(trainerApprovalDto);
+        } else {
+          // create
+          TrainerApprovalDTO trainerApprovalDto = new TrainerApprovalDTO();
+          trainerApprovalDto.setTrainerType(trainerType);
+          trainerApprovalDto.setApprovalStatus(ApprovalStatus.CURRENT);
+          trainerApprovalDto.setPerson(personDtoFromDB);
+          tcsServiceImpl.createTrainerApproval(trainerApprovalDto);
+        }
+      }
     }
   }
 }
