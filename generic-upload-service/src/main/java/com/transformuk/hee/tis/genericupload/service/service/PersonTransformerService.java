@@ -95,6 +95,7 @@ public class PersonTransformerService {
       "Can only add to a Rotation linked to the programme membership you are adding";
   private static final String A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION =
       "A valid programme membership is needed to add a rotation";
+  private static final String ADDRESS_FIELD_REQUIRED = "%1$s is required when %2$s is populated.";
   private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
 
   @Autowired
@@ -119,12 +120,14 @@ public class PersonTransformerService {
 
   public void processPeopleUpload(List<PersonXLS> personXLSS) {
     personXLSS.forEach(PersonXLS::initialiseSuccessfullyImported);
-    markRowsWithoutRegistrationNumbers(personXLSS);
 
-    addPersons(getPersonsWithUnknownRegNumbers(personXLSS));
-    addOrUpdateGMCRecords(personXLSS);
-    addOrUpdateGDCRecords(personXLSS);
-    addOrUpdatePHRecords(personXLSS);
+    markRowsWithoutRegistrationNumbers(personXLSS);
+    List<PersonXLS> rowsWithAddressValidated = getAddressValidatedRows(personXLSS);
+
+    addPersons(getPersonsWithUnknownRegNumbers(rowsWithAddressValidated));
+    addOrUpdateGMCRecords(rowsWithAddressValidated);
+    addOrUpdateGDCRecords(rowsWithAddressValidated);
+    addOrUpdatePHRecords(rowsWithAddressValidated);
   }
 
   private Set<PersonXLS> getPersonsWithUnknownRegNumbers(List<PersonXLS> personXLSS) {
@@ -415,6 +418,13 @@ public class PersonTransformerService {
     copyIfNotNullOrEmpty(personDTOFromXLS, personDTOFromDB, "addedDate", "publicHealthNumber");
     if (StringUtils.isEmpty(personDTOFromDB.getStatus())) {
       personDTOFromDB.setStatus(personDTOFromXLS.getStatus());
+    }
+    // if address1 provided, 4 existing address lines are cleared and overwritten
+    if (personDTOFromXLS.getContactDetails() != null
+        && personDTOFromXLS.getContactDetails().getAddress1() != null) {
+      personDTOFromDB.getContactDetails().setAddress2(null);
+      personDTOFromDB.getContactDetails().setAddress3(null);
+      personDTOFromDB.getContactDetails().setAddress4(null);
     }
     copyIfNotNullOrEmpty(personDTOFromXLS.getContactDetails(), personDTOFromDB.getContactDetails(),
         "surname", "forenames", "knownAs", "title", "telephoneNumber", "mobileNumber", "email",
@@ -871,5 +881,50 @@ public class PersonTransformerService {
         }
       }
     }
+  }
+
+  private List<PersonXLS> getAddressValidatedRows(List<PersonXLS> personXlss) {
+    return personXlss.stream().filter(personXls -> validateAddress(personXls))
+        .collect(Collectors.toList());
+  }
+
+  private boolean validateAddress(PersonXLS personXls) {
+    String address1 = personXls.getAddress1();
+    String address2 = personXls.getAddress2();
+    String address3 = personXls.getAddress3();
+    String postcode = personXls.getPostCode();
+
+    boolean validateResult = true;
+
+    // check address1
+    if (StringUtils.isEmpty(address1)) {
+      if (!StringUtils.isEmpty(address2)) {
+        validateResult = false;
+        personXls.addErrorMessage(String.format(ADDRESS_FIELD_REQUIRED, "address1", "address2"));
+      }
+      if (!StringUtils.isEmpty(address3)) {
+        validateResult = false;
+        personXls.addErrorMessage(String.format(ADDRESS_FIELD_REQUIRED, "address1", "address3"));
+      }
+      if (!StringUtils.isEmpty(postcode)) {
+        validateResult = false;
+        personXls.addErrorMessage(String.format(ADDRESS_FIELD_REQUIRED, "address1", "postCode"));
+      }
+    }
+
+    // check address2
+    if (StringUtils.isEmpty(address2) && !StringUtils.isEmpty(address3)) {
+      validateResult = false;
+      personXls.addErrorMessage(String.format(ADDRESS_FIELD_REQUIRED, "address2", "address3"));
+    }
+
+    // check postcode
+    if (StringUtils.isEmpty(postcode) && (!StringUtils.isEmpty(address1) || !StringUtils
+        .isEmpty(address2) || !StringUtils.isEmpty(address3))) {
+      validateResult = false;
+      personXls.addErrorMessage(String.format(ADDRESS_FIELD_REQUIRED, "postCode", "address"));
+    }
+
+    return validateResult;
   }
 }
