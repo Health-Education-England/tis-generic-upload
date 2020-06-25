@@ -513,4 +513,52 @@ public class PersonTransformerServiceTest {
     verify(tcsServiceImpl, times(0))
         .createTrainerApproval(trainerApprovalDtoArgumentCaptor.capture());
   }
+
+  @Test
+  public void shouldReturnErrorWhenAddressOrPostcodeAreNotValid() {
+    // Set up test data
+    String regNumber = "unknown";
+
+    PersonXLS personXls1 = new PersonXLS();
+    personXls1.setGmcNumber(regNumber);
+    personXls1.setAddress2("address2");
+
+    PersonXLS personXls2 = new PersonXLS();
+    personXls2.setGmcNumber(regNumber);
+    personXls2.setAddress3("address3");
+
+    PersonXLS personXls3 = new PersonXLS();
+    personXls3.setGmcNumber(regNumber);
+    personXls3.setPostCode("postcode");
+
+    PersonXLS personXls4 = new PersonXLS();
+    personXls4.setGmcNumber(regNumber);
+    personXls4.setAddress1("address1");
+
+    List<PersonXLS> personXlsList = Lists.newArrayList(personXls1, personXls2, personXls3, personXls4);
+
+    // Call code under test.
+    personTransformerService.processPeopleUpload(personXlsList);
+
+    verify(tcsServiceImpl, times(0)).createPerson(any());
+    verify(tcsServiceImpl, times(0)).updatePersonForBulkWithAssociatedDTOs(any());
+
+    assertThat("should validate address1 when address2 is populated",
+        personXls1.getErrorMessage(), containsString("address1 is required when address2 is populated."));
+    assertThat("should validate postCode when address2 is populated",
+        personXls1.getErrorMessage(), containsString("postCode is required when address is populated."));
+
+    assertThat("should validate address1 when address3 is populated",
+        personXls2.getErrorMessage(), containsString("address1 is required when address3 is populated."));
+    assertThat("should validate address2 when address3 is populated",
+        personXls2.getErrorMessage(), containsString("address2 is required when address3 is populated."));
+    assertThat("should validate postCode when address3 is populated",
+        personXls2.getErrorMessage(), containsString("postCode is required when address is populated."));
+
+    assertThat("should validate address1 when postCode is populated",
+        personXls3.getErrorMessage(), containsString("address1 is required when postCode is populated."));
+
+    assertThat("should validate postCode when address1 is populated",
+        personXls4.getErrorMessage(), containsString("postCode is required when address is populated."));
+  }
 }
