@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.ResourceAccessException;
 
 @Component
 public class PlacementUpdateTransformerService {
@@ -201,8 +202,12 @@ public class PlacementUpdateTransformerService {
       dbPlacementDetailsDTO.setLifecycleState(LifecycleState.APPROVED);
       setCommentInPlacementDTO(dbPlacementDetailsDTO, placementXLS, username);
       logger.info("dbPlacementDetailsDTO => {}", dbPlacementDetailsDTO);
-      tcsServiceImpl.updatePlacement(dbPlacementDetailsDTO);
-      placementXLS.setSuccessfullyImported(true);
+      try {
+        tcsServiceImpl.updatePlacement(dbPlacementDetailsDTO);
+        placementXLS.setSuccessfullyImported(true);
+      } catch (ResourceAccessException rae) {
+        new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(placementXLS, rae);
+      }
     }
   }
 
@@ -384,7 +389,7 @@ public class PlacementUpdateTransformerService {
   private void setWTEOrRecordError(PlacementUpdateXLS placementXLS,
       PlacementDetailsDTO placementDTO) {
     if (placementXLS.getWte() != null) {
-      placementDTO.setWholeTimeEquivalent(placementXLS.getWte());
+      placementDTO.setWholeTimeEquivalent(BigDecimal.valueOf(placementXLS.getWte()));
     }
   }
 
