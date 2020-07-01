@@ -389,7 +389,7 @@ public class PlacementUpdateTransformerService {
   private void setWTEOrRecordError(PlacementUpdateXLS placementXLS,
       PlacementDetailsDTO placementDTO) {
     if (placementXLS.getWte() != null) {
-      placementDTO.setWholeTimeEquivalent(BigDecimal.valueOf(placementXLS.getWte()));
+      placementDTO.setWholeTimeEquivalent(new BigDecimal(placementXLS.getWte().toString()));
     }
   }
 
