@@ -53,6 +53,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.ResourceAccessException;
 
 @Component
 public class PlacementTransformerService {
@@ -356,12 +357,16 @@ public class PlacementTransformerService {
     if (!placementXLS.hasErrors()) {
       placementDTO.setLifecycleState(LifecycleState.APPROVED);
       setCommentInPlacementDTO(placementDTO, placementXLS, username);
-      if (updatePlacement) {
-        tcsServiceImpl.updatePlacement(placementDTO);
-      } else {
-        tcsServiceImpl.createPlacement(placementDTO);
+      try {
+        if (updatePlacement) {
+          tcsServiceImpl.updatePlacement(placementDTO);
+        } else {
+          tcsServiceImpl.createPlacement(placementDTO);
+        }
+        placementXLS.setSuccessfullyImported(true);
+      } catch (ResourceAccessException rae) {
+        new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(placementXLS, rae);
       }
-      placementXLS.setSuccessfullyImported(true);
     }
   }
 
@@ -562,7 +567,7 @@ public class PlacementTransformerService {
     if (placementXLS.getWte() == null) {
       placementXLS.addErrorMessage(WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY);
     } else {
-      placementDTO.setWholeTimeEquivalent(placementXLS.getWte());
+      placementDTO.setWholeTimeEquivalent(new BigDecimal(placementXLS.getWte().toString()));
     }
   }
 
