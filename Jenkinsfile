@@ -89,17 +89,6 @@ node {
 
             milestone 3
 
-            stage('Development') {
-              node {
-                println "[Jenkinsfile INFO] Development Deploy starting..."
-
-                sh "ansible-playbook -i $env.DEVOPS_BASE/ansible/inventory/dev $env.DEVOPS_BASE/ansible/${service}.yml --extra-vars=\"{\'versions\': {\'${service}\': \'${env.GIT_COMMIT}\'}}\""
-
-              }
-            }
-
-            milestone 4
-
             stage('Staging') {
               node {
                 println "[Jenkinsfile INFO] Stage Deploy starting..."
@@ -108,7 +97,7 @@ node {
               }
             }
 
-            milestone 5
+            milestone 4
 
             stage('Approval') {
               timeout(time:5, unit:'HOURS') {
@@ -116,7 +105,7 @@ node {
               }
             }
 
-            milestone 6
+            milestone 5
 
             stage('Production') {
               node {
