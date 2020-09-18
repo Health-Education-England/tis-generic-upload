@@ -38,7 +38,7 @@ spring:
     open-in-view: false
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     database: MYSQL
-    show-sql: true
+    show-sql: false
     hibernate:
       ddl-auto: none
       naming:
@@ -202,3 +202,5 @@ logging:
 # ===================================================================
 
 application:
+
+aws.s3.bucket: ${GENERIC_UPLOAD_AWS_BUCKET_NAME}

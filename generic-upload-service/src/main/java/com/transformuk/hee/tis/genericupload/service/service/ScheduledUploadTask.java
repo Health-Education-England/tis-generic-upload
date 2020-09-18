@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -78,7 +79,7 @@ public class ScheduledUploadTask {
   private FundingUpdateTransformerService fundingUpdateTransformerService;
 
   @Autowired
-  public ScheduledUploadTask(FileStorageRepository fileStorageRepository,
+  public ScheduledUploadTask(@Qualifier("awsFileStorageRepository") FileStorageRepository fileStorageRepository,
       ApplicationTypeRepository applicationTypeRepository,
       AzureProperties azureProperties) {
     this.fileStorageRepository = fileStorageRepository;
