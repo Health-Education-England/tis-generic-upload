@@ -117,3 +117,5 @@ jhipster:
 # ===================================================================
 
 application:
+
+aws.s3.bucket: generic-upload-tis-team-local

@@ -3,6 +3,8 @@ spring:
     url: jdbc:mysql://${DBHOST:localhost}:${DBPORT:3306}/${DBNAME:genericupload}?useUnicode=true&characterEncoding=utf8&useSSL=${USE_SSL:false}
     username: ${DBUSER:root}
     password: ${DBPASSWORD:}
+  jpa:
+    show-sql: false
 
 flyway:
   password: ${DBPASSWORD:}
@@ -26,7 +28,7 @@ logging:
 azure:
   accountName: ${CLOUD_BLOB_ACCOUNT_NAME:heetisshare}
   accountKey: ${CLOUD_BLOB_ACCOUNT_KEY:EiuyeB22bm2lgQQpBz68VKwui4Mcp0HQslF1sVaM1aL9hGSFxp9dL6+QpVSJZFdvLrRyo6CYFjwfb3ac2/399g==}
-  containerName: ${CLOUD_BLOB_CONTAINER_NAME:dev}
+  containerName: ${CLOUD_BLOB_CONTAINER_NAME:fileupload}
   servicebus:
     connection-string: ${SERVICE_BUS_CONNECTION_STRING:Endpoint=sb://heetisdevsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=USyHBoGzI0Q+dS0rchjGYFurWlJBe5C7omLSxo6KYeY=}
     queue-name: ${SERVICE_BUS_QUEUE_NAME:heetisdevq}
@@ -36,3 +38,7 @@ azure:
     subscription-receive-mode: ${SERVICE_BUS_S_RECEIVE_MODE:peeklock}
 
 deadletterDirectory: ${DEADLETER_DIR:/tmp/deadletter}
+
+application:
+
+aws.s3.bucket: generic-upload-tis-team-local
