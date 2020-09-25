@@ -26,8 +26,8 @@ logging:
 # Azure block blob storage properties
 # ===================================================================
 azure:
-  accountName: ${CLOUD_BLOB_ACCOUNT_NAME:}
-  accountKey: ${CLOUD_BLOB_ACCOUNT_KEY:}
+  accountName: ${CLOUD_BLOB_ACCOUNT_NAME:heetisshare}
+  accountKey: ${CLOUD_BLOB_ACCOUNT_KEY:EiuyeB22bm2lgQQpBz68VKwui4Mcp0HQslF1sVaM1aL9hGSFxp9dL6+QpVSJZFdvLrRyo6CYFjwfb3ac2/399g==}
   containerName: ${CLOUD_BLOB_CONTAINER_NAME:fileupload}
   servicebus:
     connection-string: ${SERVICE_BUS_CONNECTION_STRING:Endpoint=sb://heetisdevsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=USyHBoGzI0Q+dS0rchjGYFurWlJBe5C7omLSxo6KYeY=}
