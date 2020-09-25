@@ -41,20 +41,6 @@ azure:
 
 deadletterDirectory: ${DEADLETER_DIR}
 
-
-jhipster:
-  http:
-    cache: # Used by the CachingHttpHeadersFilter
-      timeToLiveInDays: 1461
-  security:
-    authentication:
-      jwt:
-        secret: bf146229e219404ac8f09cde58ec1ac65ba9e1b7
-  metrics: # DropWizard Metrics configuration, used by MetricsConfiguration
-    prometheus:
-      enabled: true
-      endpoint: /management/prometheus
-
 application:
 
 endpoints:
