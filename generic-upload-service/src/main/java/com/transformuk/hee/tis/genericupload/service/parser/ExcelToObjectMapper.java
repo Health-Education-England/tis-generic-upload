@@ -23,7 +23,6 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -200,8 +199,16 @@ public class ExcelToObjectMapper {
           } else if (cls == Float.class) {
             field.set(obj, (float) cell.getNumericCellValue());
           } else {
-            cell.setCellType(CellType.STRING);
-            field.set(obj, cell.getStringCellValue());
+            double numericValue = cell.getNumericCellValue();
+            String stringValue;
+
+            if (numericValue == (long) numericValue) {
+              stringValue = String.valueOf((long) numericValue);
+            } else {
+              stringValue = String.valueOf(numericValue);
+            }
+
+            field.set(obj, stringValue);
           }
           break;
         case BLANK:
