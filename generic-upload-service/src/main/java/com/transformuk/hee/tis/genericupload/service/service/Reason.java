@@ -123,14 +123,14 @@ public class Reason implements Serializable {
 
   @Override
   public String toString() {
-    return "Reason{" +
-        "id=" + id +
-        ", uuid=" + uuid +
-        ", code='" + code + '\'' +
-        ", label='" + label + '\'' +
-        ", outcomes=" + outcomes +
-        ", requireOther=" + requireOther +
-        ", isLegacy=" + isLegacy +
-        '}';
+    return "Reason{"
+        + "id=" + id
+        + ", uuid=" + uuid
+        + ", code='" + code + '\''
+        + ", label='" + label + '\''
+        + ", outcomes=" + outcomes
+        + ", requireOther=" + requireOther
+        + ", isLegacy=" + isLegacy
+        + '}';
   }
 }

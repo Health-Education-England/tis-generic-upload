@@ -106,11 +106,11 @@ public class Outcome implements Serializable {
 
   @Override
   public String toString() {
-    return "Reason{" +
-        "id=" + id +
-        ", uuid=" + uuid +
-        ", code='" + code + '\'' +
-        ", label='" + label + '\'' +
-        '}';
+    return "Reason{"
+        + "id=" + id
+        + ", uuid=" + uuid
+        + ", code='" + code + '\''
+        + ", label='" + label + '\''
+        + '}';
   }
 }
