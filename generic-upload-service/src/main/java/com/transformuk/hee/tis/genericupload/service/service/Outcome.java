@@ -1,10 +1,10 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
-
 import io.swagger.annotations.ApiModelProperty;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * An Assessment Outcome.
@@ -21,6 +21,8 @@ public class Outcome implements Serializable {
   private String label;
 
   private Set<Reason> reasons;
+
+  private UUID uuid;
 
   public Long getId() {
     return id;
@@ -74,6 +76,14 @@ public class Outcome implements Serializable {
     return this;
   }
 
+  public UUID getUuid() {
+    return uuid;
+  }
+
+  public void setUuid(UUID uuid) {
+    this.uuid = uuid;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -98,6 +108,7 @@ public class Outcome implements Serializable {
   public String toString() {
     return "Reason{" +
         "id=" + id +
+        ", uuid=" + uuid +
         ", code='" + code + '\'' +
         ", label='" + label + '\'' +
         '}';

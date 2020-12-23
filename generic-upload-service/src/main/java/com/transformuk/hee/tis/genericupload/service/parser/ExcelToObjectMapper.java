@@ -200,8 +200,16 @@ public class ExcelToObjectMapper {
           } else if (cls == Float.class) {
             field.set(obj, (float) cell.getNumericCellValue());
           } else {
-            cell.setCellType(CellType.STRING);
-            field.set(obj, cell.getStringCellValue());
+            double numericValue = cell.getNumericCellValue();
+            String stringValue;
+
+            if (numericValue == (long) numericValue) {
+              stringValue = String.valueOf((long) numericValue);
+            } else {
+              stringValue = String.valueOf(numericValue);
+            }
+
+            field.set(obj, stringValue);
           }
           break;
         case BLANK:

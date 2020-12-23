@@ -1,10 +1,10 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
-
 import io.swagger.annotations.ApiModelProperty;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * A Assessment Reason.
@@ -27,6 +27,8 @@ public class Reason implements Serializable {
 
   @ApiModelProperty(value = "Whether this reason was from intrepid and therefore is legacy")
   private boolean isLegacy;
+
+  private UUID uuid;
 
   public Long getId() {
     return id;
@@ -91,6 +93,14 @@ public class Reason implements Serializable {
     isLegacy = legacy;
   }
 
+  public UUID getUuid() {
+    return uuid;
+  }
+
+  public void setUuid(UUID uuid) {
+    this.uuid = uuid;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -115,6 +125,7 @@ public class Reason implements Serializable {
   public String toString() {
     return "Reason{" +
         "id=" + id +
+        ", uuid=" + uuid +
         ", code='" + code + '\'' +
         ", label='" + label + '\'' +
         ", outcomes=" + outcomes +

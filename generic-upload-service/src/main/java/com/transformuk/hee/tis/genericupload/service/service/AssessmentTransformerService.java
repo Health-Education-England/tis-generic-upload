@@ -329,10 +329,10 @@ public class AssessmentTransformerService {
             .orElse(null);
         if (outcome != null && outcome.getId() != null) {
           assessmentOutcomeDTO.setOutcomeId(outcome.getId());
+          assessmentOutcomeDTO.setOutcome(outcome.getLabel());
         } else {
           assessmentXLS.addErrorMessage(GIVEN_OUTCOME_IS_NOT_VALID);
         }
-        assessmentOutcomeDTO.setOutcome(outcome.getLabel());
         assessmentOutcomeDTO
             .setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXLS.getUnderAppeal()));
         assessmentOutcomeDTO.setAcademicOutcome(assessmentXLS.getAcademicOutcome());
