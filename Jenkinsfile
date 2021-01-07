@@ -4,6 +4,11 @@ def utils = new hee.tis.utils()
 
 node {
 
+    if (env.BRANCH_NAME != "master") {
+        // PR and branch builds are done by GitHub Actions.
+        return
+    }
+
     def service = "generic-upload"
 
     deleteDir()
