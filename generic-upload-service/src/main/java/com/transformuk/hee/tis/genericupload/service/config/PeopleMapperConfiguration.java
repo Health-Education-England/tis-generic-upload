@@ -13,7 +13,6 @@ import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipCurriculaDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.dto.QualificationDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RightToWorkDTO;
-import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import java.time.LocalDate;
@@ -174,7 +173,7 @@ public class PeopleMapperConfiguration extends MapperConfiguration {
       @Override
       protected RightToWorkDTO convert(PersonXLS source) {
         final RightToWorkDTO rightToWorkDTO = new RightToWorkDTO();
-        rightToWorkDTO.setPermitToWork(PermitToWorkType.fromString(source.getPermitToWork()));
+        rightToWorkDTO.setPermitToWork(source.getPermitToWork());
         rightToWorkDTO.setSettled(source.getSettled());
         rightToWorkDTO.setVisaDetails(source.getVisaDetails());
         rightToWorkDTO.setVisaValidTo(convertDate(source.getVisaValidTo()));
