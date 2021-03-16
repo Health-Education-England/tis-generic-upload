@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.Lists;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.PersonMapper;
-import com.transformuk.hee.tis.genericupload.service.service.mapper.TrainerApprovalMapper;
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.List;
@@ -29,32 +28,8 @@ public class PersonUpdateTransformServiceTest {
   TcsServiceImpl tcsServiceImplMock;
   @Mock
   PersonMapper personMapperMock;
-  @Mock
-  TrainerApprovalMapper trainerApprovalMapperMock;
   @InjectMocks
   private PersonUpdateTransformerService personUpdateTransformerService;
-
-  @Test
-  public void ShouldReturnErrorMessageWhenPermitToWorkDoesNotExists() {
-    PersonUpdateXls xls = new PersonUpdateXls();
-    xls.setPermitToWork("invalid");
-
-    List<String> errorMessages = personUpdateTransformerService.initialValidate(xls);
-    assertThat("Should not return error messages", errorMessages.size(), is(1));
-    assertThat("Should validate Permit To Work",
-        errorMessages.get(0), containsString(String
-            .format(PersonUpdateTransformerService.PERMIT_TO_WORK_NOT_EXISTS,
-                xls.getPermitToWork())));
-  }
-
-  @Test
-  public void ShouldNotReturnErrorMessageWhenPermitToWorkExists() {
-    PersonUpdateXls xls = new PersonUpdateXls();
-    xls.setPermitToWork("Yes");
-
-    List<String> errorMessages = personUpdateTransformerService.initialValidate(xls);
-    assertThat("Should not return error messages", errorMessages.size(), is(0));
-  }
 
   @Test
   public void ShouldReturnErrorMessageWhenTrainerApprovalStatusDoesNotExists() {

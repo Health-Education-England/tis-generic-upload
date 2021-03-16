@@ -7,7 +7,6 @@ import com.transformuk.hee.tis.genericupload.service.service.mapper.TrainerAppro
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
 import com.transformuk.hee.tis.tcs.api.dto.TrainerApprovalDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.ApprovalStatus;
-import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 
@@ -25,7 +22,6 @@ import org.springframework.web.client.RestClientException;
 public class PersonUpdateTransformerService {
 
   public static final String PERSON_ID_DUPLICATE = "Duplicate Tis_Person_ID: %s.";
-  public static final String PERMIT_TO_WORK_NOT_EXISTS = "Permit to work '%s' does not exist.";
   public static final String TRAINER_APPROVAL_STATUS_NOT_EXISTS = "Trainer Approval Status '%s' does not exist.";
   public static final String ROLE_ERROR_SEPARATOR = "Role '%s' should not use ',' as a separator, please use ';' instead.";
   private final TcsServiceImpl tcsService;
@@ -116,13 +112,6 @@ public class PersonUpdateTransformerService {
 
     List<String> errorMessages = new ArrayList<>();
 
-    String permitToWork = xls.getPermitToWork();
-    if (!StringUtils.isEmpty(permitToWork)) {
-      PermitToWorkType permitToWorkType = PermitToWorkType.fromString(permitToWork);
-      if (permitToWorkType == null) {
-        errorMessages.add(String.format(PERMIT_TO_WORK_NOT_EXISTS, permitToWork));
-      }
-    }
     String trainerApprovalStatus = xls.getTrainerApprovalStatus();
     if (!StringUtils.isEmpty(trainerApprovalStatus) && !EnumUtils.isValidEnum(
         ApprovalStatus.class, trainerApprovalStatus)) {

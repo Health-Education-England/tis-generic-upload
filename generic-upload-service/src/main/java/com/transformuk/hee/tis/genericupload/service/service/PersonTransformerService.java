@@ -29,7 +29,6 @@ import com.transformuk.hee.tis.tcs.api.dto.RotationDTO;
 import com.transformuk.hee.tis.tcs.api.dto.TrainerApprovalDTO;
 import com.transformuk.hee.tis.tcs.api.dto.TrainingNumberDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.ApprovalStatus;
-import com.transformuk.hee.tis.tcs.api.enumeration.PermitToWorkType;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
@@ -766,7 +765,7 @@ public class PersonTransformerService {
 
   private RightToWorkDTO getRightToWorkDTO(PersonXLS personXLS) {
     RightToWorkDTO rightToWorkDTO = new RightToWorkDTO();
-    rightToWorkDTO.setPermitToWork(PermitToWorkType.fromString(personXLS.getPermitToWork()));
+    rightToWorkDTO.setPermitToWork(personXLS.getPermitToWork());
     rightToWorkDTO.setSettled(personXLS.getSettled());
     rightToWorkDTO.setVisaDetails(personXLS.getVisaDetails());
     rightToWorkDTO.setVisaValidTo(convertDate(personXLS.getVisaValidTo()));
