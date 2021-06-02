@@ -46,7 +46,7 @@
     <problem-spring-web.version>0.26.2</problem-spring-web.version>
     <profile.swagger/>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <prometheus-simpleclient.version>0.0.20</prometheus-simpleclient.version>
+    <prometheus-simpleclient.version>0.11.0</prometheus-simpleclient.version>
 
     <project.build.finalName>generic-upload</project.build.finalName>
     <project.testresult.directory>${project.build.directory}/test-results</project.testresult.directory>
