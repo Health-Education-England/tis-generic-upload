@@ -165,7 +165,7 @@ public class ExcelToObjectMapper {
    *
    * @param obj   Object whom given field belong.
    * @param field Field which value need to be set.
-   * @param cell  Apache POI cell from which value needs to be retrived.
+   * @param cell  Apache POI cell from which value needs to be retrieved.
    * @throws DateTimeParseException if the input for LocalDate was not d/M/yyyy or dd/MM/yyyy.
    */
   private void setObjectFieldValueFromCell(Object obj, Field field, Cell cell)
@@ -175,7 +175,7 @@ public class ExcelToObjectMapper {
     if (cell == null) {
       setNullValueToObject(obj, field);
     } else {
-      switch (cell.getCellTypeEnum()) {
+      switch (cell.getCellType()) {
         case STRING:
           String trim = cell.getStringCellValue().trim();
           if (cls == LocalDate.class) {
