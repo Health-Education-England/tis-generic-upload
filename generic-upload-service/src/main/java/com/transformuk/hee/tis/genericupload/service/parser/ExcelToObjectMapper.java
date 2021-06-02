@@ -84,7 +84,7 @@ public class ExcelToObjectMapper {
    * @throws IOException
    */
   private Workbook createWorkBook(InputStream excelFile)
-      throws IOException, InvalidFormatException {
+      throws IOException {
     return WorkbookFactory.create(excelFile);
   }
 
