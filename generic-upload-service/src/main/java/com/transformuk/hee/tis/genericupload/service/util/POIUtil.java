@@ -17,7 +17,7 @@ public class POIUtil {
     }
     for (int cellNum = row.getFirstCellNum(); cellNum < row.getLastCellNum(); cellNum++) {
       Cell cell = row.getCell(cellNum);
-      if (cell != null && cell.getCellTypeEnum() != CellType.BLANK && StringUtils
+      if (cell != null && cell.getCellType() != CellType.BLANK && StringUtils
           .isNotBlank(cell.toString())) {
         return false;
       }
