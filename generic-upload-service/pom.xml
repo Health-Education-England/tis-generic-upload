@@ -210,6 +210,8 @@
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-core</artifactId>
+      <version>${dropwizard-metrics.version}</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
