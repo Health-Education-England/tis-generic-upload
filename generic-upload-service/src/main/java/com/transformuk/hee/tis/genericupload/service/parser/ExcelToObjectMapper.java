@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
@@ -44,18 +43,18 @@ public class ExcelToObjectMapper {
 
 
   public ExcelToObjectMapper(InputStream excelFile, boolean validateDates)
-      throws IOException, InvalidFormatException {
+      throws IOException {
     workbook = createWorkBook(excelFile);
     dateFormat.setLenient(!validateDates);
   }
 
   /**
    * getDate() receives a date input, checks if it conforms to the DATE_REGEX, returns converted
-   * date without time
+   * date without time.
    *
-   * @param date
-   * @return
-   * @throws ParseException when date doesn't conform to DATE_REGEX
+   * @param date the date (string) to be passed to the method.
+   * @return Date.
+   * @throws ParseException when date doesn't conform to DATE_REGEX.
    */
   public static Date getDate(String date) throws ParseException {
     boolean matches = date.matches(DATE_REGEX);
@@ -79,12 +78,12 @@ public class ExcelToObjectMapper {
   /**
    * Create Apache POI @{@link Workbook} for given excel file.
    *
-   * @param excelFile
-   * @return
+   * @param excelFile the excel file passed to the method.
+   * @return Workbook.
    * @throws IOException
    */
   private Workbook createWorkBook(InputStream excelFile)
-      throws IOException, InvalidFormatException {
+      throws IOException {
     return WorkbookFactory.create(excelFile);
   }
 
@@ -165,7 +164,7 @@ public class ExcelToObjectMapper {
    *
    * @param obj   Object whom given field belong.
    * @param field Field which value need to be set.
-   * @param cell  Apache POI cell from which value needs to be retrived.
+   * @param cell  Apache POI cell from which value needs to be retrieved.
    * @throws DateTimeParseException if the input for LocalDate was not d/M/yyyy or dd/MM/yyyy.
    */
   private void setObjectFieldValueFromCell(Object obj, Field field, Cell cell)
