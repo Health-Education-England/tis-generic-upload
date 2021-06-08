@@ -168,7 +168,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 
       sheet.autoSizeColumn(errorReportingColumnIndex);
       workbook.write(fileWithErrorsOnly);
-    } catch (IOException | InvalidFormatException e) {
+    } catch (IOException | org.apache.poi.EncryptedDocumentException e) {
       logger.error("Error building errors with uploaded template : {}", e.getMessage());
     }
 

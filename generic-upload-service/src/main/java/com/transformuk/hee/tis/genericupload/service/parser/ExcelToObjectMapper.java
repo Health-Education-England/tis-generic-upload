@@ -175,7 +175,7 @@ public class ExcelToObjectMapper {
     if (cell == null) {
       setNullValueToObject(obj, field);
     } else {
-      switch (cell.getCellTypeEnum()) {
+      switch (cell.getCellType()) {
         case STRING:
           String trim = cell.getStringCellValue().trim();
           if (cls == LocalDate.class) {
