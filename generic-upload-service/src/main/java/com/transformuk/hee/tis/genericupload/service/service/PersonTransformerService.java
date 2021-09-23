@@ -103,13 +103,13 @@ public class PersonTransformerService {
 
   private static final String REGEX_NAME = "^$|^[A-Za-z0-9\\-' ]+";
   private static final String REGEX_NAME_ERROR =
-      "No special characters allowed for %s, with the exception of apostrophes, " +
-      "numbers, hyphens and spaces.";
+      "No special characters allowed for %s, with the exception of apostrophes, "
+      + "numbers, hyphens and spaces.";
 
   private static final String REGEX_PHONE = "^$|^[0-9\\\\+\\- ]+";
   private static final String REGEX_PHONE_ERROR =
-      "Only numerical values allowed for %s, no special characters, with the " +
-      "exception of plus, minus and spaces.";
+      "Only numerical values allowed for %s, no special characters, with the "
+      + "exception of plus, minus and spaces.";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
