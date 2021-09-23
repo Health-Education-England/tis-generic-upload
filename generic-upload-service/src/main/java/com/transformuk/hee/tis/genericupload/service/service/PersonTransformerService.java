@@ -97,18 +97,19 @@ public class PersonTransformerService {
   private static final String ADDRESS_FIELD_REQUIRED = "%1$s is required when %2$s is populated.";
   private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
 
-  // (copied from TCS) TODO: Better way to validate emails.
+  // regex's copied from TCS:
   private static final String REGEX_EMAIL = "^$|^[A-Za-z0-9+_.-]+@(.+)$";
   private static final String REGEX_EMAIL_ERROR = "Valid email address required.";
 
   private static final String REGEX_NAME = "^$|^[A-Za-z0-9\\-' ]+";
   private static final String REGEX_NAME_ERROR =
-          "No special characters allowed for %s, with the exception of apostrophes, hyphens and spaces.";
-  private static final String NULL_NAME_ERROR = "%s is required to create or update the record.";
+      "No special characters allowed for %s, with the exception of apostrophes, " +
+      "numbers, hyphens and spaces.";
 
   private static final String REGEX_PHONE = "^$|^[0-9\\\\+\\- ]+";
   private static final String REGEX_PHONE_ERROR =
-          "Only numerical values allowed for %s, no special characters, with the exception of plus, minus and spaces.";
+      "Only numerical values allowed for %s, no special characters, with the " +
+      "exception of plus, minus and spaces.";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -900,7 +901,7 @@ public class PersonTransformerService {
   }
 
   private List<PersonXLS> getEmailValidatedRows(List<PersonXLS> personXlss) {
-    return personXlss.stream().filter(personXls -> validateEmail(personXls))
+    return personXlss.stream().filter(this::validateEmail)
             .collect(Collectors.toList());
   }
 
@@ -917,7 +918,7 @@ public class PersonTransformerService {
   }
 
   private List<PersonXLS> getPhoneValidatedRows(List<PersonXLS> personXlss) {
-    return personXlss.stream().filter(personXls -> validatePhones(personXls))
+    return personXlss.stream().filter(this::validatePhones)
             .collect(Collectors.toList());
   }
 
@@ -941,7 +942,7 @@ public class PersonTransformerService {
   }
 
   private List<PersonXLS> getNamesValidatedRows(List<PersonXLS> personXlss) {
-    return personXlss.stream().filter(personXls -> validateNames(personXls))
+    return personXlss.stream().filter(this::validateNames)
             .collect(Collectors.toList());
   }
 
@@ -965,7 +966,7 @@ public class PersonTransformerService {
   }
 
   private List<PersonXLS> getAddressValidatedRows(List<PersonXLS> personXlss) {
-    return personXlss.stream().filter(personXls -> validateAddress(personXls))
+    return personXlss.stream().filter(this::validateAddress)
         .collect(Collectors.toList());
   }
 

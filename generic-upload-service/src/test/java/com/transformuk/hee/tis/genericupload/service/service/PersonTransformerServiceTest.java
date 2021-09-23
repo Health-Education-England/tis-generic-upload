@@ -561,4 +561,51 @@ public class PersonTransformerServiceTest {
     assertThat("should validate postCode when address1 is populated",
         personXls4.getErrorMessage(), containsString("postCode is required when address is populated."));
   }
+
+  @Test
+  public void shouldReturnErrorWhenNamePhoneOrEmailAreNotValid() {
+    // Set up test data
+    String regNumber = "unknown";
+
+    PersonXLS personXls1 = new PersonXLS();
+    personXls1.setGmcNumber(regNumber);
+    personXls1.setForenames("!valid");
+
+    PersonXLS personXls2 = new PersonXLS();
+    personXls2.setGmcNumber(regNumber);
+    personXls2.setSurname("valid=false");
+
+    PersonXLS personXls3 = new PersonXLS();
+    personXls3.setGmcNumber(regNumber);
+    personXls3.setMobile("invalid");
+
+    PersonXLS personXls4 = new PersonXLS();
+    personXls4.setGmcNumber(regNumber);
+    personXls4.setTelephone("invalid=true");
+
+    PersonXLS personXls5 = new PersonXLS();
+    personXls5.setGmcNumber(regNumber);
+    personXls5.setEmailAddress("not valid");
+
+    List<PersonXLS> personXlsList = Lists.newArrayList(personXls1, personXls2, personXls3,
+            personXls4, personXls5);
+
+    // Call code under test.
+    personTransformerService.processPeopleUpload(personXlsList);
+
+    verify(tcsServiceImpl, times(0)).createPerson(any());
+    verify(tcsServiceImpl, times(0)).updatePersonForBulkWithAssociatedDTOs(any());
+
+    assertThat("should validate forenames",
+            personXls1.getErrorMessage(), containsString("No special characters"));
+    assertThat("should validate surname",
+            personXls2.getErrorMessage(), containsString("No special characters"));
+
+    assertThat("should validate telephone",
+            personXls3.getErrorMessage(), containsString("Only numerical values"));
+    assertThat("should validate mobile",
+            personXls4.getErrorMessage(), containsString("Only numerical values"));
+    assertThat("should validate email address",
+            personXls5.getErrorMessage(), containsString("Valid email address required."));
+  }
 }
