@@ -97,6 +97,19 @@ public class PersonTransformerService {
   private static final String ADDRESS_FIELD_REQUIRED = "%1$s is required when %2$s is populated.";
   private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
 
+  // (copied from TCS) TODO: Better way to validate emails.
+  private static final String REGEX_EMAIL = "^$|^[A-Za-z0-9+_.-]+@(.+)$";
+  private static final String REGEX_EMAIL_ERROR = "Valid email address required.";
+
+  private static final String REGEX_NAME = "^$|^[A-Za-z0-9\\-' ]+";
+  private static final String REGEX_NAME_ERROR =
+          "No special characters allowed for %s, with the exception of apostrophes, hyphens and spaces.";
+  private static final String NULL_NAME_ERROR = "%s is required to create or update the record.";
+
+  private static final String REGEX_PHONE = "^$|^[0-9\\\\+\\- ]+";
+  private static final String REGEX_PHONE_ERROR =
+          "Only numerical values allowed for %s, no special characters, with the exception of plus, minus and spaces.";
+
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
   @Autowired
@@ -121,12 +134,16 @@ public class PersonTransformerService {
     personXLSS.forEach(PersonXLS::initialiseSuccessfullyImported);
 
     markRowsWithoutRegistrationNumbers(personXLSS);
-    List<PersonXLS> rowsWithAddressValidated = getAddressValidatedRows(personXLSS);
 
-    addPersons(getPersonsWithUnknownRegNumbers(rowsWithAddressValidated));
-    addOrUpdateGMCRecords(rowsWithAddressValidated);
-    addOrUpdateGDCRecords(rowsWithAddressValidated);
-    addOrUpdatePHRecords(rowsWithAddressValidated);
+    List<PersonXLS> rowsValidated = getEmailValidatedRows(personXLSS);
+    rowsValidated.retainAll(getPhoneValidatedRows(personXLSS));
+    rowsValidated.retainAll(getNamesValidatedRows(personXLSS));
+    rowsValidated.retainAll(getAddressValidatedRows(personXLSS));
+
+    addPersons(getPersonsWithUnknownRegNumbers(rowsValidated));
+    addOrUpdateGMCRecords(rowsValidated);
+    addOrUpdateGDCRecords(rowsValidated);
+    addOrUpdatePHRecords(rowsValidated);
   }
 
   private Set<PersonXLS> getPersonsWithUnknownRegNumbers(List<PersonXLS> personXLSS) {
@@ -880,6 +897,71 @@ public class PersonTransformerService {
         }
       }
     }
+  }
+
+  private List<PersonXLS> getEmailValidatedRows(List<PersonXLS> personXlss) {
+    return personXlss.stream().filter(personXls -> validateEmail(personXls))
+            .collect(Collectors.toList());
+  }
+
+  private boolean validateEmail(PersonXLS personXls) {
+    String email = personXls.getEmailAddress();
+
+    boolean validateResult = true;
+    if (email != null && !email.matches(REGEX_EMAIL)) {
+      validateResult = false;
+      personXls.addErrorMessage(REGEX_EMAIL_ERROR);
+
+    }
+    return validateResult;
+  }
+
+  private List<PersonXLS> getPhoneValidatedRows(List<PersonXLS> personXlss) {
+    return personXlss.stream().filter(personXls -> validatePhones(personXls))
+            .collect(Collectors.toList());
+  }
+
+  private boolean validatePhones(PersonXLS personXls) {
+    String phone = personXls.getMobile();
+    String mobile = personXls.getTelephone();
+
+    boolean validateResult = true;
+
+    if (phone != null && !phone.matches(REGEX_PHONE)) {
+      validateResult = false;
+      personXls.addErrorMessage(String.format(REGEX_PHONE_ERROR, "Mobile"));
+    }
+
+    if (mobile != null && !mobile.matches(REGEX_PHONE)) {
+      validateResult = false;
+      personXls.addErrorMessage(String.format(REGEX_PHONE_ERROR, "Telephone"));
+    }
+
+    return validateResult;
+  }
+
+  private List<PersonXLS> getNamesValidatedRows(List<PersonXLS> personXlss) {
+    return personXlss.stream().filter(personXls -> validateNames(personXls))
+            .collect(Collectors.toList());
+  }
+
+  private boolean validateNames(PersonXLS personXls) {
+    String forenames = personXls.getForenames();
+    String surname = personXls.getSurname();
+
+    boolean validateResult = true;
+
+    if (forenames != null && !forenames.matches(REGEX_NAME)) {
+      validateResult = false;
+      personXls.addErrorMessage(String.format(REGEX_NAME_ERROR, "Forenames"));
+    }
+
+    if (surname != null && !surname.matches(REGEX_NAME)) {
+      validateResult = false;
+      personXls.addErrorMessage(String.format(REGEX_NAME_ERROR, "Surname"));
+    }
+
+    return validateResult;
   }
 
   private List<PersonXLS> getAddressValidatedRows(List<PersonXLS> personXlss) {
