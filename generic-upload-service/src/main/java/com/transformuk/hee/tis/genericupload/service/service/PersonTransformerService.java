@@ -903,6 +903,7 @@ public class PersonTransformerService {
     class ValidEmailAddress {
       @Email
       final String validEmail;
+
       public ValidEmailAddress(String email) {
         validEmail = email;
       }
@@ -910,17 +911,17 @@ public class PersonTransformerService {
 
     boolean validateResult = true;
     if (email != null) {
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        Validator validator = factory.getValidator();
+      ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+      Validator validator = factory.getValidator();
 
-        ValidEmailAddress validEmailAddress = new ValidEmailAddress(email);
-        Set<ConstraintViolation<ValidEmailAddress>> constraintViolations =
+      ValidEmailAddress validEmailAddress = new ValidEmailAddress(email);
+      Set<ConstraintViolation<ValidEmailAddress>> constraintViolations =
                 validator.validate(validEmailAddress);
 
-        if (!constraintViolations.isEmpty()) {
-          validateResult = false;
-          personXls.addErrorMessage(VALIDATE_EMAIL_ERROR);
-        }
+      if (!constraintViolations.isEmpty()) {
+        validateResult = false;
+        personXls.addErrorMessage(VALIDATE_EMAIL_ERROR);
+      }
     }
     return validateResult;
   }
