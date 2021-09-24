@@ -49,6 +49,12 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
+import org.hibernate.validator.constraints.Email;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,6 +101,7 @@ public class PersonTransformerService {
   private static final String A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION =
       "A valid programme membership is needed to add a rotation";
   private static final String ADDRESS_FIELD_REQUIRED = "%1$s is required when %2$s is populated.";
+  private static final String VALIDATE_EMAIL_ERROR = "Valid email address required.";
   private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
 
   @Autowired
@@ -121,12 +128,14 @@ public class PersonTransformerService {
     personXLSS.forEach(PersonXLS::initialiseSuccessfullyImported);
 
     markRowsWithoutRegistrationNumbers(personXLSS);
-    List<PersonXLS> rowsWithAddressValidated = getAddressValidatedRows(personXLSS);
 
-    addPersons(getPersonsWithUnknownRegNumbers(rowsWithAddressValidated));
-    addOrUpdateGMCRecords(rowsWithAddressValidated);
-    addOrUpdateGDCRecords(rowsWithAddressValidated);
-    addOrUpdatePHRecords(rowsWithAddressValidated);
+    List<PersonXLS> rowsValidated = getEmailValidatedRows(personXLSS);
+    rowsValidated.retainAll(getAddressValidatedRows(personXLSS));
+
+    addPersons(getPersonsWithUnknownRegNumbers(rowsValidated));
+    addOrUpdateGMCRecords(rowsValidated);
+    addOrUpdateGDCRecords(rowsValidated);
+    addOrUpdatePHRecords(rowsValidated);
   }
 
   private Set<PersonXLS> getPersonsWithUnknownRegNumbers(List<PersonXLS> personXLSS) {
@@ -882,8 +891,43 @@ public class PersonTransformerService {
     }
   }
 
+  private List<PersonXLS> getEmailValidatedRows(List<PersonXLS> personXlss) {
+    return personXlss.stream().filter(this::validateEmail)
+            .collect(Collectors.toList());
+  }
+
+  private boolean validateEmail(PersonXLS personXls) {
+
+    String email = personXls.getEmailAddress();
+
+    class ValidEmailAddress {
+      @Email
+      final String validEmail;
+
+      public ValidEmailAddress(String email) {
+        validEmail = email;
+      }
+    }
+
+    boolean validateResult = true;
+    if (email != null) {
+      ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+      Validator validator = factory.getValidator();
+
+      ValidEmailAddress validEmailAddress = new ValidEmailAddress(email);
+      Set<ConstraintViolation<ValidEmailAddress>> constraintViolations =
+                validator.validate(validEmailAddress);
+
+      if (!constraintViolations.isEmpty()) {
+        validateResult = false;
+        personXls.addErrorMessage(VALIDATE_EMAIL_ERROR);
+      }
+    }
+    return validateResult;
+  }
+
   private List<PersonXLS> getAddressValidatedRows(List<PersonXLS> personXlss) {
-    return personXlss.stream().filter(personXls -> validateAddress(personXls))
+    return personXlss.stream().filter(this::validateAddress)
         .collect(Collectors.toList());
   }
 

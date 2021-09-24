@@ -561,4 +561,32 @@ public class PersonTransformerServiceTest {
     assertThat("should validate postCode when address1 is populated",
         personXls4.getErrorMessage(), containsString("postCode is required when address is populated."));
   }
+
+  @Test
+  public void shouldReturnErrorWhenEmailIsNotValid() {
+    // Set up test data
+    String regNumber = "unknown";
+
+    PersonXLS personXls1 = new PersonXLS();
+    personXls1.setGmcNumber(regNumber);
+    personXls1.setEmailAddress("not\\=valid@x.com");
+    //note that 'this=valid@x.com' IS a valid address that will be rejected by the current TCS regexp "^$|^[A-Za-z0-9+_.-]+@(.+)$"
+
+    PersonXLS personXls2 = new PersonXLS();
+    personXls2.setGmcNumber(regNumber);
+    personXls2.setEmailAddress("notvalid");
+
+    List<PersonXLS> personXlsList = Lists.newArrayList(personXls1, personXls2);
+
+    // Call code under test.
+    personTransformerService.processPeopleUpload(personXlsList);
+
+    verify(tcsServiceImpl, times(0)).createPerson(any());
+    verify(tcsServiceImpl, times(0)).updatePersonForBulkWithAssociatedDTOs(any());
+
+    assertThat("should reject invalid email address",
+            personXls1.getErrorMessage(), containsString("Valid email address required."));
+    assertThat("should reject invalid email address",
+            personXls2.getErrorMessage(), containsString("Valid email address required."));
+  }
 }
