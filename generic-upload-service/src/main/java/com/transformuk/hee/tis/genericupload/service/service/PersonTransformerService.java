@@ -49,6 +49,12 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
+import org.hibernate.validator.constraints.Email;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,21 +101,8 @@ public class PersonTransformerService {
   private static final String A_VALID_PROGRAMME_MEMBERSHIP_IS_NEEDED_TO_ADD_A_ROTATION =
       "A valid programme membership is needed to add a rotation";
   private static final String ADDRESS_FIELD_REQUIRED = "%1$s is required when %2$s is populated.";
+  private static final String VALIDATE_EMAIL_ERROR = "Valid email address required.";
   private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
-
-  // regex's copied from TCS:
-  private static final String REGEX_EMAIL = "^$|^[A-Za-z0-9+_.-]+@(.+)$";
-  private static final String REGEX_EMAIL_ERROR = "Valid email address required.";
-
-  private static final String REGEX_NAME = "^$|^[A-Za-z0-9\\-' ]+";
-  private static final String REGEX_NAME_ERROR =
-      "No special characters allowed for %s, with the exception of apostrophes, "
-      + "numbers, hyphens and spaces.";
-
-  private static final String REGEX_PHONE = "^$|^[0-9\\\\+\\- ]+";
-  private static final String REGEX_PHONE_ERROR =
-      "Only numerical values allowed for %s, no special characters, with the "
-      + "exception of plus, minus and spaces.";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -137,8 +130,6 @@ public class PersonTransformerService {
     markRowsWithoutRegistrationNumbers(personXLSS);
 
     List<PersonXLS> rowsValidated = getEmailValidatedRows(personXLSS);
-    rowsValidated.retainAll(getPhoneValidatedRows(personXLSS));
-    rowsValidated.retainAll(getNamesValidatedRows(personXLSS));
     rowsValidated.retainAll(getAddressValidatedRows(personXLSS));
 
     addPersons(getPersonsWithUnknownRegNumbers(rowsValidated));
@@ -906,62 +897,31 @@ public class PersonTransformerService {
   }
 
   private boolean validateEmail(PersonXLS personXls) {
+
     String email = personXls.getEmailAddress();
 
-    boolean validateResult = true;
-    if (email != null && !email.matches(REGEX_EMAIL)) {
-      validateResult = false;
-      personXls.addErrorMessage(REGEX_EMAIL_ERROR);
-
+    class ValidEmailAddress {
+      @Email
+      final String validEmail;
+      public ValidEmailAddress(String email) {
+        validEmail = email;
+      }
     }
-    return validateResult;
-  }
-
-  private List<PersonXLS> getPhoneValidatedRows(List<PersonXLS> personXlss) {
-    return personXlss.stream().filter(this::validatePhones)
-            .collect(Collectors.toList());
-  }
-
-  private boolean validatePhones(PersonXLS personXls) {
-    String phone = personXls.getMobile();
-    String mobile = personXls.getTelephone();
 
     boolean validateResult = true;
+    if (email != null) {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        Validator validator = factory.getValidator();
 
-    if (phone != null && !phone.matches(REGEX_PHONE)) {
-      validateResult = false;
-      personXls.addErrorMessage(String.format(REGEX_PHONE_ERROR, "Mobile"));
+        ValidEmailAddress validEmailAddress = new ValidEmailAddress(email);
+        Set<ConstraintViolation<ValidEmailAddress>> constraintViolations =
+                validator.validate(validEmailAddress);
+
+        if (!constraintViolations.isEmpty()) {
+          validateResult = false;
+          personXls.addErrorMessage(VALIDATE_EMAIL_ERROR);
+        }
     }
-
-    if (mobile != null && !mobile.matches(REGEX_PHONE)) {
-      validateResult = false;
-      personXls.addErrorMessage(String.format(REGEX_PHONE_ERROR, "Telephone"));
-    }
-
-    return validateResult;
-  }
-
-  private List<PersonXLS> getNamesValidatedRows(List<PersonXLS> personXlss) {
-    return personXlss.stream().filter(this::validateNames)
-            .collect(Collectors.toList());
-  }
-
-  private boolean validateNames(PersonXLS personXls) {
-    String forenames = personXls.getForenames();
-    String surname = personXls.getSurname();
-
-    boolean validateResult = true;
-
-    if (forenames != null && !forenames.matches(REGEX_NAME)) {
-      validateResult = false;
-      personXls.addErrorMessage(String.format(REGEX_NAME_ERROR, "Forenames"));
-    }
-
-    if (surname != null && !surname.matches(REGEX_NAME)) {
-      validateResult = false;
-      personXls.addErrorMessage(String.format(REGEX_NAME_ERROR, "Surname"));
-    }
-
     return validateResult;
   }
 

@@ -563,32 +563,20 @@ public class PersonTransformerServiceTest {
   }
 
   @Test
-  public void shouldReturnErrorWhenNamePhoneOrEmailAreNotValid() {
+  public void shouldReturnErrorWhenEmailIsNotValid() {
     // Set up test data
     String regNumber = "unknown";
 
     PersonXLS personXls1 = new PersonXLS();
     personXls1.setGmcNumber(regNumber);
-    personXls1.setForenames("!valid");
+    personXls1.setEmailAddress("not\\=valid@x.com");
+    //note that 'this=valid@x.com' IS a valid address that will be rejected by the current TCS regexp "^$|^[A-Za-z0-9+_.-]+@(.+)$"
 
     PersonXLS personXls2 = new PersonXLS();
     personXls2.setGmcNumber(regNumber);
-    personXls2.setSurname("valid=false");
+    personXls2.setEmailAddress("notvalid");
 
-    PersonXLS personXls3 = new PersonXLS();
-    personXls3.setGmcNumber(regNumber);
-    personXls3.setMobile("invalid");
-
-    PersonXLS personXls4 = new PersonXLS();
-    personXls4.setGmcNumber(regNumber);
-    personXls4.setTelephone("invalid=true");
-
-    PersonXLS personXls5 = new PersonXLS();
-    personXls5.setGmcNumber(regNumber);
-    personXls5.setEmailAddress("not valid");
-
-    List<PersonXLS> personXlsList = Lists.newArrayList(personXls1, personXls2, personXls3,
-            personXls4, personXls5);
+    List<PersonXLS> personXlsList = Lists.newArrayList(personXls1, personXls2);
 
     // Call code under test.
     personTransformerService.processPeopleUpload(personXlsList);
@@ -596,16 +584,9 @@ public class PersonTransformerServiceTest {
     verify(tcsServiceImpl, times(0)).createPerson(any());
     verify(tcsServiceImpl, times(0)).updatePersonForBulkWithAssociatedDTOs(any());
 
-    assertThat("should validate forenames",
-            personXls1.getErrorMessage(), containsString("No special characters"));
-    assertThat("should validate surname",
-            personXls2.getErrorMessage(), containsString("No special characters"));
-
-    assertThat("should validate telephone",
-            personXls3.getErrorMessage(), containsString("Only numerical values"));
-    assertThat("should validate mobile",
-            personXls4.getErrorMessage(), containsString("Only numerical values"));
-    assertThat("should validate email address",
-            personXls5.getErrorMessage(), containsString("Valid email address required."));
+    assertThat("should reject invalid email address",
+            personXls1.getErrorMessage(), containsString("Valid email address required."));
+    assertThat("should reject invalid email address",
+            personXls2.getErrorMessage(), containsString("Valid email address required."));
   }
 }
