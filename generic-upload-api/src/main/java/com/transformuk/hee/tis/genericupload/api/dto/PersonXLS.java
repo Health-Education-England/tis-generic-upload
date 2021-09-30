@@ -132,7 +132,7 @@ public class PersonXLS extends TemplateXLS {
   @ExcelColumn(name = "Programme End Date")
   private Date programmeEndDate;
 
-  @ExcelColumn(name = "Role")
+  @ExcelColumn(name = "Role *", required = true)
   private String role;
 
   @ExcelColumn(name = "Known As")
