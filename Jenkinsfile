@@ -70,6 +70,8 @@ node {
           }
 
           sh "mvn package -DskipTests"
+          sh "cp ./generic-service/target/generic-service-*.war ./generic-service/target/app.jar"
+
 
           // log into aws docker
           sh "aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 430723991443.dkr.ecr.eu-west-2.amazonaws.com"
