@@ -69,7 +69,19 @@ node {
               env.IMAGE_NAME = imageName
           }
 
-          sh "ansible-playbook -i $env.DEVOPS_BASE/ansible/inventory/dev $env.DEVOPS_BASE/ansible/tasks/spring-boot-build.yml"
+          sh "mvn package -DskipTests"
+
+          // log into aws docker
+          sh "aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 430723991443.dkr.ecr.eu-west-2.amazonaws.com"
+          
+          sh "docker build -t 430723991443.dkr.ecr.eu-west-2.amazonaws.com/generic-upload:$buildVersion ."
+          sh "docker push 430723991443.dkr.ecr.eu-west-2.amazonaws.com/generic-upload:$buildVersion"
+
+          sh "docker tag 430723991443.dkr.ecr.eu-west-2.amazonaws.com/generic-upload:$buildVersion 430723991443.dkr.ecr.eu-west-2.amazonaws.com/generic-upload:latest"
+          sh "docker push 430723991443.dkr.ecr.eu-west-2.amazonaws.com/generic-upload:latest"
+
+          sh "docker rmi 430723991443.dkr.ecr.eu-west-2.amazonaws.com/generic-upload:latest"
+          sh "docker rmi 430723991443.dkr.ecr.eu-west-2.amazonaws.com/generic-upload:$buildVersion"
 
           println "[Jenkinsfile INFO] Stage Dockerize completed..."
         }
