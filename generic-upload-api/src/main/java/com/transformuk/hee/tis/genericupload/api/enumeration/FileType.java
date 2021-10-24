@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.api.enumeration;
 
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
@@ -23,7 +24,8 @@ public enum FileType {
   PLACEMENTS_UPDATE(PlacementUpdateXLS.class),
   POSTS_CREATE(PostCreateXls.class),
   POSTS_UPDATE(PostUpdateXLS.class),
-  POSTS_FUNDING_UPDATE(PostFundingUpdateXLS.class);
+  POSTS_FUNDING_UPDATE(PostFundingUpdateXLS.class),
+  ASSESSMENTS_UPDATE(AssessmentUpdateXLS.class);
 
   /**
    * The class of the XLS DTO related to this FileType.

@@ -4,6 +4,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
@@ -77,9 +78,12 @@ public class ScheduledUploadTask {
   private PostFundingUpdateTransformerService postFundingUpdateTransformerService;
   @Autowired
   private FundingUpdateTransformerService fundingUpdateTransformerService;
+  @Autowired
+  private AssessmentUpdateTransformerService assessmentUpdateTransformerService;
 
   @Autowired
-  public ScheduledUploadTask(@Qualifier("awsFileStorageRepository") FileStorageRepository fileStorageRepository,
+  public ScheduledUploadTask(
+      @Qualifier("awsFileStorageRepository") FileStorageRepository fileStorageRepository,
       ApplicationTypeRepository applicationTypeRepository,
       AzureProperties azureProperties) {
     this.fileStorageRepository = fileStorageRepository;
@@ -184,6 +188,16 @@ public class ScheduledUploadTask {
                     new ColumnMapper(FundingUpdateXLS.class).getFieldMap());
             fundingUpdateTransformerService.processFundingUpdateUpload(fundingUpdateXLSList);
             setJobToCompleted(applicationType, fundingUpdateXLSList);
+            break;
+
+          case ASSESSMENTS_UPDATE:
+            List<AssessmentUpdateXLS> assessmentUpdateXLSList = excelToObjectMapper
+                .map(AssessmentUpdateXLS.class,
+                    new ColumnMapper(AssessmentUpdateXLS.class).getFieldMap());
+            assessmentUpdateTransformerService.processAssessmentsUpdateUpload(
+                assessmentUpdateXLSList);
+            setJobToCompleted(applicationType, assessmentUpdateXLSList);
+            break;
 
           default:
             logger.error(UNKNOWN_FILE_TYPE);

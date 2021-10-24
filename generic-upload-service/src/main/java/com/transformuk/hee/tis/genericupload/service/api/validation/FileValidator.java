@@ -86,6 +86,8 @@ public class FileValidator {
       fileType = FileType.POSTS_UPDATE;
     } else if (headers.contains("TIS_PostFunding_ID*")) {
       fileType = FileType.FUNDING_UPDATE;
+    } else if (headers.contains("TIS_Assessment_ID*")) {
+      fileType = FileType.ASSESSMENTS_UPDATE;
     } else {
       throw new InvalidFormatException("Unrecognised upload template");
     }
