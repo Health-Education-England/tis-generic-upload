@@ -69,6 +69,7 @@ node {
               env.IMAGE_NAME = imageName
           }
 
+          sh "aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 430723991443.dkr.ecr.eu-west-2.amazonaws.com"
           sh "ansible-playbook -i $env.DEVOPS_BASE/ansible/inventory/dev $env.DEVOPS_BASE/ansible/tasks/spring-boot-build.yml"
 
           println "[Jenkinsfile INFO] Stage Dockerize completed..."
