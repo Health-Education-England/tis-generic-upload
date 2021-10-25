@@ -18,7 +18,7 @@ public class AssessmentUpdateXLS extends TemplateXLS {
   @ExcelColumn(name = "Review date")
   private Date reviewDate;
 
-  @ExcelColumn(name = "TIS_Programme_Membership_ID")
+  @ExcelColumn(name = "TIS_Programme_Curriculum_Membership_ID")
   private String programmeMembershipId;
 
   @ExcelColumn(name = "Period covered from")
