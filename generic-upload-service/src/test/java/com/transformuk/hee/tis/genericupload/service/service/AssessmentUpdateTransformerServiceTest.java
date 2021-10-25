@@ -91,9 +91,15 @@ public class AssessmentUpdateTransformerServiceTest {
     outcome2.setId(2L);
     outcome2.setLabel("Outcome_2");
     Set<Outcome> outcomes = new HashSet<>();
+    outcome2.setReasons(reasonSet1);
+
+    Outcome outcome3 = new Outcome();
+    outcome3.setId(3L);
+    outcome3.setLabel("Outcome_3");
+
     outcomes.add(outcome1);
     outcomes.add(outcome2);
-    outcome2.setReasons(reasonSet1);
+    outcomes.add(outcome3);
     when(assessmentTransformerServiceMock.getAllOutcomes()).thenReturn(outcomes);
   }
 
@@ -467,6 +473,30 @@ public class AssessmentUpdateTransformerServiceTest {
     assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
     assertThat("Should get error", xlsList.get(0).getErrorMessage(),
         is(AssessmentUpdateTransformerService.OUTCOME_CANNOT_BE_IDENTIFIED));
+  }
+
+  @Test
+  public void testProcessAssessmentsUpdateUpload_reasonsShouldNotBeInput() {
+    // Existing Assessment
+    String id = "1";
+    AssessmentDTO assessmentDto = new AssessmentDTO();
+    assessmentDto.id(Long.valueOf(id));
+    assessmentDto.setTraineeId(1L);
+    when(assessmentServiceMock.findAssessmentByIds(Collections.singleton(id))).thenReturn(
+        Collections.singletonList(assessmentDto));
+
+    // AssessmentUpdateXLS to update
+    AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
+    xls.setAssessmentId(id);
+    xls.setOutcome("Outcome_3");
+    xls.setOutcomeNotAssessed("reason_1");
+    List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
+
+    assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
+    assertThat("Should get error", xlsList.get(0).getErrorMessage(),
+        is(String.format(
+            AssessmentUpdateTransformerService.NOT_ASSESSED_REASONS_SHOULD_BE_EMPTY_FOR_OUTCOME,
+            xls.getOutcome())));
   }
 
   @Test

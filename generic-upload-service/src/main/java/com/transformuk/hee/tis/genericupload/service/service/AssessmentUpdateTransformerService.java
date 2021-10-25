@@ -78,6 +78,8 @@ public class AssessmentUpdateTransformerService {
       "Given Assessment reason not found for: %s.";
   public static final String NOT_ASSESSED_REASON_IS_REQUIRED =
       "Unsatisfactory Outcome/Not Assessed Reason is required when Other reason is updating";
+  public static final String NOT_ASSESSED_REASONS_SHOULD_BE_EMPTY_FOR_OUTCOME =
+      "Not assessed reason should be empty for outcome: %s";
   public static final String ACADEMIC_OUTCOME_IS_REQUIRED = "Academic outcome is required.";
   public static final String ACADEMIC_OUTCOME_NOT_EXISTS = "Academic outcome value does not exist.";
   public static final String PYA_SHOULD_BE_BOOLEAN = "Pya should be YES/NO.";
@@ -87,8 +89,8 @@ public class AssessmentUpdateTransformerService {
   public static final String TEN_PERCENT_AUDIT_SHOULD_BE_BOOLEAN =
       "Set 10% audit - lay member should be YES/NO.";
   public static final String KNOWN_CONCERNS_SHOULD_BE_BOOLEAN = "Known concerns should be YES/NO.";
-  protected static final String[] academicCurricula = {"AFT", "ACLNIHR_FUNDING", "ACL_OTHER_FUNDING",
-      "ACFNIHR_FUNDING", "ACF_OTHER_FUNDING"};
+  protected static final String[] academicCurricula = {"AFT", "ACLNIHR_FUNDING",
+      "ACL_OTHER_FUNDING", "ACFNIHR_FUNDING", "ACF_OTHER_FUNDING"};
   protected static final String[] academicOutcomes = {"Continue on academic component",
       "Do not continue on academic component", "Successfully completed academic component"};
 
@@ -303,16 +305,24 @@ public class AssessmentUpdateTransformerService {
     }
 
     // Reasons
+    Set<Reason> outcomeReasons = outcome.getReasons();
+    // When outcome does not need a reason, but reasons are input.
+    if (CollectionUtils.isEmpty(outcomeReasons) && (notAssessedReasonFromXls
+        || otherReasonFromXls)) {
+      xls.addErrorMessage(
+          String.format(NOT_ASSESSED_REASONS_SHOULD_BE_EMPTY_FOR_OUTCOME, outcomeLabel));
+      return;
+    }
     // When otherReason is input, the notAssessedReason is required.
     if (!notAssessedReasonFromXls && otherReasonFromXls) {
       xls.addErrorMessage(NOT_ASSESSED_REASON_IS_REQUIRED);
       return;
     }
-    Set<Reason> outcomeReasons = outcome.getReasons();
+    // When outcome needs a reason, check if reason is input.
     if (!CollectionUtils.isEmpty(outcomeReasons)) {
       if (!notAssessedReasonFromXls) {
         xls.addErrorMessage(
-            String.format(OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S, xls.getOutcome()));
+            String.format(OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S, outcomeLabel));
       } else {
         List<String> notAssessedReasons = Arrays.asList(
             xls.getOutcomeNotAssessed().split(SEMI_COLON));
