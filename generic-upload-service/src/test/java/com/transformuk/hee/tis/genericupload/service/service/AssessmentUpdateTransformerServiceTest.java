@@ -28,7 +28,6 @@ import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipCurriculaDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.CurriculumSubType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.time.LocalDate;
-import java.time.Month;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -193,7 +192,7 @@ public class AssessmentUpdateTransformerServiceTest {
   }
 
   @Test
-  public void testProcessAssessmentsUpdateUpload_DatesValidation() {
+  public void testProcessAssessmentsUpdateUpload_datesShouldBeBefore1753() {
     // Existing Assessment
     String id = "1";
     AssessmentDTO assessmentDto = new AssessmentDTO();
@@ -220,9 +219,6 @@ public class AssessmentUpdateTransformerServiceTest {
     assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
 
     assertThat("Should get error", xlsList.get(0).getErrorMessage(),
-        containsString(
-            AssessmentUpdateTransformerService.PERIOD_COVERED_TO_CAN_NOT_BE_BEFORE_PERIOD_COVERED_FROM));
-    assertThat("Should get error", xlsList.get(0).getErrorMessage(),
         containsString(AssessmentUpdateTransformerService.REVIEW_DATE_BEFORE_1753));
     assertThat("Should get error", xlsList.get(0).getErrorMessage(),
         containsString(AssessmentUpdateTransformerService.PERIOD_COVERED_FROM_DATE_BEFORE_1753));
@@ -230,6 +226,148 @@ public class AssessmentUpdateTransformerServiceTest {
         containsString(AssessmentUpdateTransformerService.PERIOD_COVERED_TO_DATE_BEFORE_1753));
     assertThat("Should get error", xlsList.get(0).getErrorMessage(),
         containsString(AssessmentUpdateTransformerService.NEXT_REVIEW_DATE_BEFORE_1753));
+  }
+
+  @Test
+  public void testProcessAssessmentsUpdateUpload_shouldValidatePeriodCoveredDatesWithCurriculumDates() {
+    // Existing Assessment
+    String id = "1";
+    AssessmentDTO assessmentDto = new AssessmentDTO();
+    assessmentDto.id(Long.valueOf(id));
+    assessmentDto.setTraineeId(1L);
+    when(assessmentServiceMock.findAssessmentByIds(Collections.singleton(id))).thenReturn(
+        Collections.singletonList(assessmentDto));
+
+    // AssessmentUpdateXLS to update
+    Calendar cal1 = Calendar.getInstance();
+    cal1.set(2020, Calendar.SEPTEMBER, 1);
+    Date date1 = cal1.getTime();
+    Calendar cal2 = Calendar.getInstance();
+    cal2.set(2020, Calendar.DECEMBER, 2);
+    Date date2 = cal2.getTime();
+
+    AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
+    xls.setAssessmentId(id);
+    xls.setProgrammeMembershipId("1");
+    xls.setPeriodCoveredFrom(date1);
+    xls.setPeriodCoveredTo(date2);
+    List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
+
+    ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDto =
+        new ProgrammeMembershipCurriculaDTO();
+    programmeMembershipCurriculaDto.setId(1L);
+    PersonDTO personDto = new PersonDTO();
+    personDto.setId(1L);
+    programmeMembershipCurriculaDto.setPerson(personDto);
+    CurriculumMembershipDTO curriculumMembershipDto = new CurriculumMembershipDTO();
+    curriculumMembershipDto.setCurriculumStartDate(
+        LocalDate.of(2020, 10, 1));
+    curriculumMembershipDto.setCurriculumEndDate(
+        LocalDate.of(2020, 11, 1));
+    programmeMembershipCurriculaDto.setCurriculumMemberships(
+        Collections.singletonList(curriculumMembershipDto));
+    when(tcsServiceMock.getProgrammeMembershipDetailsByIds(Collections.singleton("1"))).thenReturn(
+        Collections.singletonList(programmeMembershipCurriculaDto));
+
+    assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
+
+    assertThat("Should get error", xlsList.get(0).getErrorMessage(),
+        containsString(
+            AssessmentUpdateTransformerService.PERIOD_COVERED_FROM_MUST_BE_AFTER_CURRICULUM_START_DATE));
+    assertThat("Should get error", xlsList.get(0).getErrorMessage(),
+        containsString(
+            AssessmentUpdateTransformerService.PERIOD_COVERED_TO_MUST_BE_BEFORE_CURRICULUM_END_DATE));
+  }
+
+  @Test
+  public void testProcessAssessmentsUpdateUpload_periodCoveredFromFromXlsShouldBeBeforeToDateFromXls() {
+    // Existing Assessment
+    String id = "1";
+    AssessmentDTO assessmentDto = new AssessmentDTO();
+    assessmentDto.id(Long.valueOf(id));
+    when(assessmentServiceMock.findAssessmentByIds(Collections.singleton(id))).thenReturn(
+        Collections.singletonList(assessmentDto));
+
+    // AssessmentUpdateXLS to update
+    Calendar cal1 = Calendar.getInstance();
+    cal1.set(2020, Calendar.SEPTEMBER, 1);
+    Date date1 = cal1.getTime();
+    Calendar cal2 = Calendar.getInstance();
+    cal2.set(2020, Calendar.SEPTEMBER, 2);
+    Date date2 = cal2.getTime();
+
+    AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
+    xls.setAssessmentId(id);
+    xls.setReviewDate(date1);
+    xls.setPeriodCoveredFrom(date2);
+    xls.setPeriodCoveredTo(date1);
+    xls.setNextReviewDate(date1);
+    List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
+
+    assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
+    assertThat("Should get error", xlsList.get(0).getErrorMessage(),
+        containsString(
+            AssessmentUpdateTransformerService.PERIOD_COVERED_TO_CAN_NOT_BE_BEFORE_PERIOD_COVERED_FROM));
+  }
+
+  @Test
+  public void testProcessAssessmentsUpdateUpload_periodCoveredFromFromXlsShouldBeBeforeToDateFromDb() {
+    // Existing Assessment
+    String id = "1";
+    AssessmentDTO assessmentDto = new AssessmentDTO();
+    assessmentDto.id(Long.valueOf(id));
+    AssessmentDetailDTO assessmentDetailDto = new AssessmentDetailDTO();
+    assessmentDetailDto.setPeriodCoveredTo(LocalDate.of(2020, 9, 1));
+    assessmentDto.setDetail(assessmentDetailDto);
+    when(assessmentServiceMock.findAssessmentByIds(Collections.singleton(id))).thenReturn(
+        Collections.singletonList(assessmentDto));
+
+    // AssessmentUpdateXLS to update
+    Calendar cal1 = Calendar.getInstance();
+    cal1.set(2020, Calendar.OCTOBER, 1);
+    Date date1 = cal1.getTime();
+
+    AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
+    xls.setAssessmentId(id);
+    xls.setReviewDate(date1);
+    xls.setPeriodCoveredFrom(date1);
+    xls.setNextReviewDate(date1);
+    List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
+
+    assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
+    assertThat("Should get error", xlsList.get(0).getErrorMessage(),
+        containsString(
+            AssessmentUpdateTransformerService.PERIOD_COVERED_TO_CAN_NOT_BE_BEFORE_PERIOD_COVERED_FROM));
+  }
+
+  @Test
+  public void testProcessAssessmentsUpdateUpload_periodCoveredFromFromDbShouldBeBeforeToDateFromXls() {
+    // Existing Assessment
+    String id = "1";
+    AssessmentDTO assessmentDto = new AssessmentDTO();
+    assessmentDto.id(Long.valueOf(id));
+    AssessmentDetailDTO assessmentDetailDto = new AssessmentDetailDTO();
+    assessmentDetailDto.setPeriodCoveredFrom(LocalDate.of(2020, 10, 1));
+    assessmentDto.setDetail(assessmentDetailDto);
+    when(assessmentServiceMock.findAssessmentByIds(Collections.singleton(id))).thenReturn(
+        Collections.singletonList(assessmentDto));
+
+    // AssessmentUpdateXLS to update
+    Calendar cal1 = Calendar.getInstance();
+    cal1.set(2020, Calendar.SEPTEMBER, 1);
+    Date date1 = cal1.getTime();
+
+    AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
+    xls.setAssessmentId(id);
+    xls.setReviewDate(date1);
+    xls.setPeriodCoveredTo(date1);
+    xls.setNextReviewDate(date1);
+    List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
+
+    assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
+    assertThat("Should get error", xlsList.get(0).getErrorMessage(),
+        containsString(
+            AssessmentUpdateTransformerService.PERIOD_COVERED_TO_CAN_NOT_BE_BEFORE_PERIOD_COVERED_FROM));
   }
 
   @Test
@@ -389,9 +527,9 @@ public class AssessmentUpdateTransformerServiceTest {
     programmeMembershipCurriculaDto.setCurriculumDTO(curriculumDto);
     CurriculumMembershipDTO curriculumMembershipDto = new CurriculumMembershipDTO();
     curriculumMembershipDto.setCurriculumStartDate(
-        LocalDate.of(2020, Month.SEPTEMBER, 1));
+        LocalDate.of(2020, 9, 1));
     curriculumMembershipDto.setCurriculumEndDate(
-        LocalDate.of(2020, Month.OCTOBER, 30));
+        LocalDate.of(2020, 10, 30));
     programmeMembershipCurriculaDto.setCurriculumMemberships(
         Collections.singletonList(curriculumMembershipDto));
     when(tcsServiceMock.getProgrammeMembershipDetailsByIds(idSet)).thenReturn(
@@ -440,9 +578,9 @@ public class AssessmentUpdateTransformerServiceTest {
     programmeMembershipCurriculaDto.setCurriculumDTO(curriculumDto);
     CurriculumMembershipDTO curriculumMembershipDto = new CurriculumMembershipDTO();
     curriculumMembershipDto.setCurriculumStartDate(
-        LocalDate.of(2020, Month.SEPTEMBER, 1));
+        LocalDate.of(2020, 9, 1));
     curriculumMembershipDto.setCurriculumEndDate(
-        LocalDate.of(2020, Month.OCTOBER, 30));
+        LocalDate.of(2020, 10, 30));
     programmeMembershipCurriculaDto.setCurriculumMemberships(
         Collections.singletonList(curriculumMembershipDto));
     when(tcsServiceMock.getProgrammeMembershipDetailsByIds(idSet)).thenReturn(
@@ -679,7 +817,7 @@ public class AssessmentUpdateTransformerServiceTest {
 
     // AssessmentUpdateXLS to update
     Calendar cal1 = Calendar.getInstance();
-    cal1.set(2020, Calendar.JANUARY, 1);
+    cal1.set(2020, Calendar.FEBRUARY, 1);
     Date date1 = cal1.getTime();
     Calendar cal2 = Calendar.getInstance();
     cal2.set(2020, Calendar.OCTOBER, 2);
@@ -740,9 +878,9 @@ public class AssessmentUpdateTransformerServiceTest {
     programmeMembershipCurriculaDto.setCurriculumDTO(curriculumDto);
     CurriculumMembershipDTO curriculumMembershipDto = new CurriculumMembershipDTO();
     curriculumMembershipDto.setCurriculumStartDate(
-        LocalDate.of(2020, Calendar.FEBRUARY, 1));
+        LocalDate.of(2020, 1, 1));
     curriculumMembershipDto.setCurriculumEndDate(
-        LocalDate.of(2020, Calendar.AUGUST, 1));
+        LocalDate.of(2020, 12, 1));
     programmeMembershipCurriculaDto.setCurriculumMemberships(
         Collections.singletonList(curriculumMembershipDto));
     when(tcsServiceMock.getProgrammeMembershipDetailsByIds(Collections.singleton("2"))).thenReturn(

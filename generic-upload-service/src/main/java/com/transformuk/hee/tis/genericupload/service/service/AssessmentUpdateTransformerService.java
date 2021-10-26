@@ -62,6 +62,10 @@ public class AssessmentUpdateTransformerService {
       "No grades at next rotation found for: %s.";
   public static final String PERIOD_COVERED_TO_CAN_NOT_BE_BEFORE_PERIOD_COVERED_FROM =
       "Period covered to can not be before Period covered from.";
+  public static final String PERIOD_COVERED_FROM_MUST_BE_AFTER_CURRICULUM_START_DATE =
+      "Period covered from must be after curriculum start date";
+  public static final String PERIOD_COVERED_TO_MUST_BE_BEFORE_CURRICULUM_END_DATE =
+      "Period covered to must be before curriculum end date";
   public static final String OUTCOME_CANNOT_BE_IDENTIFIED = "Outcome cannot be identified.";
   public static final String REVIEW_DATE_BEFORE_1753 = "Review date is before year 1753.";
   public static final String PERIOD_COVERED_FROM_DATE_BEFORE_1753 =
@@ -188,17 +192,19 @@ public class AssessmentUpdateTransformerService {
       }
       RevalidationDTO revalidationDto = assessmentDto.getRevalidation();
 
-      validateAndUpdateDates(assessmentDto, assessmentDetailDto, assessmentOutcomeDto, xls);
       updateBooleanFields(assessmentDetailDto, assessmentOutcomeDto, revalidationDto,
           xls);
       validateAndUpdateNumericFields(assessmentDetailDto, xls);
 
       validateAndUpdateProgrammeMembership(programmeMembershipsMap, assessmentDto,
           assessmentDetailDto, xls);
+      // Validation on dates should be after validation on programmeMembership
+      validateAndUpdateDates(assessmentDto, assessmentDetailDto, assessmentOutcomeDto, xls);
       validateAndUpdateOutcome(allOutcomes, assessmentOutcomeDto, xls);
       validateAndUpdateType(assessmentTypeDtoList, assessmentDto, xls);
       validateAndUpdateGrades(gradeAtTimesMap, gradeNextRotationsMap, assessmentDetailDto,
           assessmentOutcomeDto, xls);
+      // Validation on Academic outcome should be after validation on dates and outcome
       validateAndUpdateAcademicOutcome(assessmentDetailDto, assessmentOutcomeDto, xls);
       updateOtherFields(assessmentOutcomeDto, revalidationDto, xls);
 
@@ -379,7 +385,7 @@ public class AssessmentUpdateTransformerService {
     if (programmeMembershipCurriculaDto != null) {
       Long existingTraineeId = assessmentDto.getTraineeId();
       PersonDTO person = programmeMembershipCurriculaDto.getPerson();
-      if (person != null) {
+      if (existingTraineeId != null && person != null) {
         Long personIdFromProgrammeMembership = person.getId();
         if (existingTraineeId.equals(personIdFromProgrammeMembership)) {
           programmeMembershipIdIsValid = true;
@@ -487,29 +493,6 @@ public class AssessmentUpdateTransformerService {
       }
     }
 
-    // Set Period covered from & Period covered to
-    // Validate Period cover from is before Period cover to
-    Date periodCoveredFrom = xls.getPeriodCoveredFrom();
-    Date periodCoveredTo = xls.getPeriodCoveredTo();
-    if (periodCoveredFrom != null && periodCoveredTo != null
-        && periodCoveredTo.before(periodCoveredFrom)) {
-      xls.addErrorMessage(PERIOD_COVERED_TO_CAN_NOT_BE_BEFORE_PERIOD_COVERED_FROM);
-    }
-    if (periodCoveredFrom != null) {
-      try {
-        assessmentDetailDto.setPeriodCoveredFrom(convertDate(periodCoveredFrom));
-      } catch (final IllegalArgumentException e) {
-        xls.addErrorMessage(PERIOD_COVERED_FROM_DATE_BEFORE_1753);
-      }
-    }
-    if (periodCoveredTo != null) {
-      try {
-        assessmentDetailDto.setPeriodCoveredTo(convertDate(periodCoveredTo));
-      } catch (final IllegalArgumentException e) {
-        xls.addErrorMessage(PERIOD_COVERED_TO_DATE_BEFORE_1753);
-      }
-    }
-
     // Set Next review date
     Date nextReviewDate = xls.getNextReviewDate();
     if (nextReviewDate != null) {
@@ -518,6 +501,52 @@ public class AssessmentUpdateTransformerService {
       } catch (final IllegalArgumentException e) {
         xls.addErrorMessage(NEXT_REVIEW_DATE_BEFORE_1753);
       }
+    }
+
+    // Set Period covered from & Period covered to
+    // Validate Period cover from is before Period cover to
+    Date periodCoveredFrom = xls.getPeriodCoveredFrom();
+    Date periodCoveredTo = xls.getPeriodCoveredTo();
+    boolean dateCheckNext = true;
+    if (periodCoveredFrom != null) {
+      try {
+        assessmentDetailDto.setPeriodCoveredFrom(convertDate(periodCoveredFrom));
+      } catch (final IllegalArgumentException e) {
+        xls.addErrorMessage(PERIOD_COVERED_FROM_DATE_BEFORE_1753);
+        dateCheckNext = false;
+      }
+    }
+    if (periodCoveredTo != null) {
+      try {
+        assessmentDetailDto.setPeriodCoveredTo(convertDate(periodCoveredTo));
+      } catch (final IllegalArgumentException e) {
+        xls.addErrorMessage(PERIOD_COVERED_TO_DATE_BEFORE_1753);
+        dateCheckNext = false;
+      }
+    }
+    // If date conversion fails, other checks are not needed.
+    if (!dateCheckNext) {
+      return;
+    }
+    // Below converted dates could be from xls or from the DB.
+    LocalDate periodCoveredFromConverted = assessmentDetailDto.getPeriodCoveredFrom();
+    LocalDate periodCoveredToConverted = assessmentDetailDto.getPeriodCoveredTo();
+
+    if (periodCoveredFromConverted != null && periodCoveredToConverted != null
+        && periodCoveredToConverted.isBefore(periodCoveredFromConverted)) {
+      xls.addErrorMessage(PERIOD_COVERED_TO_CAN_NOT_BE_BEFORE_PERIOD_COVERED_FROM);
+    }
+
+    // Validate periodCovered dates with curriculum dates
+    LocalDate curriculumStartDate = assessmentDetailDto.getCurriculumStartDate();
+    LocalDate curriculumEndDate = assessmentDetailDto.getCurriculumEndDate();
+    if (periodCoveredFromConverted != null && curriculumStartDate != null
+        && periodCoveredFromConverted.isBefore(curriculumStartDate)) {
+      xls.addErrorMessage(PERIOD_COVERED_FROM_MUST_BE_AFTER_CURRICULUM_START_DATE);
+    }
+    if (periodCoveredToConverted != null && curriculumEndDate != null
+        && periodCoveredToConverted.isAfter(curriculumEndDate)) {
+      xls.addErrorMessage(PERIOD_COVERED_TO_MUST_BE_BEFORE_CURRICULUM_END_DATE);
     }
   }
 
