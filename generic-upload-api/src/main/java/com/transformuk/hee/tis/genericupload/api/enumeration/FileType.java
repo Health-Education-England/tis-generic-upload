@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.api.enumeration;
 
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
@@ -16,6 +17,7 @@ import lombok.Getter;
 
 public enum FileType {
   ASSESSMENTS(AssessmentXLS.class),
+  ASSESSMENTS_DELETE(AssessmentDeleteXLS.class),
   FUNDING_UPDATE(FundingUpdateXLS.class),
   PEOPLE(PersonXLS.class),
   PEOPLE_UPDATE(PersonUpdateXls.class),

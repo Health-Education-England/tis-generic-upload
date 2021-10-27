@@ -4,6 +4,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
@@ -68,6 +69,8 @@ public class ScheduledUploadTask {
   private PersonUpdateTransformerService personUpdateTransformerService;
   @Autowired
   private AssessmentTransformerService assessmentTransformerService;
+  @Autowired
+  private AssessmentDeleteService assessmentDeleteService;
   @Autowired
   private PlacementUpdateTransformerService placementUpdateTransformerService;
   @Autowired
@@ -147,6 +150,14 @@ public class ScheduledUploadTask {
                 .map(AssessmentXLS.class, new ColumnMapper(AssessmentXLS.class).getFieldMap());
             assessmentTransformerService.processAssessmentsUpload(assessmentXLSList);
             setJobToCompleted(applicationType, assessmentXLSList);
+            break;
+
+          case ASSESSMENTS_DELETE:
+            List<AssessmentDeleteXLS> assessmentDeleteXLSS = excelToObjectMapper
+                    .map(AssessmentDeleteXLS.class,
+                            new ColumnMapper(AssessmentDeleteXLS.class).getFieldMap());
+            assessmentDeleteService.processAssessmentsDeleteUpload(assessmentDeleteXLSS);
+            setJobToCompleted(applicationType, assessmentDeleteXLSS);
             break;
 
           case PLACEMENTS_UPDATE:

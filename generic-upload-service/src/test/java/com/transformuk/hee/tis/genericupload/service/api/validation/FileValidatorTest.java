@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
@@ -184,6 +185,29 @@ public class FileValidatorTest {
     // Then.
     assertThat(fileType, is(FileType.ASSESSMENTS));
     assertThat(xlsCaptor.getValue(), is((Object) AssessmentXLS.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyAssessmentsDeleteTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+
+    doNothing().when(fileValidator)
+            .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
+
+    Set<String> headers = new HashSet<>();
+    headers.add("TIS_Assessment_Id*");
+    headers.add("TIS Status*");
+
+    // When.
+    FileType fileType =
+            fileValidator.getFileType(null, null, null, headers);
+
+    // Then.
+    assertThat(fileType, is(FileType.ASSESSMENTS_DELETE));
+    assertThat(xlsCaptor.getValue(), is((Object) AssessmentDeleteXLS.class));
   }
 
   @Test
