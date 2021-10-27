@@ -74,7 +74,7 @@ public class FileValidator {
       fileType = FileType.PEOPLE;
     } else if (headers.contains("Placement Id*") && headers.contains("Placement Status*")) {
       fileType = FileType.PLACEMENTS_DELETE;
-    } else if (headers.contains("TIS_Assessment_Id*") && headers.contains("TIS Status*")) {
+    } else if (headers.contains("TIS_Assessment_ID*") && headers.contains("Assessment Status*")) {
       fileType = FileType.ASSESSMENTS_DELETE;
     } else if (headers.contains("Review date*")) {
       fileType = FileType.ASSESSMENTS;

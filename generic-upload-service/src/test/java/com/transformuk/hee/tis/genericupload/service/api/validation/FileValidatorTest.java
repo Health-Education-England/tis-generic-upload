@@ -198,8 +198,8 @@ public class FileValidatorTest {
             .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
 
     Set<String> headers = new HashSet<>();
-    headers.add("TIS_Assessment_Id*");
-    headers.add("TIS Status*");
+    headers.add("TIS_Assessment_ID*");
+    headers.add("Assessment Status*");
 
     // When.
     FileType fileType =

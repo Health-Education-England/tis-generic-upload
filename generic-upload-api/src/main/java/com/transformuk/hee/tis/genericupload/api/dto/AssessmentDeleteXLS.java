@@ -7,9 +7,9 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class AssessmentDeleteXLS extends TemplateXLS {
-    @ExcelColumn(name = "TIS_Assessment_Id*", required = true)
+    @ExcelColumn(name = "TIS_Assessment_ID*", required = true)
     private String assessmentId;
 
-    @ExcelColumn(name = "TIS Status*", required = true)
+    @ExcelColumn(name = "Assessment Status*", required = true)
     private String assessmentStatus;
 }
