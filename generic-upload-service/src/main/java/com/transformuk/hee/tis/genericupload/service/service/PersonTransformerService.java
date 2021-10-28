@@ -157,8 +157,8 @@ public class PersonTransformerService {
             .addErrorMessage(AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED));
   }
 
-  private void fixOrMarkRowsWithWrongRole(List<PersonXLS> personXLSS) {
-    personXLSS
+  private void fixOrMarkRowsWithWrongRole(List<PersonXLS> personXlss) {
+    personXlss
         .forEach(personXLS -> {
           String role = personXLS.getRole();
           if (!Objects.equals(role, "DR in Training")) {
