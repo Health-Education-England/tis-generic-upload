@@ -594,25 +594,16 @@ public class PersonTransformerServiceTest {
   }
 
   /**
-   * Role should be "DR in Training". If null, it should return an error. If not null but
-   * incorrect, it should return an error. If exactly correct, it should not return an error.
-   * If correct but with wrong casing, or additional spaces and dots, it should be automatically
-   * corrected and then accepted.
+   * Role should be "DR in Training".
    */
   @Test
   public void shouldReturnErrorWhenRoleIsIncorrect() {
     // Set up test data
-    String regNumber = "unknown";
-    String forename = "John";
-    String surname = "Smith";
-    String wrongRole = "Dr wrong role";
-
-    // Row with incorrect role
     PersonXLS personXls = new PersonXLS();
-    personXls.setForenames(forename);
-    personXls.setSurname(surname);
-    personXls.setGmcNumber(regNumber);
-    personXls.setRole(wrongRole);
+    personXls.setForenames("John");
+    personXls.setSurname("Smith");
+    personXls.setGmcNumber("unknown");
+    personXls.setRole("Dr wrong role");
 
     List<PersonXLS> personXlsList = Lists.newArrayList(personXls);
 
@@ -622,4 +613,6 @@ public class PersonTransformerServiceTest {
     assertThat("should reject invalid role",
         personXlsList.get(0).getErrorMessage(), containsString("The Role provided is invalid"));
   }
+
+
 }
