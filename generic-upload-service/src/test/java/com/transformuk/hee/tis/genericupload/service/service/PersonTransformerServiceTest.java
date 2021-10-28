@@ -8,6 +8,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,6 +35,7 @@ import com.transformuk.hee.tis.tcs.api.enumeration.ApprovalStatus;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -294,6 +296,7 @@ public class PersonTransformerServiceTest {
     personXLS.setGmcNumber(" 12345678");
     personXLS.setGdcNumber("12345678 ");
     personXLS.setPublicHealthNumber("1234 5678");
+    personXLS.setRole("DR in Training");
     personXLSS.add(personXLS);
 
     // call through
@@ -449,7 +452,7 @@ public class PersonTransformerServiceTest {
   public void trainerApprovalShouldBeCreatedWhenGmcUnknownAndRoleInSupervisorCategory() {
     // Set up test data
     String regNumber = "unknown";
-    String role = "default";
+    String role = "DR in Training";
     String roleCategoryName = "Supervisors";
 
     PersonXLS personXls = new PersonXLS();
@@ -588,5 +591,35 @@ public class PersonTransformerServiceTest {
             personXls1.getErrorMessage(), containsString("Valid email address required."));
     assertThat("should reject invalid email address",
             personXls2.getErrorMessage(), containsString("Valid email address required."));
+  }
+
+  /**
+   * Role should be "DR in Training". If null, it should return an error. If not null but
+   * incorrect, it should return an error. If exactly correct, it should not return an error.
+   * If correct but with wrong casing, or additional spaces and dots, it should be automatically
+   * corrected and then accepted.
+   */
+  @Test
+  public void shouldReturnErrorWhenRoleIsIncorrect() {
+    // Set up test data
+    String regNumber = "unknown";
+    String forename = "John";
+    String surname = "Smith";
+    String wrongRole = "Dr wrong role";
+
+    // Row with incorrect role
+    PersonXLS personXls = new PersonXLS();
+    personXls.setForenames(forename);
+    personXls.setSurname(surname);
+    personXls.setGmcNumber(regNumber);
+    personXls.setRole(wrongRole);
+
+    List<PersonXLS> personXlsList = Lists.newArrayList(personXls);
+
+    // Call code under test.
+    personTransformerService.processPeopleUpload(personXlsList);
+
+    assertThat("should reject invalid role",
+        personXlsList.get(0).getErrorMessage(), containsString("The Role provided is invalid"));
   }
 }

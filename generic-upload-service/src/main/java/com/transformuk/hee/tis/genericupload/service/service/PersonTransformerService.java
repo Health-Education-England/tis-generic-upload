@@ -103,6 +103,7 @@ public class PersonTransformerService {
   private static final String ADDRESS_FIELD_REQUIRED = "%1$s is required when %2$s is populated.";
   private static final String VALIDATE_EMAIL_ERROR = "Valid email address required.";
   private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
+  private static final String ROLE_IS_INVALID = "The Role provided is invalid";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -129,13 +130,14 @@ public class PersonTransformerService {
 
     markRowsWithoutRegistrationNumbers(personXLSS);
 
-    List<PersonXLS> rowsValidated = getEmailValidatedRows(personXLSS);
-    rowsValidated.retainAll(getAddressValidatedRows(personXLSS));
+    List<PersonXLS> validatedRows = getEmailValidatedRows(personXLSS);
+    validatedRows.retainAll(getAddressValidatedRows(personXLSS));
+    fixOrMarkRowsWithWrongRole(validatedRows);
 
-    addPersons(getPersonsWithUnknownRegNumbers(rowsValidated));
-    addOrUpdateGMCRecords(rowsValidated);
-    addOrUpdateGDCRecords(rowsValidated);
-    addOrUpdatePHRecords(rowsValidated);
+    addPersons(getPersonsWithUnknownRegNumbers(validatedRows));
+    addOrUpdateGMCRecords(validatedRows);
+    addOrUpdateGDCRecords(validatedRows);
+    addOrUpdatePHRecords(validatedRows);
   }
 
   private Set<PersonXLS> getPersonsWithUnknownRegNumbers(List<PersonXLS> personXLSS) {
@@ -153,6 +155,25 @@ public class PersonTransformerService {
             && personXLS.getPublicHealthNumber() == null)
         .forEach(personXLS -> personXLS
             .addErrorMessage(AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED));
+  }
+
+  private void fixOrMarkRowsWithWrongRole(List<PersonXLS> personXLSS) {
+    personXLSS
+        .forEach(personXLS -> {
+          String role = personXLS.getRole();
+          if (!Objects.equals(role, "DR in Training")) {
+            if (isDoctorInTrainingCaseInsensitive(role)) {
+              personXLS.setRole("DR in Training");
+            } else {
+              personXLS.addErrorMessage(ROLE_IS_INVALID);
+            }
+          }
+        });
+  }
+
+  private boolean isDoctorInTrainingCaseInsensitive(String role) {
+    String filteredRole = role.replaceAll("[\\.]?[\\s]","");
+    return filteredRole.equalsIgnoreCase("DrInTraining");
   }
 
   <DTO> Set<Long> getIdsFromRegNumberDTOsMap(Set<PersonXLS> knownRegNumbersInTIS,
