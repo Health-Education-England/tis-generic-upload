@@ -131,14 +131,15 @@ public class PersonTransformerService {
 
     markRowsWithoutRegistrationNumbers(personXLSS);
 
-    List<PersonXLS> validatedRows = getEmailValidatedRows(personXLSS);
-    validatedRows.retainAll(getAddressValidatedRows(personXLSS));
-    fixOrMarkRowsWithWrongRole(validatedRows);
+    List<PersonXLS> rowsValidated = getEmailValidatedRows(personXLSS);
+    rowsValidated.retainAll(getAddressValidatedRows(personXLSS));
 
-    addPersons(getPersonsWithUnknownRegNumbers(validatedRows));
-    addOrUpdateGMCRecords(validatedRows);
-    addOrUpdateGDCRecords(validatedRows);
-    addOrUpdatePHRecords(validatedRows);
+    fixOrMarkRowsWithWrongRole(rowsValidated);
+
+    addPersons(getPersonsWithUnknownRegNumbers(rowsValidated));
+    addOrUpdateGMCRecords(rowsValidated);
+    addOrUpdateGDCRecords(rowsValidated);
+    addOrUpdatePHRecords(rowsValidated);
   }
 
   private Set<PersonXLS> getPersonsWithUnknownRegNumbers(List<PersonXLS> personXLSS) {
