@@ -103,6 +103,7 @@ public class PersonTransformerService {
   private static final String ADDRESS_FIELD_REQUIRED = "%1$s is required when %2$s is populated.";
   private static final String VALIDATE_EMAIL_ERROR = "Valid email address required.";
   private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
+  private static final String CORRECT_ROLE = "DR in Training";
   private static final String ROLE_IS_INVALID = "The Role provided is invalid";
 
   @Autowired
@@ -161,9 +162,9 @@ public class PersonTransformerService {
     personXlss
         .forEach(personXLS -> {
           String role = personXLS.getRole();
-          if (!Objects.equals(role, "DR in Training")) {
+          if (!Objects.equals(role, CORRECT_ROLE)) {
             if (isDoctorInTrainingCaseInsensitive(role)) {
-              personXLS.setRole("DR in Training");
+              personXLS.setRole(CORRECT_ROLE);
             } else {
               personXLS.addErrorMessage(ROLE_IS_INVALID);
             }
