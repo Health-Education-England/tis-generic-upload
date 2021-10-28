@@ -8,8 +8,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,12 +34,12 @@ import com.transformuk.hee.tis.tcs.api.enumeration.ApprovalStatus;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
+import org.assertj.core.util.Strings;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +49,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringRunner.class)
 public class PersonTransformerServiceTest {
@@ -627,6 +624,7 @@ public class PersonTransformerServiceTest {
 
     List<PersonXLS> personXlsList = Lists.newArrayList(personXls);
 
+    // needs stubbing otherwise tcsServiceImpl (mock) returns nothing
     when(tcsServiceImpl.createPerson(any(PersonDTO.class))).thenReturn(new PersonDTO());
 
     // Call code under test.
@@ -634,5 +632,26 @@ public class PersonTransformerServiceTest {
 
     assertThat("should have role standardized when correct but inaccurate",
         personXlsList.get(0).getRole(), containsString("DR in Training"));
+  }
+
+  @Test
+  public void shouldNotRejectRowsWithTheRightRole() {
+    // Set up test data
+    PersonXLS personXls = new PersonXLS();
+    personXls.setForenames("John");
+    personXls.setSurname("Smith");
+    personXls.setGmcNumber("unknown");
+    personXls.setRole("DR in Training");
+
+    List<PersonXLS> personXlsList = Lists.newArrayList(personXls);
+
+    // needs stubbing otherwise tcsServiceImpl (mock) returns nothing
+    when(tcsServiceImpl.createPerson(any(PersonDTO.class))).thenReturn(new PersonDTO());
+
+    // Call code under test.
+    personTransformerService.processPeopleUpload(personXlsList);
+
+    assertThat("should not throw an error",
+        Strings.isNullOrEmpty(personXlsList.get(0).getErrorMessage()));
   }
 }
