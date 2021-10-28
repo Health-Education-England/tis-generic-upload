@@ -9,6 +9,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,6 +51,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringRunner.class)
 public class PersonTransformerServiceTest {
@@ -614,5 +616,23 @@ public class PersonTransformerServiceTest {
         personXlsList.get(0).getErrorMessage(), containsString("The Role provided is invalid"));
   }
 
+  @Test
+  public void shouldFixInaccurateRole() {
+    // Set up test data
+    PersonXLS personXls = new PersonXLS();
+    personXls.setForenames("John");
+    personXls.setSurname("Smith");
+    personXls.setGmcNumber("unknown");
+    personXls.setRole("Dr. in training ");
 
+    List<PersonXLS> personXlsList = Lists.newArrayList(personXls);
+
+    when(tcsServiceImpl.createPerson(any(PersonDTO.class))).thenReturn(new PersonDTO());
+
+    // Call code under test.
+    personTransformerService.processPeopleUpload(personXlsList);
+
+    assertThat("should have role standardized when correct but inaccurate",
+        personXlsList.get(0).getRole(), containsString("DR in Training"));
+  }
 }
