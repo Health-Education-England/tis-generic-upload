@@ -11,6 +11,8 @@ import java.util.List;
 @Component
 public class AssessmentDeleteService {
 
+    private static final String INVALID_ASSESSMENT_ID = "Invalid assessment id : ";
+
     @Autowired
     private AssessmentServiceImpl assessmentServiceImpl;
 
@@ -18,9 +20,12 @@ public class AssessmentDeleteService {
         assessmentDeleteXLSS.forEach(assessmentDeleteXLS -> {
             if ("DELETE".equalsIgnoreCase(assessmentDeleteXLS.getAssessmentStatus())) {
                 try {
-                    //TODO implement in assessments client
-                    //assessmentServiceImpl.deleteAssessment(Long.valueOf(assessmentDeleteXLS.getAssessmentId()));
+                    assessmentServiceImpl.deleteAssessment(Long.valueOf(assessmentDeleteXLS.getAssessmentId()));
                     assessmentDeleteXLS.setSuccessfullyImported(true);
+                } catch (NumberFormatException nfe) {
+                    assessmentDeleteXLS.setSuccessfullyImported(false);
+                    assessmentDeleteXLS.addErrorMessage(
+                            INVALID_ASSESSMENT_ID + assessmentDeleteXLS.getAssessmentId());
                 } catch (ResourceAccessException rae) {
                     new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(assessmentDeleteXLS, rae);
                 }
