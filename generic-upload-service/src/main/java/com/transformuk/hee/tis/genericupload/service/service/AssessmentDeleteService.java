@@ -19,7 +19,8 @@ public class AssessmentDeleteService {
     assessmentDeleteXLSS.forEach(assessmentDeleteXLS -> {
       if ("DELETE".equalsIgnoreCase(assessmentDeleteXLS.getAssessmentStatus())) {
         try {
-          assessmentServiceImpl.deleteAssessment(Long.valueOf(assessmentDeleteXLS.getAssessmentId()));
+          assessmentServiceImpl
+                  .deleteAssessment(Long.valueOf(assessmentDeleteXLS.getAssessmentId()));
           assessmentDeleteXLS.setSuccessfullyImported(true);
         } catch (NumberFormatException nfe) {
           assessmentDeleteXLS.setSuccessfullyImported(false);
