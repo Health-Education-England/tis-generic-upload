@@ -76,11 +76,11 @@ public class FundingUpdateTransformerService {
       List<FundingTypeDTO> fundingTypeDtos) {
 
     String postFundingId = fundingUpdateXls.getPostFundingTisId();
-    if (!StringUtils.isEmpty(postFundingId)) {
+    if (StringUtils.isNotEmpty(postFundingId)) {
       try {
         PostFundingDTO postFundingDto = tcsService.getPostFundingById(Long.valueOf(postFundingId));
         if (postFundingDto != null) {
-          updatePostFundingDto(fundingUpdateXls, postFundingDto, fundingBodyNameToId,
+          validateAndUpdatePostFundingDto(fundingUpdateXls, postFundingDto, fundingBodyNameToId,
               fundingTypeDtos);
         } else {
           fundingUpdateXls
@@ -97,7 +97,7 @@ public class FundingUpdateTransformerService {
   }
 
   /**
-   * Verify fundingBodyName and update entity in database.
+   * validate postFundingDto and update entity in database.
    *
    * @param fundingUpdateXls    The FundingUpdateXLS to be verified.
    * @param postFundingDto      The PostFundingDTO got from tcs service. and is also used to update
@@ -107,7 +107,7 @@ public class FundingUpdateTransformerService {
    * @param fundingTypeDtos     A list which contains all the fundingTypeDTOs got from reference
    *                            service.
    */
-  private void updatePostFundingDto(
+  private void validateAndUpdatePostFundingDto(
       FundingUpdateXLS fundingUpdateXls,
       PostFundingDTO postFundingDto,
       Map<String, String> fundingBodyNameToId,
@@ -124,7 +124,7 @@ public class FundingUpdateTransformerService {
       postFundingDto.setFundingBodyId(fundingBodyId);
     }
 
-    updateFundingType(fundingUpdateXls, postFundingDto, fundingTypeDtos);
+    checkFundingType(fundingUpdateXls, postFundingDto, fundingTypeDtos);
 
     if (fundingUpdateXls.getDateFrom() != null) {
       LocalDate dateFrom = convertDate(fundingUpdateXls.getDateFrom());
@@ -147,19 +147,13 @@ public class FundingUpdateTransformerService {
     }
   }
 
-  private void updateFundingType(FundingUpdateXLS fundingUpdateXls,
+  private void checkFundingType(FundingUpdateXLS fundingUpdateXls,
       PostFundingDTO postFundingDto, List<FundingTypeDTO> fundingTypeDtos) {
 
-    boolean fundingTypeInXls = !StringUtils.isEmpty(fundingUpdateXls.getFundingType());
-    boolean fundingDetailsInXls = !StringUtils.isEmpty(fundingUpdateXls.getFundingTypeOther());
-
-    if (!fundingTypeInXls && !fundingDetailsInXls) {
-      return;
-    }
-
-    if (!fundingTypeInXls && fundingDetailsInXls) {
-      fundingUpdateXls
-          .addErrorMessage(FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS);
+    if (StringUtils.isEmpty(fundingUpdateXls.getFundingType())){
+      if(StringUtils.isNotEmpty(fundingUpdateXls.getFundingTypeOther())) {
+        fundingUpdateXls.addErrorMessage(FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS);
+      }
       return;
     }
 
@@ -173,11 +167,11 @@ public class FundingUpdateTransformerService {
     } else {
       // If fundingType is found, replace it with the label from Reference service.
       postFundingDto.setFundingType(matchedFundingTypeDto.getLabel());
-      updateFundingDetails(fundingUpdateXls, postFundingDto, matchedFundingTypeDto);
+      checkFundingDetails(fundingUpdateXls, postFundingDto, matchedFundingTypeDto);
     }
   }
 
-  private void updateFundingDetails(FundingUpdateXLS fundingUpdateXls,
+  private void checkFundingDetails(FundingUpdateXLS fundingUpdateXls,
       PostFundingDTO postFundingDto, FundingTypeDTO matchedFundingTypeDto) {
     String fundingDetails = fundingUpdateXls.getFundingTypeOther();
     if (StringUtils.isEmpty(fundingDetails)) {
