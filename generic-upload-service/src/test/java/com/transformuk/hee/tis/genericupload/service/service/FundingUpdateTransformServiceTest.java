@@ -307,4 +307,31 @@ public class FundingUpdateTransformServiceTest {
         postFundingDtoArgumentCaptorValue.getEndDate(),
         CoreMatchers.equalTo(postFundingDto.getEndDate()));
   }
+
+  @Test
+  public void ShouldUpdateInfoToNullWhenFundingDetailsIsEmpty() {
+
+    postFundingDto.setFundingBodyId("2");
+    postFundingDto.setFundingType(FUNDING_TYPE_ACADEMIC);
+    postFundingDto.setInfo("info");
+    postFundingDto.setId(2L);
+    when(tcsServiceImpl.getPostFundingById(2L)).thenReturn(postFundingDto);
+
+    fundingUpdateXls.setPostFundingTisId("2");
+    fundingUpdateXls.setFundingType(FUNDING_TYPE_NEW);
+
+    when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
+        .thenReturn(null);
+    fundingUpdateTransformerService.processFundingUpdateUpload(
+        Collections.singletonList(fundingUpdateXls));
+
+    PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
+
+    MatcherAssert.assertThat("Should update fundingType",
+        postFundingDtoArgumentCaptorValue.getFundingType(),
+        CoreMatchers.equalTo(FUNDING_TYPE_NEW));
+    MatcherAssert.assertThat("Should update fundingTypeOther",
+        postFundingDtoArgumentCaptorValue.getInfo(),
+        CoreMatchers.equalTo(fundingUpdateXls.getFundingTypeOther())); // value is null
+  }
 }
