@@ -1,37 +1,40 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
+import static org.slf4j.LoggerFactory.getLogger;
+
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostFundingDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
-import static org.slf4j.LoggerFactory.getLogger;
-
 @Component
 public class FundingUpdateTransformerService {
 
+  protected static final String DID_NOT_FIND_POST_FUNDING_FOR_ID =
+      "Did not find the postFunding for id \"%s\".";
+  protected static final String ERROR_INVALID_FUNDING_BODY_NAME =
+      "Funding body could not be found for the name \"%s\".";
+  protected static final String ERROR_INVALID_FUNDING_TYPE =
+      "Funding type could not be found for the label \"%s\".";
+  protected static final String FUNDING_TYPE_IS_NOT_OTHER_OR_ACADEMIC =
+      "funding type specified filled although type is neither Other nor an academic type.";
+  protected static final String FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS =
+      "Funding type is required when funding details is filled.";
+  protected static final String UPDATE_FAILED = "Update failed.";
   private static final org.slf4j.Logger logger = getLogger(PostUpdateTransformerService.class);
-
-  private static final String DID_NOT_FIND_POST_FUNDING_FOR_ID = "Did not find the postFunding for id \"%s\".";
-  private static final String ERROR_INVALID_FUNDING_BODY_NAME = "Funding body could not be found for the name \"%s\".";
-  private static final String ERROR_INVALID_FUNDING_TYPE = "Funding type could not be found for the label \"%s\".";
-  private static final String FUNDING_TYPE_IS_NOT_OTHER = "Funding type specified filled although type is not Other.";
-  private static final String UPDATE_FAILED = "Update failed.";
-
+  
   @Autowired
   private ReferenceServiceImpl referenceService;
   @Autowired
@@ -49,117 +52,137 @@ public class FundingUpdateTransformerService {
 
     Set<String> fundingTypeLabels = fundingUpdateXlSs.stream()
         .map(FundingUpdateXLS::getFundingType).collect(Collectors.toSet());
-    List<FundingTypeDTO> fundingTypes = referenceService.findCurrentFundingTypesByLabelIn(fundingTypeLabels);
-    Set<String> fundingTypeLabelSet = fundingTypes.stream().map(dto -> dto.getLabel()).collect(Collectors.toSet());
+    List<FundingTypeDTO> fundingTypeDtos = referenceService.findCurrentFundingTypesByLabelIn(
+        fundingTypeLabels);
 
     for (FundingUpdateXLS fundingUpdateXlS : fundingUpdateXlSs) {
-      useMatchingCriteriaToUpdatePostFunding(fundingUpdateXlS, fundingBodyNameToId, fundingTypeLabelSet);
+      useMatchingCriteriaToUpdatePostFunding(fundingUpdateXlS, fundingBodyNameToId,
+          fundingTypeDtos);
     }
   }
 
   /**
-   * Verify postFundingId and get postFundingDTO by postFundingId.
+   * Verify postFundingId and get postFundingDto by postFundingId.
    *
-   * @param fundingUpdateXLS    The FundingUpdateXLS to be verified.
-   * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference service.
-   * @param fundingTypeLabelSet A set which contains all the fundingTypeLabels got from reference service.
+   * @param fundingUpdateXls    The FundingUpdateXLS to be verified.
+   * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference
+   *                            service.
+   * @param fundingTypeDtos     A list which contains all the fundingTypeDTOs got from reference
+   *                            service.
    */
   private void useMatchingCriteriaToUpdatePostFunding(
-      FundingUpdateXLS fundingUpdateXLS,
+      FundingUpdateXLS fundingUpdateXls,
       Map<String, String> fundingBodyNameToId,
-      Set<String> fundingTypeLabelSet) {
+      List<FundingTypeDTO> fundingTypeDtos) {
 
-    String postFundingId = fundingUpdateXLS.getPostFundingTisId();
-    if (!StringUtils.isEmpty(postFundingId)) {
+    String postFundingId = fundingUpdateXls.getPostFundingTisId();
+    if (StringUtils.isNotEmpty(postFundingId)) {
       try {
-        PostFundingDTO postFundingDTO = tcsService.getPostFundingById(Long.valueOf(postFundingId));
-        if (postFundingDTO != null) {
-          updatePostFundingDto(fundingUpdateXLS, postFundingDTO, fundingBodyNameToId, fundingTypeLabelSet);
+        PostFundingDTO postFundingDto = tcsService.getPostFundingById(Long.valueOf(postFundingId));
+        if (postFundingDto != null) {
+          validateAndUpdatePostFundingDto(fundingUpdateXls, postFundingDto, fundingBodyNameToId,
+              fundingTypeDtos);
         } else {
-          fundingUpdateXLS
+          fundingUpdateXls
               .addErrorMessage(String.format(DID_NOT_FIND_POST_FUNDING_FOR_ID, postFundingId));
         }
       } catch (ResourceAccessException e) {
-        fundingUpdateXLS
+        fundingUpdateXls
             .addErrorMessage(String.format(DID_NOT_FIND_POST_FUNDING_FOR_ID, postFundingId));
       } catch (NumberFormatException e) {
-        fundingUpdateXLS
+        fundingUpdateXls
             .addErrorMessage(String.format(DID_NOT_FIND_POST_FUNDING_FOR_ID, postFundingId));
       }
     }
   }
 
   /**
-   * Verify fundingBodyName and update entity in database.
+   * validate postFundingDto and update entity in database.
    *
-   * @param fundingUpdateXLS    The FundingUpdateXLS to be verified.
-   * @param postFundingDTO      The PostFundingDTO got from tcs service.
-   *                            and is also used to update the entity in database.
-   * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference service.
-   * @param fundingTypeLabelSet A set which contains all the fundingTypeLabels got from reference service.
+   * @param fundingUpdateXls    The FundingUpdateXLS to be verified.
+   * @param postFundingDto      The PostFundingDTO got from tcs service. and is also used to update
+   *                            the entity in database.
+   * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference
+   *                            service.
+   * @param fundingTypeDtos     A list which contains all the fundingTypeDTOs got from reference
+   *                            service.
    */
-  private void updatePostFundingDto(
-      FundingUpdateXLS fundingUpdateXLS,
-      PostFundingDTO postFundingDTO,
+  private void validateAndUpdatePostFundingDto(
+      FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto,
       Map<String, String> fundingBodyNameToId,
-      Set<String> fundingTypeLabelSet) {
+      List<FundingTypeDTO> fundingTypeDtos) {
 
     // funding body validation
-    String fundingBodyName = fundingUpdateXLS.getFundingBody();
+    String fundingBodyName = fundingUpdateXls.getFundingBody();
     String fundingBodyId = fundingBodyNameToId.get(fundingBodyName);
 
     if (fundingBodyName != null && fundingBodyId == null) {
-      fundingUpdateXLS
+      fundingUpdateXls
           .addErrorMessage(String.format(ERROR_INVALID_FUNDING_BODY_NAME, fundingBodyName));
     } else if (fundingBodyName != null) {
-      postFundingDTO.setFundingBodyId(fundingBodyId);
+      postFundingDto.setFundingBodyId(fundingBodyId);
     }
 
-    // funding type validation
-    String fundingType = fundingUpdateXLS.getFundingType();
-    boolean fundingTypeOtherFlag = false;
-    if (!StringUtils.isEmpty(fundingType)) {
-      if (Objects.equals(fundingType, "Other")) {
-        fundingTypeOtherFlag = true;
-        postFundingDTO.setFundingType(fundingType);
-      } else {
-        if (fundingTypeLabelSet.contains(fundingType)) {
-          postFundingDTO.setFundingType(fundingType);
-          postFundingDTO.setInfo(null);
-        } else {
-          fundingUpdateXLS
-              .addErrorMessage(String.format(ERROR_INVALID_FUNDING_TYPE, fundingType));
-        }
-      }
+    checkFundingType(fundingUpdateXls, postFundingDto, fundingTypeDtos);
+
+    if (fundingUpdateXls.getDateFrom() != null) {
+      LocalDate dateFrom = convertDate(fundingUpdateXls.getDateFrom());
+      postFundingDto.setStartDate(dateFrom);
+    }
+    if (fundingUpdateXls.getDateTo() != null) {
+      LocalDate dateTo = convertDate(fundingUpdateXls.getDateTo());
+      postFundingDto.setEndDate(dateTo);
     }
 
-    // funding type-other validation
-    String fundingTypeOther = fundingUpdateXLS.getFundingTypeOther();
-    if (fundingTypeOtherFlag && !StringUtils.isEmpty(fundingTypeOther)) {
-      postFundingDTO.setInfo(fundingTypeOther);
-    } else if (!fundingTypeOtherFlag && !StringUtils.isEmpty(fundingTypeOther)) {
-      fundingUpdateXLS
-          .addErrorMessage(FUNDING_TYPE_IS_NOT_OTHER);
-    }
-
-    if (fundingUpdateXLS.getDateFrom() != null) {
-      LocalDate dateFrom = convertDate(fundingUpdateXLS.getDateFrom());
-      postFundingDTO.setStartDate(dateFrom);
-    }
-    if (fundingUpdateXLS.getDateTo() != null) {
-      LocalDate dateTo = convertDate(fundingUpdateXLS.getDateTo());
-      postFundingDTO.setEndDate(dateTo);
-    }
-
-    if (!fundingUpdateXLS.hasErrors()) {
-      logger.info("postFundingDTO => {}", postFundingDTO);
+    if (!fundingUpdateXls.hasErrors()) {
+      logger.info("postFundingDto => {}", postFundingDto);
       try {
-        tcsService.updateFunding(postFundingDTO);
-        fundingUpdateXLS.setSuccessfullyImported(true);
+        tcsService.updateFunding(postFundingDto);
+        fundingUpdateXls.setSuccessfullyImported(true);
       } catch (ResourceAccessException e) {
-        fundingUpdateXLS
+        fundingUpdateXls
             .addErrorMessage(UPDATE_FAILED);
       }
+    }
+  }
+
+  private void checkFundingType(FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto, List<FundingTypeDTO> fundingTypeDtos) {
+
+    if (StringUtils.isEmpty(fundingUpdateXls.getFundingType())){
+      if(StringUtils.isNotEmpty(fundingUpdateXls.getFundingTypeOther())) {
+        fundingUpdateXls.addErrorMessage(FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS);
+      }
+      return;
+    }
+
+    String fundingType = fundingUpdateXls.getFundingType();
+    FundingTypeDTO matchedFundingTypeDto = fundingTypeDtos.stream()
+        .filter(dto -> StringUtils.equalsIgnoreCase(fundingType, dto.getLabel())).findAny()
+        .orElse(null);
+    if (matchedFundingTypeDto == null) {
+      fundingUpdateXls
+          .addErrorMessage(String.format(ERROR_INVALID_FUNDING_TYPE, fundingType));
+    } else {
+      // If fundingType is found, replace it with the label from Reference service.
+      postFundingDto.setFundingType(matchedFundingTypeDto.getLabel());
+      checkFundingDetails(fundingUpdateXls, postFundingDto, matchedFundingTypeDto);
+    }
+  }
+
+  private void checkFundingDetails(FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto, FundingTypeDTO matchedFundingTypeDto) {
+    String fundingDetails = fundingUpdateXls.getFundingTypeOther();
+    if (StringUtils.isEmpty(fundingDetails)) {
+      return;
+    }
+    if (matchedFundingTypeDto.isAcademic() || StringUtils.equals(postFundingDto.getFundingType(),
+        "Other")) {
+      postFundingDto.setInfo(fundingDetails);
+    } else {
+      fundingUpdateXls
+          .addErrorMessage(FUNDING_TYPE_IS_NOT_OTHER_OR_ACADEMIC);
     }
   }
 }

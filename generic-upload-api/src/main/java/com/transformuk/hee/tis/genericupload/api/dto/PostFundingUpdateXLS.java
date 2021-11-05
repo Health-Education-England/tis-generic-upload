@@ -15,7 +15,7 @@ public class PostFundingUpdateXLS extends TemplateXLS {
   @ExcelColumn(name = "Funding type")
   private String fundingType;
 
-  @ExcelColumn(name = "Funding type - If 'Other' please specify")
+  @ExcelColumn(name = "Funding Details")
   private String fundingTypeOther;
 
   @ExcelColumn(name = "Funding Body")
