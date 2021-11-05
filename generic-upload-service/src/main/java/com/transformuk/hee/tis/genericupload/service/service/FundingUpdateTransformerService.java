@@ -34,7 +34,7 @@ public class FundingUpdateTransformerService {
       "Funding type is required when funding details is filled.";
   protected static final String UPDATE_FAILED = "Update failed.";
   private static final org.slf4j.Logger logger = getLogger(PostUpdateTransformerService.class);
-  
+
   @Autowired
   private ReferenceServiceImpl referenceService;
   @Autowired
@@ -150,8 +150,8 @@ public class FundingUpdateTransformerService {
   private void checkFundingType(FundingUpdateXLS fundingUpdateXls,
       PostFundingDTO postFundingDto, List<FundingTypeDTO> fundingTypeDtos) {
 
-    if (StringUtils.isEmpty(fundingUpdateXls.getFundingType())){
-      if(StringUtils.isNotEmpty(fundingUpdateXls.getFundingTypeOther())) {
+    if (StringUtils.isEmpty(fundingUpdateXls.getFundingType())) {
+      if (StringUtils.isNotEmpty(fundingUpdateXls.getFundingTypeOther())) {
         fundingUpdateXls.addErrorMessage(FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS);
       }
       return;
@@ -173,12 +173,10 @@ public class FundingUpdateTransformerService {
 
   private void checkFundingDetails(FundingUpdateXLS fundingUpdateXls,
       PostFundingDTO postFundingDto, FundingTypeDTO matchedFundingTypeDto) {
+
     String fundingDetails = fundingUpdateXls.getFundingTypeOther();
-    if (StringUtils.isEmpty(fundingDetails)) {
-      return;
-    }
-    if (matchedFundingTypeDto.isAcademic() || StringUtils.equals(postFundingDto.getFundingType(),
-        "Other")) {
+    if (StringUtils.isEmpty(fundingDetails) || matchedFundingTypeDto.isAcademic()
+        || StringUtils.equals(postFundingDto.getFundingType(), "Other")) {
       postFundingDto.setInfo(fundingDetails);
     } else {
       fundingUpdateXls
