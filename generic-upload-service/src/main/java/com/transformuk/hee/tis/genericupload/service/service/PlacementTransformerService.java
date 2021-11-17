@@ -78,6 +78,7 @@ public class PlacementTransformerService {
   private static final String WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY = "Whole Time Equivalent (WTE) is mandatory";
   private static final String PLACEMENT_TYPE_IS_MANDATORY = "Placement Type is mandatory";
   private static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : %s";
+  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR = "Expected to find a placement grade for : %s";
   private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
   private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for registration number : %s";
   private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
@@ -586,7 +587,21 @@ public class PlacementTransformerService {
         .map(PlacementXLS::getGrade)
         .collect(Collectors.toSet());
     Map<String, GradeDTO> gradeMapByName = new HashMap<>();
+    List<String> gradesValidForPlacements = referenceServiceImpl
+            .findGradesCurrentPlacementAndTrainingGrades()
+            .stream()
+            .map(GradeDTO::getName)
+            .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
+      if (!gradesValidForPlacements.stream().anyMatch(gradeName::equalsIgnoreCase)) {
+        placementXLSS.stream()
+                .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
+                .forEach(placementXLS -> {
+                  logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
+                  placementXLS
+                          .addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
+                });
+      }
       List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
       if (!gradesByName.isEmpty() && gradesByName.size() == 1) {
         gradeMapByName.put(gradeName, gradesByName.get(0));
