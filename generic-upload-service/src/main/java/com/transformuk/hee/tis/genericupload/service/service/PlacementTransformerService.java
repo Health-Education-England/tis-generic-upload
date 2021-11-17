@@ -588,9 +588,7 @@ public class PlacementTransformerService {
         .collect(Collectors.toSet());
     Map<String, GradeDTO> gradeMapByName = new HashMap<>();
     List<String> gradesValidForPlacements = referenceServiceImpl
-            .findGradesCurrentPlacementAndTrainingGrades()
-            .stream()
-            .map(GradeDTO::getName)
+            .findGradesCurrentPlacementAndTrainingGrades().stream().map(GradeDTO::getName)
             .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
       if (gradesValidForPlacements.stream().noneMatch(gradeName::equalsIgnoreCase)) {
