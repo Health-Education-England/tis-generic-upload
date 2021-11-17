@@ -591,27 +591,29 @@ public class PlacementTransformerService {
             .findGradesCurrentPlacementAndTrainingGrades().stream().map(GradeDTO::getName)
             .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
-      if (gradesValidForPlacements.stream().noneMatch(gradeName::equalsIgnoreCase)) {
-        placementXLSS.stream()
-                .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
-                .forEach(placementXLS -> {
-                  logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
-                  placementXLS
-                          .addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
-                                  gradeName));
-                });
-      }
       List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
-      if (!gradesByName.isEmpty() && gradesByName.size() == 1) {
+      boolean gradeInvalid =
+              gradesValidForPlacements.stream().noneMatch(gradeName::equalsIgnoreCase);
+      boolean gradeNotUnique = (gradesByName.size() != 1);
+      if (!gradeInvalid && !gradeNotUnique) {
         gradeMapByName.put(gradeName, gradesByName.get(0));
       } else {
         placementXLSS.stream()
-            .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
-            .forEach(placementXLS -> {
-              logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
-              placementXLS
-                  .addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
-            });
+                .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
+                .forEach(placementXLS -> {
+                  if (gradeInvalid) {
+                    logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
+                    placementXLS
+                            .addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
+                                    gradeName));
+                  }
+                  if (gradeNotUnique) {
+                    logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
+                    placementXLS
+                            .addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR,
+                                    gradeName));
+                  }
+                });
       }
     }
     return gradeMapByName;
