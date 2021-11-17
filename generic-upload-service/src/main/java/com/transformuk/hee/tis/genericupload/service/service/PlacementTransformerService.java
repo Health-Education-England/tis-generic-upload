@@ -593,13 +593,14 @@ public class PlacementTransformerService {
             .map(GradeDTO::getName)
             .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
-      if (!gradesValidForPlacements.stream().anyMatch(gradeName::equalsIgnoreCase)) {
+      if (gradesValidForPlacements.stream().noneMatch(gradeName::equalsIgnoreCase)) {
         placementXLSS.stream()
                 .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
                 .forEach(placementXLS -> {
                   logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
                   placementXLS
-                          .addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
+                          .addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
+                                  gradeName));
                 });
       }
       List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
