@@ -194,31 +194,6 @@ public class PlacementUpdateTransformerService {
     return gradeValid;
   }
 
-  /**
-   * Checks if a grade can be uniquely identified from the list of grades.
-   *
-   * SIDE-EFFECT: if not unique, this is logged and the affected placement update XLS records have
-   * an error message attached to them.
-   * @param placementXLSS the list of placement update XLS records
-   * @param gradeName the grade to check for uniqueness
-   * @param gradesByName the list of grade DTOs
-   * @return true if gradeName was a valid placement grade, false otherwise (note side-effect above)
-   */
-  public boolean isPlacementGradeUnique(List<PlacementUpdateXLS> placementXLSS, String gradeName,
-                                        List<GradeDTO> gradesByName) {
-    boolean gradeUnique = gradesByName.size() == 1;
-    if (!gradeUnique) {
-      placementXLSS.stream()
-              .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
-              .forEach(placementXLS -> {
-                logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
-                placementXLS.addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR,
-                        gradeName));
-              });
-    }
-    return gradeUnique;
-  }
-
   private void updatePlacement(RegNumberToDTOLookup regNumberToDTOLookup,
       PlacementDetailsDTO dbPlacementDetailsDTO,
       Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName,
@@ -464,9 +439,7 @@ public class PlacementUpdateTransformerService {
             .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
       List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
-      boolean gradeValid = isPlacementGradeValid(placementXLSS, gradeName, gradesValidForPlacements);
-      boolean gradeUnique = isPlacementGradeUnique(placementXLSS, gradeName, gradesByName);
-      if (gradeValid && gradeUnique) {
+      if (isPlacementGradeValid(placementXLSS, gradeName, gradesValidForPlacements)) {
         gradeMapByName.put(gradeName, gradesByName.get(0));
       }
     }
