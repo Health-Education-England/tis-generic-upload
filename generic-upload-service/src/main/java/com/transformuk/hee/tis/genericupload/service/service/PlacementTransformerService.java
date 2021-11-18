@@ -78,7 +78,6 @@ public class PlacementTransformerService {
   private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
   private static final String WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY = "Whole Time Equivalent (WTE) is mandatory";
   private static final String PLACEMENT_TYPE_IS_MANDATORY = "Placement Type is mandatory";
-  private static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : %s";
   private static final String EXPECTED_A_PLACEMENT_GRADE_FOR = "Expected to find a placement grade for : %s";
   private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
   private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for registration number : %s";
