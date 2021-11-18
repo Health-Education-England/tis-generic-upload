@@ -183,7 +183,7 @@ public class PlacementUpdateTransformerService {
             placementGrades.stream().anyMatch(gradeName::equalsIgnoreCase);
     if (!gradeValid) {
       placementXLSS.stream()
-            .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
+            .filter(placementXLS -> Objects.toString(placementXLS.getGrade()).equalsIgnoreCase(gradeName))
             .forEach(placementXLS -> {
                 logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
                 placementXLS.addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
