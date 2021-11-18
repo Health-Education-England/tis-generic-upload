@@ -592,25 +592,23 @@ public class PlacementTransformerService {
             .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
       List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
-      boolean gradeInvalid =
-              gradesValidForPlacements.stream().noneMatch(gradeName::equalsIgnoreCase);
-      boolean gradeNotUnique = (gradesByName.size() != 1);
-      if (!gradeInvalid && !gradeNotUnique) {
+      boolean gradeValid =
+              gradesValidForPlacements.stream().anyMatch(gradeName::equalsIgnoreCase);
+      boolean gradeUnique = gradesByName.size() == 1;
+      if (gradeValid && gradeUnique) {
         gradeMapByName.put(gradeName, gradesByName.get(0));
       } else {
         placementXLSS.stream()
                 .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
                 .forEach(placementXLS -> {
-                  if (gradeInvalid) {
+                  if (!gradeValid) {
                     logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
-                    placementXLS
-                            .addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
+                    placementXLS.addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
                                     gradeName));
                   }
-                  if (gradeNotUnique) {
+                  if (!gradeUnique) {
                     logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
-                    placementXLS
-                            .addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR,
+                    placementXLS.addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR,
                                     gradeName));
                   }
                 });
