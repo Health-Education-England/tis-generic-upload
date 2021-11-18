@@ -4,6 +4,7 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementSupervisor;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.DTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;
@@ -255,6 +256,58 @@ public class PlacementTransformerService {
     } else {
       return true;
     }
+  }
+
+
+  /**
+   * Checks if a grade is a valid placement grade.
+   *
+   * SIDE-EFFECT: if not valid, this is logged and the affected placement XLS records have an error
+   * message attached to them.
+   * @param placementXLSS the list of placement XLS records
+   * @param gradeName the grade to verify
+   * @param placementGrades the list of valid placement grades
+   * @return true if gradeName was a valid placement grade, false otherwise (note side-effect above)
+   */
+  public boolean isPlacementGradeValid(List<PlacementXLS> placementXLSS, String gradeName,
+                                       List<String> placementGrades) {
+    boolean gradeValid =
+            placementGrades.stream().anyMatch(gradeName::equalsIgnoreCase);
+    if (!gradeValid) {
+      placementXLSS.stream()
+              .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
+              .forEach(placementXLS -> {
+                logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
+                placementXLS.addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
+                        gradeName));
+              });
+    }
+    return gradeValid;
+  }
+
+  /**
+   * Checks if a grade can be uniquely identified from the list of grades.
+   *
+   * SIDE-EFFECT: if not unique, this is logged and the affected placement XLS records have an error
+   * message attached to them.
+   * @param placementXLSS the list of placement XLS records
+   * @param gradeName the grade to check for uniqueness
+   * @param gradesByName the list of grade DTOs
+   * @return true if gradeName was a valid placement grade, false otherwise (note side-effect above)
+   */
+  public boolean isPlacementGradeUnique(List<PlacementXLS> placementXLSS, String gradeName,
+                                        List<GradeDTO> gradesByName) {
+    boolean gradeUnique = gradesByName.size() == 1;
+    if (!gradeUnique) {
+      placementXLSS.stream()
+              .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
+              .forEach(placementXLS -> {
+                logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
+                placementXLS.addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR,
+                        gradeName));
+              });
+    }
+    return gradeUnique;
   }
 
   private Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDTOFromRegNumber(
@@ -592,26 +645,10 @@ public class PlacementTransformerService {
             .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
       List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
-      boolean gradeValid =
-              gradesValidForPlacements.stream().anyMatch(gradeName::equalsIgnoreCase);
-      boolean gradeUnique = gradesByName.size() == 1;
+      boolean gradeValid = isPlacementGradeValid(placementXLSS, gradeName, gradesValidForPlacements);
+      boolean gradeUnique = isPlacementGradeUnique(placementXLSS, gradeName, gradesByName);
       if (gradeValid && gradeUnique) {
         gradeMapByName.put(gradeName, gradesByName.get(0));
-      } else {
-        placementXLSS.stream()
-                .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
-                .forEach(placementXLS -> {
-                  if (!gradeValid) {
-                    logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
-                    placementXLS.addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
-                                    gradeName));
-                  }
-                  if (!gradeUnique) {
-                    logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
-                    placementXLS.addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR,
-                                    gradeName));
-                  }
-                });
       }
     }
     return gradeMapByName;
