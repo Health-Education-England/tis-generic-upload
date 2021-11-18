@@ -12,12 +12,9 @@ import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,6 +24,7 @@ public class PlacementTransformerServiceTest {
   private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name";
+  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR = "Expected to find a placement grade for";
   static Map<String, List<SpecialtyDTO>> specialtyByName, specialtyByNameWithDuplicate;
   static Map<String, List<SiteDTO>> siteByName;
   PlacementTransformerService placementTransformerService;
@@ -282,5 +280,32 @@ public class PlacementTransformerServiceTest {
         PlacementTransformerServiceTest::getSitesForString, postDTO);
     assertThat(placementDTO.getSites().size()).isEqualTo(0);
     assertThat(placementXLS.getErrorMessage()).contains(FOUND_MULTIPLE_OTHER_SITES_FOR_NAME);
+  }
+
+
+  @Test
+  public void shouldAddErrorWithInvalidPlacementGrade() {
+    //WHEN
+    List<String> gradesValidForPlacements = Arrays.asList("Valid grade 1", "Valid grade 2");
+    String gradeName = "Specialty Registrar - HENE";
+    placementXLS.setGrade(gradeName); //not a placement grade
+    List<PlacementXLS> placementXLSS = Collections.singletonList(placementXLS);
+    placementTransformerService.isPlacementGradeValid(placementXLSS, gradeName,
+            gradesValidForPlacements);
+    //THEN
+    assertThat(placementXLS.getErrorMessage()).contains(EXPECTED_A_PLACEMENT_GRADE_FOR);
+  }
+
+  @Test
+  public void shouldNotAddErrorWithValidPlacementGrade() {
+    //WHEN
+    List<String> gradesValidForPlacements = Arrays.asList("Valid grade 1", "Valid grade 2");
+    String gradeName = "Valid grade 1";
+    placementXLS.setGrade(gradeName); //placement grade
+    List<PlacementXLS> placementXLSS = Collections.singletonList(placementXLS);
+    placementTransformerService.isPlacementGradeValid(placementXLSS, gradeName,
+            gradesValidForPlacements);
+    //THEN
+    assertThat(placementXLS.getErrorMessage()).isNull();
   }
 }

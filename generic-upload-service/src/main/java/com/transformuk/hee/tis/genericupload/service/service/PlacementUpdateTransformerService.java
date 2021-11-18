@@ -60,7 +60,7 @@ public class PlacementUpdateTransformerService {
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
   private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
   private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
-  private static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : %s";
+  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR = "Expected to find a placement grade for : %s";
   private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
   private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for Registration number : %s";
   private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
@@ -165,6 +165,32 @@ public class PlacementUpdateTransformerService {
       }
     }
     return true;
+  }
+
+  /**
+   * Checks if a grade is a valid placement grade.
+   *
+   * SIDE-EFFECT: if not valid, this is logged and the affected placement update XLS records have
+   * an error message attached to them.
+   * @param placementXLSS the list of placement update XLS records
+   * @param gradeName the grade to verify
+   * @param placementGrades the list of valid placement grades
+   * @return true if gradeName was a valid placement grade, false otherwise (note side-effect above)
+   */
+  public boolean isPlacementGradeValid(List<PlacementUpdateXLS> placementXLSS, String gradeName,
+                                       List<String> placementGrades) {
+    boolean gradeValid =
+            placementGrades.stream().anyMatch(gradeName::equalsIgnoreCase);
+    if (!gradeValid) {
+      placementXLSS.stream()
+            .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
+            .forEach(placementXLS -> {
+                logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
+                placementXLS.addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
+                        gradeName));
+            });
+    }
+    return gradeValid;
   }
 
   private void updatePlacement(RegNumberToDTOLookup regNumberToDTOLookup,
@@ -407,18 +433,13 @@ public class PlacementUpdateTransformerService {
         .map(PlacementUpdateXLS::getGrade)
         .collect(Collectors.toSet());
     Map<String, GradeDTO> gradeMapByName = new HashMap<>();
+    List<String> gradesValidForPlacements = referenceServiceImpl
+            .findGradesCurrentPlacementAndTrainingGrades().stream().map(GradeDTO::getName)
+            .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
       List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
-      if (!gradesByName.isEmpty() && gradesByName.size() == 1) {
+      if (isPlacementGradeValid(placementXLSS, gradeName, gradesValidForPlacements)) {
         gradeMapByName.put(gradeName, gradesByName.get(0));
-      } else {
-        placementXLSS.stream()
-            .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
-            .forEach(placementXLS -> {
-              logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
-              placementXLS
-                  .addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
-            });
       }
     }
     return gradeMapByName;
