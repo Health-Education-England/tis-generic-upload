@@ -4,7 +4,6 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementSupervisor;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.DTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetcher;

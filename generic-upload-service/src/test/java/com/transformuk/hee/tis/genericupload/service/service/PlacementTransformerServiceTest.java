@@ -2,7 +2,6 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
