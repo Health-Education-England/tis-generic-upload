@@ -31,7 +31,7 @@
     <hikaricp.version>2.6.0</hikaricp.version>
     <java.version>1.8</java.version>
     <jhipster.server.version>1.3.1</jhipster.server.version>
-    <jjwt.version>0.7.0</jjwt.version>
+    <jjwt.version>0.9.1</jjwt.version>
     <logstash-logback-encoder.version>6.6</logstash-logback-encoder.version>
     <m2e.apt.activation>jdt_apt</m2e.apt.activation>
     <mapstruct.version>1.4.2.Final</mapstruct.version>
@@ -47,7 +47,7 @@
     <problem-spring-web.version>0.26.2</problem-spring-web.version>
     <profile.swagger/>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <prometheus-simpleclient.version>0.11.0</prometheus-simpleclient.version>
+    <prometheus-simpleclient.version>0.12.0</prometheus-simpleclient.version>
 
     <project.build.finalName>generic-upload</project.build.finalName>
     <project.testresult.directory>${project.build.directory}/test-results</project.testresult.directory>
