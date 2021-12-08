@@ -9,9 +9,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentDetailDTO;
+import com.transformuk.hee.tis.assessment.api.dto.AssessmentListDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentOutcomeDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentOutcomeReasonDTO;
-import com.transformuk.hee.tis.assessment.api.dto.EventStatus;
 import com.transformuk.hee.tis.assessment.api.dto.RevalidationDTO;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
-import org.apache.commons.lang3.EnumUtils;
+
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,30 +55,31 @@ public class AssessmentTransformerService {
 
   public static final String SEMI_COLON = ";";
   public static final String GIVEN_ASSESSMENT_REASON_NOT_FOUND = "Given Assessment reason not found";
-  private static final Logger logger = getLogger(AssessmentTransformerService.class);
-  private static final String AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON = "At least one of the 3 registration numbers should be provided to identify a person";
-  private static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
-  private static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER = "Did not find a person for registration number : ";
-  private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
-  private static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : %s";
-  private static final String PROGRAMME_NAME_NOT_SPECIFIED = "Programme name (%s) has not been specified. Both programme name and number are needed to identify the programme";
-  private static final String PROGRAMME_NUMBER_NOT_SPECIFIED = "Programme number (%s) has not been specified. Both programme name and number are needed to identify the programme";
-  private static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED = "At least one of the three registration numbers needs to be specified";
-  private static final String DID_NOT_FIND_PROGRAMME_CURRICULUM = "Did not find Programme curriculum";
-  private static final String DAYS_OUT_OF_TRAINING_SHOULD_BE_NUMERIC = "Days out of training should be numeric";
-  private static final String MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC = "Months OOPR/OOPT counted towards training should be numeric";
-  private static final String GIVEN_OUTCOME_IS_NOT_VALID = "Given outcome is not valid";
-  private static final String OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S = "Outcome reason is required for outcome : %s";
-  private static final String OTHER_REASON_IS_REQUIRED = "Other reason is required";
-  private static final String PROGRAMME_CURRICULUM_INFO_NOT_FOUND = "Programme curriculum information not found for given trainee";
-  private static final String TRAINEE_NOT_FOUND = "Trainee information not found";
-  private static final String ASSESSMENT_TYPE_IS_REQUIRED = "Assessment type is required";
-  private static final String REVIEW_DATE_BEFORE_1753 = "Review date is before year 1753";
-  private static final String CURRICULUM_START_DATE_BEFORE_1753 = "Curriculum start date is below year 1753";
-  private static final String CURRICULUM_END_DATE_BEFORE_1753 = "Curriculum end date is below year 1753";
-  private static final String PERIOD_COVERED_FROM_DATE_BEFORE_1753 = "Period covered from date is below year 1753";
-  private static final String PERIOD_COVERED_TO_DATE_BEFORE_1753 = "Period covered to date is below year 1753";
-  private static final String NEXT_REVIEW_DATE_BEFORE_1753 = "Next review date is below year 1753";
+  public static final Logger logger = getLogger(AssessmentTransformerService.class);
+  public static final String AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON = "At least one of the 3 registration numbers should be provided to identify a person";
+  public static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
+  public static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER = "Did not find a person for registration number : ";
+  public static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
+  public static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : %s";
+  public static final String PROGRAMME_NAME_NOT_SPECIFIED = "Programme name (%s) has not been specified. Both programme name and number are needed to identify the programme";
+  public static final String PROGRAMME_NUMBER_NOT_SPECIFIED = "Programme number (%s) has not been specified. Both programme name and number are needed to identify the programme";
+  public static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED = "At least one of the three registration numbers needs to be specified";
+  public static final String DID_NOT_FIND_PROGRAMME_CURRICULUM = "Did not find Programme curriculum";
+  public static final String DAYS_OUT_OF_TRAINING_SHOULD_BE_NUMERIC = "Days out of training should be numeric";
+  public static final String MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC = "Months OOPR/OOPT counted towards training should be numeric";
+  public static final String GIVEN_OUTCOME_IS_NOT_VALID = "Given outcome is not valid";
+  public static final String OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S = "Outcome reason is required for outcome : %s";
+  public static final String OTHER_REASON_IS_REQUIRED = "Other reason is required";
+  public static final String PROGRAMME_CURRICULUM_INFO_NOT_FOUND = "Programme curriculum information not found for given trainee";
+  public static final String TRAINEE_NOT_FOUND = "Trainee information not found";
+  public static final String ASSESSMENT_TYPE_IS_REQUIRED = "Assessment type is required";
+  public static final String REVIEW_DATE_BEFORE_1753 = "Review date is before year 1753";
+  public static final String CURRICULUM_START_DATE_BEFORE_1753 = "Curriculum start date is below year 1753";
+  public static final String CURRICULUM_END_DATE_BEFORE_1753 = "Curriculum end date is below year 1753";
+  public static final String PERIOD_COVERED_FROM_DATE_BEFORE_1753 = "Period covered from date is below year 1753";
+  public static final String PERIOD_COVERED_TO_DATE_BEFORE_1753 = "Period covered to date is below year 1753";
+  public static final String NEXT_REVIEW_DATE_BEFORE_1753 = "Next review date is below year 1753";
+  public static final String ASSESSMENT_IS_DUPLICATE = "This assessment already exists: %s";
   Function<AssessmentXLS, String> getPhNumber = AssessmentXLS::getPublicHealthNumber;
   Function<AssessmentXLS, String> getGdcNumber = AssessmentXLS::getGdcNumber;
   Function<AssessmentXLS, String> getGmcNumber = AssessmentXLS::getGmcNumber;
@@ -117,6 +118,27 @@ public class AssessmentTransformerService {
       Function<DTO, Long> getId) {
     return regNumberMap.isEmpty() ? null
         : pbdDtoFetcher.findWithKeys(idExtractingFetcher.extractIds(regNumberMap, getId));
+  }
+
+  /**
+   * Checks for existing assessments that are duplicates of the assessment in the DTO.
+   *
+   * @param assessmentDTO the assessment to check
+   * @return String message listing duplicate assessment id's or an empty string if no duplicates
+   */
+  String getAnyDuplicateAssessmentsMessage(AssessmentDTO assessmentDTO) {
+    List<AssessmentListDTO> duplicateAssessments = assessmentServiceImpl.findAssessments(
+            assessmentDTO.getTraineeId(),
+            assessmentDTO.getProgrammeMembershipId(),
+            assessmentDTO.getReviewDate(),
+            (assessmentDTO.getOutcome() == null ? null : assessmentDTO.getOutcome().getOutcome()));
+    if (!duplicateAssessments.isEmpty()) {
+      return String.format(ASSESSMENT_IS_DUPLICATE, duplicateAssessments
+                      .stream()
+                      .map(d -> d.getId().toString())
+                      .collect(Collectors.joining(",")));
+    }
+    return ""; //no duplicates
   }
 
   void processAssessmentsUpload(List<AssessmentXLS> assessmentXLSList) {
@@ -405,6 +427,11 @@ public class AssessmentTransformerService {
 
       }
       assessmentDTO.setOutcome(assessmentOutcomeDTO);
+
+      String duplicateAssessments = getAnyDuplicateAssessmentsMessage(assessmentDTO);
+      if (!duplicateAssessments.isEmpty()) {
+        assessmentXLS.addErrorMessage(duplicateAssessments);
+      }
 
       //Revalidation
       RevalidationDTO revalidationDTO = new RevalidationDTO();
