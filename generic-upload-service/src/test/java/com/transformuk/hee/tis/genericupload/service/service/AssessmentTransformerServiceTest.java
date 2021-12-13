@@ -10,16 +10,19 @@ import com.google.common.collect.Lists;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentListDTO;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
-
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
+import com.transformuk.hee.tis.tcs.api.dto.CurriculumMembershipDTO;
+import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PersonBasicDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
+import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipCurriculaDTO;
+import com.transformuk.hee.tis.tcs.api.enumeration.CurriculumSubType;
+import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-
-import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
-import com.transformuk.hee.tis.reference.api.dto.CurriculumSubTypeDTO;
-import com.transformuk.hee.tis.tcs.api.dto.*;
-import com.transformuk.hee.tis.tcs.api.enumeration.CurriculumSubType;
-import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -72,6 +75,8 @@ public class AssessmentTransformerServiceTest {
 
     @Test
     public void testProcessAssessments_duplicate() {
+        //this is a very fragile unit test, and should be entirely rewritten when
+        //the AssessmentTransformerService is refactored
         Long duplicateAssessmentId = 1L;
         Long traineeId = 1L;
         String lastName = "last name";
@@ -99,7 +104,8 @@ public class AssessmentTransformerServiceTest {
         curriculumMembershipDTO.setId(1L);
         curriculumMembershipDTO.setCurriculumStartDate(curriculumStartDate);
         curriculumMembershipDTO.setCurriculumEndDate(curriculumEndDate);
-        List<CurriculumMembershipDTO> curriculumMembershipDTOList = Lists.newArrayList(curriculumMembershipDTO);
+        List<CurriculumMembershipDTO> curriculumMembershipDTOList =
+                Lists.newArrayList(curriculumMembershipDTO);
 
         ProgrammeMembershipCurriculaDTO pmc = new ProgrammeMembershipCurriculaDTO();
         pmc.setProgrammeName(programmeName);
@@ -123,7 +129,8 @@ public class AssessmentTransformerServiceTest {
         personBasicDetailsDTO.setId(traineeId);
         personBasicDetailsDTO.setGmcNumber(gmcNumber);
         personBasicDetailsDTO.setLastName(lastName);
-        List<PersonBasicDetailsDTO> personBasicDetailsDTOList = Lists.newArrayList(personBasicDetailsDTO);
+        List<PersonBasicDetailsDTO> personBasicDetailsDTOList =
+                Lists.newArrayList(personBasicDetailsDTO);
 
         List<String> publicHealthNumberList = Lists.newArrayList(gmcNumber);
 
@@ -151,9 +158,12 @@ public class AssessmentTransformerServiceTest {
                 "}]");
         when(tcsServiceMock.findPeopleByPublicHealthNumbersIn(publicHealthNumberList))
                 .thenReturn(personDTOList);
-        when(tcsServiceMock.findGmcDetailsIn(anyList())).thenReturn(gmcDetailsDTOList);
-        when(tcsServiceMock.findPersonBasicDetailsIn(anyList())).thenReturn(personBasicDetailsDTOList);
-        when(tcsServiceMock.getProgrammeMembershipForTrainee(any())).thenReturn(pmcList);
+        when(tcsServiceMock.findGmcDetailsIn(anyList()))
+                .thenReturn(gmcDetailsDTOList);
+        when(tcsServiceMock.findPersonBasicDetailsIn(anyList()))
+                .thenReturn(personBasicDetailsDTOList);
+        when(tcsServiceMock.getProgrammeMembershipForTrainee(any()))
+                .thenReturn(pmcList);
 
         when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
                 .thenReturn(duplicateAssessments);
@@ -164,6 +174,5 @@ public class AssessmentTransformerServiceTest {
         assertThat("Should get error", xlsList.get(0).getErrorMessage(),
                 is(String.format(AssessmentTransformerService.ASSESSMENT_IS_DUPLICATE,
                         duplicateAssessmentId)));
-
     }
 }
