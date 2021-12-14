@@ -9,9 +9,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentDetailDTO;
+import com.transformuk.hee.tis.assessment.api.dto.AssessmentListDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentOutcomeDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentOutcomeReasonDTO;
-import com.transformuk.hee.tis.assessment.api.dto.EventStatus;
 import com.transformuk.hee.tis.assessment.api.dto.RevalidationDTO;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
-import org.apache.commons.lang3.EnumUtils;
+
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +79,8 @@ public class AssessmentTransformerService {
   private static final String PERIOD_COVERED_FROM_DATE_BEFORE_1753 = "Period covered from date is below year 1753";
   private static final String PERIOD_COVERED_TO_DATE_BEFORE_1753 = "Period covered to date is below year 1753";
   private static final String NEXT_REVIEW_DATE_BEFORE_1753 = "Next review date is below year 1753";
+  public static final String ASSESSMENT_IS_DUPLICATE = "This assessment already exists: %s";
+
   Function<AssessmentXLS, String> getPhNumber = AssessmentXLS::getPublicHealthNumber;
   Function<AssessmentXLS, String> getGdcNumber = AssessmentXLS::getGdcNumber;
   Function<AssessmentXLS, String> getGmcNumber = AssessmentXLS::getGmcNumber;
@@ -117,6 +119,27 @@ public class AssessmentTransformerService {
       Function<DTO, Long> getId) {
     return regNumberMap.isEmpty() ? null
         : pbdDtoFetcher.findWithKeys(idExtractingFetcher.extractIds(regNumberMap, getId));
+  }
+
+  /**
+   * Checks for existing assessments that are duplicates of the assessment in the DTO.
+   *
+   * @param assessmentDTO the assessment to check
+   * @return String message listing duplicate assessment id's or an empty string if no duplicates
+   */
+  String getAnyDuplicateAssessmentsMessage(AssessmentDTO assessmentDTO) {
+    List<AssessmentListDTO> duplicateAssessments = assessmentServiceImpl.findAssessments(
+            assessmentDTO.getTraineeId(),
+            assessmentDTO.getProgrammeMembershipId(),
+            assessmentDTO.getReviewDate(),
+            (assessmentDTO.getOutcome() == null ? null : assessmentDTO.getOutcome().getOutcome()));
+    if (!duplicateAssessments.isEmpty()) {
+      return String.format(ASSESSMENT_IS_DUPLICATE, duplicateAssessments
+                      .stream()
+                      .map(d -> d.getId().toString())
+                      .collect(Collectors.joining(",")));
+    }
+    return ""; //no duplicates
   }
 
   void processAssessmentsUpload(List<AssessmentXLS> assessmentXLSList) {
@@ -405,6 +428,11 @@ public class AssessmentTransformerService {
 
       }
       assessmentDTO.setOutcome(assessmentOutcomeDTO);
+
+      String duplicateAssessments = getAnyDuplicateAssessmentsMessage(assessmentDTO);
+      if (!duplicateAssessments.isEmpty()) {
+        assessmentXLS.addErrorMessage(duplicateAssessments);
+      }
 
       //Revalidation
       RevalidationDTO revalidationDTO = new RevalidationDTO();
