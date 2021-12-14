@@ -53,8 +53,8 @@ import org.springframework.util.StringUtils;
 @Component
 public class AssessmentTransformerService {
 
-  private static final String SEMI_COLON = ";";
-  private static final String GIVEN_ASSESSMENT_REASON_NOT_FOUND = "Given Assessment reason not found";
+  public static final String SEMI_COLON = ";";
+  public static final String GIVEN_ASSESSMENT_REASON_NOT_FOUND = "Given Assessment reason not found";
   private static final Logger logger = getLogger(AssessmentTransformerService.class);
   private static final String AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON = "At least one of the 3 registration numbers should be provided to identify a person";
   private static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
