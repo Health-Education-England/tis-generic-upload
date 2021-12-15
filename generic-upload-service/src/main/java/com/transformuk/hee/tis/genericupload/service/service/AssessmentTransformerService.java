@@ -60,7 +60,7 @@ public class AssessmentTransformerService {
   private static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
   private static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER = "Did not find a person for registration number : ";
   private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
-  private static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : %s";
+  protected static final String EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR = "Expected to find a single grade for : %s";
   private static final String PROGRAMME_NAME_NOT_SPECIFIED = "Programme name (%s) has not been specified. Both programme name and number are needed to identify the programme";
   private static final String PROGRAMME_NUMBER_NOT_SPECIFIED = "Programme number (%s) has not been specified. Both programme name and number are needed to identify the programme";
   private static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED = "At least one of the three registration numbers needs to be specified";
@@ -538,8 +538,8 @@ public class AssessmentTransformerService {
         assessmentXLSList.stream().filter(
             assessmentXLS -> {
               String nextRotationGradeName = assessmentXLS.getNextRotationGradeName();
-              return nextRotationGradeName != null &&
-                  StringUtils.equalsIgnoreCase(nextRotationGradeName, gradeName);
+              return nextRotationGradeName != null
+                  && StringUtils.equalsIgnoreCase(nextRotationGradeName, gradeName);
             })
             .forEach(xls -> {
               logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
