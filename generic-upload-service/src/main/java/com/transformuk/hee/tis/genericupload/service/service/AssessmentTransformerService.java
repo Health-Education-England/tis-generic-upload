@@ -43,12 +43,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 @Component
 public class AssessmentTransformerService {
@@ -197,7 +197,7 @@ public class AssessmentTransformerService {
     String jsonAllOutcome = assessmentServiceImpl.getAllOutcomes();
     logger.info("Outcome string: {}", jsonAllOutcome);
     try {
-      if (!StringUtils.isEmpty(allOutcomes)) {
+      if (StringUtils.isNotEmpty(jsonAllOutcome)) {
         allOutcomes = objectMapper.readValue(jsonAllOutcome, new TypeReference<Set<Outcome>>() {
         });
       }
@@ -526,8 +526,8 @@ public class AssessmentTransformerService {
   //TODO optimise these to be Fetcher like
   private Map<String, GradeDTO> getGradeDTOMap(List<AssessmentXLS> assessmentXLSList) {
     Set<String> gradeNames = assessmentXLSList.stream()
-        .filter(assessmentXLS -> !StringUtils.isEmpty(assessmentXLS.getNextRotationGradeName()))
         .map(AssessmentXLS::getNextRotationGradeName)
+        .filter(StringUtils::isNotEmpty)
         .collect(Collectors.toSet());
     Map<String, GradeDTO> gradeMapByName = new HashMap<>();
     for (String gradeName : gradeNames) {
@@ -536,7 +536,11 @@ public class AssessmentTransformerService {
         gradeMapByName.put(gradeName, gradesByName.get(0));
       } else {
         assessmentXLSList.stream().filter(
-            assessmentXLS -> assessmentXLS.getNextRotationGradeName().equalsIgnoreCase(gradeName))
+            assessmentXLS -> {
+              String nextRotationGradeName = assessmentXLS.getNextRotationGradeName();
+              return nextRotationGradeName != null &&
+                  StringUtils.equalsIgnoreCase(nextRotationGradeName, gradeName);
+            })
             .forEach(xls -> {
               logger.error(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
               xls.addErrorMessage(String.format(EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR, gradeName));
@@ -545,7 +549,6 @@ public class AssessmentTransformerService {
     }
     return gradeMapByName;
   }
-
 
   private Set<String> collectRegNumbersForAssessments(List<AssessmentXLS> assessmentXLS,
       Function<AssessmentXLS, String> extractRegistrationNumber) {
