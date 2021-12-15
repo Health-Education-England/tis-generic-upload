@@ -133,6 +133,14 @@ public class AssessmentTransformerService {
             assessmentDTO.getProgrammeMembershipId(),
             assessmentDTO.getReviewDate(),
             (assessmentDTO.getOutcome() == null ? null : assessmentDTO.getOutcome().getOutcome()));
+    //now consider a possible null outcome value that is ignored by findAssessments()
+    //giving false-positives that must be filtered out
+    if (assessmentDTO.getOutcome() == null || assessmentDTO.getOutcome().getOutcome() == null) {
+      duplicateAssessments = duplicateAssessments.stream()
+              .filter(d -> d.getOutcome() == null)
+              .collect(Collectors.toList());
+    }
+
     if (!duplicateAssessments.isEmpty()) {
       return String.format(ASSESSMENT_IS_DUPLICATE, duplicateAssessments
                       .stream()
