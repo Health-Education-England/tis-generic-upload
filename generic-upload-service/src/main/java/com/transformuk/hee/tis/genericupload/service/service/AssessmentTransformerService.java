@@ -33,7 +33,6 @@ import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipCurriculaDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -129,14 +128,13 @@ public class AssessmentTransformerService {
    * @return String message listing duplicate assessment id's or an empty string if no duplicates
    */
   String getAnyDuplicateAssessmentsMessage(AssessmentDTO assessmentDTO) {
-    List<AssessmentListDTO> similarAssessments = assessmentServiceImpl.findAssessments(
+    List<AssessmentListDTO> duplicateAssessments = assessmentServiceImpl.findAssessments(
             assessmentDTO.getTraineeId(),
             assessmentDTO.getProgrammeMembershipId(),
             assessmentDTO.getReviewDate(),
             (assessmentDTO.getOutcome() == null ? null : assessmentDTO.getOutcome().getOutcome()));
     //now consider a possible null outcome value that is ignored by findAssessments()
     //giving false-positives that must be filtered out
-    List<AssessmentListDTO> duplicateAssessments = new ArrayList<>(similarAssessments);
     if (assessmentDTO.getOutcome() == null || assessmentDTO.getOutcome().getOutcome() == null) {
       duplicateAssessments = duplicateAssessments.stream()
               .filter(d -> d.getOutcome() == null)
