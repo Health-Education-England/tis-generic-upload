@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
@@ -23,6 +24,7 @@ import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -39,47 +41,21 @@ public class AssessmentTransformerServiceTest {
     @Mock
     private AssessmentServiceImpl assessmentServiceMock;
 
-    @Test
-    public void testGetAnyDuplicateAssessmentsMessage_duplicate() {
-        Long duplicateAssessmentId = 1L;
-        AssessmentDTO assessmentDTO = new AssessmentDTO();
+    private static final Long duplicateAssessmentIdNullOutcome = 1L;
+    private static final Long duplicateAssessmentIdRealOutcome = 2L;
+    private static final String lastName = "last name";
+    private static final String programmeName = "programme name";
+    private static final String programmeNumber = "programme number";
+    private static final String curriculumName = "curriculum name";
+    private static final String gmcNumber = "gmc number";
+    private static final String assessmentType = "assessment type";
+    private static final String realOutcome = "1";
 
-        AssessmentListDTO assessmentListDTO = new AssessmentListDTO();
-        assessmentListDTO.setId(duplicateAssessmentId);
-        List<AssessmentListDTO> duplicateAssessments = Lists.newArrayList(assessmentListDTO);
-
-        when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
-                .thenReturn(duplicateAssessments);
-
-        String duplicateAssessmentsMessage = assessmentTransformerService
-                .getAnyDuplicateAssessmentsMessage(assessmentDTO);
-
-        assertThat("Should get duplicate message", duplicateAssessmentsMessage,
-                is(String.format(AssessmentTransformerService.ASSESSMENT_IS_DUPLICATE,
-                        duplicateAssessmentId)));
-    }
-    @Test
-    public void testGetAnyDuplicateAssessmentsMessage_noDuplicate() {
-        AssessmentDTO assessmentDTO = new AssessmentDTO();
-        List<AssessmentListDTO> duplicateAssessments = Collections.emptyList();
-
-        when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
-                .thenReturn(duplicateAssessments);
-
-        String duplicateAssessmentsMessage = assessmentTransformerService
-                .getAnyDuplicateAssessmentsMessage(assessmentDTO);
-
-        assertThat("Should not get duplicate message", duplicateAssessmentsMessage,
-                is(""));
-    }
-
-    @Test
-    public void testProcessAssessments_duplicate() {
-        //this is a very fragile unit test, and should be entirely rewritten when
+    @Before
+    public void setUp() {
+        //this is a very fragile unit test setup, and should be entirely rewritten when
         //the AssessmentTransformerService is refactored
-        Long duplicateAssessmentId = 1L;
         Long traineeId = 1L;
-        String lastName = "last name";
         Long programmeMembershipId = 1L;
         Long programmeMembershipCurriculumId = 1L;
 
@@ -89,7 +65,6 @@ public class AssessmentTransformerServiceTest {
         String programmeNumber = "programme number";
         String curriculumName = "curriculum name";
         String gmcNumber = "gmc number";
-        String assessmentType = "assessment type";
 
         SpecialtyDTO specialtyDTO = new SpecialtyDTO();
         specialtyDTO.setId(1L);
@@ -134,18 +109,16 @@ public class AssessmentTransformerServiceTest {
 
         List<String> publicHealthNumberList = Lists.newArrayList(gmcNumber);
 
-        AssessmentXLS xls1 = new AssessmentXLS();
-        xls1.setSurname(lastName);
-        xls1.setProgrammeName(programmeName);
-        xls1.setProgrammeNumber(programmeNumber);
-        xls1.setCurriculumName(curriculumName);
-        xls1.setGmcNumber(gmcNumber);
-        xls1.setType(assessmentType);
-        List<AssessmentXLS> xlsList = Lists.newArrayList(xls1);
-
-        AssessmentListDTO assessmentListDTO = new AssessmentListDTO();
-        assessmentListDTO.setId(duplicateAssessmentId);
-        List<AssessmentListDTO> duplicateAssessments = Lists.newArrayList(assessmentListDTO);
+        AssessmentListDTO nullOutcomeAssessmentListDTO = new AssessmentListDTO();
+        nullOutcomeAssessmentListDTO.setId(duplicateAssessmentIdNullOutcome);
+        nullOutcomeAssessmentListDTO.setOutcome(null);
+        AssessmentListDTO realOutcomeAssessmentListDTO = new AssessmentListDTO();
+        realOutcomeAssessmentListDTO.setId(duplicateAssessmentIdRealOutcome);
+        realOutcomeAssessmentListDTO.setOutcome(realOutcome);
+        List<AssessmentListDTO> duplicateAssessmentsAnyOutcome =
+                Lists.newArrayList(nullOutcomeAssessmentListDTO, realOutcomeAssessmentListDTO);
+        List<AssessmentListDTO> duplicateAssessmentsSpecificOutcome =
+                Lists.newArrayList(realOutcomeAssessmentListDTO);
 
         when(tcsServiceMock.getProgrammeMembershipForTrainee(traineeId))
                 .thenReturn(pmcList);
@@ -164,15 +137,83 @@ public class AssessmentTransformerServiceTest {
                 .thenReturn(personBasicDetailsDTOList);
         when(tcsServiceMock.getProgrammeMembershipForTrainee(any()))
                 .thenReturn(pmcList);
+        when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
+                .thenReturn(duplicateAssessmentsAnyOutcome);
+        when(assessmentServiceMock.findAssessments(any(), any(), any(), notNull(String.class)))
+                .thenReturn(duplicateAssessmentsSpecificOutcome);
+    }
+
+    @Test
+    public void testGetAnyDuplicateAssessmentsMessage_duplicate() {
+        Long duplicateAssessmentId = 1L;
+        AssessmentDTO assessmentDTO = new AssessmentDTO();
+
+        AssessmentListDTO assessmentListDTO = new AssessmentListDTO();
+        assessmentListDTO.setId(duplicateAssessmentId);
+        List<AssessmentListDTO> duplicateAssessments = Lists.newArrayList(assessmentListDTO);
 
         when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
                 .thenReturn(duplicateAssessments);
+
+        String duplicateAssessmentsMessage = assessmentTransformerService
+                .getAnyDuplicateAssessmentsMessage(assessmentDTO);
+
+        assertThat("Should get duplicate message", duplicateAssessmentsMessage,
+                is(String.format(AssessmentTransformerService.ASSESSMENT_IS_DUPLICATE,
+                        duplicateAssessmentId)));
+    }
+    @Test
+    public void testGetAnyDuplicateAssessmentsMessage_noDuplicate() {
+        AssessmentDTO assessmentDTO = new AssessmentDTO();
+        List<AssessmentListDTO> duplicateAssessments = Collections.emptyList();
+
+        when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
+                .thenReturn(duplicateAssessments);
+
+        String duplicateAssessmentsMessage = assessmentTransformerService
+                .getAnyDuplicateAssessmentsMessage(assessmentDTO);
+
+        assertThat("Should not get duplicate message", duplicateAssessmentsMessage,
+                is(""));
+    }
+
+    @Test
+    public void testProcessAssessments_duplicateNullOutcome() {
+        AssessmentXLS xls1 = new AssessmentXLS();
+        xls1.setSurname(lastName);
+        xls1.setProgrammeName(programmeName);
+        xls1.setProgrammeNumber(programmeNumber);
+        xls1.setCurriculumName(curriculumName);
+        xls1.setGmcNumber(gmcNumber);
+        xls1.setType(assessmentType);
+        List<AssessmentXLS> xlsList = Lists.newArrayList(xls1);
 
         assessmentTransformerService.initialiseFetchers();
         assessmentTransformerService.processAssessmentsUpload(xlsList);
 
         assertThat("Should get error", xlsList.get(0).getErrorMessage(),
                 is(String.format(AssessmentTransformerService.ASSESSMENT_IS_DUPLICATE,
-                        duplicateAssessmentId)));
+                        duplicateAssessmentIdNullOutcome)));
     }
+
+    @Test
+    public void testProcessAssessments_duplicateRealOutcome() {
+        AssessmentXLS xls1 = new AssessmentXLS();
+        xls1.setSurname(lastName);
+        xls1.setProgrammeName(programmeName);
+        xls1.setProgrammeNumber(programmeNumber);
+        xls1.setCurriculumName(curriculumName);
+        xls1.setGmcNumber(gmcNumber);
+        xls1.setType(assessmentType);
+        xls1.setOutcome(realOutcome);
+        List<AssessmentXLS> xlsList = Lists.newArrayList(xls1);
+
+        assessmentTransformerService.initialiseFetchers();
+        assessmentTransformerService.processAssessmentsUpload(xlsList);
+
+        assertThat("Should get error", xlsList.get(0).getErrorMessage(),
+                is(String.format(AssessmentTransformerService.ASSESSMENT_IS_DUPLICATE,
+                        duplicateAssessmentIdRealOutcome)));
+    }
+
 }
