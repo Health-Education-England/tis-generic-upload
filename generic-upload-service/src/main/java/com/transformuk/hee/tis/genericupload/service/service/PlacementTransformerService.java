@@ -321,6 +321,7 @@ public class PlacementTransformerService {
       }
       if (placementsByPostIdAndPersonId.isEmpty() || !existingPlacementUpdatedOrDeleted) {
         PlacementDetailsDTO placementDTO = new PlacementDetailsDTO();
+        placementDTO.setNationalPostNumber(postDTO.getNationalPostNumber());
         placementDTO.setTraineeId(personBasicDetailsDTO.getId());
         placementDTO.setPostId(postDTO.getId());
         placementDTO.setDateFrom(dateFrom);

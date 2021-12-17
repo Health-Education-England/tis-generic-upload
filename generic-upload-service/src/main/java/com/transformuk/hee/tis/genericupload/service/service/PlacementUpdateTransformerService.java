@@ -120,6 +120,7 @@ public class PlacementUpdateTransformerService {
         PostDTO postDTO = null;
         if (placementXLS.getNationalPostNumber() != null) {
           if (isNPNValid(placementXLS, nationalPostNumber, postsMappedByNPNs, duplicateNPNKeys)) {
+            dbPlacementDetailsDTO.setNationalPostNumber(nationalPostNumber);
             postDTO = postsMappedByNPNs.get(nationalPostNumber);
             if (postDTO != null) {
               if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
