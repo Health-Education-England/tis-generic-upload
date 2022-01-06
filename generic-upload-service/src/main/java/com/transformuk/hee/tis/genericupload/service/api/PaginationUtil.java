@@ -11,7 +11,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * Pagination uses the same principles as the <a href="https://developer.github.com/v3/#pagination">Github
  * API</a>, and follow <a href="http://tools.ietf.org/html/rfc5988">RFC 5988 (Link header)</a>.
  */
-//TODO consider moving to shared library as this is duplicated from https://github.com/Health-Education-England/TIS-TCS/blob/master/tcs-service/src/main/java/com/transformuk/hee/tis/tcs/service/api/util/PaginationUtil.java"
+//TODO consider moving to shared library as this is duplicated from https://github.com/Health-Education-England/TIS-TCS/blob/main/tcs-service/src/main/java/com/transformuk/hee/tis/tcs/service/api/util/PaginationUtil.java"
 public final class PaginationUtil {
 
   private PaginationUtil() {

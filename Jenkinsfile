@@ -4,7 +4,7 @@ def utils = new hee.tis.utils()
 
 node {
 
-    if (env.BRANCH_NAME != "master") {
+    if (env.BRANCH_NAME != "main") {
         // PR and branch builds are done by GitHub Actions.
         return
     }
@@ -81,7 +81,7 @@ node {
 
     } finally {
 
-        if (env.BRANCH_NAME == "master") {
+        if (env.BRANCH_NAME == "main") {
 
             milestone 3
 

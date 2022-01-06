@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.Specification;
  * Contains convenience pieces used to build specifications as query building blocks. For more info
  * please {@see https://jverhoelen.github.io/spring-data-queries-jpa-criteria-api/}
  */
-//FIXME - CODE DUPLICATED - https://github.com/Health-Education-England/TIS-REFERENCE/blob/master/reference-service/src/main/java/com/transformuk/hee/tis/reference/service/service/impl/SpecificationFactory.java#L15
+//FIXME - CODE DUPLICATED - https://github.com/Health-Education-England/TIS-REFERENCE/blob/main/reference-service/src/main/java/com/transformuk/hee/tis/reference/service/service/impl/SpecificationFactory.java#L15
 public final class SpecificationFactory {
 
   private static final String DOT = ".";
