@@ -16,7 +16,7 @@ variables have to be set
 
 Get the CLOUD_BLOB_ACCOUNT_KEY from azure. Go to Storage accounts > tisdevstor > Access keys
 
-In other environments, the service uses [additional](https://github.com/Health-Education-England/TIS-DEVOPS/blob/master/ansible/roles/docker-compose/templates/generic-upload/docker-compose.yml#L23-#L47) environment variables to control configuration such as databases and ports, beyond the scope of this document.
+In other environments, the service uses [additional](https://github.com/Health-Education-England/TIS-DEVOPS/blob/main/ansible/roles/docker-compose/templates/generic-upload/docker-compose.yml#L23-#L47) environment variables to control configuration such as databases and ports, beyond the scope of this document.
 
 These environment can either be set on the OS shell using the export command (UNIX), then run the service using
 
@@ -63,25 +63,25 @@ Refer to [confluence](https://hee-tis.atlassian.net/wiki/spaces/TISDEV/pages/427
 
 **Convert data from excel to a bean**
 
-[ExcelToObjectMapper](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/master/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/parser/ExcelToObjectMapper.java) This 
-class is the first step of the conversion from tabular/excel data, from a [template](https://hee-tis.atlassian.net/wiki/spaces/TISDEV/pages/532709384/TIS+Bulk+Upload+Templates), to a [bean](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/master/generic-upload-api/src/main/java/com/transformuk/hee/tis/genericupload/api/dto/PersonXLS.java) using a [mapper](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/master/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/parser/PersonHeaderMapper.java) which takes the name from the header on the template and loads the data to a fieldname on the bean
+[ExcelToObjectMapper](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/main/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/parser/ExcelToObjectMapper.java) This 
+class is the first step of the conversion from tabular/excel data, from a [template](https://hee-tis.atlassian.net/wiki/spaces/TISDEV/pages/532709384/TIS+Bulk+Upload+Templates), to a [bean](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/main/generic-upload-api/src/main/java/com/transformuk/hee/tis/genericupload/api/dto/PersonXLS.java) using a [mapper](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/main/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/parser/PersonHeaderMapper.java) which takes the name from the header on the template and loads the data to a fieldname on the bean
 
 Key features to highlight of the class
 * extra columns and column ordering are ignored 
 * mandatory columns are specified with an asterisk against the header
 
-Non-input fields (not on the circulated excel template) used to report on success/errors are stored in a [super class](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/master/generic-upload-api/src/main/java/com/transformuk/hee/tis/genericupload/api/dto/TemplateXLS.java) and have a role in [reporting](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/7b2332ce235251f0937145328eb69b4bbb2df10f/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/service/ScheduledUploadTask.java#L134-L156)
+Non-input fields (not on the circulated excel template) used to report on success/errors are stored in a [super class](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/main/generic-upload-api/src/main/java/com/transformuk/hee/tis/genericupload/api/dto/TemplateXLS.java) and have a role in [reporting](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/7b2332ce235251f0937145328eb69b4bbb2df10f/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/service/ScheduledUploadTask.java#L134-L156)
 
 **Transforming to and uploading DTO data**
 
 The transformation of data happens in the Service classes, [PersonTransformerService](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/363828cb316bc0f3ff0f7a4e282f62e20f21d7f1/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/service/PersonTransformerService.java) for example. At the time of writing, two other Service classes PlacementTransformerService and PlacementDeleteService are also used to bulk upload & delete placement data respectively. 
 
-The [FETCHER](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/master/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/service/fetcher/DTOFetcher.java) 
+The [FETCHER](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/main/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/service/fetcher/DTOFetcher.java) 
 class allows bulk DTOs to be fetched. Refer to previous versions of the class to see simplified versions of the code, and the code it replaced prior to the refactor. Given a field like GMC number, extending classes such as GDCDTOFetcher, retrieve DTOs in batches. For example, given an excel sheet with 1000's of GMC rows, the class will break it up into chunks of 32 ([supposedly efficient](https://www.techempower.com/blog/2016/10/19/efficient-multiple-stream-concatenation-in-java/) for a flat-map reduce), and query using the TCS [client](https://github.com/Health-Education-England/TIS-TCS/blob/c4e46d9475dbc1b07337c205e00870988ab0225c/tcs-client/src/main/java/com/transformuk/hee/tis/tcs/client/service/impl/TcsServiceImpl.java#L340-L345), the GMC details. Batching vastly decreases the number of REST calls. The retrieved data set is stored in a map (lookup) class and the ID function determines what field to use for the Key.
 
 **Frontend API**
 
-The [api](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/master/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/api/UploadFileResource.java) to generic upload consists of endpoints to upload a file and query the results of uploaded files. 
+The [api](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/main/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/api/UploadFileResource.java) to generic upload consists of endpoints to upload a file and query the results of uploaded files. 
 
 Results from the upload are stored in the database. In the case of errors, the original file is retrieved from Azure and successful lines are removed from the uploaded template. An additional column, displaying errors encountered during an upload for each line not uploaded, is added to the file. The workflow assumed is that a user would download the file with errors reported and reupload after fixing the errors.
 
