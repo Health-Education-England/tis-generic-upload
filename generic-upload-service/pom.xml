@@ -96,7 +96,7 @@
     <dependency>
       <groupId>org.modelmapper</groupId>
       <artifactId>modelmapper</artifactId>
-      <version>0.7.5</version>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.transformuk.hee</groupId>
@@ -275,7 +275,7 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
-      <version>4.0.3</version>
+      <version>8.4.0</version>
     </dependency>
     <dependency>
       <groupId>com.jayway.jsonpath</groupId>
