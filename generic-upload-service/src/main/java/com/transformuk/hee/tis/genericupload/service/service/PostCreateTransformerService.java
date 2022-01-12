@@ -17,6 +17,7 @@ import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
+import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -276,6 +277,13 @@ public class PostCreateTransformerService {
 
     if (cachedDto != null && cachedDto.getStatus()
         .equals(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT)) {
+      if (PostSpecialtyType.SUB_SPECIALTY.equals(type) &&
+          cachedDto.getSpecialtyTypes() != null &&
+          !cachedDto.getSpecialtyTypes().contains(SpecialtyType.SUB_SPECIALTY)) {
+        validationError(String.format("Current specialty of type SUB_SPECIALTY not found with the "
+            + "name '%s'.", name));
+        return;
+      }
       dtos.add(new PostSpecialtyDTO(null, cachedDto, type));
     } else {
       validationError(String.format("Current specialty not found with the name '%s'.", name));
