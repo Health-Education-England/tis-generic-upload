@@ -12,7 +12,7 @@
 
   <groupId>com.transformuk.hee.tis</groupId>
   <artifactId>generic-upload-service</artifactId>
-  <version>1.18.3</version>
+  <version>1.18.4</version>
 
   <packaging>war</packaging>
 
@@ -101,7 +101,7 @@
     <dependency>
       <groupId>com.transformuk.hee</groupId>
       <artifactId>tis-parent-client</artifactId>
-      <version>4.0.1</version>
+      <version>5.1.4</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
