@@ -92,7 +92,7 @@ public class PostUpdateTransformerService {
           postUpdateXLS.addErrorMessage(String.format(DID_NOT_FIND_POST_FOR_ID, postTISId));
         }
       } catch (ResourceAccessException e) {
-        postUpdateXLS.addErrorMessage(String.format(DID_NOT_FIND_POST_FOR_ID, postTISId));
+        new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(postUpdateXLS, e);
       }
     }
   }
