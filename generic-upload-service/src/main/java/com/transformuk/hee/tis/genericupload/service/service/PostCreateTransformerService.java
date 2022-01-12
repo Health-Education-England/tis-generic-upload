@@ -278,6 +278,7 @@ public class PostCreateTransformerService {
     if (cachedDto != null && cachedDto.getStatus()
         .equals(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT)) {
       if (PostSpecialtyType.SUB_SPECIALTY.equals(type) &&
+          cachedDto.getSpecialtyTypes() != null &&
           !cachedDto.getSpecialtyTypes().contains(SpecialtyType.SUB_SPECIALTY)) {
         validationError(String.format("Current specialty of type SUB_SPECIALTY not found with the "
             + "name '%s'.", name));
