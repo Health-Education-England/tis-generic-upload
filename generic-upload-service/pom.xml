@@ -143,13 +143,8 @@
     </dependency>
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
-      <artifactId>assessments-api</artifactId>
-      <version>1.5.3</version>
-    </dependency>
-    <dependency>
-      <groupId>com.transformuk.hee.tis</groupId>
       <artifactId>assessments-client</artifactId>
-      <version>1.2.1</version>
+      <version>1.2.3</version>
     </dependency>
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
