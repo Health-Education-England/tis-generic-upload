@@ -244,8 +244,10 @@ public class PostCreateTransformerService {
     Multimap<PostSpecialtyType, String> specialtiesToCache = ArrayListMultimap.create();
 
     specialtiesToCache.put(PostSpecialtyType.PRIMARY, xls.getSpecialty());
-    subSpecialties.forEach(subSpecialty -> specialtiesToCache.put(PostSpecialtyType.SUB_SPECIALTY, subSpecialty));
-    otherSpecialties.forEach(otherSpecialty -> specialtiesToCache.put(PostSpecialtyType.OTHER, otherSpecialty));
+    subSpecialties.forEach(
+        subSpecialty -> specialtiesToCache.put(PostSpecialtyType.SUB_SPECIALTY, subSpecialty));
+    otherSpecialties
+        .forEach(otherSpecialty -> specialtiesToCache.put(PostSpecialtyType.OTHER, otherSpecialty));
     updateSpecialtyCache(specialtiesToCache);
 
     Set<PostSpecialtyDTO> builtDtos = new HashSet<>();
@@ -273,10 +275,11 @@ public class PostCreateTransformerService {
 
     if (!specialtiesToFind.isEmpty()) {
       specialtiesToFind.keySet().forEach(postSpecialtyType -> {
-        Collection<String> specialtiesToFindAccordingToType = specialtiesToFind.get(postSpecialtyType);
+        Collection<String> specialtiesToFindAccordingToType = specialtiesToFind
+            .get(postSpecialtyType);
         String joinedNamesToFind = StringUtils.join(specialtiesToFindAccordingToType, "\",\"");
-        List<SpecialtyDTO> specialties = postSpecialtyType.equals(PostSpecialtyType.SUB_SPECIALTY) ?
-            tcsService.getSpecialtyByName(joinedNamesToFind, SpecialtyType.SUB_SPECIALTY) :
+        List<SpecialtyDTO> specialties = postSpecialtyType.equals(PostSpecialtyType.SUB_SPECIALTY)
+            ? tcsService.getSpecialtyByName(joinedNamesToFind, SpecialtyType.SUB_SPECIALTY) :
             tcsService.getSpecialtyByName(joinedNamesToFind);
         if (specialties.isEmpty() && PostSpecialtyType.SUB_SPECIALTY.equals(postSpecialtyType)) {
           validationError(String.format("One of the following Sub specialties is not a CURRENT "
