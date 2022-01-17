@@ -1,5 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
@@ -21,6 +23,7 @@ import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -238,11 +241,12 @@ public class PostCreateTransformerService {
     List<String> otherSpecialties = splitMultiValueField(xls.getOtherSpecialties());
 
     // Update the cache with any new names.
-    Set<String> namesToCache = new HashSet<>();
-    namesToCache.add(xls.getSpecialty());
-    namesToCache.addAll(subSpecialties);
-    namesToCache.addAll(otherSpecialties);
-    updateSpecialtyCache(namesToCache);
+    Multimap<PostSpecialtyType, String> specialtiesToCache = ArrayListMultimap.create();
+
+    specialtiesToCache.put(PostSpecialtyType.PRIMARY, xls.getSpecialty());
+    subSpecialties.forEach(subSpecialty -> specialtiesToCache.put(PostSpecialtyType.SUB_SPECIALTY, subSpecialty));
+    otherSpecialties.forEach(otherSpecialty -> specialtiesToCache.put(PostSpecialtyType.OTHER, otherSpecialty));
+    updateSpecialtyCache(specialtiesToCache);
 
     Set<PostSpecialtyDTO> builtDtos = new HashSet<>();
     addPostSpecialty(xls.getSpecialty(), PostSpecialtyType.PRIMARY, builtDtos);
@@ -258,17 +262,28 @@ public class PostCreateTransformerService {
     return builtDtos;
   }
 
-  private void updateSpecialtyCache(Set<String> names) {
-    Set<String> namesToFind = names.stream().filter(name -> !specialtyNameToDto.containsKey(name))
-        .collect(Collectors.toSet());
+  private void updateSpecialtyCache(Multimap<PostSpecialtyType, String> specialtiesToCache) {
+    Multimap<PostSpecialtyType, String> specialtiesToFind = ArrayListMultimap.create();
 
-    if (!namesToFind.isEmpty()) {
-      String joinedNames = StringUtils.join(namesToFind, "\",\"");
-      List<SpecialtyDTO> dtos = tcsService.getSpecialtyByName(joinedNames);
-
-      for (SpecialtyDTO dto : dtos) {
-        specialtyNameToDto.put(dto.getName(), dto);
+    specialtiesToCache.forEach((postSpecialtyType, specialtyName) -> {
+      if (!specialtyNameToDto.containsKey(specialtyName)) {
+        specialtiesToFind.put(postSpecialtyType, specialtyName);
       }
+    });
+
+    if (!specialtiesToFind.isEmpty()) {
+      specialtiesToFind.keySet().forEach(postSpecialtyType -> {
+        Collection<String> specialtiesToFindAccordingToType = specialtiesToFind.get(postSpecialtyType);
+        String joinedNamesToFind = StringUtils.join(specialtiesToFindAccordingToType, "\",\"");
+        List<SpecialtyDTO> specialties = postSpecialtyType.equals(PostSpecialtyType.SUB_SPECIALTY) ?
+            tcsService.getSpecialtyByName(joinedNamesToFind, SpecialtyType.SUB_SPECIALTY) :
+            tcsService.getSpecialtyByName(joinedNamesToFind);
+        if (specialties.isEmpty() && PostSpecialtyType.SUB_SPECIALTY.equals(postSpecialtyType)) {
+          validationError(String.format("One of the following Sub specialties is not a CURRENT "
+              + "specialty of type SUB_SPECIALTY: '%s'.", joinedNamesToFind));
+        }
+        specialties.forEach(specialty -> specialtyNameToDto.put(specialty.getName(), specialty));
+      });
     }
   }
 
@@ -277,13 +292,6 @@ public class PostCreateTransformerService {
 
     if (cachedDto != null && cachedDto.getStatus()
         .equals(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT)) {
-      if (PostSpecialtyType.SUB_SPECIALTY.equals(type) &&
-          cachedDto.getSpecialtyTypes() != null &&
-          !cachedDto.getSpecialtyTypes().contains(SpecialtyType.SUB_SPECIALTY)) {
-        validationError(String.format("Current specialty of type SUB_SPECIALTY not found with the "
-            + "name '%s'.", name));
-        return;
-      }
       dtos.add(new PostSpecialtyDTO(null, cachedDto, type));
     } else {
       validationError(String.format("Current specialty not found with the name '%s'.", name));
