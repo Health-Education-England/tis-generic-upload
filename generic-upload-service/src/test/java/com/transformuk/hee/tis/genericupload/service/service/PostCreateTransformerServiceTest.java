@@ -23,9 +23,12 @@ import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
+import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Before;
@@ -251,13 +254,10 @@ public class PostCreateTransformerServiceTest {
     SpecialtyDTO specialty3 = new SpecialtyDTO();
     specialty3.setName("specialty3");
     specialty3.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
-    SpecialtyDTO specialty5 = new SpecialtyDTO();
-    specialty5.setName("specialty5");
-    specialty5.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
 
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
     when(tcsService.getSpecialtyByName(any()))
-        .thenReturn(Arrays.asList(specialty1, specialty2, specialty3, specialty5));
+        .thenReturn(Arrays.asList(specialty1, specialty2, specialty3));
 
     // When.
     service.processUpload(Arrays.asList(xls1, xls2, xls3));
@@ -272,8 +272,56 @@ public class PostCreateTransformerServiceTest {
     assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
         is(false));
     assertThat("The error did not match the expected value.", xls3.getErrorMessage(),
-        is("Current specialty not found with the name 'specialty6'."));
+        is("One of the following Sub specialties is not a CURRENT specialty of type SUB_SPECIALTY: 'specialty5\",\"specialty6'."));
     assertThat("The success flag did not match the expected value.", xls3.isSuccessfullyImported(),
+        is(false));
+  }
+
+  @Test
+  public void shouldFailValidationWhenTryingToUseSpecialtyNotOfTypeSubspecialtyAsPostSubSpecialty() {
+    // Given.
+
+    // Should be uploaded successfully
+    SpecialtyDTO specialty3 = new SpecialtyDTO();
+    specialty3.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
+    specialty3.setName("specialty3");
+    specialty3.setSpecialtyTypes(new HashSet<>(Collections.singletonList(SpecialtyType.SUB_SPECIALTY)));
+    xls1.setSubSpecialties("specialty3");
+
+    // Should not be uploaded and have error
+    SpecialtyDTO specialty4 = new SpecialtyDTO();
+    specialty4.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
+    specialty4.setName("specialty4");
+    specialty4.setSpecialtyTypes(new HashSet<>(Collections.singletonList(SpecialtyType.PLACEMENT)));
+    xls2.setSubSpecialties("specialty4");
+
+    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(tcsService.getSpecialtyByName("specialty1")).thenReturn(Arrays.asList(specialty1));
+    when(tcsService.getSpecialtyByName("specialty2")).thenReturn(Arrays.asList(specialty2));
+
+    when(tcsService.getSpecialtyByName("specialty3", SpecialtyType.SUB_SPECIALTY))
+        .thenReturn(Arrays.asList(specialty3));
+    when(tcsService.getSpecialtyByName("specialty4", SpecialtyType.SUB_SPECIALTY))
+        .thenReturn(new ArrayList<>());
+
+    // When.
+    service.processUpload(Arrays.asList(xls1, xls2));
+
+    // Then.
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is(nullValue()));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(true));
+    assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
+        is("One of the following Sub specialties is not a CURRENT specialty of type "
+            + "SUB_SPECIALTY: 'specialty4'."));
+    assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
         is(false));
   }
 
@@ -492,8 +540,9 @@ public class PostCreateTransformerServiceTest {
     post1.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
 
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any()))
-        .thenReturn(Arrays.asList(specialty1, specialty2, specialty3));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty3));
+    when(tcsService.getSpecialtyByName("specialty2", SpecialtyType.SUB_SPECIALTY))
+        .thenReturn(Arrays.asList(specialty2));
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
         .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
