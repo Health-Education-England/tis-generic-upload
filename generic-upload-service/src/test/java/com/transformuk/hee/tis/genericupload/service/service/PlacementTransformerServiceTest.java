@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.MULTI_VALUE_SEPARATOR;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
@@ -282,6 +283,26 @@ public class PlacementTransformerServiceTest {
     assertThat(placementXLS.getErrorMessage()).contains(FOUND_MULTIPLE_OTHER_SITES_FOR_NAME);
   }
 
+  @Test
+  public void shouldAcceptMultipleOtherSites() {
+    String mockedSite1 = "mockedSite1";
+    String mockedSite2 = "mockedSite2";
+    placementXLS.setOtherSites(mockedSite1 + MULTI_VALUE_SEPARATOR + mockedSite2);
+
+    SiteDTO siteDto1 = createSiteDTO(1L, mockedSite1,
+        com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    SiteDTO siteDto2 = createSiteDTO(2L, mockedSite2,
+        com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    addSitesList(siteByName, siteDto1);
+    addSitesList(siteByName, siteDto2);
+    postDTO.getSites().add(new PostSiteDTO(1L, 2L, PostSiteType.OTHER));
+
+    placementTransformerService.setOtherSites(placementXLS, placementDTO,
+        PlacementTransformerServiceTest::getSitesForString, postDTO);
+
+    assertThat(placementXLS.getErrorMessage()).isNull();
+    assertThat(placementDTO.getSites().size()).isEqualTo(2);
+  }
 
   @Test
   public void shouldAddErrorWithInvalidPlacementGrade() {
