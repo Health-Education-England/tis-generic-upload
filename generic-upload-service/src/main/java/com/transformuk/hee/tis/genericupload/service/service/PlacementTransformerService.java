@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
+import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.splitMultiValueField;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementSupervisor;
@@ -675,7 +676,7 @@ public class PlacementTransformerService {
     }
     String otherSitesCommaSeperated = placementXLS.getOtherSites();
     if (otherSitesCommaSeperated != null) {
-      String[] otherSites = otherSitesCommaSeperated.split(",");
+      List<String> otherSites = splitMultiValueField(otherSitesCommaSeperated);
       for (String otherSite : otherSites) {
         Optional<PlacementSiteDTO> placementSiteDTOOptional2 = buildPlacementSiteDTO(placementXLS,
             placementDTO, getSiteDTOsForName, otherSite, PlacementSiteType.OTHER, postDTO);

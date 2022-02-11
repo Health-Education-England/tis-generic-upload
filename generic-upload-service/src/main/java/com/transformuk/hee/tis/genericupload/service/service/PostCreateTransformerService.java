@@ -1,5 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.splitMultiValueField;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
@@ -419,17 +421,6 @@ public class PostCreateTransformerService {
         postNpnToDto.put(dto.getNationalPostNumber(), dto);
       }
     }
-  }
-
-  private static List<String> splitMultiValueField(String valueToSplit) {
-    if (valueToSplit != null && !valueToSplit.isEmpty()) {
-      String[] splitValues = valueToSplit.split(";");
-      return Arrays.stream(splitValues)
-          .map(String::trim)
-          .collect(Collectors.toList());
-    }
-
-    return Collections.emptyList();
   }
 
   private static void validationError(String errorMessage) {
