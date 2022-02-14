@@ -674,9 +674,9 @@ public class PlacementTransformerService {
     if (placementSiteDTOS == null) {
       placementSiteDTOS = initialiseNewPlacementSiteDTOS(placementDTO);
     }
-    String otherSitesCommaSeperated = placementXLS.getOtherSites();
-    if (otherSitesCommaSeperated != null) {
-      List<String> otherSites = splitMultiValueField(otherSitesCommaSeperated);
+    String otherSitesStr = placementXLS.getOtherSites();
+    if (otherSitesStr != null) {
+      List<String> otherSites = splitMultiValueField(otherSitesStr);
       for (String otherSite : otherSites) {
         Optional<PlacementSiteDTO> placementSiteDTOOptional2 = buildPlacementSiteDTO(placementXLS,
             placementDTO, getSiteDTOsForName, otherSite, PlacementSiteType.OTHER, postDTO);

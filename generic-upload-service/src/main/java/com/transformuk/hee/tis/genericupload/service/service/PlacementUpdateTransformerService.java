@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
+import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.splitMultiValueField;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementSupervisor;
@@ -30,6 +31,7 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -476,35 +478,37 @@ public class PlacementUpdateTransformerService {
     if (placementSiteDTOS == null) {
       placementSiteDTOS = initialiseNewPlacementSiteDTOS(placementDTO);
     }
-    String otherSitesCommaSeperated = placementXLS.getOtherSites();
-    if (otherSitesCommaSeperated != null) {
-      String[] otherSites = otherSitesCommaSeperated.split(",");
+    String otherSitesStr = placementXLS.getOtherSites();
+    if (otherSitesStr != null) {
+      List<String> otherSites = splitMultiValueField(otherSitesStr);
+      List<PlacementSiteDTO> newPlacementSiteDtos = new ArrayList<>();
       for (String otherSite : otherSites) {
         Optional<PlacementSiteDTO> placementSiteDTOOptional2 = buildPlacementSiteDTO(placementXLS,
             placementDTO, getSiteDTOsForName, otherSite, PlacementSiteType.OTHER, postDTO);
         if (placementSiteDTOOptional2.isPresent()) {
-          PlacementSiteDTO placementSiteDTO = placementSiteDTOOptional2.get();
-          addDTOIfNotPresentAsPrimaryOrOther1(placementSiteDTOS, placementSiteDTO);
+          newPlacementSiteDtos.add(placementSiteDTOOptional2.get());
         }
       }
+      updatePlacementSitesForPlacementDto(placementSiteDTOS, newPlacementSiteDtos);
     }
+  }
+
+  private void updatePlacementSitesForPlacementDto(Set<PlacementSiteDTO> placementSiteDtos,
+      List<PlacementSiteDTO> newPlacementSiteDtos) {
+    if (newPlacementSiteDtos.isEmpty()) {
+      return;
+    }
+    // all the placementSites are of type OTHER
+    if (!placementSiteDtos.isEmpty()) {
+      placementSiteDtos.removeIf(ps -> ps.getPlacementSiteType() == PlacementSiteType.OTHER);
+    }
+    placementSiteDtos.addAll(newPlacementSiteDtos);
   }
 
   private Set<PlacementSiteDTO> initialiseNewPlacementSiteDTOS(PlacementDetailsDTO placementDTO) {
     Set<PlacementSiteDTO> placmentSiteDTOS = new HashSet<>();
     placementDTO.setSites(placmentSiteDTOS);
     return placmentSiteDTOS;
-  }
-
-  private void addDTOIfNotPresentAsPrimaryOrOther1(Set<PlacementSiteDTO> placmentSiteDTOS,
-      PlacementSiteDTO placmentSiteDTO) {
-    if (placmentSiteDTOS.isEmpty()) {
-      placmentSiteDTOS.add(placmentSiteDTO);
-    } else {
-      placmentSiteDTOS.clear(); // clear all existing elements
-      placmentSiteDTO.setPlacementSiteType(PlacementSiteType.OTHER);
-      placmentSiteDTOS.add(placmentSiteDTO);
-    }
   }
 
   private Optional<PlacementSiteDTO> buildPlacementSiteDTO(PlacementUpdateXLS placementXLS,

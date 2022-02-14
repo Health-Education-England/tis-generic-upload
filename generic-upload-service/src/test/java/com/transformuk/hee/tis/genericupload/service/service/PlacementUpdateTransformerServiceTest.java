@@ -1,20 +1,25 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.MULTI_VALUE_SEPARATOR;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.Sets;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PlacementSiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementSpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.enumeration.PlacementSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 
 import java.util.*;
 
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -293,6 +298,37 @@ public class PlacementUpdateTransformerServiceTest {
         PlacementUpdateTransformerServiceTest::getSitesForString, postDTO);
     assertThat(placementDTO.getSites().size()).isEqualTo(0);
     assertThat(placementXLS.getErrorMessage()).contains(FOUND_MULTIPLE_OTHER_SITES_FOR_NAME);
+  }
+
+  @Test
+  public void shouldUpdateMultipleOtherSites() {
+    String mockedSite1 = "mockedSite1";
+    String mockedSite2 = "mockedSite2";
+    placementXLS.setOtherSites(mockedSite1 + MULTI_VALUE_SEPARATOR + mockedSite2);
+
+    SiteDTO siteDto1 = createSiteDTO(1L, mockedSite1,
+        com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    SiteDTO siteDto2 = createSiteDTO(2L, mockedSite2,
+        com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    addSitesList(siteByName, siteDto1);
+    addSitesList(siteByName, siteDto2);
+    postDTO.getSites().add(new PostSiteDTO(1L, 2L, PostSiteType.OTHER));
+
+    // set existing other sites
+    PlacementSiteDTO placementSiteDto = new PlacementSiteDTO();
+    placementSiteDto.setPlacementId(1L);
+    placementSiteDto.setId(1L);
+    placementSiteDto.setSiteId(3L);
+    placementSiteDto.setPlacementSiteType(PlacementSiteType.OTHER);
+    placementDTO.setSites(Sets.newHashSet(placementSiteDto));
+
+    placementUpdateTransformerService.setOtherSites(placementXLS, placementDTO,
+        PlacementUpdateTransformerServiceTest::getSitesForString, postDTO);
+
+    assertThat(placementXLS.getErrorMessage()).isNull();
+    assertThat(placementDTO.getSites().size()).isEqualTo(2);
+    assertThat(placementDTO.getSites().stream().map(PlacementSiteDTO::getSiteId)
+        .collect(Collectors.toSet())).contains(1L, 2L);
   }
 
   @Test
