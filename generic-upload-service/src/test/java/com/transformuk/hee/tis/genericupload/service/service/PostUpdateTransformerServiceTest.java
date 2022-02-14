@@ -541,7 +541,7 @@ public class PostUpdateTransformerServiceTest {
         .filter(g -> g.getPostGradeType() == PostGradeType.OTHER).collect(Collectors.toSet());
     assertThat(newPostGradeDTOSet.size()).isEqualTo(2);
     assertThat(newPostGradeDTOSet.stream().map(PostGradeDTO::getGradeId)
-        .collect(Collectors.toSet())).contains(2L, 3L); // Actual 2, 3, 4
+        .collect(Collectors.toSet())).contains(2L, 3L);
   }
 
   @Test
