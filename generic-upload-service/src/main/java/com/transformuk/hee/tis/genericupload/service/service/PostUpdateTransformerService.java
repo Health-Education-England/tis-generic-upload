@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.splitMultiValueField;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
@@ -42,7 +43,6 @@ import org.springframework.web.client.ResourceAccessException;
 public class PostUpdateTransformerService {
 
   private static final Logger logger = getLogger(PostUpdateTransformerService.class);
-  private static final String SEPARATOR = ";";
 
   private static final String DID_NOT_FIND_GRADE_FOR_NAME = "Did not find grade for name \"%s\".";
   private static final String FOUND_MULTIPLE_GRADES_FOR_NAME = "Found multiple grades for name \"%s\".";
@@ -149,38 +149,50 @@ public class PostUpdateTransformerService {
     Optional<PostGradeDTO> postGradeDTOOptional1 = buildPostGradeDTO(postUpdateXLS, dbPostDTO,
         getGradeDTOsForName, postUpdateXLS.getApprovedGrade(), PostGradeType.APPROVED);
     if (postGradeDTOOptional1.isPresent()) {
-      postGradeDTOS = initialiseNewPostGradeDTOS(dbPostDTO);
       PostGradeDTO postGradeDTO = postGradeDTOOptional1.get();
-      addDTOIfNotPresentAsApprovedOrOther1(postGradeDTOS, postGradeDTO);
+      updateApprovedGradeForPostDto(postGradeDTOS, postGradeDTO);
     }
-    String otherGradesCommaSeparated = postUpdateXLS.getOtherGrades();
-    if (otherGradesCommaSeparated != null) {
-      String[] otherGrades = otherGradesCommaSeparated.split(",");
+    String otherGradesStr = postUpdateXLS.getOtherGrades();
+    if (otherGradesStr != null) {
+      List<String> otherGrades = splitMultiValueField(otherGradesStr);
+      List<PostGradeDTO> newOtherPostGradeDtos = new ArrayList<>();
       for (String otherGrade : otherGrades) {
         Optional<PostGradeDTO> postGradeDTOOptional2 = buildPostGradeDTO(postUpdateXLS, dbPostDTO,
             getGradeDTOsForName, otherGrade, PostGradeType.OTHER);
         if (postGradeDTOOptional2.isPresent()) {
-          PostGradeDTO postGradeDTO = postGradeDTOOptional2.get();
-          addDTOIfNotPresentAsApprovedOrOther1(postGradeDTOS, postGradeDTO);
+          newOtherPostGradeDtos.add(postGradeDTOOptional2.get());
         }
       }
+      updateOtherGradesForPostDto(postGradeDTOS, newOtherPostGradeDtos);
     }
+  }
+
+  private void updateApprovedGradeForPostDto(Set<PostGradeDTO> postGradeDtos,
+      PostGradeDTO newApprovedPostGradeDto) {
+    if (newApprovedPostGradeDto == null) {
+      return;
+    }
+    if (!postGradeDtos.isEmpty()) {
+      postGradeDtos.removeIf(pg -> pg.getPostGradeType() == PostGradeType.APPROVED);
+    }
+    postGradeDtos.add(newApprovedPostGradeDto);
+  }
+
+  private void updateOtherGradesForPostDto(Set<PostGradeDTO> postGradeDtos,
+      List<PostGradeDTO> newOtherPostGradeDtos) {
+    if (newOtherPostGradeDtos.isEmpty()) {
+      return;
+    }
+    if (!postGradeDtos.isEmpty()) {
+      postGradeDtos.removeIf(pg -> pg.getPostGradeType() == PostGradeType.OTHER);
+    }
+    postGradeDtos.addAll(newOtherPostGradeDtos);
   }
 
   private Set<PostGradeDTO> initialiseNewPostGradeDTOS(PostDTO dbPostDTO) {
     Set<PostGradeDTO> postGradeDTOS = new HashSet<>();
     dbPostDTO.setGrades(postGradeDTOS);
     return postGradeDTOS;
-  }
-
-  private void addDTOIfNotPresentAsApprovedOrOther1(Set<PostGradeDTO> postGradeDTOS,
-      PostGradeDTO postGradeDTO) {
-    if (postGradeDTOS.isEmpty()) {
-      postGradeDTOS.add(postGradeDTO);
-    } else if (!postGradeDTOS.contains(postGradeDTO)) {
-      postGradeDTO.setPostGradeType(PostGradeType.OTHER);
-      postGradeDTOS.add(postGradeDTO);
-    }
   }
 
   private Optional<PostGradeDTO> buildPostGradeDTO(PostUpdateXLS postUpdateXLS, PostDTO dbPostDTO,
@@ -223,38 +235,65 @@ public class PostUpdateTransformerService {
     if (postSpecialtyDTOS == null) {
       postSpecialtyDTOS = initialiseNewPostSpecialtyDTOS(dbPostDTO);
     }
+    // Update primary specialty
     Optional<PostSpecialtyDTO> postSpecialtyDTOOptional1 = buildPostSpecialtyDTO(postUpdateXLS,
         dbPostDTO, getSpecialtyDTOsForName, postUpdateXLS.getSpecialty(),
         PostSpecialtyType.PRIMARY);
     if (postSpecialtyDTOOptional1.isPresent()) {
-      postSpecialtyDTOS = initialiseNewPostSpecialtyDTOS(dbPostDTO);
-      PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional1.get();
-      postSpecialtyDTOS.add(postSpecialtyDTO);
+      updatePrimarySpecialtyForPostDto(postSpecialtyDTOS, postSpecialtyDTOOptional1.get());
     }
-    String otherSpecialtiesCommaSeperated = postUpdateXLS.getOtherSpecialties();
-    if (otherSpecialtiesCommaSeperated != null) {
-      String[] otherSpecialties = otherSpecialtiesCommaSeperated.split(",");
+    // Update other specialties
+    String otherSpecialtiesStr = postUpdateXLS.getOtherSpecialties();
+    if (otherSpecialtiesStr != null) {
+      List<String> otherSpecialties = splitMultiValueField(otherSpecialtiesStr);
+      List<PostSpecialtyDTO> newOtherSpecialtyDtos = new ArrayList<>();
       for (String otherSpecialty : otherSpecialties) {
         Optional<PostSpecialtyDTO> postSpecialtyDTOOptional2 = buildPostSpecialtyDTO(postUpdateXLS,
             dbPostDTO, getSpecialtyDTOsForName, otherSpecialty, PostSpecialtyType.OTHER);
         if (postSpecialtyDTOOptional2.isPresent()) {
-          PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional2.get();
-          postSpecialtyDTOS.add(postSpecialtyDTO);
+          newOtherSpecialtyDtos.add(postSpecialtyDTOOptional2.get());
         }
       }
+      updateOtherOrSubSpecialtiesForPostDto(postSpecialtyDTOS, newOtherSpecialtyDtos,
+          PostSpecialtyType.OTHER);
     }
-    String subSpecialtiesCommaSeperated = postUpdateXLS.getSubSpecialties();
-    if (subSpecialtiesCommaSeperated != null) {
-      String[] subSpecialties = subSpecialtiesCommaSeperated.split(",");
+    // Update sub specialties
+    String subSpecialtiesStr = postUpdateXLS.getSubSpecialties();
+    if (subSpecialtiesStr != null) {
+      List<String> subSpecialties = splitMultiValueField(subSpecialtiesStr);
+      List<PostSpecialtyDTO> newSubSpecialtyDtos = new ArrayList<>();
       for (String subSpecialty : subSpecialties) {
         Optional<PostSpecialtyDTO> postSpecialtyDTOOptional3 = buildPostSpecialtyDTO(postUpdateXLS,
             dbPostDTO, getSpecialtyDTOsForName, subSpecialty, PostSpecialtyType.SUB_SPECIALTY);
         if (postSpecialtyDTOOptional3.isPresent()) {
-          PostSpecialtyDTO postSpecialtyDTO = postSpecialtyDTOOptional3.get();
-          postSpecialtyDTOS.add(postSpecialtyDTO);
+          newSubSpecialtyDtos.add(postSpecialtyDTOOptional3.get());
         }
       }
+      updateOtherOrSubSpecialtiesForPostDto(postSpecialtyDTOS, newSubSpecialtyDtos,
+          PostSpecialtyType.SUB_SPECIALTY);
     }
+  }
+
+  private void updatePrimarySpecialtyForPostDto(Set<PostSpecialtyDTO> postSpecialtyDtos,
+      PostSpecialtyDTO newPrimaryPostSpecialtyDto) {
+    if (newPrimaryPostSpecialtyDto == null) {
+      return;
+    }
+    if (!postSpecialtyDtos.isEmpty()) {
+      postSpecialtyDtos.removeIf(ps -> ps.getPostSpecialtyType() == PostSpecialtyType.PRIMARY);
+    }
+    postSpecialtyDtos.add(newPrimaryPostSpecialtyDto);
+  }
+
+  private void updateOtherOrSubSpecialtiesForPostDto(Set<PostSpecialtyDTO> postSpecialtyDtos,
+      List<PostSpecialtyDTO> newOtherOrSubPostSpecialtyDtos, PostSpecialtyType type) {
+    if (newOtherOrSubPostSpecialtyDtos.isEmpty()) {
+      return;
+    }
+    if (!postSpecialtyDtos.isEmpty()) {
+      postSpecialtyDtos.removeIf(ps -> ps.getPostSpecialtyType() == type);
+    }
+    postSpecialtyDtos.addAll(newOtherOrSubPostSpecialtyDtos);
   }
 
   private Set<PostSpecialtyDTO> initialiseNewPostSpecialtyDTOS(PostDTO dbPostDTO) {
@@ -349,41 +388,54 @@ public class PostUpdateTransformerService {
     if (postSiteDTOS == null) {
       postSiteDTOS = initialiseNewPostSiteDTOS(postDTO);
     }
+    // Update primary site
     Optional<PostSiteDTO> postSiteDTOOptional1 = buildPostSiteDTO(postUpdateXLS, postDTO,
         getSiteDTOsForName, postUpdateXLS.getMainSite(), PostSiteType.PRIMARY);
     if (postSiteDTOOptional1.isPresent()) {
-      postSiteDTOS = initialiseNewPostSiteDTOS(postDTO);
-      PostSiteDTO postSiteDTO = postSiteDTOOptional1.get();
-      addDTOIfNotPresentAsPrimaryOrOther1(postSiteDTOS, postSiteDTO);
+      updatePrimarySiteForPostDto(postSiteDTOS, postSiteDTOOptional1.get());
     }
-    String otherSitesCommaSeperated = postUpdateXLS.getOtherSites();
-    if (otherSitesCommaSeperated != null) {
-      String[] otherSites = otherSitesCommaSeperated.split(",");
+    // Update other sites
+    String otherSitesStr = postUpdateXLS.getOtherSites();
+    if (otherSitesStr != null) {
+      List<String> otherSites = splitMultiValueField(otherSitesStr);
+      List<PostSiteDTO> newOtherSiteDtos = new ArrayList<>();
       for (String otherSite : otherSites) {
         Optional<PostSiteDTO> postSiteDTOOptional2 = buildPostSiteDTO(postUpdateXLS, postDTO,
             getSiteDTOsForName, otherSite, PostSiteType.OTHER);
         if (postSiteDTOOptional2.isPresent()) {
-          PostSiteDTO postSiteDTO = postSiteDTOOptional2.get();
-          addDTOIfNotPresentAsPrimaryOrOther1(postSiteDTOS, postSiteDTO);
+          newOtherSiteDtos.add(postSiteDTOOptional2.get());
         }
       }
+      updateOtherSitesForPostDto(postSiteDTOS, newOtherSiteDtos);
     }
+  }
+
+  private void updatePrimarySiteForPostDto(Set<PostSiteDTO> postSiteDtos,
+      PostSiteDTO newPrimaryPostSiteDto) {
+    if (newPrimaryPostSiteDto == null) {
+      return;
+    }
+    if (!postSiteDtos.isEmpty()) {
+      postSiteDtos.removeIf(ps -> ps.getPostSiteType() == PostSiteType.PRIMARY);
+    }
+    postSiteDtos.add(newPrimaryPostSiteDto);
+  }
+
+  private void updateOtherSitesForPostDto(Set<PostSiteDTO> postSiteDtos,
+      List<PostSiteDTO> newOtherPostSiteDtos) {
+    if (newOtherPostSiteDtos.isEmpty()) {
+      return;
+    }
+    if (!postSiteDtos.isEmpty()) {
+      postSiteDtos.removeIf(ps -> ps.getPostSiteType() == PostSiteType.OTHER);
+    }
+    postSiteDtos.addAll(newOtherPostSiteDtos);
   }
 
   private Set<PostSiteDTO> initialiseNewPostSiteDTOS(PostDTO postDTO) {
     Set<PostSiteDTO> postSiteDTOS = new HashSet<>();
     postDTO.setSites(postSiteDTOS);
     return postSiteDTOS;
-  }
-
-  private void addDTOIfNotPresentAsPrimaryOrOther1(Set<PostSiteDTO> postSiteDTOS,
-      PostSiteDTO postSiteDTO) {
-    if (postSiteDTOS.isEmpty()) {
-      postSiteDTOS.add(postSiteDTO);
-    } else if (!postSiteDTOS.contains(postSiteDTO)) {
-      postSiteDTO.setPostSiteType(PostSiteType.OTHER);
-      postSiteDTOS.add(postSiteDTO);
-    }
   }
 
   private Optional<PostSiteDTO> buildPostSiteDTO(PostUpdateXLS postUpdateXLS, PostDTO postDTO,
@@ -477,7 +529,7 @@ public class PostUpdateTransformerService {
     }
 
     // Split the comma separated field and get the programmes from the IDs.
-    List<String> programmeIds = Arrays.asList(programmeIdsSeparated.split(","));
+    List<String> programmeIds = splitMultiValueField(programmeIdsSeparated);
 
     // If any programme IDs are not numeric then report an error.
     for (String programmeId : programmeIds) {
@@ -525,7 +577,7 @@ public class PostUpdateTransformerService {
     Set<RotationDTO> rotationDtos = new HashSet<>(
         tcsServiceImpl.getRotationByProgrammeIdsIn(programmeIds));
 
-    List<String> rotationNames = Arrays.asList(rotationsString.split(SEPARATOR));
+    List<String> rotationNames = splitMultiValueField(rotationsString);
     List<String> errorMessages = new ArrayList<>();
 
     Map<String, RotationDTO> rotationNameToDto = rotationDtos.stream()

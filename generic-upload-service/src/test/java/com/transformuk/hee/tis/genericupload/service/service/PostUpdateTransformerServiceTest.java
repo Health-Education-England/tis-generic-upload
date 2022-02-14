@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.MULTI_VALUE_SEPARATOR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
@@ -13,11 +14,16 @@ import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PostGradeDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PostSiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RotationDTO;
 import com.transformuk.hee.tis.tcs.api.dto.RotationPostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
+import com.transformuk.hee.tis.tcs.api.enumeration.PostGradeType;
+import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
+import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
@@ -27,6 +33,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Before;
@@ -71,6 +79,8 @@ public class PostUpdateTransformerServiceTest {
 
   @Captor
   private ArgumentCaptor<List<RotationPostDTO>> rotationPostDtosCaptor;
+  @Captor
+  private ArgumentCaptor<PostDTO> postDtoCaptor;
 
   private static SpecialtyDTO createSpecialtyDTO(Long id, String intrepidId, String name,
       String college, String specialtyCode, Status status) {
@@ -281,8 +291,13 @@ public class PostUpdateTransformerServiceTest {
   }
 
   @Test
-  public void canUpdateApprovedGrade() {
+  public void canUpdateApprovedGrade() throws Exception {
     postXLS.setApprovedGrade(APPROVED_GRADE_NAME);
+
+    // set existing other grades
+    PostGradeDTO postGradeDTO = new PostGradeDTO(1l, 2L, PostGradeType.APPROVED);
+    postDTO.setGrades(Sets.newHashSet(postGradeDTO));
+
     postUpdateTransformerService
         .updateGrades(postXLS, postDTO, PostUpdateTransformerServiceTest::getGradeDTOsForName);
     assertThat(postDTO.getGrades().size()).isEqualTo(1);
@@ -501,5 +516,164 @@ public class PostUpdateTransformerServiceTest {
     MatcherAssert.assertThat("The XLS error messages contained an unexpected value.",
         postXLS.getErrorMessage(), CoreMatchers
             .not(CoreMatchers.containsString("Did not find rotation for name \"rotation\".")));
+  }
+
+  @Test
+  public void shouldUpdateMultipleOtherGrades() throws Exception {
+    String mockedGrade1 = "mockedGrade1";
+    String mockedGrade2 = "mockedGrade2";
+    postXLS.setOtherGrades(mockedGrade1 + MULTI_VALUE_SEPARATOR + mockedGrade2);
+
+    GradeDTO gradeDto1 = createGradeDTO(2L, mockedGrade1);
+    GradeDTO gradeDto2 = createGradeDTO(3L, mockedGrade2);
+    createSingleListWithGrade(gradeByName, gradeDto1);
+    createSingleListWithGrade(gradeByName, gradeDto2);
+
+    // set existing other grades
+    PostGradeDTO postGradeDto = new PostGradeDTO(1l, 4L, PostGradeType.OTHER);
+    postDTO.setGrades(Sets.newHashSet(postGradeDto));
+
+    postUpdateTransformerService.updateGrades(postXLS, postDTO,
+        PostUpdateTransformerServiceTest::getGradeDTOsForName);
+
+    assertThat(postXLS.getErrorMessage()).isNull();
+    Set<PostGradeDTO> newPostGradeDTOSet = postDTO.getGrades().stream()
+        .filter(g -> g.getPostGradeType() == PostGradeType.OTHER).collect(Collectors.toSet());
+    assertThat(newPostGradeDTOSet.size()).isEqualTo(2);
+    assertThat(newPostGradeDTOSet.stream().map(PostGradeDTO::getGradeId)
+        .collect(Collectors.toSet())).contains(2L, 3L);
+  }
+
+  @Test
+  public void shouldUpdateMultipleOtherSpecialties() throws Exception {
+    String mockedSpecialty1 = "mockedSpecialty1";
+    String mockedSpecialty2 = "mockedSpecialty2";
+    String mockedSpecialty3 = "mockedSpecialty3";
+    postXLS.setSpecialty(null);
+    postXLS.setOtherSpecialties(mockedSpecialty2 + MULTI_VALUE_SEPARATOR + mockedSpecialty3);
+
+    SpecialtyDTO specialtyDto2 = createSpecialtyDTO(2L, "intrepid_2",
+        mockedSpecialty2, "college", "code2", Status.CURRENT);
+    SpecialtyDTO specialtyDto3 = createSpecialtyDTO(3L, "intrepid_3",
+        mockedSpecialty3, "college", "code3", Status.CURRENT);
+    createSingleListWithSpecialty(specialtyByName, specialtyDto2);
+    createSingleListWithSpecialty(specialtyByName, specialtyDto3);
+
+    // set existing other specialties
+    SpecialtyDTO specialtyDto1 = createSpecialtyDTO(1L, "intrepid_1",
+        mockedSpecialty1, "college", "code1", Status.CURRENT);
+    PostSpecialtyDTO postSpecialtyDto = new PostSpecialtyDTO(1l, specialtyDto1,
+        PostSpecialtyType.OTHER);
+    postDTO.setSpecialties(Sets.newHashSet(postSpecialtyDto));
+
+    postUpdateTransformerService.setSpecialties(postXLS, postDTO,
+        PostUpdateTransformerServiceTest::getSpecialtiesForString);
+
+    assertThat(postXLS.getErrorMessage()).isNull();
+    Set<PostSpecialtyDTO> newPostSpecialtyDtoSet = postDTO.getSpecialties().stream()
+        .filter(s -> s.getPostSpecialtyType() == PostSpecialtyType.OTHER)
+        .collect(Collectors.toSet());
+    assertThat(newPostSpecialtyDtoSet.size()).isEqualTo(2);
+    assertThat(newPostSpecialtyDtoSet.stream().map(PostSpecialtyDTO::getSpecialty)
+        .collect(Collectors.toSet())).contains(specialtyDto2, specialtyDto3);
+  }
+
+  @Test
+  public void shouldUpdateMultipleSubSpecialties() throws Exception {
+    String mockedSpecialty1 = "mockedSpecialty1";
+    String mockedSpecialty2 = "mockedSpecialty2";
+    String mockedSpecialty3 = "mockedSpecialty3";
+    postXLS.setSpecialty(null);
+    postXLS.setSubSpecialties(mockedSpecialty2 + MULTI_VALUE_SEPARATOR + mockedSpecialty3);
+
+    SpecialtyDTO specialtyDto2 = createSpecialtyDTO(2L, "intrepid_2",
+        mockedSpecialty2, "college", "code2", Status.CURRENT);
+    SpecialtyDTO specialtyDto3 = createSpecialtyDTO(3L, "intrepid_3",
+        mockedSpecialty3, "college", "code3", Status.CURRENT);
+    createSingleListWithSpecialty(specialtyByName, specialtyDto2);
+    createSingleListWithSpecialty(specialtyByName, specialtyDto3);
+
+    // set existing sub specialties
+    SpecialtyDTO specialtyDto1 = createSpecialtyDTO(1L, "intrepid_1",
+        mockedSpecialty1, "college", "code1", Status.CURRENT);
+    PostSpecialtyDTO postSpecialtyDto = new PostSpecialtyDTO(1l, specialtyDto1,
+        PostSpecialtyType.SUB_SPECIALTY);
+    postDTO.setSpecialties(Sets.newHashSet(postSpecialtyDto));
+
+    postUpdateTransformerService.setSpecialties(postXLS, postDTO,
+        PostUpdateTransformerServiceTest::getSpecialtiesForString);
+
+    assertThat(postXLS.getErrorMessage()).isNull();
+    Set<PostSpecialtyDTO> newPostSpecialtyDtoSet = postDTO.getSpecialties().stream()
+        .filter(s -> s.getPostSpecialtyType() == PostSpecialtyType.SUB_SPECIALTY)
+        .collect(Collectors.toSet());
+    assertThat(newPostSpecialtyDtoSet.size()).isEqualTo(2);
+    assertThat(newPostSpecialtyDtoSet.stream().map(PostSpecialtyDTO::getSpecialty)
+        .collect(Collectors.toSet())).contains(specialtyDto2, specialtyDto3);
+  }
+
+  @Test
+  public void shouldUpdateMultipleOtherSites() throws Exception {
+    String mockedSite1 = "mockedSite1";
+    String mockedSite2 = "mockedSite2";
+    postXLS.setMainSite(null);
+    postXLS.setOtherSites(mockedSite1 + MULTI_VALUE_SEPARATOR + mockedSite2);
+
+    SiteDTO siteDto1 = createSiteDTO(1L, mockedSite1);
+    SiteDTO siteDto2 = createSiteDTO(2L, mockedSite2);
+    createSingleListWithSite(siteByName, siteDto1);
+    createSingleListWithSite(siteByName, siteDto2);
+
+    // set existing other sites
+    PostSiteDTO postSiteDto = new PostSiteDTO(1L, 3L, PostSiteType.OTHER);
+    postDTO.setSites(Sets.newHashSet(postSiteDto));
+
+    postUpdateTransformerService.updateSites(postXLS, postDTO,
+        PostUpdateTransformerServiceTest::getSiteDTOsForName);
+
+    assertThat(postXLS.getErrorMessage()).isNull();
+    Set<PostSiteDTO> newPostSiteDtoSet = postDTO.getSites().stream()
+        .filter(s -> s.getPostSiteType() == PostSiteType.OTHER)
+        .collect(Collectors.toSet());
+    assertThat(newPostSiteDtoSet.size()).isEqualTo(2);
+    assertThat(newPostSiteDtoSet.stream().map(PostSiteDTO::getSiteId)
+        .collect(Collectors.toSet())).contains(1L, 2L);
+  }
+
+  @Test
+  public void shouldUpdateMultipleProgrammes() {
+    PostUpdateXLS postUpdateXls = new PostUpdateXLS();
+    postUpdateXls.setPostTISId("1");
+    postUpdateXls.setProgrammeTisId("2;3");
+
+    ProgrammeDTO programmeDto2 = new ProgrammeDTO();
+    programmeDto2.setId(2L);
+    programmeDto2.setProgrammeName("programme2");
+    programmeDto2.setStatus(Status.CURRENT);
+
+    ProgrammeDTO programmeDto3 = new ProgrammeDTO();
+    programmeDto3.setId(3L);
+    programmeDto3.setProgrammeName("programme3");
+    programmeDto3.setStatus(Status.CURRENT);
+
+    // set existing programmes
+    postDTO.setId(1L);
+    ProgrammeDTO programmeDto1 = new ProgrammeDTO();
+    programmeDto1.setId(1L);
+    postDTO.setProgrammes(Sets.newHashSet(programmeDto1));
+
+    when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
+    when(tcsServiceImpl.findProgrammesIn(Arrays.asList("2", "3")))
+        .thenReturn(Arrays.asList(programmeDto2, programmeDto3));
+
+    postUpdateTransformerService.processPostUpdateUpload(
+        Collections.singletonList(postUpdateXls), "");
+    verify(tcsServiceImpl).updatePost(postDtoCaptor.capture());
+
+    assertThat(postXLS.getErrorMessage()).isNull();
+    PostDTO updatedPostDto = postDtoCaptor.getValue();
+    Set<ProgrammeDTO> updatedProgrammes = updatedPostDto.getProgrammes();
+    assertThat(updatedProgrammes.size()).isEqualTo(2);
+    assertThat(updatedProgrammes).contains(programmeDto2, programmeDto3);
   }
 }
