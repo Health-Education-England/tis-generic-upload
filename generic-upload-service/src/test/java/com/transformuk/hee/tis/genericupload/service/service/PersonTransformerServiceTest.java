@@ -3,6 +3,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.CCT;
 import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.CESR;
 import static com.transformuk.hee.tis.genericupload.service.service.PersonTransformerService.N_A;
+import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.MULTI_VALUE_SEPARATOR;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -78,6 +79,9 @@ public class PersonTransformerServiceTest {
 
   @Captor
   private ArgumentCaptor<TrainerApprovalDTO> trainerApprovalDtoArgumentCaptor;
+
+  @Captor
+  private ArgumentCaptor<PersonDTO> personDtoArgumentCaptor;
 
   @Before
   public void initialise() {
@@ -588,5 +592,50 @@ public class PersonTransformerServiceTest {
             personXls1.getErrorMessage(), containsString("Valid email address required."));
     assertThat("should reject invalid email address",
             personXls2.getErrorMessage(), containsString("Valid email address required."));
+  }
+
+  @Test
+  public void shouldAcceptMultiRoles() {
+    String regNumber = "regNumber";
+    String role1 = "role1";
+    String role2 = "role2";
+    String role3 = "role3";
+
+    PersonDTO personXlsDto = new PersonDTO();
+    personXlsDto.setRole(role1 + MULTI_VALUE_SEPARATOR + role2);
+    personXlsDto.setContactDetails(new ContactDetailsDTO());
+    personXlsDto.setGdcDetails(new GdcDetailsDTO());
+    personXlsDto.setGmcDetails(new GmcDetailsDTO());
+    personXlsDto.setRightToWork(new RightToWorkDTO());
+    personXlsDto.setPersonalDetails(new PersonalDetailsDTO());
+    Map<String, PersonDTO> regNumberToXlsDto = Collections.singletonMap(regNumber, personXlsDto);
+
+    PersonDTO personDbDto = new PersonDTO();
+    personDbDto.setId(1L);
+    personDbDto.setRole(role3);
+    Map<String, PersonDTO> regNumberToDbDto = Collections.singletonMap(regNumber, personDbDto);
+
+    PersonXLS personXls = new PersonXLS();
+    Map<String, PersonXLS> regNumberToXls = Collections.singletonMap(regNumber, personXls);
+
+    RoleDTO roleDto1 = new RoleDTO();
+    roleDto1.setCode(role1);
+    RoleDTO roleDto2 = new RoleDTO();
+    roleDto2.setCode(role2);
+
+    when(tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDtoArgumentCaptor.capture()))
+        .thenReturn(personDbDto);
+
+    personTransformerService.updateDatastoreWithRowsFromXLS(regNumberToXlsDto, regNumberToDbDto,
+        regNumberToXls);
+
+    PersonDTO newPersonDto = personDtoArgumentCaptor.getValue();
+    String mergedRole = newPersonDto.getRole();
+    assertThat("should accept multiple roles and merge them to the existing role",
+        mergedRole, containsString(role1));
+    assertThat("should accept multiple roles and merge them to the existing role",
+        mergedRole, containsString(role2));
+    assertThat("should accept multiple roles and merge them to the existing role",
+        mergedRole, containsString(role3));
   }
 }

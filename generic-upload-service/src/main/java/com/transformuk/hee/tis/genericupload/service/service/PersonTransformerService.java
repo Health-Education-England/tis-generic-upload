@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
+import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.splitMultiValueField;
 import static com.transformuk.hee.tis.genericupload.service.util.ReflectionUtil.copyIfNotNullOrEmpty;
 
 import com.google.common.collect.Lists;
@@ -451,7 +452,9 @@ public class PersonTransformerService {
 
   private String mergeRoles(PersonDTO personDTOFromXLS, PersonDTO personDTOFromDB) {
     Set<String> personDTOFromDBRoles = getRolesSet(personDTOFromDB.getRole());
-    Set<String> personDTOFromXLSRoles = getRolesSet(personDTOFromXLS.getRole());
+    // xls template uses semicolon as delimiter
+    Set<String> personDTOFromXLSRoles = new HashSet<>(
+        splitMultiValueField(personDTOFromXLS.getRole()));
     personDTOFromXLSRoles.addAll(personDTOFromDBRoles);
     return org.apache.commons.lang3.StringUtils.join(personDTOFromXLSRoles, ',');
   }
