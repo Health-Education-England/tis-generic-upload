@@ -350,6 +350,7 @@ public class PlacementUpdateTransformerService {
       PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
       placementSpecialtyDTO.setPlacementId(placementDTO.getId());
       placementSpecialtyDTO.setSpecialtyId(specialtyDTO.getId());
+      placementSpecialtyDTO.setSpecialtyName(specialtyName);
       placementSpecialtyDTO
           .setPlacementSpecialtyType(primary ? PostSpecialtyType.PRIMARY : PostSpecialtyType.OTHER);
       return Optional.of(placementSpecialtyDTO);
