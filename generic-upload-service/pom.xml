@@ -12,7 +12,7 @@
 
   <groupId>com.transformuk.hee.tis</groupId>
   <artifactId>generic-upload-service</artifactId>
-  <version>1.18.8</version>
+  <version>1.18.9</version>
 
   <packaging>war</packaging>
 
@@ -270,7 +270,7 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
-      <version>4.0.3</version>
+      <version>8.5.3</version>
     </dependency>
     <dependency>
       <groupId>com.jayway.jsonpath</groupId>
