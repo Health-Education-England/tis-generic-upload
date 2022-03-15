@@ -13,9 +13,15 @@ import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
-
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -85,10 +91,13 @@ public class PlacementTransformerServiceTest {
         "A MEDIA COLLEGE", "NHS_CODE", Status.CURRENT);
     SpecialtyDTO anotherSpecialtyDTO = createSpeciltyDTO(123453L, "123453", ANOTHER,
         "A MEDIA COLLEGE 3", "NHS_CODE 3", Status.CURRENT);
+    SpecialtyDTO specialtyDTO1 = createSpeciltyDTO(11111L, "11111", "11111", "A MEIDA COLLEGE",
+        "NHS_CODE", Status.CURRENT);
 
     specialtyByName = new HashMap<>();
     createSingleListWithSpecialty(specialtyByName, specialtyDTO);
     createSingleListWithSpecialty(specialtyByName, anotherSpecialtyDTO);
+    createSingleListWithSpecialty(specialtyByName, specialtyDTO1);
 
     specialtyByNameWithDuplicate = new HashMap<>();
     createSingleListWithSpecialty(specialtyByNameWithDuplicate, specialtyDTO);
@@ -183,13 +192,16 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void handlesDuplicationOnPrimary() {
+  public void shouldSkipOtherSpecialtyWhenDuplicationOnPrimary() {
     placementXLS.setSpecialty2(ANOTHER);
-    placementXLS.setSpecialty3("12345");
+    placementXLS.setSpecialty3("12345"); // duplication
 
     placementTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementTransformerServiceTest::getSpecialtiesForString);
     assertThat(placementDTO.getSpecialties().size()).isEqualTo(2);
+    long countOfOtherSpecialties = placementDTO.getSpecialties().stream()
+        .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER)).count();
+    assertThat(countOfOtherSpecialties).isEqualTo(1);
   }
 
   @Test
@@ -214,26 +226,58 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void doesNotOverwritesSpecialtiesIfNoSpecialtyExistsOnUpload() {
-    PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
-    placementSpecialtyDTO.setSpecialtyId(10L);
-    placementSpecialtyDTO.setPlacementId(10L);
-    placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.PRIMARY);
-    Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = new HashSet<>();
-    placementSpecialtyDTOS.add(placementSpecialtyDTO);
-    placementDTO.setSpecialties(placementSpecialtyDTOS);
+  public void shouldHandleMultipleOtherSpecialties() {
+    PlacementSpecialtyDTO placementSpecialtyDto = new PlacementSpecialtyDTO();
+    placementSpecialtyDto.setSpecialtyId(10L);
+    placementSpecialtyDto.setPlacementId(10L);
+    placementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
+    placementDTO.setSpecialties(Collections.singleton(placementSpecialtyDto));
 
-    placementXLS.setSpecialty1("");
+    placementXLS.setSpecialty2(ANOTHER);
+    placementXLS.setSpecialty3("11111");
 
     placementTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementTransformerServiceTest::getSpecialtiesForString);
+
+    assertThat(placementDTO.getSpecialties().size()).isEqualTo(3);
+    List<PlacementSpecialtyDTO> placementSpecialtyDtos = placementDTO.getSpecialties().stream()
+        .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER)).collect(
+            Collectors.toList());
+    assertThat(placementSpecialtyDtos.size()).isEqualTo(2);
+    assertThat(placementSpecialtyDtos.stream().map(s -> s.getSpecialtyName())
+        .collect(Collectors.toList())).contains(ANOTHER, "11111");
+  }
+
+  @Test
+  public void shouldSkipSubSpecialtyWhenDuplicationOnPrimary() {
+    placementXLS.setSubSpecialty("12345");
+
+    placementTransformerService.setSpecialties(placementXLS, placementDTO,
+        PlacementTransformerServiceTest::getSpecialtiesForString);
+
     assertThat(placementDTO.getSpecialties().size()).isEqualTo(1);
-    for (PlacementSpecialtyDTO placementSpecialtyDTOFromPlacement : placementDTO.getSpecialties()) {
-      if (placementSpecialtyDTOFromPlacement.getSpecialtyId() == 10L) {
-        assertThat(placementSpecialtyDTOFromPlacement.getPlacementSpecialtyType())
-            .isEqualTo(PostSpecialtyType.PRIMARY);
-      }
-    }
+    PlacementSpecialtyDTO placementSpecialtyDto = placementDTO.getSpecialties().iterator().next();
+    assertThat(placementSpecialtyDto.getPlacementSpecialtyType()).isEqualTo(
+        PostSpecialtyType.PRIMARY);
+    assertThat(placementSpecialtyDto.getSpecialtyName()).isEqualTo("12345");
+  }
+
+  @Test
+  public void shouldSkipSubSpecialtyWhenDuplicationOnOtherSpecialties() {
+    placementXLS.setSpecialty2(ANOTHER);
+    placementXLS.setSpecialty3("11111");
+    placementXLS.setSubSpecialty(ANOTHER);
+
+    placementTransformerService.setSpecialties(placementXLS, placementDTO,
+        PlacementTransformerServiceTest::getSpecialtiesForString);
+
+    assertThat(placementDTO.getSpecialties().size()).isEqualTo(3);
+    long countOfOtherSpecialties = placementDTO.getSpecialties().stream()
+        .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER)).count();
+    long countOfSubSpecialty = placementDTO.getSpecialties().stream()
+        .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)).count();
+    assertThat(countOfOtherSpecialties).isEqualTo(2);
+    assertThat(countOfSubSpecialty).isEqualTo(0);
   }
 
   @Test
@@ -312,7 +356,7 @@ public class PlacementTransformerServiceTest {
     placementXLS.setGrade(gradeName); //not a placement grade
     List<PlacementXLS> placementXLSS = Collections.singletonList(placementXLS);
     placementTransformerService.isPlacementGradeValid(placementXLSS, gradeName,
-            gradesValidForPlacements);
+        gradesValidForPlacements);
     //THEN
     assertThat(placementXLS.getErrorMessage()).contains(EXPECTED_A_PLACEMENT_GRADE_FOR);
   }
@@ -325,7 +369,7 @@ public class PlacementTransformerServiceTest {
     placementXLS.setGrade(gradeName); //placement grade
     List<PlacementXLS> placementXLSS = Collections.singletonList(placementXLS);
     placementTransformerService.isPlacementGradeValid(placementXLSS, gradeName,
-            gradesValidForPlacements);
+        gradesValidForPlacements);
     //THEN
     assertThat(placementXLS.getErrorMessage()).isNull();
   }
