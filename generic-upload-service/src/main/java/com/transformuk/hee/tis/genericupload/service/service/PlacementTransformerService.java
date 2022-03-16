@@ -533,11 +533,7 @@ public class PlacementTransformerService {
 
   public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
       PlacementSpecialtyDTO placementSpecialtyDTO) {
-    if (placementSpecialtyDTOS.isEmpty()) {
-      placementSpecialtyDTOS.add(placementSpecialtyDTO);
-    } else {
-      placementSpecialtyDTOS.add(placementSpecialtyDTO);
-    }
+    placementSpecialtyDTOS.add(placementSpecialtyDTO);
   }
 
   public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementXLS placementXLS,
