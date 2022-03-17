@@ -173,25 +173,27 @@ public class PlacementUpdateTransformerService {
   /**
    * Checks if a grade is a valid placement grade.
    *
-   * SIDE-EFFECT: if not valid, this is logged and the affected placement update XLS records have
-   * an error message attached to them.
-   * @param placementXLSS the list of placement update XLS records
-   * @param gradeName the grade to verify
+   * SIDE-EFFECT: if not valid, this is logged and the affected placement update XLS records have an
+   * error message attached to them.
+   *
+   * @param placementXLSS   the list of placement update XLS records
+   * @param gradeName       the grade to verify
    * @param placementGrades the list of valid placement grades
    * @return true if gradeName was a valid placement grade, false otherwise (note side-effect above)
    */
   public boolean isPlacementGradeValid(List<PlacementUpdateXLS> placementXLSS, String gradeName,
-                                       List<String> placementGrades) {
+      List<String> placementGrades) {
     boolean gradeValid =
-            placementGrades.stream().anyMatch(gradeName::equalsIgnoreCase);
+        placementGrades.stream().anyMatch(gradeName::equalsIgnoreCase);
     if (!gradeValid) {
       placementXLSS.stream()
-            .filter(placementXLS -> Objects.toString(placementXLS.getGrade()).equalsIgnoreCase(gradeName))
-            .forEach(placementXLS -> {
-                logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
-                placementXLS.addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
-                        gradeName));
-            });
+          .filter(
+              placementXLS -> Objects.toString(placementXLS.getGrade()).equalsIgnoreCase(gradeName))
+          .forEach(placementXLS -> {
+            logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
+            placementXLS.addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
+                gradeName));
+          });
     }
     return gradeValid;
   }
@@ -298,27 +300,41 @@ public class PlacementUpdateTransformerService {
   public void setSpecialties(PlacementUpdateXLS placementXLS, PlacementDetailsDTO placementDTO,
       Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName) {
     Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = placementDTO.getSpecialties();
-    if (placementSpecialtyDTOS == null) {
+    // If the primary specialty is populated in the template,
+    // clean the existing specialty/other specialties/sub specialty.
+    if (placementSpecialtyDTOS == null || !StringUtils.isEmpty(placementXLS.getSpecialty1())) {
       placementSpecialtyDTOS = initialiseNewPlacementSpecialtyDTOS(placementDTO);
     }
+    // Primary Specialty
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional1 = buildPlacementSpecialtyDTO(
-        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty1(), true);
+        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty1(),
+        PostSpecialtyType.PRIMARY);
     if (placementSpecialtyDTOOptional1.isPresent()) {
-      placementSpecialtyDTOS = initialiseNewPlacementSpecialtyDTOS(placementDTO);
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO);
     }
+    // Other specialties
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(
-        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty2(), false);
+        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty2(),
+        PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional2.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO);
     }
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(
-        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(), false);
+        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(),
+        PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional3.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO);
+    }
+    // Sub specialty
+    Optional<PlacementSpecialtyDTO> placementSubSpecialtyDtoOptional = buildPlacementSpecialtyDTO(
+        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSubSpecialty(),
+        PostSpecialtyType.SUB_SPECIALTY);
+    if (placementSubSpecialtyDtoOptional.isPresent()) {
+      PlacementSpecialtyDTO placementSpecialtyDto = placementSubSpecialtyDtoOptional.get();
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDto);
     }
   }
 
@@ -329,20 +345,19 @@ public class PlacementUpdateTransformerService {
     return placementSpecialtyDTOS;
   }
 
-  public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
+  public void addDTOIfNotPresentAsSubSpecialty(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
       PlacementSpecialtyDTO placementSpecialtyDTO) {
-    if (placementSpecialtyDTOS.isEmpty()) {
-      placementSpecialtyDTOS.add(placementSpecialtyDTO);
-    } else if (!placementSpecialtyDTOS.contains(placementSpecialtyDTO)) {
-      placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
-      placementSpecialtyDTOS.add(placementSpecialtyDTO);
+    if (placementSpecialtyDTO.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)) {
+      placementSpecialtyDTOS.removeIf(
+          ps -> ps.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY));
     }
+    placementSpecialtyDTOS.add(placementSpecialtyDTO);
   }
 
   public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementUpdateXLS placementXLS,
       PlacementDetailsDTO placementDTO,
       Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName,
-      String specialtyName, boolean primary) {
+      String specialtyName, PostSpecialtyType postSpecialtyType) {
     Optional<SpecialtyDTO> aSingleValidSpecialty = getASingleValidSpecialtyFromTheReferenceService(
         placementXLS, getSpecialtyDTOsForName, specialtyName);
     if (aSingleValidSpecialty.isPresent()) {
@@ -351,8 +366,7 @@ public class PlacementUpdateTransformerService {
       placementSpecialtyDTO.setPlacementId(placementDTO.getId());
       placementSpecialtyDTO.setSpecialtyId(specialtyDTO.getId());
       placementSpecialtyDTO.setSpecialtyName(specialtyName);
-      placementSpecialtyDTO
-          .setPlacementSpecialtyType(primary ? PostSpecialtyType.PRIMARY : PostSpecialtyType.OTHER);
+      placementSpecialtyDTO.setPlacementSpecialtyType(postSpecialtyType);
       return Optional.of(placementSpecialtyDTO);
     }
     return Optional.empty();
@@ -438,8 +452,8 @@ public class PlacementUpdateTransformerService {
         .collect(Collectors.toSet());
     Map<String, GradeDTO> gradeMapByName = new HashMap<>();
     List<String> gradesValidForPlacements = referenceServiceImpl
-            .findGradesCurrentPlacementAndTrainingGrades().stream().map(GradeDTO::getName)
-            .collect(Collectors.toList());
+        .findGradesCurrentPlacementAndTrainingGrades().stream().map(GradeDTO::getName)
+        .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
       List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
       if (isPlacementGradeValid(placementXLSS, gradeName, gradesValidForPlacements)) {
