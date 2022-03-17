@@ -311,7 +311,7 @@ public class PlacementUpdateTransformerService {
         PostSpecialtyType.PRIMARY);
     if (placementSpecialtyDTOOptional1.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO);
     }
     // Other specialties
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(
@@ -319,14 +319,14 @@ public class PlacementUpdateTransformerService {
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional2.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO);
     }
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(
         placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(),
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional3.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO);
     }
     // Sub specialty
     Optional<PlacementSpecialtyDTO> placementSubSpecialtyDtoOptional = buildPlacementSpecialtyDTO(
@@ -334,7 +334,7 @@ public class PlacementUpdateTransformerService {
         PostSpecialtyType.SUB_SPECIALTY);
     if (placementSubSpecialtyDtoOptional.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDto = placementSubSpecialtyDtoOptional.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDto);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDto);
     }
   }
 
@@ -345,7 +345,7 @@ public class PlacementUpdateTransformerService {
     return placementSpecialtyDTOS;
   }
 
-  public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
+  public void addDTOIfNotPresentAsSubSpecialty(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
       PlacementSpecialtyDTO placementSpecialtyDTO) {
     if (placementSpecialtyDTO.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)) {
       placementSpecialtyDTOS.removeIf(
