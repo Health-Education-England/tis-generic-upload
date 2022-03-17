@@ -52,7 +52,7 @@ public class UploadFileServiceImplTest {
       HSSFSheet sheet = (HSSFSheet)workbook.getSheetAt(0);
       Map<CellAddress, HSSFComment> commentMap = sheet.getCellComments();
       int size1 = commentMap.size();
-      UploadFileServiceImpl.removeCommentsForRemovedLines(sheet, Collections.singleton(1));
+      UploadFileServiceImpl.removeCommentsForRemovedRows(sheet, Collections.singleton(1));
       commentMap = sheet.getCellComments();
       int size2 = commentMap.size();
       assertThat(size1).isGreaterThan(size2);
