@@ -69,8 +69,20 @@ public class UploadFileServiceImpl implements UploadFileService {
     this.azureProperties = azureProperties;
   }
 
+  private static void removeRowComments(Sheet sheet, int rowIndex) {
+    int numOfCols = sheet.getRow(rowIndex).getLastCellNum();
+    for (int j = 0; j < numOfCols; j++) {
+      Cell cell = sheet.getRow(rowIndex).getCell(j);
+      if (cell != null) {
+        cell.removeCellComment();
+      }
+    }
+  }
+
   //Helper method to shift rows up to remove a row as the removeRow method only blanks it out - https://stackoverflow.com/a/3554129
   public static void removeRow(Sheet sheet, int rowIndex) {
+    removeRowComments(sheet, rowIndex);
+
     int lastRowNum = sheet.getLastRowNum();
     if (rowIndex >= 0 && rowIndex < lastRowNum) {
       sheet.shiftRows(rowIndex + 1, lastRowNum, -1);
