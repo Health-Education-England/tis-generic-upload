@@ -28,6 +28,8 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.hssf.usermodel.HSSFComment;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -35,6 +37,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.util.CellAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,20 +72,19 @@ public class UploadFileServiceImpl implements UploadFileService {
     this.azureProperties = azureProperties;
   }
 
-  private static void removeRowComments(Sheet sheet, int rowIndex) {
-    int numOfCols = sheet.getRow(rowIndex).getLastCellNum();
-    for (int j = 0; j < numOfCols; j++) {
-      Cell cell = sheet.getRow(rowIndex).getCell(j);
-      if (cell != null) {
-        cell.removeCellComment();
+  static void removeCommentsForRemovedRows(Sheet sheet,
+      Set<Integer> setOfLineNumbersWithErrors) {
+    Map<CellAddress, HSSFComment> commentMap = ((HSSFSheet) sheet).getCellComments();
+    for (Map.Entry<CellAddress, HSSFComment> comment: commentMap.entrySet()) {
+      CellAddress address = comment.getKey();
+      if (!setOfLineNumbersWithErrors.contains(address.getRow())) {
+        sheet.getRow(address.getRow()).getCell(address.getColumn()).removeCellComment();
       }
     }
   }
 
   //Helper method to shift rows up to remove a row as the removeRow method only blanks it out - https://stackoverflow.com/a/3554129
   public static void removeRow(Sheet sheet, int rowIndex) {
-    removeRowComments(sheet, rowIndex);
-
     int lastRowNum = sheet.getLastRowNum();
     if (rowIndex >= 0 && rowIndex < lastRowNum) {
       sheet.shiftRows(rowIndex + 1, lastRowNum, -1);
@@ -162,6 +164,7 @@ public class UploadFileServiceImpl implements UploadFileService {
         errorReportingColumnIndex--; //overwrite the last error column
       }
       setErrorHeader(workbook, sheet, errorReportingColumnIndex);
+      removeCommentsForRemovedRows(sheet, setOfLineNumbersWithErrors);
 
       for (int rowNumber = sheet.getLastRowNum(); rowNumber > 0; rowNumber--) {
         Row row = sheet.getRow(rowNumber);

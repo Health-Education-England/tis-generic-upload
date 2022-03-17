@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Map;
 import org.apache.poi.hssf.usermodel.HSSFComment;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -51,7 +52,7 @@ public class UploadFileServiceImplTest {
       HSSFSheet sheet = (HSSFSheet)workbook.getSheetAt(0);
       Map<CellAddress, HSSFComment> commentMap = sheet.getCellComments();
       int size1 = commentMap.size();
-      UploadFileServiceImpl.removeRow(sheet, 4);
+      UploadFileServiceImpl.removeCommentsForRemovedLines(sheet, Collections.singleton(1));
       commentMap = sheet.getCellComments();
       int size2 = commentMap.size();
       assertThat(size1).isGreaterThan(size2);
