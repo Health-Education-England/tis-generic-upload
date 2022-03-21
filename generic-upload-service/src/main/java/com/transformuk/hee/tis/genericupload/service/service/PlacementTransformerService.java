@@ -85,6 +85,10 @@ public class PlacementTransformerService {
   private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
+
+  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before " +
+          "start date";
+
   Function<PlacementXLS, String> getPhNumber = PlacementXLS::getPublicHealthNumber;
   Function<PlacementXLS, String> getGdcNumber = PlacementXLS::getGdcNumber;
   Function<PlacementXLS, String> getGmcNumber = PlacementXLS::getGmcNumber;
@@ -364,8 +368,13 @@ public class PlacementTransformerService {
       }
       return false;
     }
+    else if (placementXLS.getDateFrom().after(placementXLS.getDateTo())) {
+      placementXLS.addErrorMessage(END_DATE_IS_SET_BEFORE_START_DATE);
+      return false;
+    }
     return true;
   }
+
 
   private void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName,
       Map<String, GradeDTO> gradeMapByName, PlacementXLS placementXLS,
