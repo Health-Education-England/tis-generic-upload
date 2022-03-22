@@ -4,13 +4,8 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.splitMultiValueField;
 import static org.slf4j.LoggerFactory.getLogger;
 
-import com.transformuk.hee.tis.assessment.api.dto.AssessmentDTO;
-import com.transformuk.hee.tis.assessment.api.dto.AssessmentDetailDTO;
-import com.transformuk.hee.tis.assessment.api.dto.AssessmentOutcomeDTO;
-import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementSupervisor;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PostFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.supervisor.PhnDTO;
 import com.transformuk.hee.tis.genericupload.service.service.supervisor.RegNumberDTO;
@@ -60,15 +55,16 @@ public class PlacementUpdateTransformerService {
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
   private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
   private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
-  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR = "Expected to find a placement grade for : %s";
+  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR =
+          "Expected to find a placement grade for : %s";
   private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
   private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for Registration number : %s";
   private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
   private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
-  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before " +
-          "start date";
+  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before "
+          + "start date";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
