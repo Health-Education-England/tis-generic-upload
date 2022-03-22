@@ -4,8 +4,13 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.splitMultiValueField;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.transformuk.hee.tis.assessment.api.dto.AssessmentDTO;
+import com.transformuk.hee.tis.assessment.api.dto.AssessmentDetailDTO;
+import com.transformuk.hee.tis.assessment.api.dto.AssessmentOutcomeDTO;
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementSupervisor;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PostFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.supervisor.PhnDTO;
 import com.transformuk.hee.tis.genericupload.service.service.supervisor.RegNumberDTO;
@@ -31,14 +36,7 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
@@ -69,6 +67,13 @@ public class PlacementUpdateTransformerService {
   private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
+
+
+  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before " +
+          "start date";
+
+  private static final String RANDOM_TEST_ERROR = "Test error " +
+          "start date";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -196,17 +201,53 @@ public class PlacementUpdateTransformerService {
     return gradeValid;
   }
 
+  private void setDateError(String date,
+                                     PlacementUpdateXLS placementXLS) {
+    Date toDate = placementXLS.getDateTo();
+      if (date == "dateTo") {
+        placementXLS.addErrorMessage(END_DATE_IS_SET_BEFORE_START_DATE);
+      }
+  }
+
   private void updatePlacement(RegNumberToDTOLookup regNumberToDTOLookup,
       PlacementDetailsDTO dbPlacementDetailsDTO,
       Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName,
       PlacementUpdateXLS placementXLS, PostDTO postDTO, String username) {
-    if (placementXLS.getDateFrom() != null) {
-      LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
-      dbPlacementDetailsDTO.setDateFrom(dateFrom);
+
+    Date prevDateTo = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateTo());
+    Date prevDateFrom = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateFrom());
+    boolean dateError = true;
+
+    if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null)
+    {
+     if(placementXLS.getDateFrom().before(placementXLS.getDateTo()))
+     {
+       LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
+       dbPlacementDetailsDTO.setDateFrom(dateFrom);
+       LocalDate dateTo = convertDate(placementXLS.getDateTo());
+       dbPlacementDetailsDTO.setDateTo(dateTo);
+       dateError = false;
+     }
+     else { dateError = true; }
+    } else if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() == null) {
+      if(placementXLS.getDateFrom().before(prevDateTo))
+      {
+        LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
+        dbPlacementDetailsDTO.setDateFrom(dateFrom);
+        dateError = false;
+      } else {dateError = true;}
+    } else if (placementXLS.getDateTo() != null && placementXLS.getDateFrom() == null) {
+      if(placementXLS.getDateTo().after(prevDateFrom)) {
+        LocalDate dateTo = convertDate(placementXLS.getDateTo());
+        dbPlacementDetailsDTO.setDateTo(dateTo);
+        dateError = false;
+      } else {dateError = true;}
+    } else if (placementXLS.getDateFrom() == null && placementXLS.getDateTo() == null)
+    {
+      dateError = false;
     }
-    if (placementXLS.getDateTo() != null) {
-      LocalDate dateTo = convertDate(placementXLS.getDateTo());
-      dbPlacementDetailsDTO.setDateTo(dateTo);
+    if(dateError) {
+      setDateError("dateTo", placementXLS);
     }
 
     setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, dbPlacementDetailsDTO);
