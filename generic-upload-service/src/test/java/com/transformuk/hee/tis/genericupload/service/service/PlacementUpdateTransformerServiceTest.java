@@ -402,24 +402,5 @@ public class PlacementUpdateTransformerServiceTest {
     placementXLS.setDateFrom(java.sql.Date.valueOf("2033-01-18"));
     placementUpdateTransformerService.validateDates(dbPlacementDetailsDTO, placementXLS);
     assertThat(placementXLS.getErrorMessage()).contains(END_DATE_IS_SET_BEFORE_START_DATE);
-
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
