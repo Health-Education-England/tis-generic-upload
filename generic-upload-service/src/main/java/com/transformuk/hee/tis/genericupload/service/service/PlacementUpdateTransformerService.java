@@ -209,10 +209,8 @@ public class PlacementUpdateTransformerService {
     Date prevDateFrom = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateFrom());
     boolean dateError = true;
 
-    if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null)
-    {
-      if(placementXLS.getDateFrom().before(placementXLS.getDateTo()))
-      {
+    if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
+      if(placementXLS.getDateFrom().before(placementXLS.getDateTo())) {
         LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
         dbPlacementDetailsDTO.setDateFrom(dateFrom);
         LocalDate dateTo = convertDate(placementXLS.getDateTo());
@@ -221,8 +219,7 @@ public class PlacementUpdateTransformerService {
       }
       else { dateError = true; }
     } else if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() == null) {
-      if(placementXLS.getDateFrom().before(prevDateTo))
-      {
+      if(placementXLS.getDateFrom().before(prevDateTo)) {
         LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
         dbPlacementDetailsDTO.setDateFrom(dateFrom);
         dateError = false;
@@ -233,8 +230,7 @@ public class PlacementUpdateTransformerService {
         dbPlacementDetailsDTO.setDateTo(dateTo);
         dateError = false;
       } else {dateError = true;}
-    } else if (placementXLS.getDateFrom() == null && placementXLS.getDateTo() == null)
-    {
+    } else if (placementXLS.getDateFrom() == null && placementXLS.getDateTo() == null) {
       dateError = false;
     }
     if(dateError) {
