@@ -93,10 +93,13 @@ public class PlacementUpdateTransformerServiceTest {
         "A MEDIA COLLEGE", "NHS_CODE", Status.CURRENT);
     SpecialtyDTO anotherSpecialtyDTO = createSpeciltyDTO(123453L, "123453", ANOTHER,
         "A MEDIA COLLEGE 3", "NHS_CODE 3", Status.CURRENT);
+    SpecialtyDTO specialtyDTO1 = createSpeciltyDTO(11111L, "11111", "11111", "A MEIDA COLLEGE",
+        "NHS_CODE", Status.CURRENT);
 
     specialtyByName = new HashMap<>();
     createSingleListWithSpecialty(specialtyByName, specialtyDTO);
     createSingleListWithSpecialty(specialtyByName, anotherSpecialtyDTO);
+    createSingleListWithSpecialty(specialtyByName, specialtyDTO1);
 
     specialtyByNameWithDuplicate = new HashMap<>();
     createSingleListWithSpecialty(specialtyByNameWithDuplicate, specialtyDTO);
@@ -186,11 +189,18 @@ public class PlacementUpdateTransformerServiceTest {
   }
 
   @Test
-  public void canBuildMultipleSpecialtiesForPlacement() {
+  public void canBuildAllSpecialtiesWhenPrimarySpecialtyPopulatedForPlacement() {
     placementXLS.setSpecialty2(ANOTHER);
+    placementXLS.setSubSpecialty("11111");
     placementUpdateTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementUpdateTransformerServiceTest::getSpecialtiesForString);
-    assertThat(placementDTO.getSpecialties().size()).isEqualTo(2);
+    assertThat(placementDTO.getSpecialties().size()).isEqualTo(3);
+    long countOfOtherSpecialties = placementDTO.getSpecialties().stream()
+        .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER)).count();
+    long countOfSubSpecialties = placementDTO.getSpecialties().stream()
+        .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)).count();
+    assertThat(countOfOtherSpecialties).isEqualTo(1);
+    assertThat(countOfSubSpecialties).isEqualTo(1);
   }
 
   @Test
@@ -204,57 +214,191 @@ public class PlacementUpdateTransformerServiceTest {
   }
 
   @Test
-  public void handlesDuplicationOnPrimary() {
+  public void shouldSkipOtherSpecialtyWhenDuplicationOnPrimary() {
     placementXLS.setSpecialty2(ANOTHER);
     placementXLS.setSpecialty3("12345");
 
     placementUpdateTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementUpdateTransformerServiceTest::getSpecialtiesForString);
     assertThat(placementDTO.getSpecialties().size()).isEqualTo(2);
+    long countOfOtherSpecialties = placementDTO.getSpecialties().stream()
+        .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER)).count();
+    assertThat(countOfOtherSpecialties).isEqualTo(1);
   }
 
   @Test
-  public void overwritesSpecialtiesIfOneSpecialtyExistsOnUpload() {
-    PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
-    placementSpecialtyDTO.setSpecialtyId(10L);
-    placementSpecialtyDTO.setPlacementId(10L);
-    placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.PRIMARY);
-    Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = new HashSet<>();
-    placementSpecialtyDTOS.add(placementSpecialtyDTO);
-    placementDTO.setSpecialties(placementSpecialtyDTOS);
+  public void shouldSkipSubSpecialtyWhenDuplicationOnPrimary() {
+    placementXLS.setSubSpecialty("12345");
 
     placementUpdateTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementUpdateTransformerServiceTest::getSpecialtiesForString);
+
     assertThat(placementDTO.getSpecialties().size()).isEqualTo(1);
-    for (PlacementSpecialtyDTO placementSpecialtyDTOFromPlacement : placementDTO.getSpecialties()) {
-      if (placementSpecialtyDTOFromPlacement.getSpecialtyId() == 12345L) {
-        assertThat(placementSpecialtyDTOFromPlacement.getPlacementSpecialtyType())
-            .isEqualTo(PostSpecialtyType.PRIMARY);
-      }
-    }
+    PlacementSpecialtyDTO placementSpecialtyDto = placementDTO.getSpecialties().iterator().next();
+    assertThat(placementSpecialtyDto.getPlacementSpecialtyType()).isEqualTo(
+        PostSpecialtyType.PRIMARY);
+    assertThat(placementSpecialtyDto.getSpecialtyName()).isEqualTo("12345");
   }
 
   @Test
-  public void doesNotOverwritesSpecialtiesIfNoSpecialtyExistsOnUpload() {
-    PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
-    placementSpecialtyDTO.setSpecialtyId(10L);
-    placementSpecialtyDTO.setPlacementId(10L);
-    placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.PRIMARY);
-    Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = new HashSet<>();
-    placementSpecialtyDTOS.add(placementSpecialtyDTO);
-    placementDTO.setSpecialties(placementSpecialtyDTOS);
+  public void shouldSkipSubSpecialtyWhenDuplicationOnOtherSpecialties() {
+    placementXLS.setSpecialty2(ANOTHER);
+    placementXLS.setSpecialty3("11111");
+    placementXLS.setSubSpecialty(ANOTHER);
+
+    placementUpdateTransformerService.setSpecialties(placementXLS, placementDTO,
+        PlacementUpdateTransformerServiceTest::getSpecialtiesForString);
+
+    assertThat(placementDTO.getSpecialties().size()).isEqualTo(3);
+    long countOfOtherSpecialties = placementDTO.getSpecialties().stream()
+        .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER)).count();
+    long countOfSubSpecialty = placementDTO.getSpecialties().stream()
+        .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)).count();
+    assertThat(countOfOtherSpecialties).isEqualTo(2);
+    assertThat(countOfSubSpecialty).isEqualTo(0);
+  }
+
+  @Test
+  public void shouldOverwriteAllSpecialtiesIfPrimaryExistsOnUpload() {
+    PlacementSpecialtyDTO primaryPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    primaryPlacementSpecialtyDto.setSpecialtyId(10L);
+    primaryPlacementSpecialtyDto.setPlacementId(10L);
+    primaryPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.PRIMARY);
+
+    PlacementSpecialtyDTO otherPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    otherPlacementSpecialtyDto.setSpecialtyId(20L);
+    otherPlacementSpecialtyDto.setPlacementId(10L);
+    otherPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
+
+    PlacementSpecialtyDTO subPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    subPlacementSpecialtyDto.setSpecialtyId(30L);
+    subPlacementSpecialtyDto.setPlacementId(10L);
+    subPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.SUB_SPECIALTY);
+
+    placementDTO.setSpecialties(
+        Sets.newHashSet(primaryPlacementSpecialtyDto, otherPlacementSpecialtyDto,
+            subPlacementSpecialtyDto));
+
+    placementXLS.setSpecialty2(ANOTHER);
+    placementXLS.setSubSpecialty("11111");
+
+    placementUpdateTransformerService.setSpecialties(placementXLS, placementDTO,
+        PlacementUpdateTransformerServiceTest::getSpecialtiesForString);
+    assertThat(placementDTO.getSpecialties().size()).isEqualTo(3);
+    assertThat(
+        placementDTO.getSpecialties().stream().map(ps -> ps.getPlacementSpecialtyType())).contains(
+        PostSpecialtyType.PRIMARY, PostSpecialtyType.OTHER, PostSpecialtyType.SUB_SPECIALTY);
+    assertThat(placementDTO.getSpecialties().stream().map(ps -> ps.getSpecialtyId())).contains(
+        12345L, 123453L, 11111L);
+  }
+
+  @Test
+  public void shouldNotOverwriteAnySpecialtiesIfNoSpecialtyExistsOnUpload() {
+    PlacementSpecialtyDTO primaryPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    primaryPlacementSpecialtyDto.setSpecialtyId(10L);
+    primaryPlacementSpecialtyDto.setPlacementId(10L);
+    primaryPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.PRIMARY);
+
+    PlacementSpecialtyDTO otherPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    otherPlacementSpecialtyDto.setSpecialtyId(20L);
+    otherPlacementSpecialtyDto.setPlacementId(10L);
+    otherPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
+
+    PlacementSpecialtyDTO subPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    subPlacementSpecialtyDto.setSpecialtyId(30L);
+    subPlacementSpecialtyDto.setPlacementId(10L);
+    subPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.SUB_SPECIALTY);
+
+    placementDTO.setSpecialties(
+        Sets.newHashSet(primaryPlacementSpecialtyDto, otherPlacementSpecialtyDto,
+            subPlacementSpecialtyDto));
 
     placementXLS.setSpecialty1("");
 
     placementUpdateTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementUpdateTransformerServiceTest::getSpecialtiesForString);
-    assertThat(placementDTO.getSpecialties().size()).isEqualTo(1);
-    for (PlacementSpecialtyDTO placementSpecialtyDTOFromPlacement : placementDTO.getSpecialties()) {
-      if (placementSpecialtyDTOFromPlacement.getSpecialtyId() == 10L) {
-        assertThat(placementSpecialtyDTOFromPlacement.getPlacementSpecialtyType())
-            .isEqualTo(PostSpecialtyType.PRIMARY);
-      }
-    }
+    assertThat(placementDTO.getSpecialties().size()).isEqualTo(3);
+    assertThat(
+        placementDTO.getSpecialties().stream().map(ps -> ps.getPlacementSpecialtyType())).contains(
+        PostSpecialtyType.PRIMARY, PostSpecialtyType.OTHER, PostSpecialtyType.SUB_SPECIALTY);
+    assertThat(placementDTO.getSpecialties().stream().map(ps -> ps.getSpecialtyId())).contains(10L,
+        20L, 30L);
+  }
+
+  @Test
+  public void shouldAddOtherSpecialtiesIfPrimaryNotFromXls() {
+    PlacementSpecialtyDTO primaryPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    primaryPlacementSpecialtyDto.setSpecialtyId(10L);
+    primaryPlacementSpecialtyDto.setPlacementId(10L);
+    primaryPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.PRIMARY);
+
+    PlacementSpecialtyDTO otherPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    otherPlacementSpecialtyDto.setSpecialtyId(20L);
+    otherPlacementSpecialtyDto.setPlacementId(10L);
+    otherPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
+
+    PlacementSpecialtyDTO subPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    subPlacementSpecialtyDto.setSpecialtyId(30L);
+    subPlacementSpecialtyDto.setPlacementId(10L);
+    subPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.SUB_SPECIALTY);
+
+    placementDTO.setSpecialties(
+        Sets.newHashSet(primaryPlacementSpecialtyDto, otherPlacementSpecialtyDto,
+            subPlacementSpecialtyDto));
+
+    placementXLS.setSpecialty1(null);
+    placementXLS.setSpecialty2("12345");
+    placementXLS.setSpecialty3(ANOTHER);
+
+    placementUpdateTransformerService.setSpecialties(placementXLS, placementDTO,
+        PlacementUpdateTransformerServiceTest::getSpecialtiesForString);
+
+    assertThat(placementDTO.getSpecialties().size()).isEqualTo(5);
+    List<PlacementSpecialtyDTO> otherPlacementSpecialtyDtos = placementDTO.getSpecialties().stream()
+        .filter(ps -> ps.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER)).collect(
+            Collectors.toList());
+    assertThat(otherPlacementSpecialtyDtos.size()).isEqualTo(3);
+    assertThat(otherPlacementSpecialtyDtos.stream().map(ps -> ps.getSpecialtyId())).contains(20L,
+        12345L, 123453L);
+  }
+
+  @Test
+  public void shouldUpdateSubSpecialtiesIfPrimaryNotFromXls() {
+    PlacementSpecialtyDTO primaryPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    primaryPlacementSpecialtyDto.setSpecialtyId(10L);
+    primaryPlacementSpecialtyDto.setPlacementId(10L);
+    primaryPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.PRIMARY);
+
+    PlacementSpecialtyDTO otherPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    otherPlacementSpecialtyDto.setSpecialtyId(20L);
+    otherPlacementSpecialtyDto.setPlacementId(10L);
+    otherPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
+
+    PlacementSpecialtyDTO subPlacementSpecialtyDto = new PlacementSpecialtyDTO();
+    subPlacementSpecialtyDto.setSpecialtyId(30L);
+    subPlacementSpecialtyDto.setPlacementId(10L);
+    subPlacementSpecialtyDto.setPlacementSpecialtyType(PostSpecialtyType.SUB_SPECIALTY);
+
+    placementDTO.setSpecialties(
+        Sets.newHashSet(primaryPlacementSpecialtyDto, otherPlacementSpecialtyDto,
+            subPlacementSpecialtyDto));
+
+    placementXLS.setSpecialty1(null);
+    placementXLS.setSpecialty2("12345");
+    placementXLS.setSubSpecialty(ANOTHER);
+
+    placementUpdateTransformerService.setSpecialties(placementXLS, placementDTO,
+        PlacementUpdateTransformerServiceTest::getSpecialtiesForString);
+
+    assertThat(placementDTO.getSpecialties().size()).isEqualTo(4);
+    assertThat(placementDTO.getSpecialties().stream()
+        .filter(ps -> ps.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER))
+        .count()).isEqualTo(2);
+    List<PlacementSpecialtyDTO> subSpecialtyDtoList = placementDTO.getSpecialties().stream()
+        .filter(ps -> ps.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY))
+        .collect(Collectors.toList());
+    assertThat(subSpecialtyDtoList.size()).isEqualTo(1);
+    assertThat(subSpecialtyDtoList.get(0).getSpecialtyName()).isEqualTo(ANOTHER);
   }
 
   @Test
@@ -343,7 +487,7 @@ public class PlacementUpdateTransformerServiceTest {
     placementXLS.setGrade(gradeName); //not a placement grade
     List<PlacementUpdateXLS> placementUpdateXLSS = Collections.singletonList(placementXLS);
     placementUpdateTransformerService.isPlacementGradeValid(placementUpdateXLSS, gradeName,
-            gradesValidForPlacements);
+        gradesValidForPlacements);
     //THEN
     assertThat(placementXLS.getErrorMessage()).contains(EXPECTED_A_PLACEMENT_GRADE_FOR);
   }
@@ -356,7 +500,7 @@ public class PlacementUpdateTransformerServiceTest {
     placementXLS.setGrade(gradeName); //placement grade
     List<PlacementUpdateXLS> placementUpdateXLSS = Collections.singletonList(placementXLS);
     placementUpdateTransformerService.isPlacementGradeValid(placementUpdateXLSS, gradeName,
-            gradesValidForPlacements);
+        gradesValidForPlacements);
     //THEN
     assertThat(placementXLS.getErrorMessage()).isNull();
   }

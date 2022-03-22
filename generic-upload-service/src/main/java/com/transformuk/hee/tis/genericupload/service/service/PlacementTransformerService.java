@@ -34,7 +34,11 @@ import com.transformuk.hee.tis.tcs.api.dto.PlacementSupervisorDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
-import com.transformuk.hee.tis.tcs.api.enumeration.*;
+import com.transformuk.hee.tis.tcs.api.enumeration.CommentSource;
+import com.transformuk.hee.tis.tcs.api.enumeration.LifecycleState;
+import com.transformuk.hee.tis.tcs.api.enumeration.PlacementSiteType;
+import com.transformuk.hee.tis.tcs.api.enumeration.PlacementStatus;
+import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -221,7 +225,8 @@ public class PlacementTransformerService {
     Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = getPersonBasicDetailsDTOFromRegNumber(
         phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC,
         placementXLS);
-    if (personBasicDetailsDTOOptional.isPresent() && checkSpecialty1ExistsOrRecordError(placementXLS)) {
+    if (personBasicDetailsDTOOptional.isPresent() && checkSpecialty1ExistsOrRecordError(
+        placementXLS)) {
       PersonBasicDetailsDTO personBasicDetailsDTO = personBasicDetailsDTOOptional.get();
       if (!placementXLS.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
         placementXLS
@@ -267,23 +272,24 @@ public class PlacementTransformerService {
    *
    * SIDE-EFFECT: if not valid, this is logged and the affected placement XLS records have an error
    * message attached to them.
-   * @param placementXLSS the list of placement XLS records
-   * @param gradeName the grade to verify
+   *
+   * @param placementXLSS   the list of placement XLS records
+   * @param gradeName       the grade to verify
    * @param placementGrades the list of valid placement grades
    * @return true if gradeName was a valid placement grade, false otherwise (note side-effect above)
    */
   public boolean isPlacementGradeValid(List<PlacementXLS> placementXLSS, String gradeName,
-                                       List<String> placementGrades) {
+      List<String> placementGrades) {
     boolean gradeValid =
-            placementGrades.stream().anyMatch(gradeName::equalsIgnoreCase);
+        placementGrades.stream().anyMatch(gradeName::equalsIgnoreCase);
     if (!gradeValid) {
       placementXLSS.stream()
-              .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
-              .forEach(placementXLS -> {
-                logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
-                placementXLS.addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
-                        gradeName));
-              });
+          .filter(placementXLS -> placementXLS.getGrade().equalsIgnoreCase(gradeName))
+          .forEach(placementXLS -> {
+            logger.error(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR, gradeName));
+            placementXLS.addErrorMessage(String.format(EXPECTED_A_PLACEMENT_GRADE_FOR,
+                gradeName));
+          });
     }
     return gradeValid;
   }
@@ -488,28 +494,42 @@ public class PlacementTransformerService {
 
   public void setSpecialties(PlacementXLS placementXLS, PlacementDetailsDTO placementDTO,
       Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName) {
-    Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = placementDTO.getSpecialties();
-    if (placementSpecialtyDTOS == null) {
-      placementSpecialtyDTOS = initialiseNewPlacementSpecialtyDTOS(placementDTO);
-    }
+    // primary specialty is mandatory.
+    // When it's populated in the template,
+    // clean the existing specialty/other specialties/sub specialty.
+    Set<PlacementSpecialtyDTO> placementSpecialtyDtos = initialiseNewPlacementSpecialtyDTOS(
+        placementDTO);
+
+    // Primary specialty
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional1 = buildPlacementSpecialtyDTO(
-        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty1(), true);
+        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty1(),
+        PostSpecialtyType.PRIMARY);
     if (placementSpecialtyDTOOptional1.isPresent()) {
-      placementSpecialtyDTOS = initialiseNewPlacementSpecialtyDTOS(placementDTO);
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO);
     }
+    // Other specialties
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(
-        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty2(), false);
+        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty2(),
+        PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional2.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO);
     }
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(
-        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(), false);
+        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(),
+        PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional3.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO);
+    }
+    // Sub specialty
+    Optional<PlacementSpecialtyDTO> placementSubSpecialtyDtoOptional = buildPlacementSpecialtyDTO(
+        placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSubSpecialty(),
+        PostSpecialtyType.SUB_SPECIALTY);
+    if (placementSubSpecialtyDtoOptional.isPresent()) {
+      PlacementSpecialtyDTO placementSpecialtyDto = placementSubSpecialtyDtoOptional.get();
+      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDto);
     }
   }
 
@@ -522,18 +542,13 @@ public class PlacementTransformerService {
 
   public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
       PlacementSpecialtyDTO placementSpecialtyDTO) {
-    if (placementSpecialtyDTOS.isEmpty()) {
-      placementSpecialtyDTOS.add(placementSpecialtyDTO);
-    } else if (!placementSpecialtyDTOS.contains(placementSpecialtyDTO)) {
-      placementSpecialtyDTO.setPlacementSpecialtyType(PostSpecialtyType.OTHER);
-      placementSpecialtyDTOS.add(placementSpecialtyDTO);
-    }
+    placementSpecialtyDTOS.add(placementSpecialtyDTO);
   }
 
   public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementXLS placementXLS,
       PlacementDetailsDTO placementDTO,
       Function<String, List<SpecialtyDTO>> getSpecialtyDTOsForName, String specialtyName,
-      boolean primary) {
+      PostSpecialtyType specialtyType) {
     Optional<SpecialtyDTO> aSingleValidSpecialty = getASingleValidSpecialtyFromTheReferenceService(
         placementXLS, getSpecialtyDTOsForName, specialtyName);
     if (aSingleValidSpecialty.isPresent()) {
@@ -542,8 +557,7 @@ public class PlacementTransformerService {
       placementSpecialtyDTO.setPlacementId(placementDTO.getId());
       placementSpecialtyDTO.setSpecialtyId(specialtyDTO.getId());
       placementSpecialtyDTO.setSpecialtyName(specialtyName);
-      placementSpecialtyDTO
-          .setPlacementSpecialtyType(primary ? PostSpecialtyType.PRIMARY : PostSpecialtyType.OTHER);
+      placementSpecialtyDTO.setPlacementSpecialtyType(specialtyType);
       return Optional.of(placementSpecialtyDTO);
     }
     return Optional.empty();
@@ -584,8 +598,7 @@ public class PlacementTransformerService {
     if (StringUtils.isEmpty(placementXLS.getSpecialty1())) {
       placementXLS.addErrorMessage(SPECIALTY1_IS_MANDATORY);
       return false;
-    }
-    else {
+    } else {
       return true;
     }
   }
@@ -626,8 +639,8 @@ public class PlacementTransformerService {
         .collect(Collectors.toSet());
     Map<String, GradeDTO> gradeMapByName = new HashMap<>();
     List<String> gradesValidForPlacements = referenceServiceImpl
-            .findGradesCurrentPlacementAndTrainingGrades().stream().map(GradeDTO::getName)
-            .collect(Collectors.toList());
+        .findGradesCurrentPlacementAndTrainingGrades().stream().map(GradeDTO::getName)
+        .collect(Collectors.toList());
     for (String gradeName : gradeNames) {
       List<GradeDTO> gradesByName = referenceServiceImpl.findGradesByName(gradeName);
       if (isPlacementGradeValid(placementXLSS, gradeName, gradesValidForPlacements)) {
