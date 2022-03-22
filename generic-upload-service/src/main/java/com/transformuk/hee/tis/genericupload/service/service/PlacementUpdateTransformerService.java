@@ -212,17 +212,17 @@ public class PlacementUpdateTransformerService {
       }
       else { dateError = true; }
     } else if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() == null) {
-      if(placementXLS.getDateFrom().before(prevDateTo)) {
+      if (placementXLS.getDateFrom().before(prevDateTo)) {
         LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
         dbPlacementDetailsDTO.setDateFrom(dateFrom);
         dateError = false;
-      } else {dateError = true;}
+      } else { dateError = true; }
     } else if (placementXLS.getDateTo() != null && placementXLS.getDateFrom() == null) {
-      if(placementXLS.getDateTo().after(prevDateFrom)) {
+      if (placementXLS.getDateTo().after(prevDateFrom)) {
         LocalDate dateTo = convertDate(placementXLS.getDateTo());
         dbPlacementDetailsDTO.setDateTo(dateTo);
         dateError = false;
-      } else {dateError = true;}
+      } else { dateError = true; }
     } else if (placementXLS.getDateFrom() == null && placementXLS.getDateTo() == null) {
       dateError = false;
     }
