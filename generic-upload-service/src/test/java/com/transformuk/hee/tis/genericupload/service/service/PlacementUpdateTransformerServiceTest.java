@@ -17,9 +17,11 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import java.util.stream.Collectors;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,6 +32,8 @@ public class PlacementUpdateTransformerServiceTest {
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name";
   private static final String EXPECTED_A_PLACEMENT_GRADE_FOR = "Expected to find a placement grade for";
+  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before "
+          + "start date";
   static Map<String, List<SpecialtyDTO>> specialtyByName, specialtyByNameWithDuplicate;
   static Map<String, List<SiteDTO>> siteByName;
   PlacementUpdateTransformerService placementUpdateTransformerService;
@@ -356,4 +360,66 @@ public class PlacementUpdateTransformerServiceTest {
     //THEN
     assertThat(placementXLS.getErrorMessage()).isNull();
   }
+
+  @Test
+  public void shouldValidateDates() {
+
+    PlacementDetailsDTO dbPlacementDetailsDTO = new PlacementDetailsDTO();
+    dbPlacementDetailsDTO.setDateFrom(LocalDate.parse("2014-02-23"));
+    dbPlacementDetailsDTO.setDateTo(LocalDate.parse("2016-02-21"));
+    placementXLS.setDateFrom(java.sql.Date.valueOf("2019-01-18"));
+    placementXLS.setDateTo(java.sql.Date.valueOf("2022-01-18"));
+
+
+    //when two valid dates provided trigger no errors
+    placementUpdateTransformerService.validateDates(dbPlacementDetailsDTO, placementXLS);
+    assertThat(placementXLS.getErrorMessage()).isNull();
+
+    //when valid dateFrom provided trigger no errors
+    placementXLS.setDateTo(null);
+    placementUpdateTransformerService.validateDates(dbPlacementDetailsDTO, placementXLS);
+    assertThat(placementXLS.getErrorMessage()).isNull();
+
+    //when valid dateTo provided trigger no errors
+    placementXLS.setDateTo(java.sql.Date.valueOf("2022-01-18"));
+    placementXLS.setDateFrom(null);
+    placementUpdateTransformerService.validateDates(dbPlacementDetailsDTO, placementXLS);
+    assertThat(placementXLS.getErrorMessage()).isNull();
+
+    //when invalid dateTo provided trigger errors
+    placementXLS.setDateTo(java.sql.Date.valueOf("2001-01-18"));
+    placementUpdateTransformerService.validateDates(dbPlacementDetailsDTO, placementXLS);
+    assertThat(placementXLS.getErrorMessage()).contains(END_DATE_IS_SET_BEFORE_START_DATE);
+
+    //when invalid dateFrom provided trigger errors
+    placementXLS.setDateTo(null);
+    placementXLS.setDateFrom(java.sql.Date.valueOf("2001-01-18"));
+    placementUpdateTransformerService.validateDates(dbPlacementDetailsDTO, placementXLS);
+    assertThat(placementXLS.getErrorMessage()).contains(END_DATE_IS_SET_BEFORE_START_DATE);
+
+    //when two invalid dates provided trigger errors
+    placementXLS.setDateTo(java.sql.Date.valueOf("2022-01-18"));
+    placementXLS.setDateFrom(java.sql.Date.valueOf("2033-01-18"));
+    placementUpdateTransformerService.validateDates(dbPlacementDetailsDTO, placementXLS);
+    assertThat(placementXLS.getErrorMessage()).contains(END_DATE_IS_SET_BEFORE_START_DATE);
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

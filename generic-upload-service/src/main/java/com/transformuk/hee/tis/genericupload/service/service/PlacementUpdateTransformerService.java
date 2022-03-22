@@ -200,7 +200,7 @@ public class PlacementUpdateTransformerService {
       }
   }
 
-  private void validateDates(PlacementDetailsDTO dbPlacementDetailsDTO,
+  public void validateDates(PlacementDetailsDTO dbPlacementDetailsDTO,
                              PlacementUpdateXLS placementXLS) {
 
     Date prevDateTo = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateTo());
