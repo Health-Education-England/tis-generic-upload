@@ -199,7 +199,7 @@ public class PlacementUpdateTransformerService {
   private void setDateError(String date,
                                      PlacementUpdateXLS placementXLS) {
     Date toDate = placementXLS.getDateTo();
-      if (date == "dateTo") {
+      if (date.equals("dateTo")) {
         placementXLS.addErrorMessage(END_DATE_IS_SET_BEFORE_START_DATE);
       }
   }
