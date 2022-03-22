@@ -514,7 +514,6 @@ public class PlacementUpdateTransformerServiceTest {
     placementXLS.setDateFrom(java.sql.Date.valueOf("2019-01-18"));
     placementXLS.setDateTo(java.sql.Date.valueOf("2022-01-18"));
 
-
     //when two valid dates provided trigger no errors
     placementUpdateTransformerService.validateDates(dbPlacementDetailsDTO, placementXLS);
     assertThat(placementXLS.getErrorMessage()).isNull();

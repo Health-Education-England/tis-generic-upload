@@ -60,7 +60,8 @@ public class PlacementUpdateTransformerService {
   private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
   private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for Registration number : %s";
   private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
-  private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
+  private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name"
+          + " \"%s\".";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
   private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before "
@@ -194,14 +195,6 @@ public class PlacementUpdateTransformerService {
     return gradeValid;
   }
 
-  private void setDateError(String date,
-                                     PlacementUpdateXLS placementXLS) {
-    Date toDate = placementXLS.getDateTo();
-      if (date.equals("dateTo")) {
-        placementXLS.addErrorMessage(END_DATE_IS_SET_BEFORE_START_DATE);
-      }
-  }
-
   public void validateDates(PlacementDetailsDTO dbPlacementDetailsDTO,
                              PlacementUpdateXLS placementXLS) {
 
@@ -209,8 +202,8 @@ public class PlacementUpdateTransformerService {
     Date prevDateFrom = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateFrom());
     boolean dateError = true;
 
-    if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
-      if(placementXLS.getDateFrom().before(placementXLS.getDateTo())) {
+    if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
+      if (placementXLS.getDateFrom().before(placementXLS.getDateTo())) {
         LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
         dbPlacementDetailsDTO.setDateFrom(dateFrom);
         LocalDate dateTo = convertDate(placementXLS.getDateTo());
@@ -233,8 +226,8 @@ public class PlacementUpdateTransformerService {
     } else if (placementXLS.getDateFrom() == null && placementXLS.getDateTo() == null) {
       dateError = false;
     }
-    if(dateError) {
-      setDateError("dateTo", placementXLS);
+    if (dateError) {
+      placementXLS.addErrorMessage(END_DATE_IS_SET_BEFORE_START_DATE);
     }
   }
 

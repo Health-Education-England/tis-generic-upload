@@ -90,8 +90,8 @@ public class PlacementTransformerService {
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
 
-  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before " +
-          "start date";
+  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before "
+          + "start date";
 
   Function<PlacementXLS, String> getPhNumber = PlacementXLS::getPublicHealthNumber;
   Function<PlacementXLS, String> getGdcNumber = PlacementXLS::getGdcNumber;
