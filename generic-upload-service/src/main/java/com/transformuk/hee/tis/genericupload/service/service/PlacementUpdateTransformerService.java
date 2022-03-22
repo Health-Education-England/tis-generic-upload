@@ -200,10 +200,8 @@ public class PlacementUpdateTransformerService {
       }
   }
 
-  private void updatePlacement(RegNumberToDTOLookup regNumberToDTOLookup,
-      PlacementDetailsDTO dbPlacementDetailsDTO,
-      Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName,
-      PlacementUpdateXLS placementXLS, PostDTO postDTO, String username) {
+  private void validateDates(PlacementDetailsDTO dbPlacementDetailsDTO,
+                             PlacementUpdateXLS placementXLS) {
 
     Date prevDateTo = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateTo());
     Date prevDateFrom = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateFrom());
@@ -211,15 +209,15 @@ public class PlacementUpdateTransformerService {
 
     if(placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null)
     {
-     if(placementXLS.getDateFrom().before(placementXLS.getDateTo()))
-     {
-       LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
-       dbPlacementDetailsDTO.setDateFrom(dateFrom);
-       LocalDate dateTo = convertDate(placementXLS.getDateTo());
-       dbPlacementDetailsDTO.setDateTo(dateTo);
-       dateError = false;
-     }
-     else { dateError = true; }
+      if(placementXLS.getDateFrom().before(placementXLS.getDateTo()))
+      {
+        LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
+        dbPlacementDetailsDTO.setDateFrom(dateFrom);
+        LocalDate dateTo = convertDate(placementXLS.getDateTo());
+        dbPlacementDetailsDTO.setDateTo(dateTo);
+        dateError = false;
+      }
+      else { dateError = true; }
     } else if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() == null) {
       if(placementXLS.getDateFrom().before(prevDateTo))
       {
@@ -240,6 +238,14 @@ public class PlacementUpdateTransformerService {
     if(dateError) {
       setDateError("dateTo", placementXLS);
     }
+  }
+
+  private void updatePlacement(RegNumberToDTOLookup regNumberToDTOLookup,
+      PlacementDetailsDTO dbPlacementDetailsDTO,
+      Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName,
+      PlacementUpdateXLS placementXLS, PostDTO postDTO, String username) {
+
+    validateDates(dbPlacementDetailsDTO, placementXLS);
 
     setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXLS, dbPlacementDetailsDTO);
     setSpecialties(placementXLS, dbPlacementDetailsDTO,
