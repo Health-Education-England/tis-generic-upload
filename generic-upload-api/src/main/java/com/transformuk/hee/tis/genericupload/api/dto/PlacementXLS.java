@@ -57,6 +57,9 @@ public class PlacementXLS extends TemplateXLS implements PlacementSupervisor {
   @ExcelColumn(name = "Specialty3")
   private String specialty3;
 
+  @ExcelColumn(name = "Sub specialty")
+  private String subSpecialty;
+
   @ExcelColumn(name = "Clinical Supervisor")
   private String clinicalSupervisor;
 
