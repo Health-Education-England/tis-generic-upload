@@ -31,7 +31,15 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
@@ -55,17 +63,14 @@ public class PlacementUpdateTransformerService {
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
   private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
   private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
-  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR =
-          "Expected to find a placement grade for : %s";
+  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR = "Expected to find a placement grade for : %s";
   private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
   private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for Registration number : %s";
   private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
-  private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name"
-          + " \"%s\".";
+  private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
-  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before "
-          + "start date";
+  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before start date";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -195,34 +200,38 @@ public class PlacementUpdateTransformerService {
     return gradeValid;
   }
 
+  /**
+   * Checks if the updated date range from the Excel document is acceptable.
+   *
+   * SIDE-EFFECT: if not valid, this is logged and the affected placement update XLS records have an
+   * error message attached to them.
+   * SIDE-EFFECT: the placementDTO is updated if the dates are acceptable.
+   *
+   * @param dbPlacementDetailsDTO the DTO of the placement
+   * @param placementXLS          the placement update XLS record
+   */
   public void validateDates(PlacementDetailsDTO dbPlacementDetailsDTO,
                              PlacementUpdateXLS placementXLS) {
-
     Date prevDateTo = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateTo());
     Date prevDateFrom = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateFrom());
     boolean dateError = true;
 
     if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
       if (placementXLS.getDateFrom().before(placementXLS.getDateTo())) {
-        LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
-        dbPlacementDetailsDTO.setDateFrom(dateFrom);
-        LocalDate dateTo = convertDate(placementXLS.getDateTo());
-        dbPlacementDetailsDTO.setDateTo(dateTo);
+        dbPlacementDetailsDTO.setDateFrom(convertDate(placementXLS.getDateFrom()));
+        dbPlacementDetailsDTO.setDateTo(convertDate(placementXLS.getDateTo()));
         dateError = false;
       }
-      else { dateError = true; }
     } else if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() == null) {
       if (placementXLS.getDateFrom().before(prevDateTo)) {
-        LocalDate dateFrom = convertDate(placementXLS.getDateFrom());
-        dbPlacementDetailsDTO.setDateFrom(dateFrom);
+        dbPlacementDetailsDTO.setDateFrom(convertDate(placementXLS.getDateFrom()));
         dateError = false;
-      } else { dateError = true; }
+      }
     } else if (placementXLS.getDateTo() != null && placementXLS.getDateFrom() == null) {
       if (placementXLS.getDateTo().after(prevDateFrom)) {
-        LocalDate dateTo = convertDate(placementXLS.getDateTo());
-        dbPlacementDetailsDTO.setDateTo(dateTo);
+        dbPlacementDetailsDTO.setDateTo(convertDate(placementXLS.getDateTo()));
         dateError = false;
-      } else { dateError = true; }
+      }
     } else if (placementXLS.getDateFrom() == null && placementXLS.getDateTo() == null) {
       dateError = false;
     }
