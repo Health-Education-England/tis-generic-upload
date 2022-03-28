@@ -4,7 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+
+import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
@@ -14,7 +15,7 @@ import org.springframework.core.io.ClassPathResource;
 public class UploadFileServiceImplTest {
 
   @Test
-  public void removeRowDoesNotActuallyRemoveARow() throws IOException, InvalidFormatException {
+  public void removeRowDoesNotActuallyRemoveARow() throws IOException, EncryptedDocumentException {
     try (InputStream is = new ClassPathResource("TIS People Import Template - empty row.xlsx")
         .getInputStream()) {
       Workbook workbook = WorkbookFactory.create(is);
@@ -27,7 +28,7 @@ public class UploadFileServiceImplTest {
   }
 
   @Test
-  public void haveToShiftRowsUpToRemoveARow() throws IOException, InvalidFormatException {
+  public void haveToShiftRowsUpToRemoveARow() throws IOException, EncryptedDocumentException {
     try (InputStream is = new ClassPathResource("TIS People Import Template - empty row.xlsx")
         .getInputStream()) {
       Workbook workbook = WorkbookFactory.create(is);
