@@ -28,13 +28,8 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +62,18 @@ public class UploadFileServiceImpl implements UploadFileService {
     this.fileStorageRepository = fileStorageRepository;
     this.applicationTypeRepository = applicationTypeRepository;
     this.azureProperties = azureProperties;
+  }
+
+  static void removeCommentsForRemovedRows(Sheet sheet,
+                                           Set<Integer> setOfLineNumbersWithErrors) {
+    // Upcast the comments to the base class, it supports both XLSX and XLS
+    Map<CellAddress, Comment> commentMap = (Map<CellAddress, Comment>) sheet.getCellComments();
+    for (Map.Entry<CellAddress, Comment> comment: commentMap.entrySet()) {
+      CellAddress address = comment.getKey();
+      if (!setOfLineNumbersWithErrors.contains(address.getRow())) {
+        sheet.getRow(address.getRow()).getCell(address.getColumn()).removeCellComment();
+      }
+    }
   }
 
   //Helper method to shift rows up to remove a row as the removeRow method only blanks it out - https://stackoverflow.com/a/3554129
@@ -150,6 +157,7 @@ public class UploadFileServiceImpl implements UploadFileService {
         errorReportingColumnIndex--; //overwrite the last error column
       }
       setErrorHeader(workbook, sheet, errorReportingColumnIndex);
+      removeCommentsForRemovedRows(sheet, setOfLineNumbersWithErrors);
 
       for (int rowNumber = sheet.getLastRowNum(); rowNumber > 0; rowNumber--) {
         Row row = sheet.getRow(rowNumber);
