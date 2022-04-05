@@ -504,7 +504,8 @@ public class PlacementTransformerService {
         PostSpecialtyType.PRIMARY);
     if (placementSpecialtyDTOOptional1.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO, placementXLS);
+      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO,
+              placementXLS);
     }
     // Other specialties
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(
@@ -512,14 +513,16 @@ public class PlacementTransformerService {
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional2.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO, placementXLS);
+      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO,
+              placementXLS);
     }
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(
         placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(),
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional3.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO, placementXLS);
+      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO,
+              placementXLS);
     }
     // Sub specialty
     Optional<PlacementSpecialtyDTO> placementSubSpecialtyDtoOptional = buildPlacementSpecialtyDTO(
@@ -527,7 +530,8 @@ public class PlacementTransformerService {
         PostSpecialtyType.SUB_SPECIALTY);
     if (placementSubSpecialtyDtoOptional.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDto = placementSubSpecialtyDtoOptional.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDto, placementXLS);
+      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDto,
+              placementXLS);
     }
   }
 
@@ -538,12 +542,12 @@ public class PlacementTransformerService {
     return placementSpecialtyDTOS;
   }
 
-  public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
-      PlacementSpecialtyDTO placementSpecialtyDTO, PlacementXLS placementXls) {
-    if (placementSpecialtyDTOS.contains(placementSpecialtyDTO)) {
+  void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDtos,
+      PlacementSpecialtyDTO placementSpecialtyDto, PlacementXLS placementXls) {
+    if (placementSpecialtyDtos.contains(placementSpecialtyDto)) {
       placementXls.addErrorMessage(NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE);
     }
-    placementSpecialtyDTOS.add(placementSpecialtyDTO);
+    placementSpecialtyDtos.add(placementSpecialtyDto);
   }
 
   public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementXLS placementXLS,

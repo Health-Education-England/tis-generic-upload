@@ -382,18 +382,18 @@ public class PlacementUpdateTransformerService {
     return placementSpecialtyDTOS;
   }
 
-  public void addDTOIfNotPresentAsSubSpecialty(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
-                                               PlacementSpecialtyDTO placementSpecialtyDTO,
+  void addDTOIfNotPresentAsSubSpecialty(Set<PlacementSpecialtyDTO> placementSpecialtyDtos,
+                                               PlacementSpecialtyDTO placementSpecialtyDto,
                                                PlacementUpdateXLS placementXls) {
-    if (placementSpecialtyDTO.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)) {
-      placementSpecialtyDTOS.removeIf(
+    if (placementSpecialtyDto.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)) {
+      placementSpecialtyDtos.removeIf(
               ps -> ps.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY));
     }
 
-    if (placementSpecialtyDTOS.contains(placementSpecialtyDTO))  {
+    if (placementSpecialtyDtos.contains(placementSpecialtyDto))  {
       placementXls.addErrorMessage(NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE);
     }
-    placementSpecialtyDTOS.add(placementSpecialtyDTO);
+    placementSpecialtyDtos.add(placementSpecialtyDto);
   }
 
   public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementUpdateXLS placementXLS,
