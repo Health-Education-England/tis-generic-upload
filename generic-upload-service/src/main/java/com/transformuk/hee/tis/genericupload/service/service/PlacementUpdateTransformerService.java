@@ -30,7 +30,6 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PlacementSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -71,6 +70,8 @@ public class PlacementUpdateTransformerService {
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
   private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before start date";
+  protected static final String NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE =
+          "No two of primary/other/sub specialty(ies) can be set with the same value.";
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -347,7 +348,7 @@ public class PlacementUpdateTransformerService {
         PostSpecialtyType.PRIMARY);
     if (placementSpecialtyDTOOptional1.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
-      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO, placementXLS);
     }
     // Other specialties
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(
@@ -355,14 +356,14 @@ public class PlacementUpdateTransformerService {
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional2.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
-      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO, placementXLS);
     }
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(
         placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(),
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional3.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
-      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO, placementXLS);
     }
     // Sub specialty
     Optional<PlacementSpecialtyDTO> placementSubSpecialtyDtoOptional = buildPlacementSpecialtyDTO(
@@ -370,7 +371,7 @@ public class PlacementUpdateTransformerService {
         PostSpecialtyType.SUB_SPECIALTY);
     if (placementSubSpecialtyDtoOptional.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDto = placementSubSpecialtyDtoOptional.get();
-      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDto);
+      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDto, placementXLS);
     }
   }
 
@@ -382,10 +383,15 @@ public class PlacementUpdateTransformerService {
   }
 
   public void addDTOIfNotPresentAsSubSpecialty(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
-      PlacementSpecialtyDTO placementSpecialtyDTO) {
+                                               PlacementSpecialtyDTO placementSpecialtyDTO,
+                                               PlacementUpdateXLS placementXls) {
     if (placementSpecialtyDTO.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)) {
       placementSpecialtyDTOS.removeIf(
-          ps -> ps.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY));
+              ps -> ps.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY));
+    }
+
+    if (placementSpecialtyDTOS.contains(placementSpecialtyDTO))  {
+      placementXls.addErrorMessage(NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE);
     }
     placementSpecialtyDTOS.add(placementSpecialtyDTO);
   }

@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.service.PlacementTransformerService.NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE;
 import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.MULTI_VALUE_SEPARATOR;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -188,11 +189,12 @@ public class PlacementTransformerServiceTest {
 
     placementTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementTransformerServiceTest::getSpecialtiesForString);
+    assertThat(placementXLS.getErrorMessage()).contains(NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE);
     assertThat(placementDTO.getSpecialties().size()).isEqualTo(2);
   }
 
   @Test
-  public void shouldSkipOtherSpecialtyWhenDuplicationOnPrimary() {
+  public void shouldHandleOtherSpecialtyWhenDuplicationOnPrimary() {
     placementXLS.setSpecialty2(ANOTHER);
     placementXLS.setSpecialty3("12345"); // duplication
 
@@ -202,6 +204,7 @@ public class PlacementTransformerServiceTest {
     long countOfOtherSpecialties = placementDTO.getSpecialties().stream()
         .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER)).count();
     assertThat(countOfOtherSpecialties).isEqualTo(1);
+    assertThat(placementXLS.getErrorMessage()).contains(NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE);
   }
 
   @Test
@@ -249,7 +252,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void shouldSkipSubSpecialtyWhenDuplicationOnPrimary() {
+  public void shouldHandleSubSpecialtyWhenDuplicationOnPrimary() {
     placementXLS.setSubSpecialty("12345");
 
     placementTransformerService.setSpecialties(placementXLS, placementDTO,
@@ -260,10 +263,11 @@ public class PlacementTransformerServiceTest {
     assertThat(placementSpecialtyDto.getPlacementSpecialtyType()).isEqualTo(
         PostSpecialtyType.PRIMARY);
     assertThat(placementSpecialtyDto.getSpecialtyName()).isEqualTo("12345");
+    assertThat(placementXLS.getErrorMessage()).contains(NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE);
   }
 
   @Test
-  public void shouldSkipSubSpecialtyWhenDuplicationOnOtherSpecialties() {
+  public void shouldHandleSubSpecialtyWhenDuplicationOnOtherSpecialties() {
     placementXLS.setSpecialty2(ANOTHER);
     placementXLS.setSpecialty3("11111");
     placementXLS.setSubSpecialty(ANOTHER);
@@ -278,6 +282,7 @@ public class PlacementTransformerServiceTest {
         .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)).count();
     assertThat(countOfOtherSpecialties).isEqualTo(2);
     assertThat(countOfSubSpecialty).isEqualTo(0);
+    assertThat(placementXLS.getErrorMessage()).contains(NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE);
   }
 
   @Test
