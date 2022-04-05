@@ -90,6 +90,8 @@ public class PlacementTransformerService {
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
   private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before start date";
+  protected static final String NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE =
+          "No two of primary/other/sub specialty(ies) can be set with the same value.";
 
   Function<PlacementXLS, String> getPhNumber = PlacementXLS::getPublicHealthNumber;
   Function<PlacementXLS, String> getGdcNumber = PlacementXLS::getGdcNumber;
@@ -502,7 +504,8 @@ public class PlacementTransformerService {
         PostSpecialtyType.PRIMARY);
     if (placementSpecialtyDTOOptional1.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO);
+      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDTO,
+              placementXLS);
     }
     // Other specialties
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(
@@ -510,14 +513,16 @@ public class PlacementTransformerService {
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional2.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO);
+      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDTO,
+              placementXLS);
     }
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(
         placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(),
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional3.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDTO);
+      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDTO,
+              placementXLS);
     }
     // Sub specialty
     Optional<PlacementSpecialtyDTO> placementSubSpecialtyDtoOptional = buildPlacementSpecialtyDTO(
@@ -525,7 +530,8 @@ public class PlacementTransformerService {
         PostSpecialtyType.SUB_SPECIALTY);
     if (placementSubSpecialtyDtoOptional.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDto = placementSubSpecialtyDtoOptional.get();
-      addDTOIfNotPresentAsPrimaryOrOther(placementSpecialtyDtos, placementSpecialtyDto);
+      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDto,
+              placementXLS);
     }
   }
 
@@ -536,9 +542,12 @@ public class PlacementTransformerService {
     return placementSpecialtyDTOS;
   }
 
-  public void addDTOIfNotPresentAsPrimaryOrOther(Set<PlacementSpecialtyDTO> placementSpecialtyDTOS,
-      PlacementSpecialtyDTO placementSpecialtyDTO) {
-    placementSpecialtyDTOS.add(placementSpecialtyDTO);
+  void addPlacementSpecialtyDtoIfUnique(Set<PlacementSpecialtyDTO> placementSpecialtyDtos,
+      PlacementSpecialtyDTO placementSpecialtyDto, PlacementXLS placementXls) {
+    if (placementSpecialtyDtos.contains(placementSpecialtyDto)) {
+      placementXls.addErrorMessage(NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE);
+    }
+    placementSpecialtyDtos.add(placementSpecialtyDto);
   }
 
   public Optional<PlacementSpecialtyDTO> buildPlacementSpecialtyDTO(PlacementXLS placementXLS,
