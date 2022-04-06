@@ -103,6 +103,8 @@ public class PersonTransformerService {
       "A valid programme membership is needed to add a rotation";
   private static final String ADDRESS_FIELD_REQUIRED = "%1$s is required when %2$s is populated.";
   private static final String VALIDATE_EMAIL_ERROR = "Valid email address required.";
+  private static final String VISA_DATES_VALIDATION_ERROR  = "'Visa issued' date must be before " +
+          "'Visa valid to' date.";
   private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
 
   @Autowired
@@ -132,6 +134,7 @@ public class PersonTransformerService {
 
     List<PersonXLS> rowsValidated = getEmailValidatedRows(personXLSS);
     rowsValidated.retainAll(getAddressValidatedRows(personXLSS));
+    rowsValidated.retainAll(getDatesAreValid(personXLSS));
 
     addPersons(getPersonsWithUnknownRegNumbers(rowsValidated));
     addOrUpdateGMCRecords(rowsValidated);
@@ -925,6 +928,22 @@ public class PersonTransformerService {
         validateResult = false;
         personXls.addErrorMessage(VALIDATE_EMAIL_ERROR);
       }
+    }
+    return validateResult;
+  }
+
+  private List<PersonXLS> getDatesAreValid(List<PersonXLS> personXlss) {
+    return personXlss.stream().filter(this::datesAreValid)
+            .collect(Collectors.toList());
+  }
+
+  private boolean datesAreValid(PersonXLS personXLS) {
+
+    boolean validateResult = true;
+
+    if (personXLS.getVisaIssued().after(personXLS.getVisaValidTo())) {
+      personXLS.addErrorMessage(VISA_DATES_VALIDATION_ERROR);
+      validateResult = false;
     }
     return validateResult;
   }
