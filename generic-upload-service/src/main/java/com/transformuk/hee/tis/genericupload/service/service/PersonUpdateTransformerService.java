@@ -1,22 +1,22 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.PersonMapper;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.TrainerApprovalMapper;
-import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
-import com.transformuk.hee.tis.tcs.api.dto.TrainerApprovalDTO;
+import com.transformuk.hee.tis.tcs.api.dto.*;
 import com.transformuk.hee.tis.tcs.api.enumeration.ApprovalStatus;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
+
+import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 
 @Component
 public class PersonUpdateTransformerService {
@@ -24,6 +24,8 @@ public class PersonUpdateTransformerService {
   public static final String PERSON_ID_DUPLICATE = "Duplicate Tis_Person_ID: %s.";
   public static final String TRAINER_APPROVAL_STATUS_NOT_EXISTS = "Trainer Approval Status '%s' does not exist.";
   public static final String ROLE_ERROR_SEPARATOR = "Role '%s' should not use ',' as a separator, please use ';' instead.";
+  private static final String VISA_DATES_VALIDATION_ERROR  = "'Visa issued' date must be before " +
+          "'Visa valid to' date.";
   private final TcsServiceImpl tcsService;
   private final PersonMapper personMapper;
   private final TrainerApprovalMapper trainerApprovalMapper;
@@ -102,6 +104,41 @@ public class PersonUpdateTransformerService {
     }
   }
 
+  public void validateDates(RightToWorkDTO dbRightToWorkDTO,
+                            PersonUpdateXls personUpdateXls) {
+
+    System.out.println("Old Date valid to: " + dbRightToWorkDTO.getVisaValidTo());
+    System.out.println("Old Date Issued: " + dbRightToWorkDTO.getVisaIssued());
+
+    System.out.println("Date valid to: " + personUpdateXls.getVisaValidTo());
+    System.out.println("Date Issued: " + personUpdateXls.getVisaIssued());
+
+    boolean dateError = true;
+    personUpdateXls.addErrorMessage(VISA_DATES_VALIDATION_ERROR);
+    if (personUpdateXls.getVisaIssued() != null && personUpdateXls.getVisaValidTo() != null) {
+      if (personUpdateXls.getVisaIssued().isBefore(personUpdateXls.getVisaValidTo())) {
+        dbRightToWorkDTO.setVisaIssued(personUpdateXls.getVisaIssued());
+        dbRightToWorkDTO.setVisaValidTo(personUpdateXls.getVisaValidTo());
+        dateError = false;
+      }
+    } else if (personUpdateXls.getVisaIssued() != null && personUpdateXls.getVisaValidTo() == null) {
+      if (personUpdateXls.getVisaIssued().isBefore(dbRightToWorkDTO.getVisaValidTo())) {
+        dbRightToWorkDTO.setVisaIssued(personUpdateXls.getVisaIssued());
+        dateError = false;
+      }
+    } else if (personUpdateXls.getVisaValidTo() != null && personUpdateXls.getVisaIssued() == null) {
+      if (personUpdateXls.getVisaValidTo().isAfter(dbRightToWorkDTO.getVisaIssued())) {
+        dbRightToWorkDTO.setVisaValidTo(personUpdateXls.getVisaValidTo());
+        dateError = false;
+      }
+    } else if (personUpdateXls.getVisaIssued() == null && personUpdateXls.getVisaValidTo() == null) {
+      dateError = false;
+    }
+    if (dateError) {
+      personUpdateXls.addErrorMessage(VISA_DATES_VALIDATION_ERROR);
+    }
+  }
+
   /**
    * Those validation can not be handled in TCS.
    *
@@ -111,6 +148,10 @@ public class PersonUpdateTransformerService {
   List<String> initialValidate(PersonUpdateXls xls) {
 
     List<String> errorMessages = new ArrayList<>();
+
+    RightToWorkDTO rightToWorkDTO = tcsService.getPerson(xls.getTisPersonId()).getRightToWork();
+
+    validateDates(rightToWorkDTO, xls);
 
     String trainerApprovalStatus = xls.getTrainerApprovalStatus();
     if (!StringUtils.isEmpty(trainerApprovalStatus) && !EnumUtils.isValidEnum(
