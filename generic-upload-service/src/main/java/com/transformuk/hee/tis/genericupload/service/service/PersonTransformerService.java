@@ -105,6 +105,8 @@ public class PersonTransformerService {
   private static final String VALIDATE_EMAIL_ERROR = "Valid email address required.";
   private static final String VISA_DATES_VALIDATION_ERROR  = "'Visa issued' date must be before " +
           "'Visa valid to' date.";
+  private static final String VISA_DATES_NULL_Date  = "Please enter both VISA issued date " +
+          "and Visa valid to date";
   private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
 
   @Autowired
@@ -941,7 +943,10 @@ public class PersonTransformerService {
 
     boolean validateResult = true;
 
-    if (personXLS.getVisaIssued().after(personXLS.getVisaValidTo())) {
+    if(personXLS.getVisaValidTo() == null || personXLS.getVisaIssued() == null) {
+      personXLS.addErrorMessage(VISA_DATES_NULL_Date);
+      validateResult = false;
+    } else if (personXLS.getVisaIssued().after(personXLS.getVisaValidTo())) {
       personXLS.addErrorMessage(VISA_DATES_VALIDATION_ERROR);
       validateResult = false;
     }
