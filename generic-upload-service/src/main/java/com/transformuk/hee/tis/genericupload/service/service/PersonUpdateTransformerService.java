@@ -116,22 +116,29 @@ public class PersonUpdateTransformerService {
     boolean dateError = true;
     personUpdateXls.addErrorMessage(VISA_DATES_VALIDATION_ERROR);
     if (personUpdateXls.getVisaIssued() != null && personUpdateXls.getVisaValidTo() != null) {
+      System.out.println("first loop");
       if (personUpdateXls.getVisaIssued().isBefore(personUpdateXls.getVisaValidTo())) {
+        System.out.println("both avaliable");
         dbRightToWorkDTO.setVisaIssued(personUpdateXls.getVisaIssued());
         dbRightToWorkDTO.setVisaValidTo(personUpdateXls.getVisaValidTo());
         dateError = false;
       }
     } else if (personUpdateXls.getVisaIssued() != null && personUpdateXls.getVisaValidTo() == null) {
+      System.out.println("second loop");
       if (personUpdateXls.getVisaIssued().isBefore(dbRightToWorkDTO.getVisaValidTo())) {
+        System.out.println("visa issued available");
         dbRightToWorkDTO.setVisaIssued(personUpdateXls.getVisaIssued());
         dateError = false;
       }
     } else if (personUpdateXls.getVisaValidTo() != null && personUpdateXls.getVisaIssued() == null) {
+      System.out.println("third loop");
       if (personUpdateXls.getVisaValidTo().isAfter(dbRightToWorkDTO.getVisaIssued())) {
+        System.out.println("visa valid to available");
         dbRightToWorkDTO.setVisaValidTo(personUpdateXls.getVisaValidTo());
         dateError = false;
       }
     } else if (personUpdateXls.getVisaIssued() == null && personUpdateXls.getVisaValidTo() == null) {
+      System.out.println("both unavailable");
       dateError = false;
     }
     if (dateError) {
