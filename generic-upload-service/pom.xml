@@ -12,7 +12,7 @@
 
   <groupId>com.transformuk.hee.tis</groupId>
   <artifactId>generic-upload-service</artifactId>
-  <version>1.18.15</version>
+  <version>1.18.16</version>
 
   <packaging>war</packaging>
 
