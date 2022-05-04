@@ -62,8 +62,9 @@ public class UploadFileResource {
     this.fileValidator = fileValidator;
   }
 
-  @ApiOperation(value = "Upload a file", notes = "Although this interface supports multiple file uploads, "
-      + "at the time of development the Angular client only supports a single upload")
+  @ApiOperation(value = "Upload a file", notes =
+      "Although this interface supports multiple file uploads, "
+          + "at the time of development the Angular client only supports a single upload")
   @ApiResponses(value = {
       @ApiResponse(code = 202, message = "Uploaded given files successfully with logId", response = ApplicationType.class),
       @ApiResponse(code = 400, message = "The error message will be in the body of the response", response = String.class),
@@ -194,11 +195,15 @@ public class UploadFileResource {
       headers.setContentDispositionFormData(filename, filename);
       headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
       return new ResponseEntity<>(fileWithErrorsOnly.toByteArray(), headers, HttpStatus.OK);
-    } catch (IOException e) {
-      log.error("Error reading file : {}", logId);
-      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     } catch (Exception e) {
-      log.error("Unexpected error building template with errors : {} ", logId);
+      String messageTemplate;
+      if (e instanceof IOException) {
+        messageTemplate = "Error reading file : %s ";
+      } else {
+        messageTemplate = "Unexpected error building template with errors : %s ";
+      }
+
+      log.error(String.format(messageTemplate, logId), e);
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
