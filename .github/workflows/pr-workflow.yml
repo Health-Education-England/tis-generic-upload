@@ -16,7 +16,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v2.4.0
         with:
-          distribution: adopt
+          distribution: temurin
           java-version: 11
 
       - name: Configure AWS credentials
