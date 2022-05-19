@@ -128,7 +128,7 @@
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
       <artifactId>tcs-client</artifactId>
-      <version>5.13.7</version>
+      <version>5.15.0</version>
     </dependency>
     <!--TODO Get rid of transistive dependencies provided by clients -->
     <dependency>
