@@ -28,11 +28,12 @@ import com.transformuk.hee.tis.tcs.api.dto.GdcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonBasicDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
-import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PlacementSummaryDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipCurriculaDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -315,14 +316,16 @@ public class AssessmentTransformerService {
       assessmentDetailDTO.setPya(BooleanUtil.parseBooleanObject(assessmentXLS.getPya()));
 
       // Get placement of trainee at time of assessment review
-      List<PlacementDetailsDTO> placementForTrainee = tcsServiceImpl
+      List<PlacementSummaryDTO> placementForTrainee = tcsServiceImpl
           .getPlacementForTrainee(assessmentDTO.getTraineeId());
-      Optional<PlacementDetailsDTO> placementAtTimeOfAssessmentReview = placementForTrainee.stream()
+      Optional<PlacementSummaryDTO> placementAtTimeOfAssessmentReview = placementForTrainee.stream()
           .filter(p -> {
             LocalDate reviewDate = assessmentDTO.getReviewDate();
             if (reviewDate != null) {
-              LocalDate dateFrom = p.getDateFrom();
-              LocalDate dateTo = p.getDateTo();
+              LocalDate dateFrom = p.getDateFrom()
+                      .toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+              LocalDate dateTo = p.getDateTo()
+                      .toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
               return dateFrom.isBefore(reviewDate) && dateTo.isAfter(reviewDate);
             }
             return false;

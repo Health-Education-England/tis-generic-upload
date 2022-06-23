@@ -12,7 +12,7 @@
 
   <groupId>com.transformuk.hee.tis</groupId>
   <artifactId>generic-upload-service</artifactId>
-  <version>1.18.16</version>
+  <version>1.18.17</version>
 
   <packaging>war</packaging>
 
@@ -128,7 +128,7 @@
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
       <artifactId>tcs-client</artifactId>
-      <version>5.15.0</version>
+      <version>6.0.1</version>
     </dependency>
     <!--TODO Get rid of transistive dependencies provided by clients -->
     <dependency>
