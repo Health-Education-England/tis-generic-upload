@@ -144,7 +144,7 @@
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
       <artifactId>assessments-client</artifactId>
-      <version>1.2.3</version>
+      <version>1.2.4</version>
     </dependency>
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
