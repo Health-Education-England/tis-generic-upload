@@ -131,7 +131,7 @@ public class AssessmentTransformerService {
   String getAnyDuplicateAssessmentsMessage(AssessmentDTO assessmentDTO) {
     List<AssessmentListDTO> duplicateAssessments = assessmentServiceImpl.findAssessments(
             assessmentDTO.getTraineeId(),
-            assessmentDTO.getProgrammeMembershipId(),
+            assessmentDTO.getCurriculumMembershipId(),
             assessmentDTO.getReviewDate(),
             (assessmentDTO.getOutcome() == null ? null : assessmentDTO.getOutcome().getOutcome()));
     //now consider a possible null outcome value that is ignored by findAssessments()
@@ -251,7 +251,7 @@ public class AssessmentTransformerService {
         assessmentDTO.setProgrammeName(programmeMembershipCurriculaDTO.getProgrammeName());
         assessmentDTO.setProgrammeId(programmeMembershipCurriculaDTO.getProgrammeId());
         assessmentDTO.setProgrammeNumber(programmeMembershipCurriculaDTO.getProgrammeNumber());
-        assessmentDTO.setProgrammeMembershipId(
+        assessmentDTO.setCurriculumMembershipId(
             programmeMembershipCurriculaDTO.getCurriculumMemberships().get(0).getId());
       } else {
         assessmentXLS.addErrorMessage(DID_NOT_FIND_PROGRAMME_CURRICULUM);
