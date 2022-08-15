@@ -6,7 +6,7 @@
 
   <groupId>com.transformuk.hee.tis</groupId>
   <artifactId>generic-upload-api</artifactId>
-  <version>1.10.8</version>
+  <version>1.11.0</version>
   <packaging>jar</packaging>
 
   <properties>

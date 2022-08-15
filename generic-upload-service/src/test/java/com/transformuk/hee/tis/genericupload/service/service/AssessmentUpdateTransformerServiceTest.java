@@ -248,7 +248,7 @@ public class AssessmentUpdateTransformerServiceTest {
 
     AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
     xls.setAssessmentId(id);
-    xls.setProgrammeMembershipId("1");
+    xls.setCurriculumMembershipId("1");
     xls.setPeriodCoveredFrom(date1);
     xls.setPeriodCoveredTo(date2);
     List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
@@ -383,7 +383,7 @@ public class AssessmentUpdateTransformerServiceTest {
     String invalidValue = "invalidNumberValue";
     AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
     xls.setAssessmentId(id);
-    xls.setProgrammeMembershipId(invalidValue);
+    xls.setCurriculumMembershipId(invalidValue);
     xls.setMonthsCountedToTraining(invalidValue);
     xls.setDaysOutOfTraining(invalidValue);
     List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
@@ -446,7 +446,7 @@ public class AssessmentUpdateTransformerServiceTest {
     // AssessmentUpdateXLS to update
     AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
     xls.setAssessmentId(id);
-    xls.setProgrammeMembershipId("1");
+    xls.setCurriculumMembershipId("1");
     List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
 
     when(tcsServiceMock.getProgrammeMembershipDetailsByIds(idSet)).thenReturn(
@@ -472,7 +472,7 @@ public class AssessmentUpdateTransformerServiceTest {
     // AssessmentUpdateXLS to update
     AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
     xls.setAssessmentId(id);
-    xls.setProgrammeMembershipId("1");
+    xls.setCurriculumMembershipId("1");
     List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
 
     ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDto =
@@ -511,7 +511,7 @@ public class AssessmentUpdateTransformerServiceTest {
 
     AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
     xls.setAssessmentId(id);
-    xls.setProgrammeMembershipId("1");
+    xls.setCurriculumMembershipId("1");
     xls.setPeriodCoveredFrom(date1);
     xls.setPeriodCoveredTo(date2);
     List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
@@ -562,7 +562,7 @@ public class AssessmentUpdateTransformerServiceTest {
     AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
     xls.setAssessmentId(id);
     xls.setAcademicOutcome(academicOutcome);
-    xls.setProgrammeMembershipId("1");
+    xls.setCurriculumMembershipId("1");
     xls.setPeriodCoveredFrom(date1);
     xls.setPeriodCoveredTo(date2);
     List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
@@ -763,7 +763,7 @@ public class AssessmentUpdateTransformerServiceTest {
     AssessmentDTO assessmentDto = new AssessmentDTO();
     assessmentDto.id(Long.valueOf(id));
     assessmentDto.setTraineeId(1L);
-    assessmentDto.setProgrammeMembershipId(1L);
+    assessmentDto.setCurriculumMembershipId(1L);
     assessmentDto.setType("assessmentType_1");
     assessmentDto.setReviewDate(LocalDate.of(2020, 9, 2));
     AssessmentDetailDTO detailDto = new AssessmentDetailDTO();
@@ -825,7 +825,7 @@ public class AssessmentUpdateTransformerServiceTest {
 
     AssessmentUpdateXLS xls = Mockito.spy(new AssessmentUpdateXLS());
     xls.setAssessmentId(id);
-    xls.setProgrammeMembershipId("2");
+    xls.setCurriculumMembershipId("2");
     xls.setType("assessmentType_2");
     xls.setReviewDate(date2);
     xls.setPeriodCoveredFrom(date1);
@@ -900,8 +900,8 @@ public class AssessmentUpdateTransformerServiceTest {
     assertThat("The assessment Id does not match the expected value",
         assessmentDtoToUpdate.getId(), is(Long.valueOf(xls.getAssessmentId())));
     assertThat("The ProgrammeMembership Id does not match the expected value",
-        assessmentDtoToUpdate.getProgrammeMembershipId(),
-        is(Long.valueOf(xls.getProgrammeMembershipId())));
+        assessmentDtoToUpdate.getCurriculumMembershipId(),
+        is(Long.valueOf(xls.getCurriculumMembershipId())));
     assertThat("The type does not match the expected value", assessmentDtoToUpdate.getType(),
         is(xls.getType()));
     assertThat("The reviewDate does not match the expected value",
@@ -992,7 +992,7 @@ public class AssessmentUpdateTransformerServiceTest {
     AssessmentDTO assessmentDto = new AssessmentDTO();
     assessmentDto.id(Long.valueOf(id));
     assessmentDto.setTraineeId(1L);
-    assessmentDto.setProgrammeMembershipId(1L);
+    assessmentDto.setCurriculumMembershipId(1L);
     assessmentDto.setType("assessmentType_1");
     assessmentDto.setReviewDate(LocalDate.of(2020, 9, 2));
     AssessmentDetailDTO detailDto = new AssessmentDetailDTO();
@@ -1055,8 +1055,8 @@ public class AssessmentUpdateTransformerServiceTest {
     assertThat("The assessment Id does not match the expected value",
         assessmentDtoToUpdate.getId(), is(Long.valueOf(xls.getAssessmentId())));
     assertThat("The ProgrammeMembership Id does not match the expected value",
-        assessmentDtoToUpdate.getProgrammeMembershipId(),
-        is(assessmentDto.getProgrammeMembershipId()));
+        assessmentDtoToUpdate.getCurriculumMembershipId(),
+        is(assessmentDto.getCurriculumMembershipId()));
     assertThat("The type does not match the expected value", assessmentDtoToUpdate.getType(),
         is(assessmentDto.getType()));
     assertThat("The reviewDate does not match the expected value",

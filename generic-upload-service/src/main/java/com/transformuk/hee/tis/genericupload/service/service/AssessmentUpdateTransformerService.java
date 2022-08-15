@@ -372,7 +372,7 @@ public class AssessmentUpdateTransformerService {
       AssessmentUpdateXLS xls) {
     // Set ProgrammeMembership & curriculum
 
-    String programmeMembershipId = xls.getProgrammeMembershipId();
+    String programmeMembershipId = xls.getCurriculumMembershipId();
     if (StringUtils.isEmpty(programmeMembershipId)) {
       return;
     }
@@ -398,7 +398,7 @@ public class AssessmentUpdateTransformerService {
       return;
     }
 
-    assessmentDto.setProgrammeMembershipId(programmeMembershipCurriculaDto.getId());
+    assessmentDto.setCurriculumMembershipId(programmeMembershipCurriculaDto.getId());
     assessmentDto.setProgrammeId(programmeMembershipCurriculaDto.getProgrammeId());
     assessmentDto.setProgrammeName(programmeMembershipCurriculaDto.getProgrammeName());
     assessmentDto.setProgrammeNumber(programmeMembershipCurriculaDto.getProgrammeNumber());
@@ -600,7 +600,7 @@ public class AssessmentUpdateTransformerService {
   private void validateAndUpdateNumericFields(AssessmentDetailDTO assessmentDetailDto,
       AssessmentUpdateXLS xls) {
 
-    String programmeMembershipId = xls.getProgrammeMembershipId();
+    String programmeMembershipId = xls.getCurriculumMembershipId();
     if (!StringUtils.isEmpty(programmeMembershipId)
         && !NumberUtils.isDigits(programmeMembershipId)) {
       xls.addErrorMessage(TIS_PROGRAMME_MEMBERSHIP_ID_SHOULD_BE_NUMERIC);
@@ -760,7 +760,7 @@ public class AssessmentUpdateTransformerService {
     Map<String, ProgrammeMembershipCurriculaDTO> programmeMembershipsMap = new HashMap<>();
     if (!xlsList.isEmpty()) {
       Set<String> programmeMembershipIds = xlsList.stream()
-          .map(AssessmentUpdateXLS::getProgrammeMembershipId)
+          .map(AssessmentUpdateXLS::getCurriculumMembershipId)
           .filter(NumberUtils::isDigits).collect(
               Collectors.toSet());
       if (!programmeMembershipIds.isEmpty()) {
