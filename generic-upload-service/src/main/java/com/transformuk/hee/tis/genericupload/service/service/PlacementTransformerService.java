@@ -65,34 +65,57 @@ public class PlacementTransformerService {
 
   public static final String CLINICAL_SUPERVISOR = "Clinical supervisor";
   public static final String EDUCATIONAL_SUPERVISOR = "Educational supervisor";
-  private static final Logger logger = getLogger(PlacementTransformerService.class);
-  private static final String AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON = "At least one of the 3 registration numbers should be provided to identify a person";
-  private static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER = "Surname does not match last name obtained via registration number";
-  private static final String NATIONAL_POST_NUMBER_IS_MANDATORY = "National Post number is mandatory";
-  private static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts found for National Post Number : ";
-  private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by National Post Number : ";
-  private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER = "POST status is set to DELETE for National Post Number : ";
-  private static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER = "Did not find a person for registration number : ";
-  private static final String SPECIALTY1_IS_MANDATORY = "Specialty1 field is required";
-  private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name : ";
-  private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
-  private static final String PLACEMENT_FROM_DATE_IS_MANDATORY = "Placement from date is mandatory";
-  private static final String PLACEMENT_TO_DATE_IS_MANDATORY = "Placement to date is mandatory";
-  private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
-  private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
-  private static final String WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY = "Whole Time Equivalent (WTE) is mandatory";
-  private static final String PLACEMENT_TYPE_IS_MANDATORY = "Placement Type is mandatory";
-  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR = "Expected to find a placement grade for : %s";
-  private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
-  private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for registration number : %s";
-  private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
-  private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
-  private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
-  private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
-  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before start date";
   protected static final String NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE =
-          "No two of primary/other/sub specialty(ies) can be set with the same value.";
-
+      "No two of primary/other/sub specialty(ies) can be set with the same value.";
+  private static final Logger logger = getLogger(PlacementTransformerService.class);
+  private static final String ONE_OF_3_REG_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON =
+      "At least one of the 3 registration numbers should be provided to identify a person";
+  private static final String SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER =
+      "Surname does not match last name obtained via registration number";
+  private static final String NATIONAL_POST_NUMBER_IS_MANDATORY =
+      "National Post number is mandatory";
+  private static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER =
+      "Multiple posts found for National Post Number: ";
+  private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER =
+      "Could not find post by National Post Number: ";
+  private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER =
+      "POST status is set to DELETE for National Post Number: ";
+  private static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER =
+      "Did not find a person for registration number: ";
+  private static final String SPECIALTY1_IS_MANDATORY =
+      "Specialty1 field is required";
+  private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME =
+      "Did not find specialty for name: ";
+  private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME =
+      "Found multiple specialties for name: ";
+  private static final String PLACEMENT_FROM_DATE_IS_MANDATORY =
+      "Placement from date is mandatory";
+  private static final String PLACEMENT_TO_DATE_IS_MANDATORY =
+      "Placement to date is mandatory";
+  private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR =
+      "Multiple or no grades found for: ";
+  private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR =
+      "Multiple or no sites found for: ";
+  private static final String WHOLE_TIME_EQUIVALENT_WTE_IS_MANDATORY =
+      "Whole Time Equivalent (WTE) is mandatory";
+  private static final String PLACEMENT_TYPE_IS_MANDATORY =
+      "Placement Type is mandatory";
+  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR =
+      "Expected to find a placement grade for: %s";
+  private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR =
+      "Expected to find a single site for: %s";
+  private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER =
+      "Could not find a %1$s for registration number: %s";
+  private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER =
+      "%1$s is not a role for person with registration number: %2$s";
+  private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME =
+      "Did not find other site for name \"%s\".";
+  private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME =
+      "Found multiple other sites for name \"%s\".";
+  private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME =
+      "Did not find other site in parent post for name \"%s\".";
+  private static final String END_DATE_IS_SET_BEFORE_START_DATE =
+      "End date cannot be set before start date";
   Function<PlacementXLS, String> getPhNumber = PlacementXLS::getPublicHealthNumber;
   Function<PlacementXLS, String> getGdcNumber = PlacementXLS::getGdcNumber;
   Function<PlacementXLS, String> getGmcNumber = PlacementXLS::getGmcNumber;
@@ -269,7 +292,7 @@ public class PlacementTransformerService {
 
   /**
    * Checks if a grade is a valid placement grade.
-   *
+   * <p>
    * SIDE-EFFECT: if not valid, this is logged and the affected placement XLS records have an error
    * message attached to them.
    *
@@ -310,7 +333,7 @@ public class PlacementTransformerService {
           PersonDTO::getId);
     } else {
       placementXLS.addErrorMessage(
-          AT_LEAST_ONE_OF_THE_3_REGISTRATION_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON);
+          ONE_OF_3_REG_NUMBERS_SHOULD_BE_PROVIDED_TO_IDENTIFY_A_PERSON);
       return Optional.empty();
     }
   }
@@ -505,7 +528,7 @@ public class PlacementTransformerService {
     if (placementSpecialtyDTOOptional1.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
       addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDTO,
-              placementXLS);
+          placementXLS);
     }
     // Other specialties
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(
@@ -514,7 +537,7 @@ public class PlacementTransformerService {
     if (placementSpecialtyDTOOptional2.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
       addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDTO,
-              placementXLS);
+          placementXLS);
     }
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(
         placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(),
@@ -522,7 +545,7 @@ public class PlacementTransformerService {
     if (placementSpecialtyDTOOptional3.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
       addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDTO,
-              placementXLS);
+          placementXLS);
     }
     // Sub specialty
     Optional<PlacementSpecialtyDTO> placementSubSpecialtyDtoOptional = buildPlacementSpecialtyDTO(
@@ -531,7 +554,7 @@ public class PlacementTransformerService {
     if (placementSubSpecialtyDtoOptional.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDto = placementSubSpecialtyDtoOptional.get();
       addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDto,
-              placementXLS);
+          placementXLS);
     }
   }
 

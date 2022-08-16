@@ -28,7 +28,14 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.CellAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +63,8 @@ public class UploadFileServiceImpl implements UploadFileService {
   private final AzureProperties azureProperties;
 
   @Autowired
-  public UploadFileServiceImpl(@Qualifier("awsFileStorageRepository") FileStorageRepository fileStorageRepository,
+  public UploadFileServiceImpl(
+      @Qualifier("awsFileStorageRepository") FileStorageRepository fileStorageRepository,
       ApplicationTypeRepository applicationTypeRepository,
       AzureProperties azureProperties) {
     this.fileStorageRepository = fileStorageRepository;
@@ -65,10 +73,10 @@ public class UploadFileServiceImpl implements UploadFileService {
   }
 
   static void removeCommentsForRemovedRows(Sheet sheet,
-                                           Set<Integer> setOfLineNumbersWithErrors) {
+      Set<Integer> setOfLineNumbersWithErrors) {
     // Upcast the comments to the base class, it supports both XLSX and XLS
     Map<CellAddress, Comment> commentMap = (Map<CellAddress, Comment>) sheet.getCellComments();
-    for (Map.Entry<CellAddress, Comment> comment: commentMap.entrySet()) {
+    for (Map.Entry<CellAddress, Comment> comment : commentMap.entrySet()) {
       CellAddress address = comment.getKey();
       if (!setOfLineNumbersWithErrors.contains(address.getRow())) {
         sheet.getRow(address.getRow()).getCell(address.getColumn()).removeCellComment();

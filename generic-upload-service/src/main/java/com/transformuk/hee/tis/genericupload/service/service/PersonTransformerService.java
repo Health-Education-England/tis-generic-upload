@@ -54,7 +54,6 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
-
 import org.hibernate.validator.constraints.Email;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -453,10 +452,10 @@ public class PersonTransformerService {
   private String mergeRoles(PersonDTO personDTOFromXLS, PersonDTO personDTOFromDB) {
     Set<String> personDTOFromDBRoles = getRolesSet(personDTOFromDB.getRole());
     // xls template uses semicolon as delimiter
-    Set<String> personDTOFromXLSRoles = new HashSet<>(
+    Set<String> personDtoFromXlsRoles = new HashSet<>(
         splitMultiValueField(personDTOFromXLS.getRole()));
-    personDTOFromXLSRoles.addAll(personDTOFromDBRoles);
-    return org.apache.commons.lang3.StringUtils.join(personDTOFromXLSRoles, ',');
+    personDtoFromXlsRoles.addAll(personDTOFromDBRoles);
+    return org.apache.commons.lang3.StringUtils.join(personDtoFromXlsRoles, ',');
   }
 
   private Set<String> getRolesSet(String csvRoles) {
@@ -532,12 +531,12 @@ public class PersonTransformerService {
       savedPersonDTO.getProgrammeMemberships().stream()
           .filter(programmeMembershipDTO1 -> programmeMembershipDTO1.equals(programmeMembershipDTO))
           .findFirst().ifPresent(savedProgrammeMembershipDTO -> {
-            if (!Objects.equals(programmeMembershipDTO.getRotation(),
-                savedProgrammeMembershipDTO.getRotation())) {
-              savedProgrammeMembershipDTO.setRotation(programmeMembershipDTO.getRotation());
-              tcsServiceImpl.updateProgrammeMembership(savedProgrammeMembershipDTO);
-            }
-          });
+        if (!Objects.equals(programmeMembershipDTO.getRotation(),
+            savedProgrammeMembershipDTO.getRotation())) {
+          savedProgrammeMembershipDTO.setRotation(programmeMembershipDTO.getRotation());
+          tcsServiceImpl.updateProgrammeMembership(savedProgrammeMembershipDTO);
+        }
+      });
     }
   }
 
@@ -896,7 +895,7 @@ public class PersonTransformerService {
 
   private List<PersonXLS> getEmailValidatedRows(List<PersonXLS> personXlss) {
     return personXlss.stream().filter(this::validateEmail)
-            .collect(Collectors.toList());
+        .collect(Collectors.toList());
   }
 
   private boolean validateEmail(PersonXLS personXls) {
@@ -904,6 +903,7 @@ public class PersonTransformerService {
     String email = personXls.getEmailAddress();
 
     class ValidEmailAddress {
+
       @Email
       final String validEmail;
 
@@ -919,7 +919,7 @@ public class PersonTransformerService {
 
       ValidEmailAddress validEmailAddress = new ValidEmailAddress(email);
       Set<ConstraintViolation<ValidEmailAddress>> constraintViolations =
-                validator.validate(validEmailAddress);
+          validator.validate(validEmailAddress);
 
       if (!constraintViolations.isEmpty()) {
         validateResult = false;
