@@ -4,13 +4,10 @@ import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.tcs.api.dto.RightToWorkDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
 
 @Mapper(componentModel = "spring")
 public interface RightToWorkMapper {
 
-  @Mappings({
-          @Mapping(source = "tisPersonId", target = "id"),
-  })
+  @Mapping(source = "tisPersonId", target = "id")
   RightToWorkDTO toDto(PersonUpdateXls xls);
 }

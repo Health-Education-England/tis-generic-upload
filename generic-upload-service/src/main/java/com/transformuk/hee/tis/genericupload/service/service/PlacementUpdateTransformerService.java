@@ -51,28 +51,42 @@ import org.springframework.web.client.ResourceAccessException;
 @Component
 public class PlacementUpdateTransformerService {
 
-  public static final String INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED = "INTREPID ID already exists for this record of placement and it can not be updated";
+  public static final String INTREPID_ID_IS_ALREADY_EXISTS_FOR_THIS_RECORD_AND_IT_CAN_NOT_BE_UPDATED
+      = "INTREPID ID already exists for this record of placement and it can not be updated";
   public static final String CLINICAL_SUPERVISOR = "Clinical supervisor";
   public static final String EDUCATIONAL_SUPERVISOR = "Educational supervisor";
-  private static final Logger logger = getLogger(PlacementUpdateTransformerService.class);
-  private static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER = "Multiple posts were found for National Post Number : ";
-  private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER = "Could not find post by THIS National Post Number : ";
-  private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER = "POST status is set to DELETE for National Post Number : ";
-  private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name : ";
-  private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name : ";
-  private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for  : ";
-  private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR = "Multiple or no sites found for  : ";
-  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR = "Expected to find a placement grade for : %s";
-  private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR = "Expected to find a single site for : %s";
-  private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER = "Could not find a %1$s for Registration number : %s";
-  private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER = "%1$s is not a role for person with registration number : %2$s";
-  private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name \"%s\".";
-  private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name \"%s\".";
-  private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name \"%s\".";
-  private static final String END_DATE_IS_SET_BEFORE_START_DATE = "End date cannot be set before start date";
   protected static final String NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE =
-          "No two of primary/other/sub specialty(ies) can be set with the same value.";
-
+      "No two of primary/other/sub specialty(ies) can be set with the same value.";
+  private static final Logger logger = getLogger(PlacementUpdateTransformerService.class);
+  private static final String MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER =
+      "Multiple posts were found for National Post Number: ";
+  private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER =
+      "Could not find post by THIS National Post Number: ";
+  private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER =
+      "POST status is set to DELETE for National Post Number: ";
+  private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name: ";
+  private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME =
+      "Found multiple specialties for name: ";
+  private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR =
+      "Multiple or no grades found for: ";
+  private static final String MULTIPLE_OR_NO_SITES_FOUND_FOR =
+      "Multiple or no sites found for: ";
+  private static final String EXPECTED_A_PLACEMENT_GRADE_FOR =
+      "Expected to find a placement grade for: %s";
+  private static final String EXPECTED_TO_FIND_A_SINGLE_SITE_FOR =
+      "Expected to find a single site for: %s";
+  private static final String COULD_NOT_FIND_A_FOR_REGISTRATION_NUMBER =
+      "Could not find a %1$s for Registration number: %s";
+  private static final String IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER =
+      "%1$s is not a role for person with registration number: %2$s";
+  private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME =
+      "Did not find other site for name \"%s\".";
+  private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME =
+      "Found multiple other sites for name \"%s\".";
+  private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME =
+      "Did not find other site in parent post for name \"%s\".";
+  private static final String END_DATE_IS_SET_BEFORE_START_DATE =
+      "End date cannot be set before start date";
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
 
@@ -175,7 +189,7 @@ public class PlacementUpdateTransformerService {
 
   /**
    * Checks if a grade is a valid placement grade.
-   *
+   * <p>
    * SIDE-EFFECT: if not valid, this is logged and the affected placement update XLS records have an
    * error message attached to them.
    *
@@ -203,41 +217,42 @@ public class PlacementUpdateTransformerService {
 
   /**
    * Checks if the updated date range from the Excel document is acceptable.
-   *
+   * <p>
    * SIDE-EFFECT: if not valid, this is logged and the affected placement update XLS records have an
-   * error message attached to them.
-   * SIDE-EFFECT: the placementDTO is updated if the dates are acceptable.
+   * error message attached to them. SIDE-EFFECT: the placementDTO is updated if the dates are
+   * acceptable.
+   * </p>
    *
-   * @param dbPlacementDetailsDTO the DTO of the placement
-   * @param placementXLS          the placement update XLS record
+   * @param dbPlacementDetailsDto the DTO of the placement
+   * @param placementXls          the placement update XLS record
    */
-  public void validateDates(PlacementDetailsDTO dbPlacementDetailsDTO,
-                             PlacementUpdateXLS placementXLS) {
-    Date prevDateTo = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateTo());
-    Date prevDateFrom = java.sql.Date.valueOf(dbPlacementDetailsDTO.getDateFrom());
+  public void validateDates(PlacementDetailsDTO dbPlacementDetailsDto,
+      PlacementUpdateXLS placementXls) {
+    Date prevDateTo = java.sql.Date.valueOf(dbPlacementDetailsDto.getDateTo());
+    Date prevDateFrom = java.sql.Date.valueOf(dbPlacementDetailsDto.getDateFrom());
     boolean dateError = true;
 
-    if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() != null) {
-      if (placementXLS.getDateFrom().before(placementXLS.getDateTo())) {
-        dbPlacementDetailsDTO.setDateFrom(convertDate(placementXLS.getDateFrom()));
-        dbPlacementDetailsDTO.setDateTo(convertDate(placementXLS.getDateTo()));
+    if (placementXls.getDateFrom() != null && placementXls.getDateTo() != null) {
+      if (placementXls.getDateFrom().before(placementXls.getDateTo())) {
+        dbPlacementDetailsDto.setDateFrom(convertDate(placementXls.getDateFrom()));
+        dbPlacementDetailsDto.setDateTo(convertDate(placementXls.getDateTo()));
         dateError = false;
       }
-    } else if (placementXLS.getDateFrom() != null && placementXLS.getDateTo() == null) {
-      if (placementXLS.getDateFrom().before(prevDateTo)) {
-        dbPlacementDetailsDTO.setDateFrom(convertDate(placementXLS.getDateFrom()));
+    } else if (placementXls.getDateFrom() != null && placementXls.getDateTo() == null) {
+      if (placementXls.getDateFrom().before(prevDateTo)) {
+        dbPlacementDetailsDto.setDateFrom(convertDate(placementXls.getDateFrom()));
         dateError = false;
       }
-    } else if (placementXLS.getDateTo() != null && placementXLS.getDateFrom() == null) {
-      if (placementXLS.getDateTo().after(prevDateFrom)) {
-        dbPlacementDetailsDTO.setDateTo(convertDate(placementXLS.getDateTo()));
+    } else if (placementXls.getDateTo() != null && placementXls.getDateFrom() == null) {
+      if (placementXls.getDateTo().after(prevDateFrom)) {
+        dbPlacementDetailsDto.setDateTo(convertDate(placementXls.getDateTo()));
         dateError = false;
       }
-    } else if (placementXLS.getDateFrom() == null && placementXLS.getDateTo() == null) {
+    } else if (placementXls.getDateFrom() == null && placementXls.getDateTo() == null) {
       dateError = false;
     }
     if (dateError) {
-      placementXLS.addErrorMessage(END_DATE_IS_SET_BEFORE_START_DATE);
+      placementXls.addErrorMessage(END_DATE_IS_SET_BEFORE_START_DATE);
     }
   }
 
@@ -348,7 +363,7 @@ public class PlacementUpdateTransformerService {
         PostSpecialtyType.PRIMARY);
     if (placementSpecialtyDTOOptional1.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
-      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO, placementXLS);
+      addDtoIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO, placementXLS);
     }
     // Other specialties
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDTO(
@@ -356,14 +371,14 @@ public class PlacementUpdateTransformerService {
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional2.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
-      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO, placementXLS);
+      addDtoIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO, placementXLS);
     }
     Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDTO(
         placementXLS, placementDTO, getSpecialtyDTOsForName, placementXLS.getSpecialty3(),
         PostSpecialtyType.OTHER);
     if (placementSpecialtyDTOOptional3.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
-      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO, placementXLS);
+      addDtoIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDTO, placementXLS);
     }
     // Sub specialty
     Optional<PlacementSpecialtyDTO> placementSubSpecialtyDtoOptional = buildPlacementSpecialtyDTO(
@@ -371,7 +386,7 @@ public class PlacementUpdateTransformerService {
         PostSpecialtyType.SUB_SPECIALTY);
     if (placementSubSpecialtyDtoOptional.isPresent()) {
       PlacementSpecialtyDTO placementSpecialtyDto = placementSubSpecialtyDtoOptional.get();
-      addDTOIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDto, placementXLS);
+      addDtoIfNotPresentAsSubSpecialty(placementSpecialtyDTOS, placementSpecialtyDto, placementXLS);
     }
   }
 
@@ -382,15 +397,17 @@ public class PlacementUpdateTransformerService {
     return placementSpecialtyDTOS;
   }
 
-  void addDTOIfNotPresentAsSubSpecialty(Set<PlacementSpecialtyDTO> placementSpecialtyDtos,
-                                               PlacementSpecialtyDTO placementSpecialtyDto,
-                                               PlacementUpdateXLS placementXls) {
+  //TODO: Looks like a private method rather than package accessible `default`
+  void addDtoIfNotPresentAsSubSpecialty(Set<PlacementSpecialtyDTO> placementSpecialtyDtos,
+      PlacementSpecialtyDTO placementSpecialtyDto,
+      PlacementUpdateXLS placementXls) {
     if (placementSpecialtyDto.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)) {
       placementSpecialtyDtos.removeIf(
-              ps -> ps.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY));
+          ps -> ps.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)
+      );
     }
 
-    if (placementSpecialtyDtos.contains(placementSpecialtyDto))  {
+    if (placementSpecialtyDtos.contains(placementSpecialtyDto)) {
       placementXls.addErrorMessage(NO_TWO_SPECIALTIES_CAN_HAVE_SAME_VALUE);
     }
     placementSpecialtyDtos.add(placementSpecialtyDto);
