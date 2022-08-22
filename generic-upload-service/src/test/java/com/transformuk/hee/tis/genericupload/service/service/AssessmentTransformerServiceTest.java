@@ -3,6 +3,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
@@ -11,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentDTO;
+import com.transformuk.hee.tis.assessment.api.dto.AssessmentDetailDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentListDTO;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
@@ -20,16 +22,20 @@ import com.transformuk.hee.tis.tcs.api.dto.CurriculumMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.dto.GmcDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonBasicDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PersonDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PlacementSummaryDTO;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipCurriculaDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.CurriculumSubType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -55,6 +61,9 @@ public class AssessmentTransformerServiceTest {
   private AssessmentServiceImpl assessmentServiceMock;
   @Mock
   private ReferenceServiceImpl referenceServiceMock;
+
+  @Captor
+  private ArgumentCaptor<AssessmentDTO> assessmentDTOArgCaptor;
 
   @Before
   public void setUp() {
@@ -243,5 +252,73 @@ public class AssessmentTransformerServiceTest {
     assertThat("should not get error", xlsList.get(1).getErrorMessage(), not(containsString(
         String.format(AssessmentTransformerService.EXPECTED_TO_FIND_A_SINGLE_GRADE_FOR,
             nextRotationGradeName))));
+  }
+
+  @Test
+  public void testProcessAssessments_noDateFromInPlacement() {
+    AssessmentXLS xls1 = new AssessmentXLS();
+    xls1.setSurname(lastName);
+    xls1.setProgrammeName(programmeName);
+    xls1.setProgrammeNumber(programmeNumber);
+    xls1.setCurriculumName(curriculumName);
+    xls1.setGmcNumber(gmcNumber);
+    xls1.setType(assessmentType);
+    xls1.setReviewDate(new Date());
+    List<AssessmentXLS> xlsList = Lists.newArrayList(xls1);
+
+    when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
+        .thenReturn(Lists.newArrayList());
+    PlacementSummaryDTO placementSummaryDto = new PlacementSummaryDTO();
+    placementSummaryDto.setDateFrom(null);
+    placementSummaryDto.setDateTo(new Date());
+    when(tcsServiceMock.getPlacementForTrainee(any())).thenReturn(
+        Lists.newArrayList(placementSummaryDto));
+
+    when(assessmentServiceMock.createTraineeAssessment(assessmentDTOArgCaptor.capture(),
+        any())).thenReturn(null);
+
+    assessmentTransformerService.initialiseFetchers();
+    assessmentTransformerService.processAssessmentsUpload(xlsList);
+
+    AssessmentDetailDTO assessmentDetailDto = assessmentDTOArgCaptor.getValue().getDetail();
+    assertThat("Should get correct Grade abbreviation",
+        assessmentDetailDto.getGradeAbbreviation(), is("NA"));
+    assertThat("Should get Grade Id null", assessmentDetailDto.getGradeId(), is(nullValue()));
+    assertThat("Should get correct Grade Name",
+        assessmentDetailDto.getGradeName(), is("Not Available"));
+  }
+
+  @Test
+  public void testProcessAssessments_noDateToInPlacement() {
+    AssessmentXLS xls1 = new AssessmentXLS();
+    xls1.setSurname(lastName);
+    xls1.setProgrammeName(programmeName);
+    xls1.setProgrammeNumber(programmeNumber);
+    xls1.setCurriculumName(curriculumName);
+    xls1.setGmcNumber(gmcNumber);
+    xls1.setType(assessmentType);
+    xls1.setReviewDate(new Date());
+    List<AssessmentXLS> xlsList = Lists.newArrayList(xls1);
+
+    when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
+        .thenReturn(Lists.newArrayList());
+    PlacementSummaryDTO placementSummaryDto = new PlacementSummaryDTO();
+    placementSummaryDto.setDateFrom(new Date());
+    placementSummaryDto.setDateTo(null);
+    when(tcsServiceMock.getPlacementForTrainee(any())).thenReturn(
+        Lists.newArrayList(placementSummaryDto));
+
+    when(assessmentServiceMock.createTraineeAssessment(assessmentDTOArgCaptor.capture(),
+        any())).thenReturn(null);
+
+    assessmentTransformerService.initialiseFetchers();
+    assessmentTransformerService.processAssessmentsUpload(xlsList);
+
+    AssessmentDetailDTO assessmentDetailDto = assessmentDTOArgCaptor.getValue().getDetail();
+    assertThat("Should get correct Grade abbreviation",
+        assessmentDetailDto.getGradeAbbreviation(), is("NA"));
+    assertThat("Should get Grade Id null", assessmentDetailDto.getGradeId(), is(nullValue()));
+    assertThat("Should get correct Grade Name",
+        assessmentDetailDto.getGradeName(), is("Not Available"));
   }
 }

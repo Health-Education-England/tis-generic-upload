@@ -335,7 +335,7 @@ public class AssessmentTransformerService {
       Optional<PlacementSummaryDTO> placementAtTimeOfAssessmentReview = placementForTrainee.stream()
           .filter(p -> {
             LocalDate reviewDate = assessmentDTO.getReviewDate();
-            if (reviewDate != null) {
+            if (reviewDate != null && p.getDateFrom() != null && p.getDateTo() != null) {
               LocalDate dateFrom = p.getDateFrom()
                   .toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
               LocalDate dateTo = p.getDateTo()
