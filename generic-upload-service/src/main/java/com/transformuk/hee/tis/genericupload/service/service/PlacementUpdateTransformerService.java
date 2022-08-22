@@ -192,6 +192,7 @@ public class PlacementUpdateTransformerService {
    * <p>
    * SIDE-EFFECT: if not valid, this is logged and the affected placement update XLS records have an
    * error message attached to them.
+   * </p>
    *
    * @param placementXLSS   the list of placement update XLS records
    * @param gradeName       the grade to verify
@@ -397,8 +398,7 @@ public class PlacementUpdateTransformerService {
     return placementSpecialtyDTOS;
   }
 
-  //TODO: Looks like a private method rather than package accessible `default`
-  void addDtoIfNotPresentAsSubSpecialty(Set<PlacementSpecialtyDTO> placementSpecialtyDtos,
+  private void addDtoIfNotPresentAsSubSpecialty(Set<PlacementSpecialtyDTO> placementSpecialtyDtos,
       PlacementSpecialtyDTO placementSpecialtyDto,
       PlacementUpdateXLS placementXls) {
     if (placementSpecialtyDto.getPlacementSpecialtyType().equals(PostSpecialtyType.SUB_SPECIALTY)) {

@@ -67,9 +67,11 @@ public class AssessmentTransformerService {
       "Did not find a person for registration number : ";
   private static final String MULTIPLE_OR_NO_GRADES_FOUND_FOR = "Multiple or no grades found for: ";
   private static final String PROGRAMME_NAME_NOT_SPECIFIED =
-      "Programme name (%s) has not been specified. Both programme name and number are needed to identify the programme";
+      "Programme name (%s) has not been specified." +
+          " Both programme name and number are needed to identify the programme";
   private static final String PROGRAMME_NUMBER_NOT_SPECIFIED =
-      "Programme number (%s) has not been specified. Both programme name and number are needed to identify the programme";
+      "Programme number (%s) has not been specified." +
+          " Both programme name and number are needed to identify the programme";
   private static final String AT_LEAST_ONE_OF_THE_THREE_REGISTRATION_NUMBERS_NEEDS_TO_BE_SPECIFIED =
       "At least one of the three registration numbers needs to be specified";
   private static final String DID_NOT_FIND_PROGRAMME_CURRICULUM =

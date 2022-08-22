@@ -295,6 +295,7 @@ public class PlacementTransformerService {
    * <p>
    * SIDE-EFFECT: if not valid, this is logged and the affected placement XLS records have an error
    * message attached to them.
+   * </p>
    *
    * @param placementXLSS   the list of placement XLS records
    * @param gradeName       the grade to verify
