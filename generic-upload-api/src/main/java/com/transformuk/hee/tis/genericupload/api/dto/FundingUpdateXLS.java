@@ -12,6 +12,9 @@ public class FundingUpdateXLS extends TemplateXLS {
   @ExcelColumn(name = "TIS_PostFunding_ID*", required = true)
   private String postFundingTisId;
 
+  @ExcelColumn(name = "TIS_Post_ID*", required = true)
+  private String postTisId;
+
   @ExcelColumn(name = "Funding type")
   private String fundingType;
 

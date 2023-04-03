@@ -59,6 +59,7 @@ public class FundingUpdateTransformServiceTest {
     fundingUpdateXls.setFundingType(FUNDING_TYPE_NEW);
     fundingUpdateXls.setFundingTypeOther(null);
     fundingUpdateXls.setFundingBody(FUNDING_BODY_VALID);
+    fundingUpdateXls.setPostTisId("1");
     Calendar cFrom = Calendar.getInstance();
     cFrom.set(2019, Calendar.SEPTEMBER, 1); // 2019-09-01
     fundingUpdateXls.setDateFrom(cFrom.getTime());
@@ -333,5 +334,20 @@ public class FundingUpdateTransformServiceTest {
     MatcherAssert.assertThat("Should update fundingTypeOther",
         postFundingDtoArgumentCaptorValue.getInfo(),
         CoreMatchers.equalTo(fundingUpdateXls.getFundingTypeOther())); // value is null
+  }
+
+  @Test
+  public void shouldGiveErrorWhenPostIdDoesNotMatch() {
+    String postId = "999";
+    fundingUpdateXls.setPostTisId(postId);
+    fundingUpdateTransformerService.processFundingUpdateUpload(
+        Collections.singletonList(fundingUpdateXls));
+
+    MatcherAssert.assertThat(
+        "Should give error when postId in XLS does not match postId of the post funding",
+        fundingUpdateXls.getErrorMessage(),
+        CoreMatchers.containsString(
+            String.format(FundingUpdateTransformerService.POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING,
+                postId)));
   }
 }

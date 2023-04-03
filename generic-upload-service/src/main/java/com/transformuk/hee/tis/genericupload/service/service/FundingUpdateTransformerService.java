@@ -22,6 +22,8 @@ import org.springframework.web.client.ResourceAccessException;
 @Component
 public class FundingUpdateTransformerService {
 
+  protected static final String POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING =
+      "This post funding is not under the post id: \"%s\"";
   protected static final String DID_NOT_FIND_POST_FUNDING_FOR_ID =
       "Did not find the postFunding for id \"%s\".";
   protected static final String ERROR_INVALID_FUNDING_BODY_NAME =
@@ -80,8 +82,15 @@ public class FundingUpdateTransformerService {
       try {
         PostFundingDTO postFundingDto = tcsService.getPostFundingById(Long.valueOf(postFundingId));
         if (postFundingDto != null) {
-          validateAndUpdatePostFundingDto(fundingUpdateXls, postFundingDto, fundingBodyNameToId,
-              fundingTypeDtos);
+          if (StringUtils.equals(postFundingDto.getPostId().toString(),
+              fundingUpdateXls.getPostTisId())) {
+            validateAndUpdatePostFundingDto(fundingUpdateXls, postFundingDto, fundingBodyNameToId,
+                fundingTypeDtos);
+          } else {
+            fundingUpdateXls
+                .addErrorMessage(String.format(POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING,
+                    fundingUpdateXls.getPostTisId()));
+          }
         } else {
           fundingUpdateXls
               .addErrorMessage(String.format(DID_NOT_FIND_POST_FUNDING_FOR_ID, postFundingId));
