@@ -80,11 +80,12 @@ public class FileValidator {
       fileType = FileType.ASSESSMENTS;
     } else if (headers.contains("TIS_Placement_ID*") && headers.contains("Intrepid_Placement_ID")) {
       fileType = FileType.PLACEMENTS_UPDATE;
-    } else if (headers.contains("TIS_Post_ID*") && headers.contains("Funding type")) {
+    } else if (headers.contains("TIS_Post_ID*") && headers.contains("Funding type")
+        && !headers.contains("TIS_PostFunding_ID*")) {
       fileType = FileType.POSTS_FUNDING_UPDATE;
     } else if (headers.contains("National Post Number*")) {
       fileType = FileType.POSTS_CREATE;
-    } else if (headers.contains("TIS_Post_ID*")) {
+    } else if (headers.contains("TIS_Post_ID*") && !headers.contains("TIS_PostFunding_ID*")) {
       fileType = FileType.POSTS_UPDATE;
     } else if (headers.contains("TIS_PostFunding_ID*")) {
       fileType = FileType.FUNDING_UPDATE;
