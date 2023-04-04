@@ -220,9 +220,13 @@ public class FileValidatorTest {
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
 
+    Set<String> headers = new HashSet<>();
+    headers.add("TIS_PostFunding_ID*");
+    headers.add("TIS_Post_ID*");
+
     // When.
     FileType fileType =
-        fileValidator.getFileType(null, null, null, Collections.singleton("TIS_PostFunding_ID*"));
+        fileValidator.getFileType(null, null, null, headers);
 
     // Then.
     assertThat(fileType, is(FileType.FUNDING_UPDATE));

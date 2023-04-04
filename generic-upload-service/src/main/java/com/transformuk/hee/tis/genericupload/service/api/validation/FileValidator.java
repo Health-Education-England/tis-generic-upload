@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 public class FileValidator {
 
+  private static final String TIS_POSTFUNDING_ID_MANDATORY = "TIS_PostFunding_ID*";
   public static final String DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD =
       "Date missing or incorrect format on mandatory field (%1$s)";
   public static final String FIELD_IS_REQUIRED_AT_LINE_NO = "%s Field is required at line no %d ";
@@ -80,13 +81,15 @@ public class FileValidator {
       fileType = FileType.ASSESSMENTS;
     } else if (headers.contains("TIS_Placement_ID*") && headers.contains("Intrepid_Placement_ID")) {
       fileType = FileType.PLACEMENTS_UPDATE;
-    } else if (headers.contains("TIS_Post_ID*") && headers.contains("Funding type")) {
+    } else if (headers.contains("TIS_Post_ID*") && headers.contains("Funding type")
+        && !headers.contains(TIS_POSTFUNDING_ID_MANDATORY)) {
       fileType = FileType.POSTS_FUNDING_UPDATE;
     } else if (headers.contains("National Post Number*")) {
       fileType = FileType.POSTS_CREATE;
-    } else if (headers.contains("TIS_Post_ID*")) {
+    } else if (headers.contains("TIS_Post_ID*") && !headers.contains(
+        TIS_POSTFUNDING_ID_MANDATORY)) {
       fileType = FileType.POSTS_UPDATE;
-    } else if (headers.contains("TIS_PostFunding_ID*")) {
+    } else if (headers.contains(TIS_POSTFUNDING_ID_MANDATORY)) {
       fileType = FileType.FUNDING_UPDATE;
     } else if (headers.contains("TIS_Assessment_ID*")) {
       fileType = FileType.ASSESSMENTS_UPDATE;
