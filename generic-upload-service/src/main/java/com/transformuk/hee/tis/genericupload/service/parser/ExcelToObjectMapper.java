@@ -177,6 +177,8 @@ public class ExcelToObjectMapper {
       switch (cell.getCellType()) {
         case STRING:
           String trim = cell.getStringCellValue().trim();
+          if (StringUtils.isEmpty(trim))
+            break;
           if (cls == LocalDate.class) {
             field.set(obj, MapperConfiguration.convertDate(trim));
           } else if (cls == Date.class) {
