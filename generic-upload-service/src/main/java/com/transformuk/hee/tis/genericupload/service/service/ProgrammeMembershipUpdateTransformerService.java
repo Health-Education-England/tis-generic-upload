@@ -89,16 +89,14 @@ public class ProgrammeMembershipUpdateTransformerService {
 
     xlsList.stream()
         .collect(Collectors.groupingBy(ProgrammeMembershipUpdateXls::getProgrammeMembershipId))
-        .forEach((id, pms) ->
-            {
-              if (pms.size() == 1) {
-                filteredList.add(pms.get(0));
-              } else {
-                pms.forEach(pm -> pm.addErrorMessage(String.format(PM_ID_IS_DUPLICATE, id)));
-              }
-              // ProgrammeMembershipId is a mandatory field so pms.size <1 is left undefined.
-            }
-        );
+        .forEach((id, pms) -> {
+          // ProgrammeMembershipId is a mandatory field so pms.size <1 is left undefined.
+          if (pms.size() == 1) {
+            filteredList.add(pms.get(0));
+          } else {
+            pms.forEach(pm -> pm.addErrorMessage(String.format(PM_ID_IS_DUPLICATE, id)));
+          }
+        });
     return filteredList;
   }
 }
