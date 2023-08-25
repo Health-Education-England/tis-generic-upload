@@ -20,10 +20,10 @@ import org.springframework.web.client.ResourceAccessException;
 @Component
 public class ProgrammeMembershipUpdateTransformerService {
 
-  protected static final String PM_ID_IS_DUPLICATE = "Duplicate TIS_ProgrammeMembership_ID: %s.";
-  protected static final String UNEXPECTED_ERROR = "Unexpected error occurred";
   public static final String PROGRAMME_MEMBERSHIP_TYPE_NOT_EXISTS =
       "Programme membership type with code %s does not exist.";
+  protected static final String PM_ID_IS_DUPLICATE = "Duplicate TIS_ProgrammeMembership_ID: %s.";
+  protected static final String UNEXPECTED_ERROR = "Unexpected error occurred";
   private static final Logger logger = getLogger(ProgrammeMembershipUpdateTransformerService.class);
 
   private final TcsServiceImpl tcsService;
@@ -89,16 +89,14 @@ public class ProgrammeMembershipUpdateTransformerService {
 
     xlsList.stream()
         .collect(Collectors.groupingBy(ProgrammeMembershipUpdateXls::getProgrammeMembershipId))
-        .forEach((id, pms) ->
-            {
-              if (pms.size() == 1) {
-                filteredList.add(pms.get(0));
-              } else {
-                pms.forEach(pm -> pm.addErrorMessage(String.format(PM_ID_IS_DUPLICATE, id)));
-              }
-              // ProgrammeMembershipId is a mandatory field so pms.size <1 is left undefined.
-            }
-        );
+        .forEach((id, pms) -> {
+          if (pms.size() == 1) {
+            filteredList.add(pms.get(0));
+          } else {
+            pms.forEach(pm -> pm.addErrorMessage(String.format(PM_ID_IS_DUPLICATE, id)));
+          }
+          // ProgrammeMembershipId is a mandatory field so pms.size <1 is left undefined.
+        });
     return filteredList;
   }
 }
