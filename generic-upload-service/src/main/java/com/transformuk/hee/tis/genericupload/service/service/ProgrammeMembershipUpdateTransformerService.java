@@ -9,9 +9,8 @@ import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -37,8 +36,7 @@ public class ProgrammeMembershipUpdateTransformerService {
   }
 
   /**
-   * Validate some data from Excel and send path request to TCS,
-   * then handle the response.
+   * Validate some data from Excel and send path request to TCS, then handle the response.
    *
    * @param xlsList The Xls list from the Excel user input
    */
@@ -53,7 +51,7 @@ public class ProgrammeMembershipUpdateTransformerService {
 
     List<ProgrammeMembershipUpdateXls> filteredList = handleDuplicateIds(xlsList);
 
-    for (ProgrammeMembershipUpdateXls xls: filteredList) {
+    for (ProgrammeMembershipUpdateXls xls : filteredList) {
       List<String> initialErrMsgs = initialValidate(xls);
       ProgrammeMembershipDTO programmeMembershipDto = pmMapper.toDto(xls);
       programmeMembershipDto.getMessageList().addAll(initialErrMsgs);
@@ -88,24 +86,19 @@ public class ProgrammeMembershipUpdateTransformerService {
       List<ProgrammeMembershipUpdateXls> xlsList) {
 
     List<ProgrammeMembershipUpdateXls> filteredList = new ArrayList<>();
-    // Use a HashMap to store all the numbers of each ProgrammeMembershipUuid
-    Map<String, Integer> countOfIds = new HashMap<>();
 
-    for (ProgrammeMembershipUpdateXls xls : xlsList) {
-      String programmeMembershipId = xls.getProgrammeMembershipId();
-      if (!countOfIds.containsKey(programmeMembershipId)) {
-        countOfIds.put(programmeMembershipId, 1);
-      } else {
-        countOfIds.put(programmeMembershipId, countOfIds.get(programmeMembershipId) + 1);
-      }
-    }
-    for (ProgrammeMembershipUpdateXls xls : xlsList) {
-      if (countOfIds.get(xls.getProgrammeMembershipId()) > 1) {
-        xls.addErrorMessage(String.format(PM_ID_IS_DUPLICATE, xls.getProgrammeMembershipId()));
-      } else {
-        filteredList.add(xls);
-      }
-    }
+    xlsList.stream()
+        .collect(Collectors.groupingBy(ProgrammeMembershipUpdateXls::getProgrammeMembershipId))
+        .forEach((id, pms) ->
+            {
+              if (pms.size() == 1) {
+                filteredList.add(pms.get(0));
+              } else {
+                pms.forEach(pm -> pm.addErrorMessage(String.format(PM_ID_IS_DUPLICATE, id)));
+              }
+              // ProgrammeMembershipId is a mandatory field so pms.size <1 is left undefined.
+            }
+        );
     return filteredList;
   }
 }
