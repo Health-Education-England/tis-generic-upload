@@ -16,6 +16,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
@@ -83,6 +84,8 @@ public class ScheduledUploadTask {
   private FundingUpdateTransformerService fundingUpdateTransformerService;
   @Autowired
   private AssessmentUpdateTransformerService assessmentUpdateTransformerService;
+  @Autowired
+  private ProgrammeMembershipUpdateTransformerService pmUpdateTransformerService;
 
   @Autowired
   public ScheduledUploadTask(
@@ -208,6 +211,15 @@ public class ScheduledUploadTask {
             assessmentUpdateTransformerService.processAssessmentsUpdateUpload(
                 assessmentUpdateXLSList);
             setJobToCompleted(applicationType, assessmentUpdateXLSList);
+            break;
+
+          case PROGRAMME_MEMBERSHIP_UPDATE:
+            List<ProgrammeMembershipUpdateXls> programmeMembershipUpdateXlsList =
+                excelToObjectMapper.map(ProgrammeMembershipUpdateXls.class,
+                    new ColumnMapper(ProgrammeMembershipUpdateXls.class).getFieldMap());
+            pmUpdateTransformerService.processProgrammeMembershipsUpdateUpload(
+                programmeMembershipUpdateXlsList);
+            setJobToCompleted(applicationType, programmeMembershipUpdateXlsList);
             break;
 
           default:

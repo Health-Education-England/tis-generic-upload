@@ -12,6 +12,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import lombok.Getter;
 
@@ -27,7 +28,8 @@ public enum FileType {
   POSTS_CREATE(PostCreateXls.class),
   POSTS_UPDATE(PostUpdateXLS.class),
   POSTS_FUNDING_UPDATE(PostFundingUpdateXLS.class),
-  ASSESSMENTS_UPDATE(AssessmentUpdateXLS.class);
+  ASSESSMENTS_UPDATE(AssessmentUpdateXLS.class),
+  PROGRAMME_MEMBERSHIP_UPDATE(ProgrammeMembershipUpdateXls.class);
 
   /**
    * The class of the XLS DTO related to this FileType.
