@@ -2,7 +2,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.ProgrammeMembershipMapper;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
@@ -16,7 +16,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.ResourceAccessException;;
+import org.springframework.web.client.ResourceAccessException;
 
 @Component
 public class ProgrammeMembershipUpdateTransformerService {
@@ -36,16 +36,24 @@ public class ProgrammeMembershipUpdateTransformerService {
     this.pmMapper = pmMapper;
   }
 
-  public void processProgrammeMembershipsUpdateUpload(List<ProgrammeMembershipUpdateXLS> xlsList) {
+  /**
+   * Validate some data from Excel and send path request to TCS,
+   * then handle the response.
+   *
+   * @param xlsList The Xls list from the Excel user input
+   */
+  public void processProgrammeMembershipsUpdateUpload(
+      List<ProgrammeMembershipUpdateXls> xlsList) {
+
     xlsList.forEach(TemplateXLS::initialiseSuccessfullyImported);
 
     if (xlsList.isEmpty()) {
       return;
     }
 
-    List<ProgrammeMembershipUpdateXLS> filteredList = handleDuplicateIds(xlsList);
+    List<ProgrammeMembershipUpdateXls> filteredList = handleDuplicateIds(xlsList);
 
-    for (ProgrammeMembershipUpdateXLS xls: filteredList) {
+    for (ProgrammeMembershipUpdateXls xls: filteredList) {
       List<String> initialErrMsgs = initialValidate(xls);
       ProgrammeMembershipDTO programmeMembershipDto = pmMapper.toDto(xls);
       programmeMembershipDto.getMessageList().addAll(initialErrMsgs);
@@ -59,12 +67,13 @@ public class ProgrammeMembershipUpdateTransformerService {
           xls.addErrorMessages(errMsgs);
         }
       } catch (ResourceAccessException rae) {
+        logger.error(UNEXPECTED_ERROR, rae);
         xls.addErrorMessage(UNEXPECTED_ERROR);
       }
     }
   }
 
-  List<String> initialValidate(ProgrammeMembershipUpdateXLS xls) {
+  List<String> initialValidate(ProgrammeMembershipUpdateXls xls) {
     List<String> errMsg = new ArrayList<>();
 
     String programmeMembershipType = xls.getProgrammeMembershipType();
@@ -75,12 +84,12 @@ public class ProgrammeMembershipUpdateTransformerService {
     return errMsg;
   }
 
-  List<ProgrammeMembershipUpdateXLS> handleDuplicateIds(List<ProgrammeMembershipUpdateXLS> xlsList) {
-    List<ProgrammeMembershipUpdateXLS> filteredList = new ArrayList<>();
+  List<ProgrammeMembershipUpdateXls> handleDuplicateIds(List<ProgrammeMembershipUpdateXls> xlsList) {
+    List<ProgrammeMembershipUpdateXls> filteredList = new ArrayList<>();
     // Use a HashMap to store all the numbers of each ProgrammeMembershipUuid
     Map<String, Integer> countOfIds = new HashMap<>();
 
-    for (ProgrammeMembershipUpdateXLS xls : xlsList) {
+    for (ProgrammeMembershipUpdateXls xls : xlsList) {
       String programmeMembershipId = xls.getProgrammeMembershipId();
       if (!countOfIds.containsKey(programmeMembershipId)) {
         countOfIds.put(programmeMembershipId, 1);
@@ -88,7 +97,7 @@ public class ProgrammeMembershipUpdateTransformerService {
         countOfIds.put(programmeMembershipId, countOfIds.get(programmeMembershipId) + 1);
       }
     }
-    for (ProgrammeMembershipUpdateXLS xls : xlsList) {
+    for (ProgrammeMembershipUpdateXls xls : xlsList) {
       if (countOfIds.get(xls.getProgrammeMembershipId()) > 1) {
         xls.addErrorMessage(String.format(PM_ID_IS_DUPLICATE, xls.getProgrammeMembershipId()));
       } else {

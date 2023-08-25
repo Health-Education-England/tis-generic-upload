@@ -8,7 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
-import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.ProgrammeMembershipMapperImpl;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
@@ -45,7 +45,7 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
 
   @Test
   public void shouldReturnErrorWhenPmTypeNotExists() {
-    ProgrammeMembershipUpdateXLS xls = new ProgrammeMembershipUpdateXLS();
+    ProgrammeMembershipUpdateXls xls = new ProgrammeMembershipUpdateXls();
     String pmType = "Not found";
     xls.setProgrammeMembershipType(pmType);
 
@@ -58,7 +58,7 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
 
   @Test
   public void shouldNotReturnErrorWhenPmTypeExists() {
-    ProgrammeMembershipUpdateXLS xls = new ProgrammeMembershipUpdateXLS();
+    ProgrammeMembershipUpdateXls xls = new ProgrammeMembershipUpdateXls();
     xls.setProgrammeMembershipType(PROGRAMME_MEMBERSHIP_TYPE);
 
     List<String> errMsg = testObj.initialValidate(xls);
@@ -67,15 +67,15 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
 
   @Test
   public void shouldHandleDuplicateIds() {
-    ProgrammeMembershipUpdateXLS xls1 = new ProgrammeMembershipUpdateXLS();
-    ProgrammeMembershipUpdateXLS xls2 = new ProgrammeMembershipUpdateXLS();
-    ProgrammeMembershipUpdateXLS xls3 = new ProgrammeMembershipUpdateXLS();
+    ProgrammeMembershipUpdateXls xls1 = new ProgrammeMembershipUpdateXls();
+    ProgrammeMembershipUpdateXls xls2 = new ProgrammeMembershipUpdateXls();
+    ProgrammeMembershipUpdateXls xls3 = new ProgrammeMembershipUpdateXls();
     xls1.setProgrammeMembershipId(PROGRAMME_MEMBERSHIP_ID);
     xls2.setProgrammeMembershipId(PROGRAMME_MEMBERSHIP_ID);
     String id3 = UUID.randomUUID().toString();
     xls3.setProgrammeMembershipId(id3);
 
-    List<ProgrammeMembershipUpdateXLS> xlsList =
+    List<ProgrammeMembershipUpdateXls> xlsList =
         testObj.handleDuplicateIds(Lists.newArrayList(xls1, xls2, xls3));
 
     Assert.assertEquals(1, xlsList.size());
@@ -84,12 +84,12 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
 
   @Test
   public void testProcessPmUpdateUpload_duplicateIds() {
-    ProgrammeMembershipUpdateXLS xls1 = new ProgrammeMembershipUpdateXLS();
-    ProgrammeMembershipUpdateXLS xls2 = new ProgrammeMembershipUpdateXLS();
+    ProgrammeMembershipUpdateXls xls1 = new ProgrammeMembershipUpdateXls();
+    ProgrammeMembershipUpdateXls xls2 = new ProgrammeMembershipUpdateXls();
     xls1.setProgrammeMembershipId(PROGRAMME_MEMBERSHIP_ID);
     xls2.setProgrammeMembershipId(PROGRAMME_MEMBERSHIP_ID);
 
-    List<ProgrammeMembershipUpdateXLS> xlsList = Lists.newArrayList(xls1, xls2);
+    List<ProgrammeMembershipUpdateXls> xlsList = Lists.newArrayList(xls1, xls2);
 
     testObj.processProgrammeMembershipsUpdateUpload(xlsList);
 
@@ -103,10 +103,10 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
 
   @Test
   public void testProcessPmUpdateUpload_noError() {
-    ProgrammeMembershipUpdateXLS xls = Mockito.spy(new ProgrammeMembershipUpdateXLS());
+    ProgrammeMembershipUpdateXls xls = Mockito.spy(new ProgrammeMembershipUpdateXls());
     xls.setProgrammeMembershipId(PROGRAMME_MEMBERSHIP_ID);
     xls.setProgrammeMembershipType(PROGRAMME_MEMBERSHIP_TYPE);
-    List<ProgrammeMembershipUpdateXLS> xlsList = Lists.newArrayList(xls);
+    List<ProgrammeMembershipUpdateXls> xlsList = Lists.newArrayList(xls);
 
     ProgrammeMembershipDTO pmDto = new ProgrammeMembershipDTO();
     pmDto.setUuid(PROGRAMME_MEMBERSHIP_UUID);
@@ -123,10 +123,10 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
 
   @Test
   public void testProcessPmUpdateUpload_errMsg() {
-    ProgrammeMembershipUpdateXLS xls = Mockito.spy(new ProgrammeMembershipUpdateXLS());
+    ProgrammeMembershipUpdateXls xls = Mockito.spy(new ProgrammeMembershipUpdateXls());
     xls.setProgrammeMembershipId(PROGRAMME_MEMBERSHIP_ID);
     xls.setProgrammeMembershipType(PROGRAMME_MEMBERSHIP_TYPE);
-    List<ProgrammeMembershipUpdateXLS> xlsList = Lists.newArrayList(xls);
+    List<ProgrammeMembershipUpdateXls> xlsList = Lists.newArrayList(xls);
 
     ProgrammeMembershipDTO pmDto = new ProgrammeMembershipDTO();
     pmDto.setUuid(PROGRAMME_MEMBERSHIP_UUID);
@@ -146,10 +146,10 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
 
   @Test
   public void testProcessPmUpdateUpload_shouldHandleException() {
-    ProgrammeMembershipUpdateXLS xls = Mockito.spy(new ProgrammeMembershipUpdateXLS());
+    ProgrammeMembershipUpdateXls xls = Mockito.spy(new ProgrammeMembershipUpdateXls());
     xls.setProgrammeMembershipId(PROGRAMME_MEMBERSHIP_ID);
     xls.setProgrammeMembershipType(PROGRAMME_MEMBERSHIP_TYPE);
-    List<ProgrammeMembershipUpdateXLS> xlsList = Lists.newArrayList(xls);
+    List<ProgrammeMembershipUpdateXls> xlsList = Lists.newArrayList(xls);
 
     doThrow(new ResourceAccessException("")).when(tcsServiceMock)
         .patchProgrammeMembership(any(ProgrammeMembershipDTO.class));

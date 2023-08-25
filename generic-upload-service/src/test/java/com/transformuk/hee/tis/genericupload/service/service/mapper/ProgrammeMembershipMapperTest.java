@@ -1,6 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service.mapper;
 
-import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import java.time.LocalDate;
 import java.time.Month;
@@ -26,8 +26,8 @@ public class ProgrammeMembershipMapperTest {
     mapper = new ProgrammeMembershipMapperImpl();
   }
 
-  ProgrammeMembershipUpdateXLS initialiseXls() {
-    ProgrammeMembershipUpdateXLS xls = new ProgrammeMembershipUpdateXLS();
+  ProgrammeMembershipUpdateXls initialiseXls() {
+    ProgrammeMembershipUpdateXls xls = new ProgrammeMembershipUpdateXls();
     xls.setProgrammeMembershipId(PROGRAMME_MEMBERSHIP_ID);
     xls.setProgrammeMembershipType(PROGRAMME_MEMBERSHIP_TYPE);
     xls.setRotation(ROTATION);
@@ -48,7 +48,7 @@ public class ProgrammeMembershipMapperTest {
 
   @Test
   public void shouldConvertEntityToDto() {
-    ProgrammeMembershipUpdateXLS xls = initialiseXls();
+    ProgrammeMembershipUpdateXls xls = initialiseXls();
 
     ProgrammeMembershipDTO programmeMembershipDto = mapper.toDto(xls);
 
@@ -73,7 +73,7 @@ public class ProgrammeMembershipMapperTest {
 
   @Test
   public void shouldSetNullWhenPmTypeNotFound() {
-    ProgrammeMembershipUpdateXLS xls = initialiseXls();
+    ProgrammeMembershipUpdateXls xls = initialiseXls();
     xls.setProgrammeMembershipType("Not Found");
 
     ProgrammeMembershipDTO programmeMembershipDto = mapper.toDto(xls);

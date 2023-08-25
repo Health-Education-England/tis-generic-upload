@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class ProgrammeMembershipUpdateXLS extends TemplateXLS {
+public class ProgrammeMembershipUpdateXls extends TemplateXLS {
 
   @ExcelColumn(name = "TIS_ProgrammeMembership_ID*", required = true)
   private String programmeMembershipId;
