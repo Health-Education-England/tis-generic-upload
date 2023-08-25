@@ -34,11 +34,11 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
   private static final String PROGRAMME_MEMBERSHIP_TYPE = "SUBSTANTIVE";
 
   @Mock
-  TcsServiceImpl tcsServiceMock;
+  private TcsServiceImpl tcsServiceMock;
   @InjectMocks
   private ProgrammeMembershipUpdateTransformerService testObj;
   @Spy
-  ProgrammeMembershipMapper pmMapper = new ProgrammeMembershipMapperImpl();
+  private ProgrammeMembershipMapper pmMapper = new ProgrammeMembershipMapperImpl();
 
   @Test
   public void shouldReturnErrorWhenPmTypeNotExists() {
