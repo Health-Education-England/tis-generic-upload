@@ -1,7 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -9,24 +9,24 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
+import com.transformuk.hee.tis.genericupload.service.service.mapper.ProgrammeMembershipMapper;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.ProgrammeMembershipMapperImpl;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.List;
 import java.util.UUID;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.web.client.ResourceAccessException;
 
-@RunWith(SpringRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ProgrammeMembershipUpdateTransformerServiceTest {
 
   private static final UUID PROGRAMME_MEMBERSHIP_UUID = UUID.randomUUID();
@@ -37,11 +37,8 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
   TcsServiceImpl tcsServiceMock;
   @InjectMocks
   private ProgrammeMembershipUpdateTransformerService testObj;
-
-  @Before
-  public void setUp() {
-    ReflectionTestUtils.setField(testObj, "pmMapper", new ProgrammeMembershipMapperImpl());
-  }
+  @Spy
+  ProgrammeMembershipMapper pmMapper = new ProgrammeMembershipMapperImpl();
 
   @Test
   public void shouldReturnErrorWhenPmTypeNotExists() {
@@ -50,8 +47,8 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
     xls.setProgrammeMembershipType(pmType);
 
     List<String> errMsg = testObj.initialValidate(xls);
-    Assert.assertEquals(1, errMsg.size());
-    Assert.assertEquals(String.format(
+    assertEquals(1, errMsg.size());
+    assertEquals(String.format(
             ProgrammeMembershipUpdateTransformerService.PROGRAMME_MEMBERSHIP_TYPE_NOT_EXISTS, pmType),
         errMsg.get(0));
   }
@@ -62,7 +59,7 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
     xls.setProgrammeMembershipType(PROGRAMME_MEMBERSHIP_TYPE);
 
     List<String> errMsg = testObj.initialValidate(xls);
-    Assert.assertEquals(0, errMsg.size());
+    assertEquals(0, errMsg.size());
   }
 
   @Test
@@ -78,8 +75,8 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
     List<ProgrammeMembershipUpdateXls> xlsList =
         testObj.handleDuplicateIds(Lists.newArrayList(xls1, xls2, xls3));
 
-    Assert.assertEquals(1, xlsList.size());
-    Assert.assertEquals(id3, xlsList.get(0).getProgrammeMembershipId());
+    assertEquals(1, xlsList.size());
+    assertEquals(id3, xlsList.get(0).getProgrammeMembershipId());
   }
 
   @Test
@@ -93,12 +90,12 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
 
     testObj.processProgrammeMembershipsUpdateUpload(xlsList);
 
-    assertThat("Should get error", xlsList.get(0).getErrorMessage(),
-        is(String.format(ProgrammeMembershipUpdateTransformerService.PM_ID_IS_DUPLICATE,
-            PROGRAMME_MEMBERSHIP_ID)));
-    assertThat("Should get error", xlsList.get(1).getErrorMessage(),
-        is(String.format(ProgrammeMembershipUpdateTransformerService.PM_ID_IS_DUPLICATE,
-            PROGRAMME_MEMBERSHIP_ID)));
+    assertEquals(String.format(
+        ProgrammeMembershipUpdateTransformerService.PM_ID_IS_DUPLICATE,
+        PROGRAMME_MEMBERSHIP_ID), xlsList.get(0).getErrorMessage());
+    assertEquals(String.format(
+        ProgrammeMembershipUpdateTransformerService.PM_ID_IS_DUPLICATE,
+        PROGRAMME_MEMBERSHIP_ID), xlsList.get(1).getErrorMessage());
   }
 
   @Test
@@ -118,7 +115,7 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
     testObj.processProgrammeMembershipsUpdateUpload(xlsList);
 
     verify(xls).setSuccessfullyImported(true);
-    Assert.assertNull(xls.getErrorMessage());
+    assertNull(xls.getErrorMessage());
   }
 
   @Test
@@ -141,7 +138,7 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
     testObj.processProgrammeMembershipsUpdateUpload(xlsList);
 
     verify(xls).addErrorMessages(errorMsgs);
-    Assert.assertEquals(errMsg, xls.getErrorMessage());
+    assertEquals(errMsg, xls.getErrorMessage());
   }
 
   @Test
@@ -155,7 +152,7 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
         .patchProgrammeMembership(any(ProgrammeMembershipDTO.class));
 
     testObj.processProgrammeMembershipsUpdateUpload(xlsList);
-    Assert.assertEquals(ProgrammeMembershipUpdateTransformerService.UNEXPECTED_ERROR,
+    assertEquals(ProgrammeMembershipUpdateTransformerService.UNEXPECTED_ERROR,
         xls.getErrorMessage());
   }
 }

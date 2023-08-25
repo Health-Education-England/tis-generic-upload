@@ -1,10 +1,12 @@
-package com.transformuk.hee.tis.genericupload.service.service.utils;
+package com.transformuk.hee.tis.genericupload.service.util;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.Calendar;
 import java.util.Date;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class DateUtilsTest {
@@ -16,14 +18,14 @@ public class DateUtilsTest {
     Date date = cal.getTime();
 
     LocalDate localDate = DateUtils.toLocalDate(date);
-    Assert.assertEquals(2023, localDate.getYear());
-    Assert.assertEquals(Month.AUGUST, localDate.getMonth());
-    Assert.assertEquals(22, localDate.getDayOfMonth());
+    assertEquals(2023, localDate.getYear());
+    assertEquals(Month.AUGUST, localDate.getMonth());
+    assertEquals(22, localDate.getDayOfMonth());
   }
 
   @Test
   public void shouldReturnNullWhenDateIsNull() {
     LocalDate localDate = DateUtils.toLocalDate(null);
-    Assert.assertNull(localDate);
+    assertNull(localDate);
   }
 }

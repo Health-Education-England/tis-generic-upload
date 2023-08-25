@@ -1,7 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service.mapper;
 
 import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
-import com.transformuk.hee.tis.genericupload.service.service.utils.DateUtils;
+import com.transformuk.hee.tis.genericupload.service.util.DateUtils;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import org.apache.commons.lang3.EnumUtils;

@@ -1,4 +1,4 @@
-package com.transformuk.hee.tis.genericupload.service.service.utils;
+package com.transformuk.hee.tis.genericupload.service.util;
 
 import java.time.LocalDate;
 import java.time.ZoneId;

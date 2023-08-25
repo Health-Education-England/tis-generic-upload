@@ -1,5 +1,8 @@
 package com.transformuk.hee.tis.genericupload.service.service.mapper;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.tcs.api.dto.ProgrammeMembershipDTO;
 import java.time.LocalDate;
@@ -7,7 +10,6 @@ import java.time.Month;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,23 +54,23 @@ public class ProgrammeMembershipMapperTest {
 
     ProgrammeMembershipDTO programmeMembershipDto = mapper.toDto(xls);
 
-    Assert.assertEquals(PROGRAMME_MEMBERSHIP_ID, programmeMembershipDto.getUuid().toString());
-    Assert.assertEquals(PROGRAMME_MEMBERSHIP_TYPE,
+    assertEquals(PROGRAMME_MEMBERSHIP_ID, programmeMembershipDto.getUuid().toString());
+    assertEquals(PROGRAMME_MEMBERSHIP_TYPE,
         programmeMembershipDto.getProgrammeMembershipType().name());
-    Assert.assertEquals(ROTATION, programmeMembershipDto.getRotation().getName());
-    Assert.assertEquals(TRAINING_PATHWAY, programmeMembershipDto.getTrainingPathway());
-    Assert.assertEquals(LEAVING_REASON, programmeMembershipDto.getLeavingReason());
+    assertEquals(ROTATION, programmeMembershipDto.getRotation().getName());
+    assertEquals(TRAINING_PATHWAY, programmeMembershipDto.getTrainingPathway());
+    assertEquals(LEAVING_REASON, programmeMembershipDto.getLeavingReason());
 
     LocalDate startDate = programmeMembershipDto.getProgrammeStartDate();
     LocalDate endDate = programmeMembershipDto.getProgrammeEndDate();
 
-    Assert.assertEquals(2023, startDate.getYear());
-    Assert.assertEquals(Month.AUGUST, startDate.getMonth());
-    Assert.assertEquals(22, startDate.getDayOfMonth());
+    assertEquals(2023, startDate.getYear());
+    assertEquals(Month.AUGUST, startDate.getMonth());
+    assertEquals(22, startDate.getDayOfMonth());
 
-    Assert.assertEquals(2024, endDate.getYear());
-    Assert.assertEquals(Month.AUGUST, endDate.getMonth());
-    Assert.assertEquals(22, endDate.getDayOfMonth());
+    assertEquals(2024, endDate.getYear());
+    assertEquals(Month.AUGUST, endDate.getMonth());
+    assertEquals(22, endDate.getDayOfMonth());
   }
 
   @Test
@@ -77,6 +79,6 @@ public class ProgrammeMembershipMapperTest {
     xls.setProgrammeMembershipType("Not Found");
 
     ProgrammeMembershipDTO programmeMembershipDto = mapper.toDto(xls);
-    Assert.assertNull(programmeMembershipDto.getProgrammeMembershipType());
+    assertNull(programmeMembershipDto.getProgrammeMembershipType());
   }
 }
