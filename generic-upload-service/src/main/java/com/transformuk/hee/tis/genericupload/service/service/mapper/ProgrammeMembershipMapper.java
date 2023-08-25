@@ -20,7 +20,7 @@ public interface ProgrammeMembershipMapper {
   /**
    * Convert programme membership type from String to enumeration.
    *
-   * @param programmeMembershipType
+   * @param programmeMembershipType the programme membership type string
    * @return converted enum value, if not found, return null
    */
   default ProgrammeMembershipType programmeMembershipTypeFromString(

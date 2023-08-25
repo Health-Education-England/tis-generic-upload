@@ -84,7 +84,9 @@ public class ProgrammeMembershipUpdateTransformerService {
     return errMsg;
   }
 
-  List<ProgrammeMembershipUpdateXls> handleDuplicateIds(List<ProgrammeMembershipUpdateXls> xlsList) {
+  List<ProgrammeMembershipUpdateXls> handleDuplicateIds(
+      List<ProgrammeMembershipUpdateXls> xlsList) {
+
     List<ProgrammeMembershipUpdateXls> filteredList = new ArrayList<>();
     // Use a HashMap to store all the numbers of each ProgrammeMembershipUuid
     Map<String, Integer> countOfIds = new HashMap<>();
