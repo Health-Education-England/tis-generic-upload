@@ -81,4 +81,13 @@ public class ProgrammeMembershipMapperTest {
     ProgrammeMembershipDTO programmeMembershipDto = mapper.toDto(xls);
     assertNull(programmeMembershipDto.getProgrammeMembershipType());
   }
+
+  @Test
+  public void shouldSetRotationToNullWhenRotationNameIsNull() {
+    ProgrammeMembershipUpdateXls xls = initialiseXls();
+    xls.setRotation(null);
+
+    ProgrammeMembershipDTO programmeMembershipDto = mapper.toDto(xls);
+    assertNull(programmeMembershipDto.getRotation());
+  }
 }
