@@ -11,8 +11,6 @@ import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.EnumUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -75,9 +73,12 @@ public class ProgrammeMembershipUpdateTransformerService {
     List<String> errMsg = new ArrayList<>();
 
     String programmeMembershipType = xls.getProgrammeMembershipType();
-    if (!StringUtils.isEmpty(programmeMembershipType) && !EnumUtils.isValidEnum(
-        ProgrammeMembershipType.class, programmeMembershipType)) {
-      errMsg.add(String.format(PROGRAMME_MEMBERSHIP_TYPE_NOT_EXISTS, programmeMembershipType));
+    if (programmeMembershipType != null) {
+      ProgrammeMembershipType pmTypeEnum =
+          ProgrammeMembershipType.fromString(programmeMembershipType);
+      if (pmTypeEnum == null) {
+        errMsg.add(String.format(PROGRAMME_MEMBERSHIP_TYPE_NOT_EXISTS, programmeMembershipType));
+      }
     }
     return errMsg;
   }
