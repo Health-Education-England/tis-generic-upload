@@ -16,7 +16,6 @@ import com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.List;
 import java.util.UUID;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -57,6 +56,15 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
   public void shouldNotReturnErrorWhenPmTypeExists() {
     ProgrammeMembershipUpdateXls xls = new ProgrammeMembershipUpdateXls();
     xls.setProgrammeMembershipType(PROGRAMME_MEMBERSHIP_TYPE);
+
+    List<String> errMsg = testObj.initialValidate(xls);
+    assertEquals(0, errMsg.size());
+  }
+
+  @Test
+  public void shouldAcceptPmTypeCaseInsensitive() {
+    ProgrammeMembershipUpdateXls xls = new ProgrammeMembershipUpdateXls();
+    xls.setProgrammeMembershipType("Substantive");
 
     List<String> errMsg = testObj.initialValidate(xls);
     assertEquals(0, errMsg.size());
