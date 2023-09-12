@@ -88,6 +88,25 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
   }
 
   @Test
+  public void shouldHandleInvalidUuid() {
+    ProgrammeMembershipUpdateXls xls1 = new ProgrammeMembershipUpdateXls();
+    ProgrammeMembershipUpdateXls xls2 = new ProgrammeMembershipUpdateXls();
+    xls1.setProgrammeMembershipId("invalidId");
+    xls2.setProgrammeMembershipId("123456");
+
+    List<ProgrammeMembershipUpdateXls> xlsList = Lists.newArrayList(xls1, xls2);
+
+    testObj.processProgrammeMembershipsUpdateUpload(xlsList);
+
+    assertEquals(String.format(
+        ProgrammeMembershipUpdateTransformerService.PM_ID_NOT_UUID,
+        PROGRAMME_MEMBERSHIP_ID), xlsList.get(0).getErrorMessage());
+    assertEquals(String.format(
+        ProgrammeMembershipUpdateTransformerService.PM_ID_NOT_UUID,
+        PROGRAMME_MEMBERSHIP_ID), xlsList.get(1).getErrorMessage());
+  }
+
+  @Test
   public void testProcessPmUpdateUpload_duplicateIds() {
     ProgrammeMembershipUpdateXls xls1 = new ProgrammeMembershipUpdateXls();
     ProgrammeMembershipUpdateXls xls2 = new ProgrammeMembershipUpdateXls();
