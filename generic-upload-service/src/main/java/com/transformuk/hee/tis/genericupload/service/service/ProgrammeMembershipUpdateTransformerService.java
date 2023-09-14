@@ -18,10 +18,11 @@ import org.springframework.web.client.ResourceAccessException;
 @Component
 public class ProgrammeMembershipUpdateTransformerService {
 
-  public static final String PROGRAMME_MEMBERSHIP_TYPE_NOT_EXISTS =
+  protected static final String PROGRAMME_MEMBERSHIP_TYPE_NOT_EXISTS =
       "Programme membership type with code %s does not exist.";
   protected static final String PM_ID_IS_DUPLICATE = "Duplicate TIS_ProgrammeMembership_ID: %s.";
-  protected static final String UNEXPECTED_ERROR = "Unexpected error occurred";
+  protected static final String PM_ID_NOT_UUID = "Programme membership ID is not a valid UUID.";
+  protected static final String UNEXPECTED_ERROR = "Unexpected error occurred.";
   private static final Logger logger = getLogger(ProgrammeMembershipUpdateTransformerService.class);
 
   private final TcsServiceImpl tcsService;
@@ -51,7 +52,14 @@ public class ProgrammeMembershipUpdateTransformerService {
 
     for (ProgrammeMembershipUpdateXls xls : filteredList) {
       List<String> initialErrMsgs = initialValidate(xls);
-      ProgrammeMembershipDTO programmeMembershipDto = pmMapper.toDto(xls);
+      ProgrammeMembershipDTO programmeMembershipDto;
+      try {
+        programmeMembershipDto = pmMapper.toDto(xls);
+      } catch (IllegalArgumentException e) {
+        xls.addErrorMessage(PM_ID_NOT_UUID);
+        continue;
+      }
+
       programmeMembershipDto.getMessageList().addAll(initialErrMsgs);
       try {
         ProgrammeMembershipDTO patchedProgrammeMembershipDto =

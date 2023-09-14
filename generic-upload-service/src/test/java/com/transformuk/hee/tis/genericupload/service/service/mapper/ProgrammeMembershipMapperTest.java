@@ -90,4 +90,12 @@ public class ProgrammeMembershipMapperTest {
     ProgrammeMembershipDTO programmeMembershipDto = mapper.toDto(xls);
     assertNull(programmeMembershipDto.getRotation());
   }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void shouldThrowExceptionWhenUuidNotValid() {
+    ProgrammeMembershipUpdateXls xls = initialiseXls();
+    xls.setProgrammeMembershipId("invalidUuid");
+
+    mapper.toDto(xls);
+  }
 }

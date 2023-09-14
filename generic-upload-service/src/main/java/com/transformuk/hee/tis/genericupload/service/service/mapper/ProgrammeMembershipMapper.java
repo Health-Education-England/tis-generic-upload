@@ -18,7 +18,7 @@ public interface ProgrammeMembershipMapper {
       + "com.transformuk.hee.tis.tcs.api.enumeration.ProgrammeMembershipType.fromString("
       + "xls.getProgrammeMembershipType()))",
       target = "programmeMembershipType")
-  ProgrammeMembershipDTO toDto(ProgrammeMembershipUpdateXls xls);
+  ProgrammeMembershipDTO toDto(ProgrammeMembershipUpdateXls xls) throws IllegalArgumentException;
 
   /**
    * Custom method to convert rotation name to Rotation Dto.
