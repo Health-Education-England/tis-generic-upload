@@ -113,6 +113,8 @@ public class PostCreateTransformerServiceTest {
     grade2.setId(2L);
     grade2.setName("grade2");
     grade2.setStatus(Status.CURRENT);
+    grade2.setTrainingGrade(true);
+    grade2.setPostGrade(true);
 
     specialty1 = new SpecialtyDTO();
     specialty1.setName("specialty1");
@@ -214,14 +216,19 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenCurrentGradeNotFound() {
+  public void shouldFailValidationWhenCurrentGradeWithPostGradeAndTrainingGradeValueTrue_NotFound() {
     // Given.
     xls2.setOtherGrades("grade3;grade4");
 
+    //Approved grades
     grade1.setStatus(Status.INACTIVE);
+
+    //Other grades
     GradeDTO grade3 = new GradeDTO();
     grade3.setName("grade3");
     grade3.setStatus(Status.CURRENT);
+    grade3.setPostGrade(true);
+    grade3.setTrainingGrade(true);
 
     when(referenceService.findGradesByName(any()))
         .thenReturn(Arrays.asList(grade1, grade2, grade3));
@@ -231,11 +238,11 @@ public class PostCreateTransformerServiceTest {
 
     // Then.
     assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
-        is("Current grade not found with the name 'grade1'."));
+        is("Both approved grade and other grades must be of status current with training and post grade value true 'grade1'."));
     assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
         is(false));
     assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
-        is("Current grade not found with the name 'grade4'."));
+        is("Both approved grade and other grades must be of status current with training and post grade value true 'grade4'."));
     assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
         is(false));
   }

@@ -2,6 +2,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.MULTI_VALUE_SEPARATOR;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -675,5 +676,115 @@ public class PostUpdateTransformerServiceTest {
     Set<ProgrammeDTO> updatedProgrammes = updatedPostDto.getProgrammes();
     assertThat(updatedProgrammes.size()).isEqualTo(2);
     assertThat(updatedProgrammes).contains(programmeDto2, programmeDto3);
+  }
+
+  @Test
+  public void shouldNotFailValidationWhenBothApprovedAndOtherGradeStatusAreCurrentWithPostGradeAndTrainingGradeValueTrue() {
+    // Approved grade
+    GradeDTO approvedGrade = new GradeDTO();
+    approvedGrade.setName("Approved grade");
+    approvedGrade.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    approvedGrade.setPostGrade(true);
+    approvedGrade.setTrainingGrade(true);
+
+    //Other grades
+    GradeDTO otherGrade1 = new GradeDTO();
+    otherGrade1.setName("Other grade 1");
+    otherGrade1.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    otherGrade1.setPostGrade(true);
+    otherGrade1.setTrainingGrade(true);
+
+    GradeDTO otherGrade3 = new GradeDTO();
+    otherGrade3.setName("Other grade 3");
+    otherGrade3.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    otherGrade3.setPostGrade(true);
+    otherGrade3.setTrainingGrade(true);
+
+    //Mock specialty and trusts
+    SpecialtyDTO specialtyDTO = createSpecialtyDTO(12345L, "12345", "12345", "A MEDIA COLLEGE",
+        "NHS_CODE", Status.CURRENT);
+    TrustDTO trustDTO = createTrustDTO(TRAINING_BODY_ID, TRAINING_BODY);
+
+    postXLS.setApprovedGrade(approvedGrade.getName());
+    postXLS.setOtherGrades(otherGrade1.getName() + ";Other grade 2;" + otherGrade3.getName());
+
+    postDTO.setId(1L);
+
+    when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
+    when(referenceServiceImpl.findGradesByName("Approved grade"))
+        .thenReturn(Arrays.asList(approvedGrade));
+    when(referenceServiceImpl.findGradesByName("Other grade 1"))
+        .thenReturn(Arrays.asList(otherGrade1));
+    when(referenceServiceImpl.findGradesByName("Other grade 3"))
+        .thenReturn(Arrays.asList(otherGrade3));
+    when(tcsServiceImpl.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialtyDTO));
+    when(referenceServiceImpl.findTrustByTrustKnownAs(any())).thenReturn(Arrays.asList(trustDTO));
+
+    //Code under test
+    postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
+
+    //Assertions
+    String message = postXLS.getErrorMessage();
+
+    MatcherAssert.assertThat(
+        "Both approved grade and other grades must be of status current with training and post grade value true",
+        message, containsString(String.format(
+            "Both approved grade and other grades must be of status current with training and post grade value true 'Other grade 2'")));
+  }
+
+  @Test
+  public void shouldFailValidationWhenBothApprovedAndOtherGradesStatusAreInactiveRegardlessOf_PostGradeAndTrainingGradeValueTrue() {
+    //Inactive Approved grade
+    GradeDTO approvedGrade = new GradeDTO();
+    approvedGrade.setName("Approved grade");
+    approvedGrade.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.INACTIVE);
+    approvedGrade.setPostGrade(true);
+    approvedGrade.setTrainingGrade(true);
+
+    //Inactive Other grades
+    GradeDTO otherGrade1 = new GradeDTO();
+    otherGrade1.setName("Other grade 1");
+    otherGrade1.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.INACTIVE);
+    otherGrade1.setPostGrade(true);
+    otherGrade1.setTrainingGrade(true);
+
+    //Mock specialty and trusts
+    SpecialtyDTO specialtyDTO = createSpecialtyDTO(12345L, "12345", "12345", "A MEDIA COLLEGE",
+        "NHS_CODE", Status.CURRENT);
+    TrustDTO trustDTO = createTrustDTO(TRAINING_BODY_ID, TRAINING_BODY);
+
+    postXLS.setApprovedGrade(approvedGrade.getName());
+    postXLS.setOtherGrades(
+        otherGrade1.getName() + ";Other grade 2;");//Multiple other grades are allowed
+
+    postDTO.setId(1L);
+
+    when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
+    when(referenceServiceImpl.findGradesByName("Approved grade"))
+        .thenReturn(Arrays.asList(approvedGrade));
+    when(referenceServiceImpl.findGradesByName("Other grade 1"))
+        .thenReturn(Arrays.asList(otherGrade1));
+    when(tcsServiceImpl.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialtyDTO));
+    when(referenceServiceImpl.findTrustByTrustKnownAs(any())).thenReturn(Arrays.asList(trustDTO));
+
+    // Code under test
+    postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
+
+    // assertions
+    String message = postXLS.getErrorMessage();
+    MatcherAssert.assertThat(
+        "Both approved grade and other grades must be of status current with training and post grade value true",
+        message, containsString(String.format(
+            "Both approved grade and other grades must be of status current with training and post grade value true 'Approved grade'.")));
+
+    MatcherAssert.assertThat(
+        "Both approved grade and other grades must be of status current with training and post grade value true",
+        message, containsString(String.format(
+            "Both approved grade and other grades must be of status current with training and post grade value true 'Other grade 1'")));
+
+    MatcherAssert.assertThat(
+        "Both approved grade and other grades must be of status current with training and post grade value true",
+        message, containsString(String.format(
+            "Both approved grade and other grades must be of status current with training and post grade value true 'Other grade 2'")));
   }
 }

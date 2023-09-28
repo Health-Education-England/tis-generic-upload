@@ -23,7 +23,6 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -215,11 +214,16 @@ public class PostUpdateTransformerService {
       List<GradeDTO> gradeByName = getGradeDTOsForName.apply(gradeName);
       if (gradeByName != null) {
 
-        if (gradeByName.size() == 1) {
+        if (gradeByName.size() == 1 && gradeByName.get(0).getStatus()
+            .equals(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT)
+            && gradeByName.get(0).isPostGrade() == true
+            && gradeByName.get(0).isTrainingGrade() == true) {
           return Optional.of(gradeByName.get(0));
         } else {
           String errorMessage =
-              gradeByName.isEmpty() ? DID_NOT_FIND_GRADE_FOR_NAME : FOUND_MULTIPLE_GRADES_FOR_NAME;
+              String.format(
+                  "Both approved grade and other grades must be of status current with training and post grade value true '%s'.",
+                  gradeName);
           postUpdateXLS.addErrorMessage(String.format(errorMessage, gradeName));
         }
       }
