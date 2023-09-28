@@ -109,6 +109,8 @@ public class PostCreateTransformerServiceTest {
     grade1.setId(1L);
     grade1.setName("grade1");
     grade1.setStatus(Status.CURRENT);
+    grade1.setTrainingGrade(true);
+    grade1.setPostGrade(true);
     grade2 = new GradeDTO();
     grade2.setId(2L);
     grade2.setName("grade2");

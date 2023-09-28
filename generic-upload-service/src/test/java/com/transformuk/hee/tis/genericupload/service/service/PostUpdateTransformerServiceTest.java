@@ -163,6 +163,9 @@ public class PostUpdateTransformerServiceTest {
     // mock grades
     GradeDTO gradeDTO = createGradeDTO(APPROVED_GRADE_ID, APPROVED_GRADE_NAME);
     gradeByName = new HashMap<>();
+    gradeDTO.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.INACTIVE);
+    gradeDTO.setPostGrade(true);
+    gradeDTO.setTrainingGrade(true);
     createSingleListWithGrade(gradeByName, gradeDTO);
 
     // mock sites
@@ -526,7 +529,15 @@ public class PostUpdateTransformerServiceTest {
     postXLS.setOtherGrades(mockedGrade1 + MULTI_VALUE_SEPARATOR + mockedGrade2);
 
     GradeDTO gradeDto1 = createGradeDTO(2L, mockedGrade1);
+    gradeDto1.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    gradeDto1.setPostGrade(true);
+    gradeDto1.setTrainingGrade(true);
+
     GradeDTO gradeDto2 = createGradeDTO(3L, mockedGrade2);
+    gradeDto2.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    gradeDto2.setPostGrade(true);
+    gradeDto2.setTrainingGrade(true);
+
     createSingleListWithGrade(gradeByName, gradeDto1);
     createSingleListWithGrade(gradeByName, gradeDto2);
 
