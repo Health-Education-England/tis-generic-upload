@@ -222,7 +222,7 @@ public class PostUpdateTransformerService {
         } else {
           String errorMessage =
               String.format(
-                  "Both approved grade and other grades must be of status current with training and post grade value true '%s'.",
+                  "No current, post and training grade found for '%s'.",
                   gradeName);
           postUpdateXLS.addErrorMessage(String.format(errorMessage, gradeName));
         }

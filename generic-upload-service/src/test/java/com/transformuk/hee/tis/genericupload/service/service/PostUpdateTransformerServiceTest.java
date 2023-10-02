@@ -3,6 +3,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.MULTI_VALUE_SEPARATOR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -83,7 +84,7 @@ public class PostUpdateTransformerServiceTest {
   @Captor
   private ArgumentCaptor<PostDTO> postDtoCaptor;
 
-  private static SpecialtyDTO createSpecialtyDTO(Long id, String intrepidId, String name,
+  static SpecialtyDTO createSpecialtyDTO(Long id, String intrepidId, String name,
       String college, String specialtyCode, Status status) {
     SpecialtyDTO specialtyDTO = new SpecialtyDTO();
     specialtyDTO.setId(id);
@@ -340,7 +341,7 @@ public class PostUpdateTransformerServiceTest {
 
     // Perform assertions.
     MatcherAssert.assertThat("The XLS error messages contained an unexpected value.",
-        postXLS.getErrorMessage(), CoreMatchers.not(CoreMatchers.containsString("rotation")));
+        postXLS.getErrorMessage(), CoreMatchers.not(containsString("rotation")));
 
     List<RotationPostDTO> rotationPostDtos = rotationPostDtosCaptor.getValue();
     MatcherAssert.assertThat("The number of RotationPostDTOs did not match the expected value.",
@@ -399,7 +400,7 @@ public class PostUpdateTransformerServiceTest {
 
     // Perform assertions.
     MatcherAssert.assertThat("The XLS error messages contained an unexpected value.",
-        postXLS.getErrorMessage(), CoreMatchers.not(CoreMatchers.containsString("rotation")));
+        postXLS.getErrorMessage(), CoreMatchers.not(containsString("rotation")));
 
     List<RotationPostDTO> rotationPostDtos = rotationPostDtosCaptor.getValue();
     MatcherAssert.assertThat("The number of RotationPostDTOs did not match the expected value.",
@@ -471,10 +472,10 @@ public class PostUpdateTransformerServiceTest {
     // Perform assertions.
     MatcherAssert.assertThat("The XLS error messages did not contain the expected value.",
         postXLS.getErrorMessage(),
-        CoreMatchers.containsString("Did not find rotation for name \"rotation2\"."));
+        containsString("Did not find rotation for name \"rotation2\"."));
     MatcherAssert.assertThat("The XLS error messages did not contain the expected value.",
         postXLS.getErrorMessage(),
-        CoreMatchers.containsString("Did not find rotation for name \"rotation3\"."));
+        containsString("Did not find rotation for name \"rotation3\"."));
   }
 
   /**
@@ -516,10 +517,10 @@ public class PostUpdateTransformerServiceTest {
     // Perform assertions.
     MatcherAssert.assertThat("The XLS error messages did not contain the expected value.",
         postXLS.getErrorMessage(),
-        CoreMatchers.containsString("Found multiple rotations for name \"rotation\"."));
+        containsString("Found multiple rotations for name \"rotation\"."));
     MatcherAssert.assertThat("The XLS error messages contained an unexpected value.",
         postXLS.getErrorMessage(), CoreMatchers
-            .not(CoreMatchers.containsString("Did not find rotation for name \"rotation\".")));
+            .not(containsString("Did not find rotation for name \"rotation\".")));
   }
 
   @Test
@@ -690,7 +691,7 @@ public class PostUpdateTransformerServiceTest {
   }
 
   @Test
-  public void shouldNotFailValidationWhenBothApprovedAndOtherGradeStatusAreCurrentWithPostGradeAndTrainingGradeValueTrue() {
+  public void should_Not_FailValidationWhenBothApprovedAndOtherGradeStatusAreCurrentWithPostGradeAndTrainingGradeValueTrue() {
     // Approved grade
     GradeDTO approvedGrade = new GradeDTO();
     approvedGrade.setName("Approved grade");
@@ -737,10 +738,9 @@ public class PostUpdateTransformerServiceTest {
     //Assertions
     String message = postXLS.getErrorMessage();
 
-    MatcherAssert.assertThat(
-        "Both approved grade and other grades must be of status current with training and post grade value true",
-        message, containsString(String.format(
-            "Both approved grade and other grades must be of status current with training and post grade value true 'Other grade 2'")));
+    org.junit.Assert.assertThat(
+        "No current, post and training grade found for",
+        message, is("No current, post and training grade found for 'Other grade 2'."));
   }
 
   @Test
@@ -784,18 +784,14 @@ public class PostUpdateTransformerServiceTest {
     // assertions
     String message = postXLS.getErrorMessage();
     MatcherAssert.assertThat(
-        "Both approved grade and other grades must be of status current with training and post grade value true",
-        message, containsString(String.format(
-            "Both approved grade and other grades must be of status current with training and post grade value true 'Approved grade'.")));
+        "No current, post and training grade found for",
+        message, containsString("No current, post and training grade found for 'Approved grade'."));
+
+    MatcherAssert.assertThat("No current, post and training grade found for", message,
+        containsString("No current, post and training grade found for 'Other grade 1'"));
 
     MatcherAssert.assertThat(
-        "Both approved grade and other grades must be of status current with training and post grade value true",
-        message, containsString(String.format(
-            "Both approved grade and other grades must be of status current with training and post grade value true 'Other grade 1'")));
-
-    MatcherAssert.assertThat(
-        "Both approved grade and other grades must be of status current with training and post grade value true",
-        message, containsString(String.format(
-            "Both approved grade and other grades must be of status current with training and post grade value true 'Other grade 2'")));
+        "No current, post and training grade found for",
+        message, containsString("No current, post and training grade found for 'Other grade 2'"));
   }
 }

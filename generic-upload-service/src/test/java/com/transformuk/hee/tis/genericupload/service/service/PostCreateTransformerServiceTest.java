@@ -240,11 +240,11 @@ public class PostCreateTransformerServiceTest {
 
     // Then.
     assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
-        is("Both approved grade and other grades must be of status current with training and post grade value true 'grade1'."));
+        is("No current, post and training grade found for 'grade1'."));
     assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
         is(false));
     assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
-        is("Both approved grade and other grades must be of status current with training and post grade value true 'grade4'."));
+        is("No current, post and training grade found for 'grade4'."));
     assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
         is(false));
   }

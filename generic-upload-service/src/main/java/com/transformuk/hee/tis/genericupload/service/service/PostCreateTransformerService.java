@@ -235,7 +235,7 @@ public class PostCreateTransformerService {
       dtos.add(new PostGradeDTO(null, cachedDto.getId(), type));
     } else {
       validationError(String.format(
-          "Both approved grade and other grades must be of status current with training and post grade value true '%s'.",
+          "No current, post and training grade found for '%s'.",
           name));
     }
   }
