@@ -43,7 +43,7 @@ public class PostUpdateTransformerService {
 
   private static final Logger logger = getLogger(PostUpdateTransformerService.class);
 
-  private static final String DID_NOT_FIND_GRADE_FOR_NAME = "Did not find grade for name \"%s\".";
+  private static final String DID_NOT_FIND_GRADE_FOR_NAME = "No current, post and training grade found for '%s'.";
   private static final String FOUND_MULTIPLE_GRADES_FOR_NAME = "Found multiple grades for name \"%s\".";
   private static final String DID_NOT_FIND_PROGRAMMES_FOR_IDS = "Did not find current programmes with IDs \"%s\".";
   private static final String PROGRAMME_ID_NOT_A_NUMBER = "The programme ID \"%s\" is not a number.";
@@ -213,17 +213,14 @@ public class PostUpdateTransformerService {
     if (!StringUtils.isEmpty(gradeName)) {
       List<GradeDTO> gradeByName = getGradeDTOsForName.apply(gradeName);
       if (gradeByName != null) {
-
-        if (gradeByName.size() == 1 && gradeByName.get(0).getStatus()
-            .equals(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT)
-            && gradeByName.get(0).isPostGrade() == true
-            && gradeByName.get(0).isTrainingGrade() == true) {
-          return Optional.of(gradeByName.get(0));
+        GradeDTO gradeDTO = null;
+        if (gradeByName.size() == 1 && (gradeDTO = gradeByName.get(0)).getStatus()
+            .equals(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT) && gradeDTO
+            .isPostGrade() && gradeDTO.isTrainingGrade()) {
+          return Optional.of(gradeDTO);
         } else {
           String errorMessage =
-              String.format(
-                  "No current, post and training grade found for '%s'.",
-                  gradeName);
+              gradeByName.size() > 1 ? FOUND_MULTIPLE_GRADES_FOR_NAME : DID_NOT_FIND_GRADE_FOR_NAME;
           postUpdateXLS.addErrorMessage(String.format(errorMessage, gradeName));
         }
       }

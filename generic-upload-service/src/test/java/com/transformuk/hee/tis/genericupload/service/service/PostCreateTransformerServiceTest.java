@@ -218,7 +218,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenCurrentGradeWithPostGradeAndTrainingGradeValueTrue_NotFound() {
+  public void shouldFailValidationWhenGradeNameNotFound() {
     // Given.
     xls2.setOtherGrades("grade3;grade4");
 

@@ -691,7 +691,7 @@ public class PostUpdateTransformerServiceTest {
   }
 
   @Test
-  public void should_Not_FailValidationWhenBothApprovedAndOtherGradeStatusAreCurrentWithPostGradeAndTrainingGradeValueTrue() {
+  public void shouldPassValidationWhenCurrentGradesAreOfPostGradeAndTrainingGradeValueTrue() {
     // Approved grade
     GradeDTO approvedGrade = new GradeDTO();
     approvedGrade.setName("Approved grade");
@@ -738,13 +738,13 @@ public class PostUpdateTransformerServiceTest {
     //Assertions
     String message = postXLS.getErrorMessage();
 
-    org.junit.Assert.assertThat(
+    MatcherAssert.assertThat(
         "No current, post and training grade found for",
         message, is("No current, post and training grade found for 'Other grade 2'."));
   }
 
   @Test
-  public void shouldFailValidationWhenBothApprovedAndOtherGradesStatusAreInactiveRegardlessOf_PostGradeAndTrainingGradeValueTrue() {
+  public void shouldThrowErrorMessageWhenInactiveGradesAreOfPostGradeAndTrainingGradeValueTrue() {
     //Inactive Approved grade
     GradeDTO approvedGrade = new GradeDTO();
     approvedGrade.setName("Approved grade");

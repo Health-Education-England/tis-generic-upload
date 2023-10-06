@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.enums.Status;
-import com.transformuk.hee.tis.reference.client.ReferenceService;
+import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,9 +33,10 @@ public class PostCreateParameterizedTest {
   private List<PostCreateXls> xlsList;
 
   private PostCreateTransformerService service;
+  private GradeDTO grade1, grade2;
 
   @Mock
-  private ReferenceService referenceService;
+  private ReferenceServiceImpl referenceService;
 
   @Mock
   private TcsServiceImpl tcsService;
@@ -64,6 +65,8 @@ public class PostCreateParameterizedTest {
     MockitoAnnotations.initMocks(this);
     service = new PostCreateTransformerService(referenceService, tcsService);
 
+    grade1 = new GradeDTO();
+
     xls1 = new PostCreateXls();
     xls1.setNationalPostNumber("npn1");
     xls1.setSpecialty("specialty1");
@@ -72,6 +75,7 @@ public class PostCreateParameterizedTest {
     xls1.setEmployingBody("employingBody1");
     xls1.setProgrammeTisId("1;2");
     xls1.setOwner("owner1");
+    xls1.setApprovedGrade("grade1");
 
     xls2 = new PostCreateXls();
     xls2.setNationalPostNumber("npn2");
@@ -81,40 +85,37 @@ public class PostCreateParameterizedTest {
     xls2.setEmployingBody("employingBody2");
     xls2.setProgrammeTisId("3;4");
     xls2.setOwner("owner2");
+    xls2.setApprovedGrade("grade2");
+
+    grade2 = new GradeDTO();
+    grade2.setId(2L);
+    grade2.setName("grade2");
+    grade2.setStatus(Status.CURRENT);
+    grade2.setTrainingGrade(true);
+    grade2.setPostGrade(true);
 
     xlsList = Arrays.asList(xls1, xls2);
   }
 
   @Test
-  public void shouldFailValidationWhenApprovedGradeStatusIsNotCurrent_WithPostGradeAndTrainingGradeValueNotTrue() {
+  public void shouldThrowErrorMessageWhenApprovedGradeStatusIsNotCurrentWithPostGradeAndTrainingGradeValueNotTrue() {
     // Given.
-    // Other grades
+    xls2.setOtherGrades("grade3;grade4");
+
+    //Approved grades
+    grade1.setStatus(status);
+    grade1.setTrainingGrade(isTrainingGrade);
+    grade1.setPostGrade(isPostGrade);
+
+    //Other grades
     GradeDTO grade3 = new GradeDTO();
     grade3.setName("grade3");
     grade3.setStatus(Status.CURRENT);
     grade3.setPostGrade(true);
     grade3.setTrainingGrade(true);
 
-    GradeDTO grade4 = new GradeDTO();
-    grade4.setName("grade4");
-    grade4.setStatus(Status.INACTIVE);
-    grade4.setPostGrade(true);
-    grade4.setTrainingGrade(true);
-    xls1.setOtherGrades("grade3;" + grade4.getName());
-    xls2.setOtherGrades("grade3;grade4");
-
-    // Approved grades
-    GradeDTO grade1 = new GradeDTO();
-    grade1.setName("grade1");
-    grade1.setStatus(status);
-    grade1.setTrainingGrade(isTrainingGrade);
-    grade1.setPostGrade(isPostGrade);
-
-    xls1.setApprovedGrade(grade1.getName());
-    xls2.setApprovedGrade("grade2");
-
     when(referenceService.findGradesByName(any()))
-        .thenReturn(Arrays.asList(grade1, grade3, grade4));
+        .thenReturn(Arrays.asList(grade1, grade2, grade3));
 
     // When.
     service.processUpload(xlsList);
@@ -125,13 +126,13 @@ public class PostCreateParameterizedTest {
     assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
         is(false));
     assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
-        is("No current, post and training grade found for 'grade2'."));
+        is("No current, post and training grade found for 'grade4'."));
     assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
         is(false));
   }
 
   @Test
-  public void shouldFailValidationWhenOtherGradesStatusIsNotCurrent_WithPostGradeAndTrainingGradeValueNotTrue() {
+  public void shouldThrowErrorMessageWhenOtherGradesStatusIsNotCurrentWithPostGradeAndTrainingGradeValueNotTrue() {
     // Given.
     // Approved grades
     GradeDTO grade1 = new GradeDTO();
