@@ -24,7 +24,6 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -231,10 +230,11 @@ public class PostCreateTransformerService {
   private void addPostGrade(String name, PostGradeType type, Set<PostGradeDTO> dtos) {
     GradeDTO cachedDto = gradeNameToDto.get(name);
 
-    if (cachedDto != null && cachedDto.getStatus().equals(Status.CURRENT)) {
+    if (cachedDto != null && cachedDto.getStatus().equals(Status.CURRENT)
+        && cachedDto.isPostGrade() && cachedDto.isTrainingGrade()) {
       dtos.add(new PostGradeDTO(null, cachedDto.getId(), type));
     } else {
-      validationError(String.format("Current grade not found with the name '%s'.", name));
+      validationError(String.format("No current, post and training grade found for '%s'.", name));
     }
   }
 

@@ -23,7 +23,6 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,8 @@ public class PostUpdateTransformerService {
 
   private static final Logger logger = getLogger(PostUpdateTransformerService.class);
 
-  private static final String DID_NOT_FIND_GRADE_FOR_NAME = "Did not find grade for name \"%s\".";
+  private static final String DID_NOT_FIND_GRADE_FOR_NAME =
+      "No current, post and training grade found for '%s'.";
   private static final String FOUND_MULTIPLE_GRADES_FOR_NAME = "Found multiple grades for name \"%s\".";
   private static final String DID_NOT_FIND_PROGRAMMES_FOR_IDS = "Did not find current programmes with IDs \"%s\".";
   private static final String PROGRAMME_ID_NOT_A_NUMBER = "The programme ID \"%s\" is not a number.";
@@ -211,15 +211,17 @@ public class PostUpdateTransformerService {
   private Optional<GradeDTO> getASingleValidGradeFromTheReferenceService(
       PostUpdateXLS postUpdateXLS, Function<String, List<GradeDTO>> getGradeDTOsForName,
       String gradeName) {
+    // It's unclear if not adding an error for null `gradeName` is possible and correct
     if (!StringUtils.isEmpty(gradeName)) {
       List<GradeDTO> gradeByName = getGradeDTOsForName.apply(gradeName);
       if (gradeByName != null) {
-
-        if (gradeByName.size() == 1) {
+        if (gradeByName.size() == 1 && gradeByName.get(0).getStatus()
+            .equals(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT)
+            && gradeByName.get(0).isPostGrade() && gradeByName.get(0).isTrainingGrade()) {
           return Optional.of(gradeByName.get(0));
         } else {
           String errorMessage =
-              gradeByName.isEmpty() ? DID_NOT_FIND_GRADE_FOR_NAME : FOUND_MULTIPLE_GRADES_FOR_NAME;
+              gradeByName.size() > 1 ? FOUND_MULTIPLE_GRADES_FOR_NAME : DID_NOT_FIND_GRADE_FOR_NAME;
           postUpdateXLS.addErrorMessage(String.format(errorMessage, gradeName));
         }
       }

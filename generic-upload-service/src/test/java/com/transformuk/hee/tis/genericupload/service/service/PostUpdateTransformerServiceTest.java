@@ -2,6 +2,9 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.MULTI_VALUE_SEPARATOR;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -49,8 +52,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 public class PostUpdateTransformerServiceTest {
 
-  public static final Long EMPLOYING_BODY_ID = 5678L;
-  public static final String EMPLOYING_BODY = "5678body";
   private static final String ANOTHER = "12345another";
   private static final String SUB_SPECIALTY = "12345sub";
   private static final String TRAINING_DESCRIPTION = "12345training";
@@ -82,7 +83,7 @@ public class PostUpdateTransformerServiceTest {
   @Captor
   private ArgumentCaptor<PostDTO> postDtoCaptor;
 
-  private static SpecialtyDTO createSpecialtyDTO(Long id, String intrepidId, String name,
+  static SpecialtyDTO createSpecialtyDTO(Long id, String intrepidId, String name,
       String college, String specialtyCode, Status status) {
     SpecialtyDTO specialtyDTO = new SpecialtyDTO();
     specialtyDTO.setId(id);
@@ -162,6 +163,9 @@ public class PostUpdateTransformerServiceTest {
     // mock grades
     GradeDTO gradeDTO = createGradeDTO(APPROVED_GRADE_ID, APPROVED_GRADE_NAME);
     gradeByName = new HashMap<>();
+    gradeDTO.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    gradeDTO.setPostGrade(true);
+    gradeDTO.setTrainingGrade(true);
     createSingleListWithGrade(gradeByName, gradeDTO);
 
     // mock sites
@@ -263,14 +267,14 @@ public class PostUpdateTransformerServiceTest {
     postUpdateTransformerService.updateTrainingDescription(postXLS, postDTO);
     postXLS.setTrainingDescription(null);
     postUpdateTransformerService.updateTrainingDescription(postXLS, postDTO);
-    assertThat(postDTO.getTrainingDescription().equals(TRAINING_DESCRIPTION));
+    assertThat(postDTO.getTrainingDescription()).isEqualTo(TRAINING_DESCRIPTION);
   }
 
   @Test
   public void canUpdateTrainingDescription() {
     postXLS.setTrainingDescription(TRAINING_DESCRIPTION);
     postUpdateTransformerService.updateTrainingDescription(postXLS, postDTO);
-    assertThat(postDTO.getTrainingDescription().equals(TRAINING_DESCRIPTION));
+    assertThat(postDTO.getTrainingDescription()).isEqualTo(TRAINING_DESCRIPTION);
   }
 
   @Test
@@ -278,7 +282,7 @@ public class PostUpdateTransformerServiceTest {
     postXLS.setTrainingBody(TRAINING_BODY);
     postUpdateTransformerService.updateTrustReferences(postXLS, postDTO,
         PostUpdateTransformerServiceTest::getTrustsByTrustKnownAs);
-    assertThat(postDTO.getTrainingBodyId().equals(TRAINING_BODY_ID));
+    assertThat(postDTO.getTrainingBodyId()).isEqualTo(TRAINING_BODY_ID);
   }
 
   @Test
@@ -287,11 +291,11 @@ public class PostUpdateTransformerServiceTest {
     postUpdateTransformerService
         .updateSites(postXLS, postDTO, PostUpdateTransformerServiceTest::getSiteDTOsForName);
     assertThat(postDTO.getSites().size()).isEqualTo(1);
-    assertThat(postDTO.getSites().iterator().next().getSiteId().equals(SITE_ID));
+    assertThat(postDTO.getSites().iterator().next().getSiteId()).isEqualTo(SITE_ID);
   }
 
   @Test
-  public void canUpdateApprovedGrade() throws Exception {
+  public void canUpdateApprovedGrade() {
     postXLS.setApprovedGrade(APPROVED_GRADE_NAME);
 
     // set existing other grades
@@ -301,7 +305,7 @@ public class PostUpdateTransformerServiceTest {
     postUpdateTransformerService
         .updateGrades(postXLS, postDTO, PostUpdateTransformerServiceTest::getGradeDTOsForName);
     assertThat(postDTO.getGrades().size()).isEqualTo(1);
-    assertThat(postDTO.getGrades().iterator().next().getGradeId().equals(APPROVED_GRADE_ID));
+    assertThat(postDTO.getGrades().iterator().next().getGradeId()).isEqualTo(APPROVED_GRADE_ID);
   }
 
   /**
@@ -336,7 +340,7 @@ public class PostUpdateTransformerServiceTest {
 
     // Perform assertions.
     MatcherAssert.assertThat("The XLS error messages contained an unexpected value.",
-        postXLS.getErrorMessage(), CoreMatchers.not(CoreMatchers.containsString("rotation")));
+        postXLS.getErrorMessage(), CoreMatchers.not(containsString("rotation")));
 
     List<RotationPostDTO> rotationPostDtos = rotationPostDtosCaptor.getValue();
     MatcherAssert.assertThat("The number of RotationPostDTOs did not match the expected value.",
@@ -395,7 +399,7 @@ public class PostUpdateTransformerServiceTest {
 
     // Perform assertions.
     MatcherAssert.assertThat("The XLS error messages contained an unexpected value.",
-        postXLS.getErrorMessage(), CoreMatchers.not(CoreMatchers.containsString("rotation")));
+        postXLS.getErrorMessage(), CoreMatchers.not(containsString("rotation")));
 
     List<RotationPostDTO> rotationPostDtos = rotationPostDtosCaptor.getValue();
     MatcherAssert.assertThat("The number of RotationPostDTOs did not match the expected value.",
@@ -467,10 +471,10 @@ public class PostUpdateTransformerServiceTest {
     // Perform assertions.
     MatcherAssert.assertThat("The XLS error messages did not contain the expected value.",
         postXLS.getErrorMessage(),
-        CoreMatchers.containsString("Did not find rotation for name \"rotation2\"."));
+        containsString("Did not find rotation for name \"rotation2\"."));
     MatcherAssert.assertThat("The XLS error messages did not contain the expected value.",
         postXLS.getErrorMessage(),
-        CoreMatchers.containsString("Did not find rotation for name \"rotation3\"."));
+        containsString("Did not find rotation for name \"rotation3\"."));
   }
 
   /**
@@ -512,10 +516,10 @@ public class PostUpdateTransformerServiceTest {
     // Perform assertions.
     MatcherAssert.assertThat("The XLS error messages did not contain the expected value.",
         postXLS.getErrorMessage(),
-        CoreMatchers.containsString("Found multiple rotations for name \"rotation\"."));
+        containsString("Found multiple rotations for name \"rotation\"."));
     MatcherAssert.assertThat("The XLS error messages contained an unexpected value.",
         postXLS.getErrorMessage(), CoreMatchers
-            .not(CoreMatchers.containsString("Did not find rotation for name \"rotation\".")));
+            .not(containsString("Did not find rotation for name \"rotation\".")));
   }
 
   @Test
@@ -525,7 +529,15 @@ public class PostUpdateTransformerServiceTest {
     postXLS.setOtherGrades(mockedGrade1 + MULTI_VALUE_SEPARATOR + mockedGrade2);
 
     GradeDTO gradeDto1 = createGradeDTO(2L, mockedGrade1);
+    gradeDto1.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    gradeDto1.setPostGrade(true);
+    gradeDto1.setTrainingGrade(true);
+
     GradeDTO gradeDto2 = createGradeDTO(3L, mockedGrade2);
+    gradeDto2.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    gradeDto2.setPostGrade(true);
+    gradeDto2.setTrainingGrade(true);
+
     createSingleListWithGrade(gradeByName, gradeDto1);
     createSingleListWithGrade(gradeByName, gradeDto2);
 
@@ -675,5 +687,109 @@ public class PostUpdateTransformerServiceTest {
     Set<ProgrammeDTO> updatedProgrammes = updatedPostDto.getProgrammes();
     assertThat(updatedProgrammes.size()).isEqualTo(2);
     assertThat(updatedProgrammes).contains(programmeDto2, programmeDto3);
+  }
+
+  @Test
+  public void shouldPassValidationWhenCurrentGradesAreOfPostGradeAndTrainingGradeValueTrue() {
+    // Approved grade
+    GradeDTO approvedGrade = new GradeDTO();
+    approvedGrade.setName("Approved grade");
+    approvedGrade.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    approvedGrade.setPostGrade(true);
+    approvedGrade.setTrainingGrade(true);
+
+    //Other grades
+    GradeDTO otherGrade1 = new GradeDTO();
+    otherGrade1.setName("Other grade 1");
+    otherGrade1.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    otherGrade1.setPostGrade(true);
+    otherGrade1.setTrainingGrade(true);
+
+    GradeDTO otherGrade3 = new GradeDTO();
+    otherGrade3.setName("Other grade 3");
+    otherGrade3.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
+    otherGrade3.setPostGrade(true);
+    otherGrade3.setTrainingGrade(true);
+
+    //Mock specialty and trusts
+    SpecialtyDTO specialtyDTO = createSpecialtyDTO(12345L, "12345", "12345", "A MEDIA COLLEGE",
+        "NHS_CODE", Status.CURRENT);
+    TrustDTO trustDTO = createTrustDTO(TRAINING_BODY_ID, TRAINING_BODY);
+
+    postXLS.setApprovedGrade(approvedGrade.getName());
+    postXLS.setOtherGrades(otherGrade1.getName() + ";" + otherGrade3.getName());
+
+    postDTO.setId(1L);
+
+    when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
+    when(referenceServiceImpl.findGradesByName("Approved grade"))
+        .thenReturn(Arrays.asList(approvedGrade));
+    when(referenceServiceImpl.findGradesByName("Other grade 1"))
+        .thenReturn(Arrays.asList(otherGrade1));
+    when(referenceServiceImpl.findGradesByName("Other grade 3"))
+        .thenReturn(Arrays.asList(otherGrade3));
+    when(tcsServiceImpl.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialtyDTO));
+    when(referenceServiceImpl.findTrustByTrustKnownAs(any())).thenReturn(Arrays.asList(trustDTO));
+
+    //Code under test
+    postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
+
+    //Assertions
+    String message = postXLS.getErrorMessage();
+
+    MatcherAssert.assertThat(message, nullValue());
+    MatcherAssert.assertThat(postXLS.isSuccessfullyImported(), is(true));
+  }
+
+  @Test
+  public void shouldFailGradeValidationWhenNoGradeMatches() {
+    //Inactive Approved grade
+    GradeDTO approvedGrade = new GradeDTO();
+    approvedGrade.setName("Approved grade");
+    approvedGrade.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.INACTIVE);
+    approvedGrade.setPostGrade(true);
+    approvedGrade.setTrainingGrade(true);
+
+    //Inactive Other grades
+    GradeDTO otherGrade1 = new GradeDTO();
+    otherGrade1.setName("Other grade 1");
+    otherGrade1.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.INACTIVE);
+    otherGrade1.setPostGrade(true);
+    otherGrade1.setTrainingGrade(true);
+
+    //Mock specialty and trusts
+    SpecialtyDTO specialtyDTO = createSpecialtyDTO(12345L, "12345", "12345", "A MEDIA COLLEGE",
+        "NHS_CODE", Status.CURRENT);
+    TrustDTO trustDTO = createTrustDTO(TRAINING_BODY_ID, TRAINING_BODY);
+
+    postXLS.setApprovedGrade(approvedGrade.getName());
+    postXLS.setOtherGrades(
+        otherGrade1.getName() + ";Other grade 2;");//Multiple other grades are allowed
+
+    postDTO.setId(1L);
+
+    when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
+    when(referenceServiceImpl.findGradesByName("Approved grade"))
+        .thenReturn(Collections.emptyList());
+    when(referenceServiceImpl.findGradesByName("Other grade 1"))
+        .thenReturn(Collections.emptyList());
+    when(tcsServiceImpl.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialtyDTO));
+    when(referenceServiceImpl.findTrustByTrustKnownAs(any())).thenReturn(Arrays.asList(trustDTO));
+
+    // Code under test
+    postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
+
+    // assertions
+    String message = postXLS.getErrorMessage();
+    MatcherAssert.assertThat(
+        "No current, post and training grade found for",
+        message, containsString("No current, post and training grade found for 'Approved grade'."));
+
+    MatcherAssert.assertThat("No current, post and training grade found for", message,
+        containsString("No current, post and training grade found for 'Other grade 1'"));
+
+    MatcherAssert.assertThat(
+        "No current, post and training grade found for",
+        message, containsString("No current, post and training grade found for 'Other grade 2'"));
   }
 }
