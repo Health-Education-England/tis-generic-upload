@@ -43,7 +43,8 @@ public class PostUpdateTransformerService {
 
   private static final Logger logger = getLogger(PostUpdateTransformerService.class);
 
-  private static final String DID_NOT_FIND_GRADE_FOR_NAME = "No current, post and training grade found for '%s'.";
+  private static final String DID_NOT_FIND_GRADE_FOR_NAME =
+      "No current, post and training grade found for '%s'.";
   private static final String FOUND_MULTIPLE_GRADES_FOR_NAME = "Found multiple grades for name \"%s\".";
   private static final String DID_NOT_FIND_PROGRAMMES_FOR_IDS = "Did not find current programmes with IDs \"%s\".";
   private static final String PROGRAMME_ID_NOT_A_NUMBER = "The programme ID \"%s\" is not a number.";
@@ -210,14 +211,14 @@ public class PostUpdateTransformerService {
   private Optional<GradeDTO> getASingleValidGradeFromTheReferenceService(
       PostUpdateXLS postUpdateXLS, Function<String, List<GradeDTO>> getGradeDTOsForName,
       String gradeName) {
+    // It's unclear if not adding an error for null `gradeName` is possible and correct
     if (!StringUtils.isEmpty(gradeName)) {
       List<GradeDTO> gradeByName = getGradeDTOsForName.apply(gradeName);
       if (gradeByName != null) {
-        GradeDTO gradeDTO = null;
-        if (gradeByName.size() == 1 && (gradeDTO = gradeByName.get(0)).getStatus()
-            .equals(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT) && gradeDTO
-            .isPostGrade() && gradeDTO.isTrainingGrade()) {
-          return Optional.of(gradeDTO);
+        if (gradeByName.size() == 1 && gradeByName.get(0).getStatus()
+            .equals(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT)
+            && gradeByName.get(0).isPostGrade() && gradeByName.get(0).isTrainingGrade()) {
+          return Optional.of(gradeByName.get(0));
         } else {
           String errorMessage =
               gradeByName.size() > 1 ? FOUND_MULTIPLE_GRADES_FOR_NAME : DID_NOT_FIND_GRADE_FOR_NAME;

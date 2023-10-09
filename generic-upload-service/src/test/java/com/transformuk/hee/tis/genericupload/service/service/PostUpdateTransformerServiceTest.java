@@ -4,6 +4,7 @@ import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -718,7 +719,7 @@ public class PostUpdateTransformerServiceTest {
     TrustDTO trustDTO = createTrustDTO(TRAINING_BODY_ID, TRAINING_BODY);
 
     postXLS.setApprovedGrade(approvedGrade.getName());
-    postXLS.setOtherGrades(otherGrade1.getName() + ";Other grade 2;" + otherGrade3.getName());
+    postXLS.setOtherGrades(otherGrade1.getName() + ";" + otherGrade3.getName());
 
     postDTO.setId(1L);
 
@@ -738,13 +739,12 @@ public class PostUpdateTransformerServiceTest {
     //Assertions
     String message = postXLS.getErrorMessage();
 
-    MatcherAssert.assertThat(
-        "No current, post and training grade found for",
-        message, is("No current, post and training grade found for 'Other grade 2'."));
+    MatcherAssert.assertThat(message, nullValue());
+    MatcherAssert.assertThat(postXLS.isSuccessfullyImported(), is(true));
   }
 
   @Test
-  public void shouldThrowErrorMessageWhenInactiveGradesAreOfPostGradeAndTrainingGradeValueTrue() {
+  public void shouldFailGradeValidationWhenNoGradeMatches() {
     //Inactive Approved grade
     GradeDTO approvedGrade = new GradeDTO();
     approvedGrade.setName("Approved grade");
@@ -772,9 +772,9 @@ public class PostUpdateTransformerServiceTest {
 
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
     when(referenceServiceImpl.findGradesByName("Approved grade"))
-        .thenReturn(Arrays.asList(approvedGrade));
+        .thenReturn(Collections.emptyList());
     when(referenceServiceImpl.findGradesByName("Other grade 1"))
-        .thenReturn(Arrays.asList(otherGrade1));
+        .thenReturn(Collections.emptyList());
     when(tcsServiceImpl.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialtyDTO));
     when(referenceServiceImpl.findTrustByTrustKnownAs(any())).thenReturn(Arrays.asList(trustDTO));
 

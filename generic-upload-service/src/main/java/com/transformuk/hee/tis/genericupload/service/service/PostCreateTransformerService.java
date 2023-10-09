@@ -231,11 +231,10 @@ public class PostCreateTransformerService {
     GradeDTO cachedDto = gradeNameToDto.get(name);
 
     if (cachedDto != null && cachedDto.getStatus().equals(Status.CURRENT)
-        && cachedDto.isPostGrade() == true && cachedDto.isTrainingGrade() == true) {
+        && cachedDto.isPostGrade() && cachedDto.isTrainingGrade()) {
       dtos.add(new PostGradeDTO(null, cachedDto.getId(), type));
     } else {
-      validationError(String.format(
-          "No current, post and training grade found for '%s'.", name));
+      validationError(String.format("No current, post and training grade found for '%s'.", name));
     }
   }
 
