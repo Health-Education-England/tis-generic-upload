@@ -52,8 +52,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 public class PostUpdateTransformerServiceTest {
 
-  public static final Long EMPLOYING_BODY_ID = 5678L;
-  public static final String EMPLOYING_BODY = "5678body";
   private static final String ANOTHER = "12345another";
   private static final String SUB_SPECIALTY = "12345sub";
   private static final String TRAINING_DESCRIPTION = "12345training";
@@ -165,7 +163,7 @@ public class PostUpdateTransformerServiceTest {
     // mock grades
     GradeDTO gradeDTO = createGradeDTO(APPROVED_GRADE_ID, APPROVED_GRADE_NAME);
     gradeByName = new HashMap<>();
-    gradeDTO.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.INACTIVE);
+    gradeDTO.setStatus(com.transformuk.hee.tis.reference.api.enums.Status.CURRENT);
     gradeDTO.setPostGrade(true);
     gradeDTO.setTrainingGrade(true);
     createSingleListWithGrade(gradeByName, gradeDTO);
@@ -269,14 +267,14 @@ public class PostUpdateTransformerServiceTest {
     postUpdateTransformerService.updateTrainingDescription(postXLS, postDTO);
     postXLS.setTrainingDescription(null);
     postUpdateTransformerService.updateTrainingDescription(postXLS, postDTO);
-    assertThat(postDTO.getTrainingDescription().equals(TRAINING_DESCRIPTION));
+    assertThat(postDTO.getTrainingDescription()).isEqualTo(TRAINING_DESCRIPTION);
   }
 
   @Test
   public void canUpdateTrainingDescription() {
     postXLS.setTrainingDescription(TRAINING_DESCRIPTION);
     postUpdateTransformerService.updateTrainingDescription(postXLS, postDTO);
-    assertThat(postDTO.getTrainingDescription().equals(TRAINING_DESCRIPTION));
+    assertThat(postDTO.getTrainingDescription()).isEqualTo(TRAINING_DESCRIPTION);
   }
 
   @Test
@@ -284,7 +282,7 @@ public class PostUpdateTransformerServiceTest {
     postXLS.setTrainingBody(TRAINING_BODY);
     postUpdateTransformerService.updateTrustReferences(postXLS, postDTO,
         PostUpdateTransformerServiceTest::getTrustsByTrustKnownAs);
-    assertThat(postDTO.getTrainingBodyId().equals(TRAINING_BODY_ID));
+    assertThat(postDTO.getTrainingBodyId()).isEqualTo(TRAINING_BODY_ID);
   }
 
   @Test
@@ -293,11 +291,11 @@ public class PostUpdateTransformerServiceTest {
     postUpdateTransformerService
         .updateSites(postXLS, postDTO, PostUpdateTransformerServiceTest::getSiteDTOsForName);
     assertThat(postDTO.getSites().size()).isEqualTo(1);
-    assertThat(postDTO.getSites().iterator().next().getSiteId().equals(SITE_ID));
+    assertThat(postDTO.getSites().iterator().next().getSiteId()).isEqualTo(SITE_ID);
   }
 
   @Test
-  public void canUpdateApprovedGrade() throws Exception {
+  public void canUpdateApprovedGrade() {
     postXLS.setApprovedGrade(APPROVED_GRADE_NAME);
 
     // set existing other grades
@@ -307,7 +305,7 @@ public class PostUpdateTransformerServiceTest {
     postUpdateTransformerService
         .updateGrades(postXLS, postDTO, PostUpdateTransformerServiceTest::getGradeDTOsForName);
     assertThat(postDTO.getGrades().size()).isEqualTo(1);
-    assertThat(postDTO.getGrades().iterator().next().getGradeId().equals(APPROVED_GRADE_ID));
+    assertThat(postDTO.getGrades().iterator().next().getGradeId()).isEqualTo(APPROVED_GRADE_ID);
   }
 
   /**
