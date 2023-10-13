@@ -78,14 +78,14 @@ public class FundingUpdateTransformServiceTest {
     // initialise fundingTypeDto
     FundingTypeDTO fundingTypeDto = new FundingTypeDTO();
     fundingTypeDto.setLabel(FUNDING_TYPE_NEW);
-    fundingTypeDto.setAcademic(false);
+    fundingTypeDto.setAllowDetails(false);
     when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
         Collections.singleton(FUNDING_TYPE_NEW)))
         .thenReturn(Collections.singletonList(fundingTypeDto));
 
     FundingTypeDTO fundingTypeDto_1 = new FundingTypeDTO();
     fundingTypeDto_1.setLabel(FUNDING_TYPE_ACADEMIC);
-    fundingTypeDto_1.setAcademic(true);
+    fundingTypeDto_1.setAllowDetails(true);
     when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
         Collections.singleton(FUNDING_TYPE_ACADEMIC)))
         .thenReturn(Collections.singletonList(fundingTypeDto_1));

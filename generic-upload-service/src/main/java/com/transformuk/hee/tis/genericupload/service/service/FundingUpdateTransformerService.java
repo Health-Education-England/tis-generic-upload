@@ -184,7 +184,7 @@ public class FundingUpdateTransformerService {
       PostFundingDTO postFundingDto, FundingTypeDTO matchedFundingTypeDto) {
 
     String fundingDetails = fundingUpdateXls.getFundingTypeOther();
-    if (StringUtils.isEmpty(fundingDetails) || matchedFundingTypeDto.isAcademic()
+    if (StringUtils.isEmpty(fundingDetails) || matchedFundingTypeDto.isAllowDetails()
         || StringUtils.equals(postFundingDto.getFundingType(), "Other")) {
       postFundingDto.setInfo(fundingDetails);
     } else {
