@@ -31,7 +31,7 @@ public class FundingUpdateTransformerService {
   protected static final String ERROR_INVALID_FUNDING_TYPE =
       "Funding type could not be found for the label \"%s\".";
   protected static final String FUNDING_TYPE_IS_NOT_OTHER_OR_ACADEMIC =
-      "funding type specified filled although type is neither Other nor an academic type.";
+      "funding details is not allowed for the funding type specified.";
   protected static final String FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS =
       "Funding type is required when funding details is filled.";
   protected static final String UPDATE_FAILED = "Update failed.";
@@ -184,8 +184,7 @@ public class FundingUpdateTransformerService {
       PostFundingDTO postFundingDto, FundingTypeDTO matchedFundingTypeDto) {
 
     String fundingDetails = fundingUpdateXls.getFundingTypeOther();
-    if (StringUtils.isEmpty(fundingDetails) || matchedFundingTypeDto.isAllowDetails()
-        || StringUtils.equals(postFundingDto.getFundingType(), "Other")) {
+    if (StringUtils.isEmpty(fundingDetails) || matchedFundingTypeDto.isAllowDetails()) {
       postFundingDto.setInfo(fundingDetails);
     } else {
       fundingUpdateXls
