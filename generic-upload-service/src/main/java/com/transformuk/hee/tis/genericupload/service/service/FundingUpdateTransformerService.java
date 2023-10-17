@@ -31,7 +31,7 @@ public class FundingUpdateTransformerService {
   protected static final String ERROR_INVALID_FUNDING_TYPE =
       "Funding type could not be found for the label \"%s\".";
   protected static final String FUNDING_TYPE_IS_NOT_OTHER_OR_ACADEMIC =
-      "funding details is not allowed for the funding type specified.";
+      "Funding details is not allowed for the funding type specified.";
   protected static final String FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS =
       "Funding type is required when funding details is filled.";
   protected static final String UPDATE_FAILED = "Update failed.";

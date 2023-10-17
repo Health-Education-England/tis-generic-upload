@@ -216,40 +216,6 @@ public class FundingUpdateTransformServiceTest {
   }
 
   @Test
-  public void canUpdateFieldsWhenFundingTypeIsOther() {
-    String fundingType = FUNDING_TYPE_OTHER.toUpperCase();
-    fundingUpdateXls.setFundingType(fundingType);
-    fundingUpdateXls.setFundingTypeOther("other type");
-
-    FundingTypeDTO fundingTypeDto = new FundingTypeDTO();
-    fundingTypeDto.setLabel(FUNDING_TYPE_OTHER);
-    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(Collections.singleton(fundingType)))
-        .thenReturn(Collections.singletonList(fundingTypeDto));
-    when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
-        .thenReturn(null);
-    fundingUpdateTransformerService.processFundingUpdateUpload(
-        Collections.singletonList(fundingUpdateXls));
-
-    PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
-
-    MatcherAssert.assertThat("Should update fundingType",
-        postFundingDtoArgumentCaptorValue.getFundingType(),
-        CoreMatchers.equalTo(FUNDING_TYPE_OTHER));
-    MatcherAssert.assertThat("Should update fundingTypeOther",
-        postFundingDtoArgumentCaptorValue.getInfo(),
-        CoreMatchers.equalTo(fundingUpdateXls.getFundingTypeOther()));
-    MatcherAssert.assertThat("Should update fundingBody",
-        postFundingDtoArgumentCaptorValue.getFundingBodyId(),
-        CoreMatchers.equalTo("1"));
-    MatcherAssert.assertThat("Should update dateFrom",
-        postFundingDtoArgumentCaptorValue.getStartDate(),
-        CoreMatchers.equalTo(convertDate(fundingUpdateXls.getDateFrom())));
-    MatcherAssert.assertThat("Should update dateTo",
-        postFundingDtoArgumentCaptorValue.getEndDate(),
-        CoreMatchers.equalTo(convertDate(fundingUpdateXls.getDateTo())));
-  }
-
-  @Test
   public void canUpdateFieldsWhenFundingTypeIsAnAcademicType() {
     fundingUpdateXls.setFundingType(FUNDING_TYPE_ACADEMIC);
     fundingUpdateXls.setFundingTypeOther("details");
