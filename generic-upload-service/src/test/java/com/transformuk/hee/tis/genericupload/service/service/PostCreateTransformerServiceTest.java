@@ -1,6 +1,5 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -8,6 +7,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
+import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.LocalOfficeDTO;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
@@ -15,6 +15,7 @@ import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.api.enums.Status;
 import com.transformuk.hee.tis.reference.client.ReferenceService;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
+import com.transformuk.hee.tis.tcs.api.dto.PostFundingDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostGradeDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostSpecialtyDTO;
@@ -25,12 +26,15 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,6 +46,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class PostCreateTransformerServiceTest {
 
+  private static final long DAY_IN_MILLIS = 86400000L;
   private PostCreateTransformerService service;
 
   @Mock
@@ -76,6 +81,8 @@ public class PostCreateTransformerServiceTest {
   private LocalOfficeDTO owner1;
   private LocalOfficeDTO owner2;
 
+  private FundingTypeDTO fundingType1;
+
   @Captor
   private ArgumentCaptor<List<PostDTO>> dtoCaptor;
 
@@ -92,6 +99,8 @@ public class PostCreateTransformerServiceTest {
     xls1.setEmployingBody("employingBody1");
     xls1.setProgrammeTisId("1;2");
     xls1.setOwner("owner1");
+    xls1.setFundingType("funding1");
+    xls1.setFundingStartDate(new Date(1L));
 
     xls2 = new PostCreateXls();
     xls2.setNationalPostNumber("npn2");
@@ -102,6 +111,8 @@ public class PostCreateTransformerServiceTest {
     xls2.setEmployingBody("employingBody2");
     xls2.setProgrammeTisId("3;4");
     xls2.setOwner("owner2");
+    xls2.setFundingType("funding1");
+    xls2.setFundingStartDate(new Date(1L));
 
     xlsList = Arrays.asList(xls1, xls2);
 
@@ -171,6 +182,10 @@ public class PostCreateTransformerServiceTest {
     owner2 = new LocalOfficeDTO();
     owner2.setName("owner2");
     owner2.setStatus(Status.CURRENT);
+
+    fundingType1 = new FundingTypeDTO();
+    fundingType1.setStatus(Status.CURRENT);
+    fundingType1.setLabel("funding1");
   }
 
   @Test
@@ -294,7 +309,8 @@ public class PostCreateTransformerServiceTest {
     SpecialtyDTO specialty3 = new SpecialtyDTO();
     specialty3.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
     specialty3.setName("specialty3");
-    specialty3.setSpecialtyTypes(new HashSet<>(Collections.singletonList(SpecialtyType.SUB_SPECIALTY)));
+    specialty3.setSpecialtyTypes(
+        new HashSet<>(Collections.singletonList(SpecialtyType.SUB_SPECIALTY)));
     xls1.setSubSpecialties("specialty3");
 
     // Should not be uploaded and have error
@@ -311,13 +327,17 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
-    when(tcsService.getSpecialtyByName("specialty1")).thenReturn(Arrays.asList(specialty1));
-    when(tcsService.getSpecialtyByName("specialty2")).thenReturn(Arrays.asList(specialty2));
+    when(tcsService.getSpecialtyByName("specialty1"))
+        .thenReturn(Collections.singletonList((specialty1)));
+    when(tcsService.getSpecialtyByName("specialty2"))
+        .thenReturn(Collections.singletonList(specialty2));
 
     when(tcsService.getSpecialtyByName("specialty3", SpecialtyType.SUB_SPECIALTY))
-        .thenReturn(Arrays.asList(specialty3));
+        .thenReturn(Collections.singletonList(specialty3));
     when(tcsService.getSpecialtyByName("specialty4", SpecialtyType.SUB_SPECIALTY))
         .thenReturn(new ArrayList<>());
+    when(referenceService.findCurrentFundingTypesByLabelIn(any()))
+        .thenReturn(Collections.singletonList(fundingType1));
 
     // When.
     service.processUpload(Arrays.asList(xls1, xls2));
@@ -372,6 +392,8 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
         .thenReturn(Arrays.asList(trainingBody1, employingBody1, employingBody2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
 
     // When.
     service.processUpload(xlsList);
@@ -397,6 +419,8 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
         .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
 
     // When.
     service.processUpload(xlsList);
@@ -425,6 +449,8 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(Arrays.asList(programme1, programme2, programme3));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
 
     // When.
     service.processUpload(xlsList);
@@ -452,6 +478,8 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(Arrays.asList(programme1, programme2, programme3));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
 
     // When.
     service.processUpload(xlsList);
@@ -481,6 +509,8 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
 
     // When.
     service.processUpload(xlsList);
@@ -516,6 +546,8 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
     when(tcsService.findPostsByNationalPostNumbersIn(any()))
         .thenReturn(Collections.singletonList(post1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
 
     // When.
     service.processUpload(xlsList);
@@ -527,6 +559,34 @@ public class PostCreateTransformerServiceTest {
     assertThat("The error did not match the expected value.", xls2.getErrorMessage(),
         is("Old post not found with the NPN 'oldPost2'."));
     assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
+        is(false));
+  }
+
+  @Test
+  public void shouldFailValidationWhenPostFundingDatesInvalid() {
+    // Given.
+    xls1.setFundingStartDate(new Date(2 * DAY_IN_MILLIS));
+    xls1.setFundingEndDate(new Date(DAY_IN_MILLIS));
+    xls1.setFundingType("funding1");
+
+    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
+
+    // When.
+    service.processUpload(xlsList);
+
+    // Then.
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Funding End Date cannot be before Start Date if included."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
         is(false));
   }
 
@@ -551,7 +611,7 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
     when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty3));
     when(tcsService.getSpecialtyByName("specialty2", SpecialtyType.SUB_SPECIALTY))
-        .thenReturn(Arrays.asList(specialty2));
+        .thenReturn(Collections.singletonList(specialty2));
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
         .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
@@ -560,9 +620,55 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
     when(tcsService.findPostsByNationalPostNumbersIn(any()))
         .thenReturn(Collections.singletonList(post1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
 
     when(tcsService.bulkCreateDto(dtoCaptor.capture(), any(), any()))
         .thenReturn(Collections.emptyList());
+
+    PostDTO expected1 = new PostDTO();
+    expected1.setNationalPostNumber("npn1");
+    expected1.setTrainingBodyId(1L);
+    expected1.setEmployingBodyId(3L);
+    expected1.setOwner("owner1");
+    expected1.setTrainingDescription("trainingDescription1");
+    expected1.setOldPost(post1);
+    expected1.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
+    expected1.setBypassNPNGeneration(true);
+    expected1.setProgrammes(Stream.of(programme1, programme2).collect(Collectors.toSet()));
+    expected1.setGrades(Stream.of(
+        new PostGradeDTO(null, 1L, PostGradeType.APPROVED),
+        new PostGradeDTO(null, 1L, PostGradeType.OTHER),
+        new PostGradeDTO(null, 2L, PostGradeType.OTHER)
+    ).collect(Collectors.toSet()));
+    expected1.setSites(Stream.of(
+        new PostSiteDTO(null, 1L, PostSiteType.PRIMARY),
+        new PostSiteDTO(null, 1L, PostSiteType.OTHER),
+        new PostSiteDTO(null, 2L, PostSiteType.OTHER)
+    ).collect(Collectors.toSet()));
+    expected1.specialties(Stream.of(
+        new PostSpecialtyDTO(null, specialty1, PostSpecialtyType.PRIMARY),
+        new PostSpecialtyDTO(null, specialty1, PostSpecialtyType.OTHER),
+        new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.SUB_SPECIALTY)
+    ).collect(Collectors.toSet()));
+    PostFundingDTO expectedFunding = new PostFundingDTO();
+    expectedFunding.setFundingType("funding1");
+    expectedFunding.setStartDate(LocalDate.of(1970, 1, 1));
+    expected1.addFunding(expectedFunding);
+
+    PostDTO expected2 = new PostDTO();
+    expected2.setNationalPostNumber("npn2");
+    expected2.setTrainingBodyId(2L);
+    expected2.setEmployingBodyId(4L);
+    expected2.setOwner("owner2");
+    expected2.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
+    expected2.setBypassNPNGeneration(true);
+    expected2.setProgrammes(Stream.of(programme3, programme4).collect(Collectors.toSet()));
+    expected2.setGrades(Collections.singleton(new PostGradeDTO(null, 2L, PostGradeType.APPROVED)));
+    expected2.setSites(Collections.singleton(new PostSiteDTO(null, 2L, PostSiteType.PRIMARY)));
+    expected2.specialties(
+        Collections.singleton(new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.PRIMARY)));
+    expected2.addFunding(expectedFunding);
 
     // When.
     service.processUpload(xlsList);
@@ -579,98 +685,9 @@ public class PostCreateTransformerServiceTest {
     assertThat("The number of built DTOs did not match the expected value.", postDtos.size(),
         is(2));
 
-    PostDTO postDto = postDtos.get(0);
-    assertThat("The DTO's NPN did not match the expected value.", postDto.getNationalPostNumber(),
-        is("npn1"));
-    assertThat("The DTO's NPN did not match the expected value.", postDto.getTrainingBodyId(),
-        is(1L));
-    assertThat("The DTO's NPN did not match the expected value.", postDto.getEmployingBodyId(),
-        is(3L));
-    assertThat("The DTO's owner did not match the expected value.", postDto.getOwner(),
-        is("owner1"));
-    assertThat("The DTO's training description did not match the expected value.",
-        postDto.getTrainingDescription(), is("trainingDescription1"));
-    assertThat("The DTO's old post did not match the expected value.", postDto.getOldPost(),
-        is(post1));
-    assertThat("The DTO's status did not match the expected value.", postDto.getStatus(), is(
-        com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT));
-    assertThat("The DTO's NPN generation flag did not match the expected value.",
-        postDto.isBypassNPNGeneration(), is(true));
-
-    Set<ProgrammeDTO> programmes = postDto.getProgrammes();
-    assertThat("The DTO's programmes did not contain the expected number.", programmes.size(),
-        is(2));
-    assertThat("The DTO's programmes did not match the expected values.", programmes,
-        hasItems(programme1, programme2));
-
-    Set<PostGradeDTO> postGrades = postDto.getGrades();
-    assertThat("The DTO's grades did not contain the expected number.", postGrades.size(), is(3));
-    assertThat("The DTO's grades did not match the expected values.", postGrades, hasItems(
-        new PostGradeDTO(null, 1L, PostGradeType.APPROVED),
-        new PostGradeDTO(null, 1L, PostGradeType.OTHER),
-        new PostGradeDTO(null, 2L, PostGradeType.OTHER)
-    ));
-
-    Set<PostSiteDTO> postSites = postDto.getSites();
-    assertThat("The DTO's sites did not contain the expected number.", postSites.size(), is(3));
-    assertThat("The DTO's sites did not match the expected values.", postSites, hasItems(
-        new PostSiteDTO(null, 1L, PostSiteType.PRIMARY),
-        new PostSiteDTO(null, 1L, PostSiteType.OTHER),
-        new PostSiteDTO(null, 2L, PostSiteType.OTHER)
-    ));
-
-    Set<PostSpecialtyDTO> postSpecialties = postDto.getSpecialties();
-    assertThat("The DTO's specialties did not contain the expected number.", postSpecialties.size(),
-        is(3));
-    assertThat("The DTO's specialties did not match the expected values.", postSpecialties,
-        hasItems(
-            new PostSpecialtyDTO(null, specialty1, PostSpecialtyType.PRIMARY),
-            new PostSpecialtyDTO(null, specialty1, PostSpecialtyType.OTHER),
-            new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.SUB_SPECIALTY)
-        ));
-
-    postDto = postDtos.get(1);
-    assertThat("The DTO's NPN did not match the expected value.", postDto.getNationalPostNumber(),
-        is("npn2"));
-    assertThat("The DTO's NPN did not match the expected value.", postDto.getTrainingBodyId(),
-        is(2L));
-    assertThat("The DTO's NPN did not match the expected value.", postDto.getEmployingBodyId(),
-        is(4L));
-    assertThat("The DTO's owner did not match the expected value.", postDto.getOwner(),
-        is("owner2"));
-    assertThat("The DTO's training description did not match the expected value.",
-        postDto.getTrainingDescription(), nullValue());
-    assertThat("The DTO's old post did not match the expected value.", postDto.getOldPost(),
-        nullValue());
-    assertThat("The DTO's status did not match the expected value.", postDto.getStatus(), is(
-        com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT));
-    assertThat("The DTO's NPN generation flag did not match the expected value.",
-        postDto.isBypassNPNGeneration(), is(true));
-
-    programmes = postDto.getProgrammes();
-    assertThat("The DTO's programmes did not contain the expected number.", programmes.size(),
-        is(2));
-    assertThat("The DTO's programmes did not match the expected values.", programmes,
-        hasItems(programme3, programme4));
-
-    postGrades = postDto.getGrades();
-    assertThat("The DTO's grades did not contain the expected number.", postGrades.size(), is(1));
-    assertThat("The DTO's grades did not match the expected values.", postGrades, hasItems(
-        new PostGradeDTO(null, 2L, PostGradeType.APPROVED)
-    ));
-
-    postSites = postDto.getSites();
-    assertThat("The DTO's sites did not contain the expected number.", postSites.size(), is(1));
-    assertThat("The DTO's sites did not match the expected values.", postSites, hasItems(
-        new PostSiteDTO(null, 2L, PostSiteType.PRIMARY)
-    ));
-
-    postSpecialties = postDto.getSpecialties();
-    assertThat("The DTO's specialties did not contain the expected number.", postSpecialties.size(),
-        is(1));
-    assertThat("The DTO's specialties did not match the expected values.", postSpecialties,
-        hasItems(
-            new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.PRIMARY)
-        ));
+    assertThat("The first DTO did not match the expected value.", postDtos.get(0),
+        is(expected1));
+    assertThat("The second DTO did not match the expected value.", postDtos.get(1),
+        is(expected2));
   }
 }
