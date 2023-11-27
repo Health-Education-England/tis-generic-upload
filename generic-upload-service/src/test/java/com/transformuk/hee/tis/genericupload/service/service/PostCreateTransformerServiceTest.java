@@ -591,6 +591,33 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
+  public void shouldFailValidationWhenPostFundingBodyInvalid() {
+    // Given.
+    xls1.setFundingType("funding1");
+    xls1.setFundingBody("funder1");
+
+    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
+
+    // When.
+    service.processUpload(xlsList);
+
+    // Then.
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("No current match found for Funding Body 'funder1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+  }
+
+  @Test
   public void shouldCreatePostsWhenValidationPasses() {
     // Given.
     xls1.setTrainingDescription("trainingDescription1");

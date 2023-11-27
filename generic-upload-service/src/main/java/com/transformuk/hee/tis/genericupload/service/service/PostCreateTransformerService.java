@@ -453,7 +453,7 @@ public class PostCreateTransformerService {
       }
       TrustDTO trust = trustNameToDto.get(fundingBody);
       if (trust == null) {
-        validationError(String.format("No current match found for Funding Body '%s'", fundingBody));
+        validationError(String.format("No current match found for Funding Body '%s'.", fundingBody));
       } else {
         fundingDto.setFundingBodyId(trust.getId().toString());
       }
