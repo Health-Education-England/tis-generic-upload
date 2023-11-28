@@ -618,6 +618,33 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
+  public void shouldFailValidationWhenPostFundingDetailsProvidedButNotAllowed() {
+    // Given.
+    xls1.setFundingType("funding1");
+    xls1.setFundingDetails("boom!");
+
+    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
+
+    // When.
+    service.processUpload(xlsList);
+
+    // Then.
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Funding Details provided but are not allowed for 'funding1'."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+  }
+
+  @Test
   public void shouldCreatePostsWhenValidationPasses() {
     // Given.
     xls1.setTrainingDescription("trainingDescription1");
@@ -626,6 +653,8 @@ public class PostCreateTransformerServiceTest {
     xls1.setSubSpecialties("specialty2");
     xls1.setOtherSites("site1;site2");
     xls1.setOldPost("oldPost1");
+    xls1.setFundingDetails("included");
+    fundingType1.setAllowDetails(true);
 
     SpecialtyDTO specialty3 = new SpecialtyDTO();
     specialty3.setName("specialty3");
@@ -678,10 +707,11 @@ public class PostCreateTransformerServiceTest {
         new PostSpecialtyDTO(null, specialty1, PostSpecialtyType.OTHER),
         new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.SUB_SPECIALTY)
     ).collect(Collectors.toSet()));
-    PostFundingDTO expectedFunding = new PostFundingDTO();
-    expectedFunding.setFundingType("funding1");
-    expectedFunding.setStartDate(LocalDate.of(1970, 1, 1));
-    expected1.addFunding(expectedFunding);
+    PostFundingDTO expectedFunding1 = new PostFundingDTO();
+    expectedFunding1.setFundingType("funding1");
+    expectedFunding1.setStartDate(LocalDate.of(1970, 1, 1));
+    expectedFunding1.setInfo("included");
+    expected1.addFunding(expectedFunding1);
 
     PostDTO expected2 = new PostDTO();
     expected2.setNationalPostNumber("npn2");
@@ -695,7 +725,10 @@ public class PostCreateTransformerServiceTest {
     expected2.setSites(Collections.singleton(new PostSiteDTO(null, 2L, PostSiteType.PRIMARY)));
     expected2.specialties(
         Collections.singleton(new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.PRIMARY)));
-    expected2.addFunding(expectedFunding);
+    PostFundingDTO expectedFunding2 = new PostFundingDTO();
+    expectedFunding2.setFundingType("funding1");
+    expectedFunding2.setStartDate(LocalDate.of(1970, 1, 1));
+    expected2.addFunding(expectedFunding2);
 
     // When.
     service.processUpload(xlsList);

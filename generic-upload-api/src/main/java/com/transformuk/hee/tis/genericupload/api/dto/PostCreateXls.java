@@ -48,10 +48,10 @@ public class PostCreateXls extends TemplateXLS {
   @ExcelColumn(name = "Owner*", required = true)
   private String owner;
 
-  @ExcelColumn(name = "Funding Type", required = true)
+  @ExcelColumn(name = "Funding Type*", required = true)
   private String fundingType;
 
-  @ExcelColumn(name = "Funding Start Date", required = true)
+  @ExcelColumn(name = "Funding Start Date*", required = true)
   private Date fundingStartDate;
 
   @ExcelColumn(name = "Funding End Date")

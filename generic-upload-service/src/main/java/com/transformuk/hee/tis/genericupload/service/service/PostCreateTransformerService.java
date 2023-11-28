@@ -6,6 +6,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
+import com.transformuk.hee.tis.genericupload.service.util.DateUtils;
 import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.LocalOfficeDTO;
@@ -26,7 +27,6 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -436,9 +436,7 @@ public class PostCreateTransformerService {
     final PostFundingDTO fundingDto = new PostFundingDTO();
 
     String fundingType = xls.getFundingType();
-    if (!fundingTypeToDto.containsKey(fundingType)) {
-      updateFundingTypeCache(Collections.singleton(fundingType));
-    }
+    updateFundingTypeCache(fundingType);
     final FundingTypeDTO fundingTypeDto = fundingTypeToDto.get(fundingType);
     if (fundingTypeDto == null) {
       validationError(String.format("No current funding type found for '%s'.", fundingType));
@@ -448,35 +446,43 @@ public class PostCreateTransformerService {
 
     String fundingBody = xls.getFundingBody();
     if (StringUtils.isNotBlank(fundingBody)) {
-      if (!trustNameToDto.containsKey(fundingBody)) {
-        updateTrustCache(Collections.singleton(fundingBody));
-      }
+      updateTrustCache(Collections.singleton(fundingBody));
       TrustDTO trust = trustNameToDto.get(fundingBody);
       if (trust == null) {
-        validationError(String.format("No current match found for Funding Body '%s'.", fundingBody));
+        validationError(
+            String.format("No current match found for Funding Body '%s'.", fundingBody));
       } else {
         fundingDto.setFundingBodyId(trust.getId().toString());
       }
     }
 
-    fundingDto.setStartDate(
-        xls.getFundingStartDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+    fundingDto.setStartDate(DateUtils.toLocalDate(xls.getFundingStartDate()));
     if (xls.getFundingEndDate() != null) {
-      final LocalDate endDate = xls.getFundingEndDate().toInstant().atZone(ZoneId.systemDefault())
-          .toLocalDate();
+      final LocalDate endDate = DateUtils.toLocalDate(xls.getFundingEndDate());
       if (endDate.isBefore(fundingDto.getStartDate())) {
         validationError("Funding End Date cannot be before Start Date if included.");
       } else {
         fundingDto.setEndDate(endDate);
       }
     }
-    fundingDto.setInfo(xls.getFundingDetails());
+
+    final String fundingDetails = xls.getFundingDetails();
+    if (StringUtils.isNotEmpty(fundingDetails)) {
+      if (fundingTypeDto.isAllowDetails()) {
+        fundingDto.setInfo(xls.getFundingDetails());
+      } else {
+        validationError(
+            String.format("Funding Details provided but are not allowed for '%s'.", fundingType));
+      }
+    }
     return fundingDto;
   }
 
-  private void updateFundingTypeCache(Set<String> fundingTypes) {
-    referenceService.findCurrentFundingTypesByLabelIn(fundingTypes)
-        .forEach(dto -> fundingTypeToDto.put(dto.getLabel(), dto));
+  private void updateFundingTypeCache(String fundingType) {
+    if (!fundingTypeToDto.containsKey(fundingType)) {
+      referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton(fundingType))
+          .forEach(dto -> fundingTypeToDto.put(dto.getLabel(), dto));
+    }
   }
 
   private static void validationError(String errorMessage) {
