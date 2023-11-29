@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
 import com.transformuk.hee.tis.genericupload.api.ExcelColumn;
+import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -46,6 +47,21 @@ public class PostCreateXls extends TemplateXLS {
 
   @ExcelColumn(name = "Owner*", required = true)
   private String owner;
+
+  @ExcelColumn(name = "Funding Type*", required = true)
+  private String fundingType;
+
+  @ExcelColumn(name = "Funding Start Date*", required = true)
+  private Date fundingStartDate;
+
+  @ExcelColumn(name = "Funding End Date")
+  private Date fundingEndDate;
+
+  @ExcelColumn(name = "Funding Body")
+  private String fundingBody;
+
+  @ExcelColumn(name = "Funding Details")
+  private String fundingDetails;
 
   @ExcelColumn(name = "Old Post")
   private String oldPost;
