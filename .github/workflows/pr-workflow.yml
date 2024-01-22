@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-java@v3.4.0
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 11
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -49,6 +49,12 @@ jobs:
 
       - name: Run tests
         run: mvn test
+
+      - name: Set up quality analysis JDK
+        uses: actions/setup-java@v3.4.0
+        with:
+          distribution: temurin
+          java-version: 17
 
       - name: Run quality analysis
         env:
