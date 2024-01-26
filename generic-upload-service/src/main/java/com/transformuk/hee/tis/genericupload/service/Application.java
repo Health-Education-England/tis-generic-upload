@@ -19,8 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.audit.AuditEventRepository;
-import org.springframework.boot.actuate.autoconfigure.MetricFilterAutoConfiguration;
-import org.springframework.boot.actuate.autoconfigure.MetricRepositoryAutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -38,8 +36,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     @ComponentScan("com.transformuk.hee.tis.assessment.client"),
     @ComponentScan("com.transformuk.hee.tis.reference")
 })
-@EnableAutoConfiguration(exclude = {MetricFilterAutoConfiguration.class,
-    MetricRepositoryAutoConfiguration.class})
+@EnableAutoConfiguration
 @EnableConfigurationProperties({ApplicationProperties.class})
 @PropertySource({
     "classpath:/config/application.properties",
@@ -93,7 +90,8 @@ public class Application {
   /**
    * Initializes generic-upload.
    * <p>
-   * Spring profiles can be configured with a program arguments --spring.profiles.active=your-active-profile
+   * Spring profiles can be configured with a program arguments
+   * --spring.profiles.active=your-active-profile
    * <p>
    * You can find more information on how profiles work with JHipster on <a
    * href="http://www.jhipster.tech/profiles/">http://www.jhipster.tech/profiles/</a>.
@@ -120,7 +118,7 @@ public class Application {
   }
 
   @Bean
-  public Cache<Class, Map<String, ServiceKey>> bulkServiceData() {
+  public Cache<Class<?>, Map<String, ServiceKey>> bulkServiceData() {
     return CacheBuilder.newBuilder()
         .expireAfterAccess(EXPIRE_DATA_IN_SECONDS, TimeUnit.SECONDS)
         .removalListener(notification -> log

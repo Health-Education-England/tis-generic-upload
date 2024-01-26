@@ -1,10 +1,10 @@
 package com.transformuk.hee.tis.genericupload.service.config;
 
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.concurrent.TimeUnit;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.guava.GuavaCacheManager;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,10 +13,14 @@ import org.springframework.context.annotation.Configuration;
 public class CacheConfiguration {
 
   @Bean
-  public CacheManager cacheManager() {
-    GuavaCacheManager guavaCacheManager = new GuavaCacheManager();
-    guavaCacheManager.setCacheBuilder(
-        CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS)); //TODO externalise
-    return guavaCacheManager;
+  public Caffeine<Object, Object> caffeineConfig() {
+    return Caffeine.newBuilder().expireAfterAccess(10, TimeUnit.SECONDS); //TODO externalise
+  }
+
+  @Bean
+  public CacheManager cacheManager(Caffeine<Object, Object> caffieneConfig) {
+    CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+    cacheManager.setCaffeine(caffieneConfig);
+    return cacheManager;
   }
 }

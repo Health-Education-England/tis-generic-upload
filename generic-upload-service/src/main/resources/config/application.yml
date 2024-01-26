@@ -25,15 +25,18 @@ management:
 spring:
   application:
     name: generic-upload
+  main:
+    allow-bean-definition-overriding: true
   profiles:
     active: local
     include:
     - swagger
     - prometheus
   jackson:
-    serialization.write_dates_as_timestamps: false
     date-format: dd/MM/yyyy
-    serialization.indent_output: true
+    serialization:
+      indent_output: true
+      write_dates_as_timestamps: false
   jpa:
     open-in-view: false
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect

@@ -44,7 +44,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.domain.Specifications;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
@@ -158,8 +157,7 @@ public class UploadFileServiceImpl implements UploadFileService {
             applicationType.getFileName()));
         Workbook workbook = WorkbookFactory.create(bis)) {
       Sheet sheet = workbook.getSheetAt(0);
-      int totalColumns = sheet.getRow(0).getLastCellNum();
-      int errorReportingColumnIndex = totalColumns;
+      int errorReportingColumnIndex = sheet.getRow(0).getLastCellNum();
       if (sheet.getRow(0).getCell(errorReportingColumnIndex - 1).getStringCellValue()
           .equalsIgnoreCase(REASON_FOR_IMPORT_FAILURE)) {
         errorReportingColumnIndex--; //overwrite the last error column
@@ -211,20 +209,20 @@ public class UploadFileServiceImpl implements UploadFileService {
     List<Specification<ApplicationType>> specs = new ArrayList<>();
     //add the text search criteria
     if (uploadedDate != null) {
-      specs.add(Specifications.where(dateIs(uploadedDate)));
+      specs.add(Specification.where(dateIs(uploadedDate)));
     }
     if (StringUtils.isNotEmpty(user)) {
-      specs.add(Specifications.where(containsLike("username", user))
-          .or(Specifications.where(containsLike("firstName", user)))
-          .or(Specifications.where(containsLike("lastName", user))));
+      specs.add(Specification.where(containsLike("username", user))
+          .or(Specification.where(containsLike("firstName", user)))
+          .or(Specification.where(containsLike("lastName", user))));
     }
     if (StringUtils.isNotEmpty(file)) {
-      specs.add(Specifications.where(containsLike("fileName", file)));
+      specs.add(Specification.where(containsLike("fileName", file)));
     }
 
     Page<ApplicationType> result;
     if (!specs.isEmpty()) {
-      Specifications<ApplicationType> fullSpec = Specifications.where(specs.get(0));
+      Specification<ApplicationType> fullSpec = Specification.where(specs.get(0));
       //add the rest of the specs that made it in
       for (int i = 1; i < specs.size(); i++) {
         fullSpec = fullSpec.and(specs.get(i));
