@@ -2,9 +2,6 @@
 # Spring Boot configuration.
 #
 # This configuration is used for unit/integration tests.
-#
-# More information on profiles: https://jhipster.github.io/profiles/
-# More information on configuration properties: https://jhipster.github.io/common-application-properties/
 # ===================================================================
 
 # ===================================================================
@@ -30,7 +27,7 @@ spring:
         username: sa
         password:
     jpa:
-        database-platform: io.github.jhipster.domain.util.FixedH2Dialect
+        database-platform: org.hibernate.dialect.H2Dialect
         database: H2
         open-in-view: false
         show-sql: true

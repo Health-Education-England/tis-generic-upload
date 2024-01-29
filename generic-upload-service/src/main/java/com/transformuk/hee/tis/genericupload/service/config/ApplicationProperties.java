@@ -3,8 +3,6 @@ package com.transformuk.hee.tis.genericupload.service.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Properties specific to JHipster.
- * <p>
  * <p>
  * Properties are configured in the application.yml file.
  * </p>

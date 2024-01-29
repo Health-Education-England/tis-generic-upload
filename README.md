@@ -92,7 +92,6 @@ Results from the upload are stored in the database. In the case of errors, the o
 * spring batch code as the service uses a [Scheduler](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/7b2332ce235251f0937145328eb69b4bbb2df10f/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/Application.java#L46) `com.transformuk.hee.tis.genericupload.service.config.steps.PeopleSteps`
 * the [ETL Service](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/fa32d014394ebf394773e7d10fad6f3e8d6739a5/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/service/EtlService.java#L26) code; the [File Process Service](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/cf54a659bbeaab97ad65c5743859aa3278d1cef0/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/service/impl/FileProcessServiceImpl.java#L38) code;
 * anything associated with [Mapper](https://github.com/Health-Education-England/TIS-GENERIC-UPLOAD/blob/55fb4a783fd23818d9bd07a9c9123e95a421f994/generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/config/PeopleMapperConfiguration.java#L32)
-* unused JHipster boilerplate code 
 
 ### TODO - Documentation
 

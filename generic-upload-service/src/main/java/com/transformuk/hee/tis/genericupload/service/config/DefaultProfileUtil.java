@@ -1,6 +1,5 @@
 package com.transformuk.hee.tis.genericupload.service.config;
 
-import io.github.jhipster.config.JHipsterConstants;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.boot.SpringApplication;
@@ -31,7 +30,7 @@ public final class DefaultProfileUtil {
      * This cannot be set in the <code>application.yml</code> file.
      * See https://github.com/spring-projects/spring-boot/issues/1219
      */
-    defProperties.put(SPRING_PROFILE_DEFAULT, JHipsterConstants.SPRING_PROFILE_DEVELOPMENT);
+    defProperties.put(SPRING_PROFILE_DEFAULT, "dev");
     app.setDefaultProperties(defProperties);
   }
 
