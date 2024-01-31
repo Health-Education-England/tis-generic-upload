@@ -130,16 +130,10 @@
       <artifactId>tcs-client</artifactId>
       <version>6.2.0</version>
     </dependency>
-    <!--TODO Get rid of transistive dependencies provided by clients -->
-    <dependency>
-      <groupId>com.transformuk.hee</groupId>
-      <artifactId>reference-api</artifactId>
-      <version>2.10.2</version>
-    </dependency>
     <dependency>
       <groupId>com.transformuk.hee</groupId>
       <artifactId>reference-client</artifactId>
-      <version>4.13.0</version>
+      <version>4.14.2</version>
     </dependency>
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
