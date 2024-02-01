@@ -1,28 +1,15 @@
 package com.transformuk.hee.tis.genericupload.service.monitoring;
 
-import org.springframework.boot.actuate.endpoint.Endpoint;
+import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
+import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.stereotype.Component;
 
 @Component
-public class HealthEndpoint implements Endpoint<Status> {
+@Endpoint(id = "healthz")
+public class HealthEndpoint {
 
-  @Override
-  public String getId() {
-    return "healthz";
-  }
-
-  @Override
-  public boolean isEnabled() {
-    return true;
-  }
-
-  @Override
-  public boolean isSensitive() {
-    return true;
-  }
-
-  @Override
+  @ReadOperation
   public Status invoke() {
     return Status.UP;
   }

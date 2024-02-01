@@ -2,8 +2,8 @@ package com.transformuk.hee.tis.genericupload.service.api;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
-import com.codahale.metrics.annotation.Timed;
 import com.transformuk.hee.tis.genericupload.service.api.vm.LoggerVM;
+import io.micrometer.core.annotation.Timed;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
