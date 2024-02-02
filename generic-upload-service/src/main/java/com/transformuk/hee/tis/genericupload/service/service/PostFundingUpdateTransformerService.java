@@ -135,10 +135,9 @@ public class PostFundingUpdateTransformerService {
       if (fundingBodyName != null && fundingBodyId == null) {
         postFundingUpdateXls
             .addErrorMessage(String.format(ERROR_INVALID_FUNDING_BODY_NAME, fundingBodyName));
-        continue;
       }
 
-      UUID fundingSubTypeId = checkAndGetFundingSubtype(postFundingUpdateXls,
+      final UUID fundingSubTypeId = checkAndGetFundingSubtype(postFundingUpdateXls,
           fundingSubTypeLabelToId);
       if (StringUtils.isNotEmpty(postFundingUpdateXls.getErrorMessage())) {
         continue;
