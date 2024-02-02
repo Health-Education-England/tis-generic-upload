@@ -48,7 +48,7 @@ public class PostFundingUpdateTransformerService {
 
     // Get all fundingSubType and retrieve matching fundingSubType IDs.
     Set<String> fundingSubTypeLabels = postFundingUpdateXlss.stream()
-        .map(PostFundingUpdateXLS::getFundingSubType).collect(Collectors.toSet());
+        .map(PostFundingUpdateXLS::getFundingSubtype).collect(Collectors.toSet());
     List<FundingSubTypeDto> fundingSubTypes =
         referenceService.findCurrentFundingSubTypesByLabels(fundingSubTypeLabels);
     // As fundingSubType label is not unique for all fundingSubTypes,
@@ -159,7 +159,7 @@ public class PostFundingUpdateTransformerService {
   private UUID checkAndGetFundingSubtype(PostFundingUpdateXLS postFundingUpdateXls,
       Map<String, UUID> fundingSubTypeLabelToId) {
     String fundingType = postFundingUpdateXls.getFundingType();
-    String fundingSubType = postFundingUpdateXls.getFundingSubType();
+    String fundingSubType = postFundingUpdateXls.getFundingSubtype();
 
     if (fundingType == null && fundingSubType != null) {
       postFundingUpdateXls

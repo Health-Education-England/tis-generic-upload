@@ -32,10 +32,10 @@ class PostFundingUpdateTransformerServiceTest {
   private static final String POST_TIS_ID = "1";
   private static final Long FUNDING_TYPE_ID = 1L;
   private static final String FUNDING_TYPE_LABEL = "fundingType";
-  private static final UUID FUNDING_SUB_TYPE_UUID = UUID.randomUUID();
-  private static final String FUNDING_SUB_TYPE_LABEL = "fundingSubType";
+  private static final UUID FUNDING_SUBTYPE_UUID = UUID.randomUUID();
+  private static final String FUNDING_SUBTYPE_LABEL = "fundingSubtype";
   private static final String ERROR_INVALID_FUNDING_SUB_TYPE = String.format(
-      ERROR_INVALID_FUNDING_SUB_TYPE_LABEL, FUNDING_SUB_TYPE_LABEL);
+      ERROR_INVALID_FUNDING_SUB_TYPE_LABEL, FUNDING_SUBTYPE_LABEL);
   private FundingTypeDTO fundingTypeDto;
   private FundingSubTypeDto fundingSubTypeDto;
 
@@ -61,18 +61,18 @@ class PostFundingUpdateTransformerServiceTest {
     fundingTypeDto.setLabel(FUNDING_TYPE_LABEL);
 
     fundingSubTypeDto = new FundingSubTypeDto();
-    fundingSubTypeDto.setId(FUNDING_SUB_TYPE_UUID);
-    fundingSubTypeDto.setLabel(FUNDING_SUB_TYPE_LABEL);
+    fundingSubTypeDto.setId(FUNDING_SUBTYPE_UUID);
+    fundingSubTypeDto.setLabel(FUNDING_SUBTYPE_LABEL);
     fundingSubTypeDto.setFundingType(fundingTypeDto);
   }
 
   @Test
   void shouldSetFundingSubTypeIdWhenLabelIsFound() {
     when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    when(postFundingUpdateXls.getFundingSubType()).thenReturn(FUNDING_SUB_TYPE_LABEL);
+    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
 
     when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
-        Collections.singleton(FUNDING_SUB_TYPE_LABEL)))
+        Collections.singleton(FUNDING_SUBTYPE_LABEL)))
         .thenReturn(Collections.singletonList(fundingSubTypeDto));
 
     uploadServiceMock.processPostFundingUpdateUpload(
@@ -83,18 +83,18 @@ class PostFundingUpdateTransformerServiceTest {
     PostDTO postDto = postFundingDtoCaptor.getValue();
     assertEquals(1, postDto.getFundings().size());
     PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
-    assertEquals(postFundingDto.getFundingSubTypeId(), FUNDING_SUB_TYPE_UUID);
+    assertEquals(postFundingDto.getFundingSubTypeId(), FUNDING_SUBTYPE_UUID);
     assertEquals(0, postFundingDto.getMessageList().size());
   }
 
   @Test
   void shouldAddErrorWhenLabelNotFound() {
     when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    when(postFundingUpdateXls.getFundingSubType()).thenReturn(FUNDING_SUB_TYPE_LABEL);
+    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
     when(postFundingUpdateXls.getErrorMessage()).thenReturn(ERROR_INVALID_FUNDING_SUB_TYPE);
 
     when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
-        Collections.singleton(FUNDING_SUB_TYPE_LABEL)))
+        Collections.singleton(FUNDING_SUBTYPE_LABEL)))
         .thenReturn(Collections.emptyList());
 
     uploadServiceMock.processPostFundingUpdateUpload(
@@ -109,12 +109,12 @@ class PostFundingUpdateTransformerServiceTest {
   @Test
   void shouldAddErrorWhenFundingTypeIsNotSpecifiedForFundingSubType() {
     when(postFundingUpdateXls.getFundingType()).thenReturn(null);
-    when(postFundingUpdateXls.getFundingSubType()).thenReturn(FUNDING_SUB_TYPE_LABEL);
+    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
     when(postFundingUpdateXls.getErrorMessage()).thenReturn(
         ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
 
     when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
-        Collections.singleton(FUNDING_SUB_TYPE_LABEL)))
+        Collections.singleton(FUNDING_SUBTYPE_LABEL)))
         .thenReturn(Collections.singletonList(fundingSubTypeDto));
 
     uploadServiceMock.processPostFundingUpdateUpload(
