@@ -3,6 +3,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE;
 import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_SUB_TYPE_LABEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -99,10 +100,8 @@ class PostFundingUpdateTransformerServiceTest {
     uploadService.processPostFundingUpdateUpload(
         Collections.singletonList(postFundingUpdateXls));
 
-    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
+    verify(tcsServiceMock, never()).updatePostFundings(any());
     verify(postFundingUpdateXls).addErrorMessage(ERROR_INVALID_FUNDING_SUB_TYPE);
-    PostDTO postDto = postDtoCaptor.getValue();
-    assertEquals(0, postDto.getFundings().size());
   }
 
   @Test
@@ -119,9 +118,7 @@ class PostFundingUpdateTransformerServiceTest {
     uploadService.processPostFundingUpdateUpload(
         Collections.singletonList(postFundingUpdateXls));
 
-    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
+    verify(tcsServiceMock, never()).updatePostFundings(any());
     verify(postFundingUpdateXls).addErrorMessage(ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
-    PostDTO postDto = postDtoCaptor.getValue();
-    assertEquals(0, postDto.getFundings().size());
   }
 }

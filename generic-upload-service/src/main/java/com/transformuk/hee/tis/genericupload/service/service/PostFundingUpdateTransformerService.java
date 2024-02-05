@@ -88,9 +88,13 @@ public class PostFundingUpdateTransformerService {
 
       Map<PostFundingDTO, PostFundingUpdateXLS> fundingDtosToSource = buildFundingDtos(
           postIdToPostFundingUpdateXls.getValue(), fundingBodyNameToId, fundingSubTypeLabelToId);
+      Set<PostFundingDTO> builtPostFundingDtos = fundingDtosToSource.keySet();
+      if (builtPostFundingDtos.isEmpty()) {
+        continue;
+      }
       PostDTO postDto = new PostDTO();
       postDto.setId(Long.parseLong(postId));
-      postDto.setFundings(fundingDtosToSource.keySet());
+      postDto.setFundings(builtPostFundingDtos);
 
       try {
         List<PostFundingDTO> postFundingDtos = tcsService.updatePostFundings(postDto);
