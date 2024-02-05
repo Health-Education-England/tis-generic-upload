@@ -30,7 +30,7 @@ public class PostFundingUpdateTransformerService {
   protected static final String ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE =
       "Funding type is required when funding subtype is filled.";
   protected static final String ERROR_INVALID_FUNDING_SUB_TYPE_LABEL =
-      "Funding body could not be found for the label \"%s\".";
+      "Funding subtype could not be found for the label \"%s\".";
 
   @Autowired
   private ReferenceServiceImpl referenceService;
