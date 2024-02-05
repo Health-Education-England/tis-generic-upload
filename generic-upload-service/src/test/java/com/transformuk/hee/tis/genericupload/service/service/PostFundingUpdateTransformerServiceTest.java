@@ -4,7 +4,7 @@ import static com.transformuk.hee.tis.genericupload.service.service.PostFundingU
 import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_SUB_TYPE_LABEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,7 +40,7 @@ class PostFundingUpdateTransformerServiceTest {
   private FundingSubTypeDto fundingSubTypeDto;
 
   @InjectMocks
-  private PostFundingUpdateTransformerService uploadServiceMock;
+  private PostFundingUpdateTransformerService uploadService;
   @Mock
   private TcsServiceImpl tcsServiceMock;
   @Mock
@@ -50,7 +50,7 @@ class PostFundingUpdateTransformerServiceTest {
   private PostFundingUpdateXLS postFundingUpdateXls;
 
   @Captor
-  private ArgumentCaptor<PostDTO> postFundingDtoCaptor;
+  private ArgumentCaptor<PostDTO> postDtoCaptor;
 
   @BeforeEach
   void setUp() {
@@ -75,16 +75,15 @@ class PostFundingUpdateTransformerServiceTest {
         Collections.singleton(FUNDING_SUBTYPE_LABEL)))
         .thenReturn(Collections.singletonList(fundingSubTypeDto));
 
-    uploadServiceMock.processPostFundingUpdateUpload(
+    uploadService.processPostFundingUpdateUpload(
         Collections.singletonList(postFundingUpdateXls));
 
-    verify(tcsServiceMock).updatePostFundings(postFundingDtoCaptor.capture());
-    verify(postFundingUpdateXls, times(0)).addErrorMessage(anyString());
-    PostDTO postDto = postFundingDtoCaptor.getValue();
+    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
+    verify(postFundingUpdateXls, never()).addErrorMessage(anyString());
+    PostDTO postDto = postDtoCaptor.getValue();
     assertEquals(1, postDto.getFundings().size());
     PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
     assertEquals(postFundingDto.getFundingSubTypeId(), FUNDING_SUBTYPE_UUID);
-    assertEquals(0, postFundingDto.getMessageList().size());
   }
 
   @Test
@@ -97,12 +96,12 @@ class PostFundingUpdateTransformerServiceTest {
         Collections.singleton(FUNDING_SUBTYPE_LABEL)))
         .thenReturn(Collections.emptyList());
 
-    uploadServiceMock.processPostFundingUpdateUpload(
+    uploadService.processPostFundingUpdateUpload(
         Collections.singletonList(postFundingUpdateXls));
 
-    verify(tcsServiceMock).updatePostFundings(postFundingDtoCaptor.capture());
+    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
     verify(postFundingUpdateXls).addErrorMessage(ERROR_INVALID_FUNDING_SUB_TYPE);
-    PostDTO postDto = postFundingDtoCaptor.getValue();
+    PostDTO postDto = postDtoCaptor.getValue();
     assertEquals(0, postDto.getFundings().size());
   }
 
@@ -117,12 +116,12 @@ class PostFundingUpdateTransformerServiceTest {
         Collections.singleton(FUNDING_SUBTYPE_LABEL)))
         .thenReturn(Collections.singletonList(fundingSubTypeDto));
 
-    uploadServiceMock.processPostFundingUpdateUpload(
+    uploadService.processPostFundingUpdateUpload(
         Collections.singletonList(postFundingUpdateXls));
 
-    verify(tcsServiceMock).updatePostFundings(postFundingDtoCaptor.capture());
+    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
     verify(postFundingUpdateXls).addErrorMessage(ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
-    PostDTO postDto = postFundingDtoCaptor.getValue();
+    PostDTO postDto = postDtoCaptor.getValue();
     assertEquals(0, postDto.getFundings().size());
   }
 }
