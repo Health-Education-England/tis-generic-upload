@@ -88,6 +88,27 @@ class PostFundingUpdateTransformerServiceTest {
   }
 
   @Test
+  void shouldSetFundingSubTypeIdCaseInsensitively() {
+    final String fundingSubtypeLabelInUpperCase = FUNDING_SUBTYPE_LABEL.toUpperCase();
+    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
+    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(fundingSubtypeLabelInUpperCase);
+
+    when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
+        Collections.singleton(fundingSubtypeLabelInUpperCase)))
+        .thenReturn(Collections.singletonList(fundingSubTypeDto));
+
+    uploadService.processPostFundingUpdateUpload(
+        Collections.singletonList(postFundingUpdateXls));
+
+    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
+    verify(postFundingUpdateXls, never()).addErrorMessage(anyString());
+    PostDTO postDto = postDtoCaptor.getValue();
+    assertEquals(1, postDto.getFundings().size());
+    PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
+    assertEquals(postFundingDto.getFundingSubTypeId(), FUNDING_SUBTYPE_UUID);
+  }
+
+  @Test
   void shouldAddErrorWhenLabelNotFound() {
     when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
     when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);

@@ -56,7 +56,8 @@ public class PostFundingUpdateTransformerService {
     // use (fundingType label, fundingSubtype label) from reference service as key.
     Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId = fundingSubTypes.stream()
         .collect(Collectors.toMap(
-            dto -> ImmutablePair.of(dto.getFundingType().getLabel(), dto.getLabel()),
+            dto -> ImmutablePair.of(dto.getFundingType().getLabel().toLowerCase(),
+                dto.getLabel().toLowerCase()),
             FundingSubTypeDto::getId));
 
     // Group rows by post ID.
@@ -175,7 +176,7 @@ public class PostFundingUpdateTransformerService {
             .addErrorMessage(ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
       } else {
         fundingSubtypeId = fundingSubTypeLabelToId.get(
-            ImmutablePair.of(fundingType, fundingSubtype));
+            ImmutablePair.of(fundingType.toLowerCase(), fundingSubtype.toLowerCase()));
         if (fundingSubtypeId == null) {
           postFundingUpdateXls
               .addErrorMessage(String.format(ERROR_INVALID_FUNDING_SUB_TYPE_LABEL, fundingSubtype));
