@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
+import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
@@ -13,7 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -21,7 +25,12 @@ import org.springframework.web.client.RestClientException;
 @Component
 public class PostFundingUpdateTransformerService {
 
-  public static final String ERROR_INVALID_FUNDING_BODY_NAME = "Funding body could not be found for the name \"%s\".";
+  protected static final String ERROR_INVALID_FUNDING_BODY_NAME =
+      "Funding body could not be found for the name \"%s\".";
+  protected static final String ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE =
+      "Funding type is required when funding subtype is filled.";
+  protected static final String ERROR_INVALID_FUNDING_SUB_TYPE_LABEL =
+      "Funding subtype could not be found for the label \"%s\".";
 
   @Autowired
   private ReferenceServiceImpl referenceService;
@@ -37,6 +46,18 @@ public class PostFundingUpdateTransformerService {
     List<TrustDTO> trusts = referenceService.findCurrentTrustsByTrustKnownAsIn(fundingBodies);
     Map<String, String> fundingBodyNameToId = trusts.stream()
         .collect(Collectors.toMap(TrustDTO::getTrustKnownAs, dto -> String.valueOf(dto.getId())));
+
+    // Get all fundingSubType and retrieve matching fundingSubType IDs.
+    Set<String> fundingSubTypeLabels = postFundingUpdateXlss.stream()
+        .map(PostFundingUpdateXLS::getFundingSubtype).collect(Collectors.toSet());
+    List<FundingSubTypeDto> fundingSubTypes =
+        referenceService.findCurrentFundingSubTypesByLabels(fundingSubTypeLabels);
+    // As fundingSubtype label is not unique for all fundingSubtypes,
+    // use (fundingType label, fundingSubtype label) from reference service as key.
+    Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId = fundingSubTypes.stream()
+        .collect(Collectors.toMap(
+            dto -> ImmutablePair.of(dto.getFundingType().getLabel(), dto.getLabel()),
+            FundingSubTypeDto::getId));
 
     // Group rows by post ID.
     // TODO: There is an issue with validating the presence of required fields, this can be
@@ -66,10 +87,14 @@ public class PostFundingUpdateTransformerService {
       String postId = postIdToPostFundingUpdateXls.getKey();
 
       Map<PostFundingDTO, PostFundingUpdateXLS> fundingDtosToSource = buildFundingDtos(
-          postIdToPostFundingUpdateXls.getValue(), fundingBodyNameToId);
+          postIdToPostFundingUpdateXls.getValue(), fundingBodyNameToId, fundingSubTypeLabelToId);
+      Set<PostFundingDTO> builtPostFundingDtos = fundingDtosToSource.keySet();
+      if (builtPostFundingDtos.isEmpty()) {
+        continue;
+      }
       PostDTO postDto = new PostDTO();
       postDto.setId(Long.parseLong(postId));
-      postDto.setFundings(fundingDtosToSource.keySet());
+      postDto.setFundings(builtPostFundingDtos);
 
       try {
         List<PostFundingDTO> postFundingDtos = tcsService.updatePostFundings(postDto);
@@ -98,13 +123,16 @@ public class PostFundingUpdateTransformerService {
   /**
    * Build PostFundingDTOs from the PostFundingUpdateXLS.
    *
-   * @param postFundingUpdateXlss The PostFundingUpdateXLS to build DTOs for.
-   * @param fundingBodyNameToId   A mapping of funding body names to IDs, as required by the DTO.
+   * @param postFundingUpdateXlss   The PostFundingUpdateXLS to build DTOs for.
+   * @param fundingBodyNameToId     A mapping of funding body names to IDs, as required by the DTO.
+   * @param fundingSubTypeLabelToId A mapping of (fundingType, fundingSubType) to fundingSubType
+   *                                UUID.
    * @return A map of built PostFundingDTOs to source PostFundingUpdateXLS.
    */
   private Map<PostFundingDTO, PostFundingUpdateXLS> buildFundingDtos(
       Collection<PostFundingUpdateXLS> postFundingUpdateXlss,
-      Map<String, String> fundingBodyNameToId) {
+      Map<String, String> fundingBodyNameToId,
+      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId) {
     Map<PostFundingDTO, PostFundingUpdateXLS> postFundingDtosToSource = new HashMap<>();
 
     for (PostFundingUpdateXLS postFundingUpdateXls : postFundingUpdateXlss) {
@@ -114,6 +142,11 @@ public class PostFundingUpdateTransformerService {
       if (fundingBodyName != null && fundingBodyId == null) {
         postFundingUpdateXls
             .addErrorMessage(String.format(ERROR_INVALID_FUNDING_BODY_NAME, fundingBodyName));
+      }
+
+      final UUID fundingSubTypeId = checkAndGetFundingSubtype(postFundingUpdateXls,
+          fundingSubTypeLabelToId);
+      if (StringUtils.isNotEmpty(postFundingUpdateXls.getErrorMessage())) {
         continue;
       }
 
@@ -123,10 +156,32 @@ public class PostFundingUpdateTransformerService {
       postFundingDto.setStartDate(postFundingUpdateXls.getDateFrom());
       postFundingDto.setEndDate(postFundingUpdateXls.getDateTo());
       postFundingDto.setFundingBodyId(fundingBodyId);
+      postFundingDto.setFundingSubTypeId(fundingSubTypeId);
 
       postFundingDtosToSource.put(postFundingDto, postFundingUpdateXls);
     }
-
     return postFundingDtosToSource;
+  }
+
+  private UUID checkAndGetFundingSubtype(PostFundingUpdateXLS postFundingUpdateXls,
+      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId) {
+    String fundingType = postFundingUpdateXls.getFundingType();
+    String fundingSubtype = postFundingUpdateXls.getFundingSubtype();
+    UUID fundingSubtypeId = null;
+
+    if (fundingSubtype != null) {
+      if (fundingType == null) {
+        postFundingUpdateXls
+            .addErrorMessage(ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
+      } else {
+        fundingSubtypeId = fundingSubTypeLabelToId.get(
+            ImmutablePair.of(fundingType, fundingSubtype));
+        if (fundingSubtypeId == null) {
+          postFundingUpdateXls
+              .addErrorMessage(String.format(ERROR_INVALID_FUNDING_SUB_TYPE_LABEL, fundingSubtype));
+        }
+      }
+    }
+    return fundingSubtypeId;
   }
 }
