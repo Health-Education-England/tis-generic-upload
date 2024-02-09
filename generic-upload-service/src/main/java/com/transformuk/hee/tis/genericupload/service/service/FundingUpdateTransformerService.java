@@ -4,6 +4,7 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
+import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
@@ -34,6 +35,10 @@ public class FundingUpdateTransformerService {
       "Funding details is not allowed for the funding type specified.";
   protected static final String FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS =
       "Funding type is required when funding details is filled.";
+  protected static final String FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE =
+      "Funding type is required when funding subtype is filled.";
+  protected static final String FUNDING_SUB_TYPE_NOT_FOUND =
+      "Funding sub type not found for this funding type";
   protected static final String UPDATE_FAILED = "Update failed.";
   private static final org.slf4j.Logger logger = getLogger(PostUpdateTransformerService.class);
 
@@ -159,14 +164,18 @@ public class FundingUpdateTransformerService {
   private void checkFundingType(FundingUpdateXLS fundingUpdateXls,
       PostFundingDTO postFundingDto, List<FundingTypeDTO> fundingTypeDtos) {
 
-    if (StringUtils.isEmpty(fundingUpdateXls.getFundingType())) {
+    final String fundingType = fundingUpdateXls.getFundingType();
+
+    if (StringUtils.isEmpty(fundingType)) {
       if (StringUtils.isNotEmpty(fundingUpdateXls.getFundingTypeOther())) {
         fundingUpdateXls.addErrorMessage(FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS);
+      }
+      if (StringUtils.isNotEmpty(fundingUpdateXls.getFundingSubtype())) {
+        fundingUpdateXls.addErrorMessage(FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
       }
       return;
     }
 
-    String fundingType = fundingUpdateXls.getFundingType();
     FundingTypeDTO matchedFundingTypeDto = fundingTypeDtos.stream()
         .filter(dto -> StringUtils.equalsIgnoreCase(fundingType, dto.getLabel())).findAny()
         .orElse(null);
@@ -177,6 +186,9 @@ public class FundingUpdateTransformerService {
       // If fundingType is found, replace it with the label from Reference service.
       postFundingDto.setFundingType(matchedFundingTypeDto.getLabel());
       checkFundingDetails(fundingUpdateXls, postFundingDto, matchedFundingTypeDto);
+
+      // check funding subtype
+      checkAndSetFundingSubtype(fundingUpdateXls, postFundingDto, matchedFundingTypeDto);
     }
   }
 
@@ -189,6 +201,26 @@ public class FundingUpdateTransformerService {
     } else {
       fundingUpdateXls
           .addErrorMessage(FUNDING_TYPE_IS_NOT_OTHER_OR_ACADEMIC);
+    }
+  }
+
+  private void checkAndSetFundingSubtype(FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto, FundingTypeDTO matchedFundingTypeDto) {
+
+    String fundingSubtype = fundingUpdateXls.getFundingSubtype();
+    if (StringUtils.isNotEmpty(fundingSubtype)) {
+      List<FundingSubTypeDto> allCurrentFundingSubTypes =
+          referenceService.findCurrentFundingSubTypesForFundingTypeId(
+              matchedFundingTypeDto.getId());
+      FundingSubTypeDto foundFundingSubTypeDto = allCurrentFundingSubTypes.stream()
+          .filter(dto -> dto.getLabel().equalsIgnoreCase(fundingSubtype)).findFirst().orElse(null);
+      if (foundFundingSubTypeDto != null) {
+        postFundingDto.setFundingSubTypeId(foundFundingSubTypeDto.getId());
+      } else {
+        fundingUpdateXls.addErrorMessage(FUNDING_SUB_TYPE_NOT_FOUND);
+      }
+    } else {
+      postFundingDto.setFundingSubTypeId(null);
     }
   }
 }
