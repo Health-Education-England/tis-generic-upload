@@ -157,7 +157,6 @@ public class FundingUpdateTransformerServiceTest {
     fundingUpdateXls.setFundingType(null);
     fundingUpdateXls.setFundingTypeOther("details");
 
-    postFundingDto.setFundingType(null);
     when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
 
     fundingUpdateTransformerService.processFundingUpdateUpload(
@@ -176,6 +175,7 @@ public class FundingUpdateTransformerServiceTest {
         .thenReturn(Collections.singletonList(fundingSubTypeDto));
     when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
         .thenReturn(postFundingDto);
+
     fundingUpdateTransformerService.processFundingUpdateUpload(
         Collections.singletonList(fundingUpdateXls));
 
@@ -263,7 +263,7 @@ public class FundingUpdateTransformerServiceTest {
 
   @Test
   public void canHandleRequiredFundingTypeWhenFundingSubtypeIsFilled() {
-    postFundingDto.setFundingType(null);
+    fundingUpdateXls.setFundingTypeOther(null);
     fundingUpdateXls.setFundingType(null);
     fundingUpdateXls.setFundingSubtype(FUNDING_SUBTYPE);
     when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);

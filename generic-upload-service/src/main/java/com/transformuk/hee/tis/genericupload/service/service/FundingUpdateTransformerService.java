@@ -80,6 +80,8 @@ public class FundingUpdateTransformerService {
    * @param fundingUpdateXls    The FundingUpdateXLS to be verified.
    * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference
    *                            service.
+   * @param fundingSubTypeLabelToId A mapping of (fundingType, fundingSubType) to fundingSubType
+   *                            UUID.
    */
   private void useMatchingCriteriaToUpdatePostFunding(
       FundingUpdateXLS fundingUpdateXls,
@@ -123,6 +125,8 @@ public class FundingUpdateTransformerService {
    *                            the entity in database.
    * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference
    *                            service.
+   * @param fundingSubTypeLabelToId A mapping of (fundingType, fundingSubType) to fundingSubType
+   *                            UUID.
    */
   private void validateAndUpdatePostFundingDto(
       FundingUpdateXLS fundingUpdateXls,
@@ -130,37 +134,13 @@ public class FundingUpdateTransformerService {
       Map<String, String> fundingBodyNameToId,
       Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId) {
 
-    // funding body validation
-    final String fundingBodyName = fundingUpdateXls.getFundingBody();
-    final String fundingBodyId = fundingBodyNameToId.get(fundingBodyName);
-    final String fundingType = fundingUpdateXls.getFundingType();
-    final String fundingSubtype = fundingUpdateXls.getFundingSubtype();
+    validateAndUpdateFundingBody(fundingUpdateXls, postFundingDto, fundingBodyNameToId);
 
-    if (fundingBodyName != null && fundingBodyId == null) {
-      fundingUpdateXls
-          .addErrorMessage(String.format(ERROR_INVALID_FUNDING_BODY_NAME, fundingBodyName));
-    } else if (fundingBodyName != null) {
-      postFundingDto.setFundingBodyId(fundingBodyId);
-    }
+    updateFundingType(fundingUpdateXls, postFundingDto);
 
-    postFundingDto.setInfo(fundingUpdateXls.getFundingTypeOther());
+    validateAndUpdateFundingDetails(fundingUpdateXls, postFundingDto);
 
-    if (fundingType != null) {
-      postFundingDto.setFundingType(fundingType);
-    }
-
-    if (postFundingDto.getInfo() != null && postFundingDto.getFundingType() == null) {
-      fundingUpdateXls
-          .addErrorMessage(FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS);
-    }
-
-    if (fundingSubtype != null) {
-      final UUID fundingSubTypeId = checkAndGetFundingSubtype(fundingUpdateXls,
-          postFundingDto.getFundingType(), fundingSubTypeLabelToId);
-      postFundingDto.setFundingSubTypeId(fundingSubTypeId);
-    } else {
-      postFundingDto.setFundingSubTypeId(null);
-    }
+    validateAndUpdateSubType(fundingUpdateXls, postFundingDto, fundingSubTypeLabelToId);
 
     if (fundingUpdateXls.getDateFrom() != null) {
       LocalDate dateFrom = convertDate(fundingUpdateXls.getDateFrom());
@@ -189,14 +169,62 @@ public class FundingUpdateTransformerService {
     }
   }
 
-  private UUID checkAndGetFundingSubtype(FundingUpdateXLS fundingUpdateXls,
-      String fundingType,
+  private void validateAndUpdateFundingBody(FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto,
+      Map<String, String> fundingBodyNameToId) {
+    final String fundingBodyName = fundingUpdateXls.getFundingBody();
+    final String fundingBodyId = fundingBodyNameToId.get(fundingBodyName);
+
+    if (StringUtils.isNotEmpty(fundingBodyName) && StringUtils.isEmpty(fundingBodyId)) {
+      fundingUpdateXls
+          .addErrorMessage(String.format(ERROR_INVALID_FUNDING_BODY_NAME, fundingBodyName));
+    } else if (fundingBodyName != null) {
+      postFundingDto.setFundingBodyId(fundingBodyId);
+    }
+  }
+
+  private void updateFundingType(FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto) {
+    final String fundingType = fundingUpdateXls.getFundingType();
+    if (StringUtils.isNotEmpty(fundingType)) {
+      postFundingDto.setFundingType(fundingType);
+    }
+  }
+
+  private void validateAndUpdateFundingDetails(FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto) {
+    final String fundingType = fundingUpdateXls.getFundingType();
+    final String fundingDetails = fundingUpdateXls.getFundingTypeOther();
+
+    if (StringUtils.isEmpty(fundingType)) {
+      if (StringUtils.isNotEmpty(fundingDetails)) {
+        fundingUpdateXls.addErrorMessage(FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS);
+      }
+      return;
+    }
+    postFundingDto.setInfo(fundingDetails);
+  }
+
+  private void validateAndUpdateSubType(FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto,
       Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId) {
-    String fundingSubtype = fundingUpdateXls.getFundingSubtype();
+    if (StringUtils.isNotEmpty(fundingUpdateXls.getFundingSubtype())) {
+      final UUID fundingSubTypeId = checkAndGetFundingSubtypeId(fundingUpdateXls,
+          fundingSubTypeLabelToId);
+      postFundingDto.setFundingSubTypeId(fundingSubTypeId);
+    } else {
+      postFundingDto.setFundingSubTypeId(null);
+    }
+  }
+
+  private UUID checkAndGetFundingSubtypeId(FundingUpdateXLS fundingUpdateXls,
+      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId) {
+    final String fundingSubtype = fundingUpdateXls.getFundingSubtype();
+    final String fundingType = fundingUpdateXls.getFundingType();
     UUID fundingSubtypeId = null;
 
-    if (fundingSubtype != null) {
-      if (fundingType == null) {
+    if (StringUtils.isNotEmpty(fundingSubtype)) {
+      if (StringUtils.isEmpty(fundingType)) {
         fundingUpdateXls
             .addErrorMessage(FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
       } else {
