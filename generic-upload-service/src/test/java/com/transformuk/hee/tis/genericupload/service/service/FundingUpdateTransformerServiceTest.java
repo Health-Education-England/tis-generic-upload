@@ -26,12 +26,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.mockito.runners.MockitoJUnitRunner;
 
 /**
  * The unit tests for {@link FundingUpdateTransformerService}.
  */
-@RunWith(SpringRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class FundingUpdateTransformerServiceTest {
 
   private static final Long POST_FUNDING_ID = 1L;
@@ -90,16 +90,10 @@ public class FundingUpdateTransformerServiceTest {
     FundingTypeDTO fundingTypeDto = new FundingTypeDTO();
     fundingTypeDto.setLabel(FUNDING_TYPE_NEW);
     fundingTypeDto.setAllowDetails(false);
-    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
-        Collections.singleton(FUNDING_TYPE_NEW)))
-        .thenReturn(Collections.singletonList(fundingTypeDto));
 
     FundingTypeDTO fundingTypeDto_1 = new FundingTypeDTO();
     fundingTypeDto_1.setLabel(FUNDING_TYPE_ACADEMIC);
     fundingTypeDto_1.setAllowDetails(true);
-    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
-        Collections.singleton(FUNDING_TYPE_ACADEMIC)))
-        .thenReturn(Collections.singletonList(fundingTypeDto_1));
 
     // initialise postFundingDto
     postFundingDto = new PostFundingDTO();
