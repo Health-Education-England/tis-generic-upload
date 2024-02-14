@@ -1,7 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE;
 import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE;
-import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_SUB_TYPE_LABEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -36,7 +36,7 @@ class PostFundingUpdateTransformerServiceTest {
   private static final UUID FUNDING_SUBTYPE_UUID = UUID.randomUUID();
   private static final String FUNDING_SUBTYPE_LABEL = "fundingSubtype";
   private static final String ERROR_INVALID_FUNDING_SUB_TYPE = String.format(
-      ERROR_INVALID_FUNDING_SUB_TYPE_LABEL, FUNDING_SUBTYPE_LABEL);
+      ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE, FUNDING_SUBTYPE_LABEL, FUNDING_TYPE_LABEL);
   private FundingTypeDTO fundingTypeDto;
   private FundingSubTypeDto fundingSubTypeDto;
 

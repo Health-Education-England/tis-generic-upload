@@ -29,8 +29,8 @@ public class PostFundingUpdateTransformerService {
       "Funding body could not be found for the name \"%s\".";
   protected static final String ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE =
       "Funding type is required when funding subtype is filled.";
-  protected static final String ERROR_INVALID_FUNDING_SUB_TYPE_LABEL =
-      "Funding subtype could not be found for the label \"%s\".";
+  protected static final String ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE =
+      "Funding subtype \"%s\" does not match funding type \"%s\".";
 
   @Autowired
   private ReferenceServiceImpl referenceService;
@@ -179,7 +179,8 @@ public class PostFundingUpdateTransformerService {
             ImmutablePair.of(fundingType.toLowerCase(), fundingSubtype.toLowerCase()));
         if (fundingSubtypeId == null) {
           postFundingUpdateXls
-              .addErrorMessage(String.format(ERROR_INVALID_FUNDING_SUB_TYPE_LABEL, fundingSubtype));
+              .addErrorMessage(String.format(ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE,
+                  fundingSubtype, fundingType));
         }
       }
     }
