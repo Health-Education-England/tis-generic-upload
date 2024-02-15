@@ -35,8 +35,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -60,10 +62,16 @@ public class PostCreateTransformerService {
   private Map<String, LocalOfficeDTO> localOfficeNameToDto;
   private Map<String, PostDTO> postNpnToDto;
   private HashMap<String, FundingTypeDTO> fundingTypeToDto;
+  private HashMap<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId;
 
   PostCreateTransformerService(ReferenceService referenceService, TcsServiceImpl tcsService) {
     this.tcsService = tcsService;
     this.referenceService = referenceService;
+  }
+
+  private static void validationError(String errorMessage) {
+    LOGGER.error(errorMessage);
+    throw new IllegalArgumentException(errorMessage);
   }
 
   void processUpload(List<PostCreateXls> xlsList) {
@@ -79,6 +87,7 @@ public class PostCreateTransformerService {
     localOfficeNameToDto = new HashMap<>();
     postNpnToDto = new HashMap<>();
     fundingTypeToDto = new HashMap<>();
+    fundingSubTypeLabelToId = new HashMap<>();
 
     List<PostDTO> postDtos = new ArrayList<>();
     Map<String, Long> npnToXls = xlsList.stream().collect(
@@ -475,6 +484,18 @@ public class PostCreateTransformerService {
             String.format("Funding Details provided but are not allowed for '%s'.", fundingType));
       }
     }
+
+    final String fundingSubtype = xls.getFundingSubtype();
+    if (StringUtils.isNotEmpty(fundingSubtype)) {
+      updateFundingSubtypeCache(fundingTypeDto, fundingSubtype);
+      UUID fundingSubtypeId = fundingSubTypeLabelToId.get(
+          ImmutablePair.of(fundingType.toLowerCase(), fundingSubtype.toLowerCase()));
+      if (fundingSubtypeId == null) {
+        validationError(String.format("Funding subtype \"%s\" does not match funding type \"%s\".",
+            fundingSubtype, fundingType));
+      }
+    }
+
     return fundingDto;
   }
 
@@ -485,8 +506,13 @@ public class PostCreateTransformerService {
     }
   }
 
-  private static void validationError(String errorMessage) {
-    LOGGER.error(errorMessage);
-    throw new IllegalArgumentException(errorMessage);
+  private void updateFundingSubtypeCache(FundingTypeDTO fundingTypeDto, String fundingSubtype) {
+    if (!fundingSubTypeLabelToId.containsKey(
+        ImmutablePair.of(fundingTypeDto.getLabel().toLowerCase(), fundingSubtype.toLowerCase()))) {
+      referenceService.findCurrentFundingSubTypesForFundingTypeId(fundingTypeDto.getId())
+          .forEach(dto -> fundingSubTypeLabelToId.put(
+              ImmutablePair.of(dto.getFundingType().getLabel().toLowerCase(),
+                  dto.getLabel().toLowerCase()), dto.getId()));
+    }
   }
 }
