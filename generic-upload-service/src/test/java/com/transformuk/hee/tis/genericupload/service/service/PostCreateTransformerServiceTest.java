@@ -7,6 +7,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
+import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.LocalOfficeDTO;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Before;
@@ -47,6 +49,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class PostCreateTransformerServiceTest {
 
   private static final long DAY_IN_MILLIS = 86400000L;
+  private static final UUID FUNDING_SUBTYPE_ID = UUID.randomUUID();
   private PostCreateTransformerService service;
 
   @Mock
@@ -82,6 +85,7 @@ public class PostCreateTransformerServiceTest {
   private LocalOfficeDTO owner2;
 
   private FundingTypeDTO fundingType1;
+  private FundingSubTypeDto fundingSubTypeDto1;
 
   @Captor
   private ArgumentCaptor<List<PostDTO>> dtoCaptor;
@@ -186,6 +190,12 @@ public class PostCreateTransformerServiceTest {
     fundingType1 = new FundingTypeDTO();
     fundingType1.setStatus(Status.CURRENT);
     fundingType1.setLabel("funding1");
+    fundingType1.setId(1L);
+
+    fundingSubTypeDto1 = new FundingSubTypeDto();
+    fundingSubTypeDto1.setLabel("fundingSubtype1");
+    fundingSubTypeDto1.setId(FUNDING_SUBTYPE_ID);
+    fundingSubTypeDto1.setFundingType(fundingType1);
   }
 
   @Test
@@ -329,8 +339,6 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
     when(tcsService.getSpecialtyByName("specialty1"))
         .thenReturn(Collections.singletonList((specialty1)));
-    when(tcsService.getSpecialtyByName("specialty2"))
-        .thenReturn(Collections.singletonList(specialty2));
 
     when(tcsService.getSpecialtyByName("specialty3", SpecialtyType.SUB_SPECIALTY))
         .thenReturn(Collections.singletonList(specialty3));
@@ -447,8 +455,6 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
         .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
-    when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
 
@@ -645,6 +651,34 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
+  public void shouldFailValidationWhenPostFundingSubtypeNotMatchFundingType() {
+    // Given.
+    xls1.setFundingType("funding1");
+    xls1.setFundingSubtype("boom!");
+    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingSubTypesForFundingTypeId(any())).thenReturn(
+        Collections.emptyList());
+
+    // When.
+    service.processUpload(xlsList);
+
+    // Then.
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("Funding subtype \"boom!\" does not match funding type \"funding1\"."));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(false));
+  }
+
+  @Test
   public void shouldCreatePostsWhenValidationPasses() {
     // Given.
     xls1.setTrainingDescription("trainingDescription1");
@@ -654,6 +688,7 @@ public class PostCreateTransformerServiceTest {
     xls1.setOtherSites("site1;site2");
     xls1.setOldPost("oldPost1");
     xls1.setFundingDetails("included");
+    xls1.setFundingSubtype("fundingSubtype1");
     fundingType1.setAllowDetails(true);
 
     SpecialtyDTO specialty3 = new SpecialtyDTO();
@@ -678,6 +713,8 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(Collections.singletonList(post1));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingSubTypesForFundingTypeId(any())).thenReturn(
+        Collections.singletonList(fundingSubTypeDto1));
 
     when(tcsService.bulkCreateDto(dtoCaptor.capture(), any(), any()))
         .thenReturn(Collections.emptyList());
