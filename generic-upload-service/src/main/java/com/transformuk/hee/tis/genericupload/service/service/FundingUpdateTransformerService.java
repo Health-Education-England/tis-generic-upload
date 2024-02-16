@@ -34,8 +34,8 @@ public class FundingUpdateTransformerService {
       "Funding type is required when funding details is filled.";
   protected static final String FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE =
       "Funding type is required when funding subtype is filled.";
-  protected static final String INVALID_FUNDING_SUB_TYPE_LABEL =
-      "Funding subtype could not be found for the label \"%s\".";
+  protected static final String FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE =
+      "Funding subtype \"%s\" does not match funding type \"%s\".";
 
   protected static final String UPDATE_FAILED = "Update failed.";
   private static final org.slf4j.Logger logger = getLogger(PostUpdateTransformerService.class);
@@ -77,11 +77,11 @@ public class FundingUpdateTransformerService {
   /**
    * Verify postFundingId and get postFundingDto by postFundingId.
    *
-   * @param fundingUpdateXls    The FundingUpdateXLS to be verified.
-   * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference
-   *                            service.
+   * @param fundingUpdateXls        The FundingUpdateXLS to be verified.
+   * @param fundingBodyNameToId     A map which contains all the fundingBodies got from reference
+   *                                service.
    * @param fundingSubTypeLabelToId A mapping of (fundingType, fundingSubType) to fundingSubType
-   *                            UUID.
+   *                                UUID.
    */
   private void useMatchingCriteriaToUpdatePostFunding(
       FundingUpdateXLS fundingUpdateXls,
@@ -120,13 +120,13 @@ public class FundingUpdateTransformerService {
   /**
    * validate postFundingDto and update entity in database.
    *
-   * @param fundingUpdateXls    The FundingUpdateXLS to be verified.
-   * @param postFundingDto      The PostFundingDTO got from tcs service. and is also used to update
-   *                            the entity in database.
-   * @param fundingBodyNameToId A map which contains all the fundingBodies got from reference
-   *                            service.
+   * @param fundingUpdateXls        The FundingUpdateXLS to be verified.
+   * @param postFundingDto          The PostFundingDTO got from tcs service. and is also used to
+   *                                update the entity in database.
+   * @param fundingBodyNameToId     A map which contains all the fundingBodies got from reference
+   *                                service.
    * @param fundingSubTypeLabelToId A mapping of (fundingType, fundingSubType) to fundingSubType
-   *                            UUID.
+   *                                UUID.
    */
   private void validateAndUpdatePostFundingDto(
       FundingUpdateXLS fundingUpdateXls,
@@ -231,8 +231,9 @@ public class FundingUpdateTransformerService {
         fundingSubtypeId = fundingSubTypeLabelToId.get(
             ImmutablePair.of(fundingType.toLowerCase(), fundingSubtype.toLowerCase()));
         if (fundingSubtypeId == null) {
-          fundingUpdateXls
-              .addErrorMessage(String.format(INVALID_FUNDING_SUB_TYPE_LABEL, fundingSubtype));
+          fundingUpdateXls.addErrorMessage(
+                  String.format(FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE, fundingSubtype,
+                      fundingType));
         }
       }
     }

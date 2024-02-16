@@ -317,7 +317,7 @@ public class FundingUpdateTransformerServiceTest {
         "should throw error when fundingSubtype not found",
         fundingUpdateXls.getErrorMessage(),
         containsString(
-            String.format(FundingUpdateTransformerService.INVALID_FUNDING_SUB_TYPE_LABEL,
-                FUNDING_SUBTYPE)));
+            String.format(FundingUpdateTransformerService.FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE,
+                FUNDING_SUBTYPE, FUNDING_TYPE_NEW)));
   }
 }
