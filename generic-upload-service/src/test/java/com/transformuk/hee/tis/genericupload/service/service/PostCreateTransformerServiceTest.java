@@ -748,6 +748,7 @@ public class PostCreateTransformerServiceTest {
     expectedFunding1.setFundingType("funding1");
     expectedFunding1.setStartDate(LocalDate.of(1970, 1, 1));
     expectedFunding1.setInfo("included");
+    expectedFunding1.setFundingSubTypeId(FUNDING_SUBTYPE_ID);
     expected1.addFunding(expectedFunding1);
 
     PostDTO expected2 = new PostDTO();

@@ -493,6 +493,8 @@ public class PostCreateTransformerService {
       if (fundingSubtypeId == null) {
         validationError(String.format("Funding subtype \"%s\" does not match funding type \"%s\".",
             fundingSubtype, fundingType));
+      } else {
+        fundingDto.setFundingSubTypeId(fundingSubtypeId);
       }
     }
 
