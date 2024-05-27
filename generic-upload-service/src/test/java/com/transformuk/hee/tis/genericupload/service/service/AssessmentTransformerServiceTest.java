@@ -16,6 +16,7 @@ import com.transformuk.hee.tis.assessment.api.dto.AssessmentDetailDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentListDTO;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.reference.api.dto.AssessmentTypeDto;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumMembershipDTO;
@@ -51,6 +52,9 @@ public class AssessmentTransformerServiceTest {
   private static final String curriculumName = "curriculum name";
   private static final String gmcNumber = "gmc number";
   private static final String assessmentType = "assessment type";
+  private static final String validAssessmentType1 = "valid Assessment Type1";
+  private static final String validAssessmentType2 = "valid Assessment Type2";
+  private static final String invalidAssessmentType = "invalid Assessment Type";
   private static final String realOutcome = "1";
   private static final String nextRotationGradeName = "grade name";
   @InjectMocks
@@ -320,5 +324,38 @@ public class AssessmentTransformerServiceTest {
     assertThat("Should get Grade Id null", assessmentDetailDto.getGradeId(), is(nullValue()));
     assertThat("Should get correct Grade Name",
         assessmentDetailDto.getGradeName(), is("Not Available"));
+  }
+
+  @Test
+  public void testValidateAssessmentType_typeNotFoundInReferenceDb() {
+    AssessmentXLS xls = new AssessmentXLS();
+    xls.setSurname(lastName);
+    xls.setProgrammeName(programmeName);
+    xls.setProgrammeNumber(programmeNumber);
+    xls.setCurriculumName(curriculumName);
+    xls.setGmcNumber(gmcNumber);
+    xls.setReviewDate(new Date());
+    xls.setType(invalidAssessmentType);
+
+    List<AssessmentXLS> xlsList = Collections.singletonList(xls);
+
+    when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
+        .thenReturn(Lists.newArrayList());
+
+    AssessmentTypeDto assessmentTypeDto1 = new AssessmentTypeDto();
+    assessmentTypeDto1.setId(1L);
+    assessmentTypeDto1.setLabel(validAssessmentType1);
+    AssessmentTypeDto assessmentTypeDto2 = new AssessmentTypeDto();
+    assessmentTypeDto2.setId(2L);
+    assessmentTypeDto2.setLabel(validAssessmentType2);
+
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(
+        Lists.newArrayList(assessmentTypeDto1, assessmentTypeDto2));
+
+    assessmentTransformerService.initialiseFetchers();
+    assessmentTransformerService.processAssessmentsUpload(xlsList);
+
+    assertThat("Should get an error", xlsList.get(0).getErrorMessage(),
+        is(AssessmentTransformerService.ASSESSMENT_TYPE_NOT_MATCH));
   }
 }
