@@ -21,6 +21,7 @@ import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetch
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.util.BooleanUtil;
+import com.transformuk.hee.tis.reference.api.dto.AssessmentTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
@@ -88,6 +89,7 @@ public class AssessmentTransformerService {
       "Programme curriculum information not found for given trainee";
   private static final String TRAINEE_NOT_FOUND = "Trainee information not found";
   private static final String ASSESSMENT_TYPE_IS_REQUIRED = "Assessment type is required";
+  public static final String ASSESSMENT_TYPE_NOT_MATCH = "Type does not match a reference value.";
   private static final String REVIEW_DATE_BEFORE_1753 = "Review date is before year 1753";
   private static final String CURRICULUM_START_DATE_BEFORE_1753 =
       "Curriculum start date is below year 1753";
@@ -192,9 +194,12 @@ public class AssessmentTransformerService {
       // initialise all the outcome reasons by calling assessment
       this.allOutcomes = getAllOutcomes();
 
+      List<AssessmentTypeDto> assessmentTypeDtoListFromDb = referenceServiceImpl
+          .findAllAssessmentTypes();
+
       for (AssessmentXLS assessmentXLS : assessmentXLSList) {
         useMatchingCriteriaToCreateAssessment(phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC,
-            gmcDetailsMap, pbdMapByGMC, gradeMapByName, assessmentXLS);
+            gmcDetailsMap, pbdMapByGMC, gradeMapByName, assessmentXLS, assessmentTypeDtoListFromDb);
       }
     }
   }
@@ -228,7 +233,8 @@ public class AssessmentTransformerService {
       Map<Long, PersonBasicDetailsDTO> pbdMapByPH, Map<String, GdcDetailsDTO> gdcDetailsMap,
       Map<Long, PersonBasicDetailsDTO> pbdMapByGDC, Map<String, GmcDetailsDTO> gmcDetailsMap,
       Map<Long, PersonBasicDetailsDTO> pbdMapByGMC,
-      Map<String, GradeDTO> gradeMapByName, AssessmentXLS assessmentXLS) {
+      Map<String, GradeDTO> gradeMapByName, AssessmentXLS assessmentXLS,
+      List<AssessmentTypeDto> assessmentTypeDtoListFromDb) {
     Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = getPersonBasicDetailsDTOFromRegNumber(
         phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC,
         assessmentXLS);
@@ -469,11 +475,27 @@ public class AssessmentTransformerService {
       revalidationDTO.setResponsibleOfficerComments(assessmentXLS.getResponsibleOfficerComments());
       assessmentDTO.setRevalidation(revalidationDTO);
 
+      validateAndUpdateAssessmentType(assessmentTypeDtoListFromDb, assessmentDTO, assessmentXLS);
       saveAssessment(personBasicDetailsDTO, assessmentXLS, assessmentDTO);
 
     }
   }
 
+  private void validateAndUpdateAssessmentType(List<AssessmentTypeDto> assessmentTypeDtoListFromDb,
+      AssessmentDTO assessmentDto, AssessmentXLS xls) {
+    String type = xls.getType();
+    if (!StringUtils.isEmpty(type)) {
+      AssessmentTypeDto assessmentTypeDto = assessmentTypeDtoListFromDb.stream()
+          .filter(t -> t.getLabel() != null && t.getLabel().equalsIgnoreCase(type))
+          .findAny()
+          .orElse(null);
+      if (assessmentTypeDto != null && assessmentTypeDto.getLabel() != null) {
+        assessmentDto.setType(assessmentTypeDto.getLabel());
+      } else {
+        xls.addErrorMessage(ASSESSMENT_TYPE_NOT_MATCH);
+      }
+    }
+  }
 
   private Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDTOFromRegNumber(
       Map<String, PersonDTO> phnDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByPH,
@@ -623,5 +645,4 @@ public class AssessmentTransformerService {
     }
     return programmeMembershipCurriculaDTO;
   }
-
 }
