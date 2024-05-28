@@ -486,7 +486,9 @@ public class AssessmentTransformerService {
     String type = xls.getType();
     if (!StringUtils.isEmpty(type)) {
       AssessmentTypeDto assessmentTypeDto = assessmentTypeDtoListFromDb.stream()
-          .filter(t -> t.getLabel().equalsIgnoreCase(type)).findAny().orElse(null);
+          .filter(t -> t.getLabel() != null && t.getLabel().equalsIgnoreCase(type))
+          .findAny()
+          .orElse(null);
       if (assessmentTypeDto != null && assessmentTypeDto.getLabel() != null) {
         assessmentDto.setType(assessmentTypeDto.getLabel());
       } else {
