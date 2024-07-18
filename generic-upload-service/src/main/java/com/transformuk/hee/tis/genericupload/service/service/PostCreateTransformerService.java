@@ -468,8 +468,9 @@ public class PostCreateTransformerService {
     fundingDto.setStartDate(DateUtils.toLocalDate(xls.getFundingStartDate()));
     if (xls.getFundingEndDate() != null) {
       final LocalDate endDate = DateUtils.toLocalDate(xls.getFundingEndDate());
-      if (endDate.isBefore(fundingDto.getStartDate())) {
-        validationError("Funding End Date cannot be before Start Date if included.");
+      if (endDate != null && !endDate.isAfter(fundingDto.getStartDate())) {
+        validationError(
+            "Post funding end date must not be equal to or before start date if included.");
       } else {
         fundingDto.setEndDate(endDate);
       }

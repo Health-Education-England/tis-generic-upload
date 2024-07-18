@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +17,7 @@ import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostFundingDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -141,5 +143,19 @@ class PostFundingUpdateTransformerServiceTest {
 
     verify(tcsServiceMock, never()).updatePostFundings(any());
     verify(postFundingUpdateXls).addErrorMessage(ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
+  }
+
+  @Test
+  void shouldThrowErrorWhenFundingEndDateIsBeforeStartDate() {
+    LocalDate startDate = LocalDate.of(2023, 1, 2);
+    LocalDate endDate = LocalDate.of(2023, 1, 1);
+
+    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
+    when(postFundingUpdateXls.getDateTo()).thenReturn(endDate);
+
+    uploadService.processPostFundingUpdateUpload(Collections.singletonList(postFundingUpdateXls));
+
+    verify(postFundingUpdateXls, times(1))
+        .addErrorMessage(PostFundingUpdateTransformerService.FUNDING_END_DATE_VALIDATION_MSG);
   }
 }

@@ -36,6 +36,10 @@ public class FundingUpdateTransformerService {
       "Funding type is required when funding subtype is filled.";
   protected static final String FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE =
       "Funding subtype \"%s\" does not match funding type \"%s\".";
+  protected static final String FUNDING_START_DATE_NULL_OR_EMPTY =
+      "Post funding start date cannot be null or empty";
+  protected static final String FUNDING_END_DATE_VALIDATION_MSG =
+      "Post funding end date must not be equal to or before start date if included.";
 
   protected static final String UPDATE_FAILED = "Update failed.";
   private static final org.slf4j.Logger logger = getLogger(PostUpdateTransformerService.class);
@@ -142,14 +146,7 @@ public class FundingUpdateTransformerService {
 
     validateAndUpdateSubType(fundingUpdateXls, postFundingDto, fundingSubTypeLabelToId);
 
-    if (fundingUpdateXls.getDateFrom() != null) {
-      LocalDate dateFrom = convertDate(fundingUpdateXls.getDateFrom());
-      postFundingDto.setStartDate(dateFrom);
-    }
-    if (fundingUpdateXls.getDateTo() != null) {
-      LocalDate dateTo = convertDate(fundingUpdateXls.getDateTo());
-      postFundingDto.setEndDate(dateTo);
-    }
+    validateFundingStartAndEndDate(fundingUpdateXls, postFundingDto);
 
     if (!fundingUpdateXls.hasErrors()) {
       logger.info("postFundingDto => {}", postFundingDto);
@@ -232,11 +229,38 @@ public class FundingUpdateTransformerService {
             ImmutablePair.of(fundingType.toLowerCase(), fundingSubtype.toLowerCase()));
         if (fundingSubtypeId == null) {
           fundingUpdateXls.addErrorMessage(
-                  String.format(FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE, fundingSubtype,
-                      fundingType));
+              String.format(FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE, fundingSubtype,
+                  fundingType));
         }
       }
     }
     return fundingSubtypeId;
+  }
+
+  private void validateFundingStartAndEndDate(FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto) {
+    if (fundingUpdateXls.getDateFrom() != null || fundingUpdateXls.getDateTo() != null) {
+      LocalDate dateFrom = null;
+      LocalDate dateTo = null;
+
+      if (fundingUpdateXls.getDateFrom() != null) {
+        dateFrom = convertDate(fundingUpdateXls.getDateFrom());
+        if (dateFrom == null) {
+          fundingUpdateXls
+              .addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
+        } else {
+          postFundingDto.setStartDate(dateFrom);
+        }
+      }
+
+      if (fundingUpdateXls.getDateTo() != null && fundingUpdateXls.getDateFrom() != null) {
+        dateTo = convertDate(fundingUpdateXls.getDateTo());
+        if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
+          fundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
+        } else {
+          postFundingDto.setEndDate(dateTo);
+        }
+      }
+    }
   }
 }

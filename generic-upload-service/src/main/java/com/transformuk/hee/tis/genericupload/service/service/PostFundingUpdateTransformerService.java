@@ -7,6 +7,7 @@ import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostFundingDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -31,6 +32,8 @@ public class PostFundingUpdateTransformerService {
       "Funding type is required when funding subtype is filled.";
   protected static final String ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE =
       "Funding subtype \"%s\" does not match funding type \"%s\".";
+  protected static final String FUNDING_START_DATE_NULL_OR_EMPTY = "Post funding start date cannot be null or empty";
+  protected static final String FUNDING_END_DATE_VALIDATION_MSG = "Post funding end date must not be equal to or before start date if included.";
 
   @Autowired
   private ReferenceServiceImpl referenceService;
@@ -154,8 +157,9 @@ public class PostFundingUpdateTransformerService {
       PostFundingDTO postFundingDto = new PostFundingDTO();
       postFundingDto.setFundingType(postFundingUpdateXls.getFundingType());
       postFundingDto.setInfo(postFundingUpdateXls.getFundingTypeOther());
-      postFundingDto.setStartDate(postFundingUpdateXls.getDateFrom());
-      postFundingDto.setEndDate(postFundingUpdateXls.getDateTo());
+
+      validateFundingStartAndEndDate(postFundingUpdateXls, postFundingDto);
+
       postFundingDto.setFundingBodyId(fundingBodyId);
       postFundingDto.setFundingSubTypeId(fundingSubTypeId);
 
@@ -185,5 +189,31 @@ public class PostFundingUpdateTransformerService {
       }
     }
     return fundingSubtypeId;
+  }
+
+  private void validateFundingStartAndEndDate(PostFundingUpdateXLS postFundingUpdateXls,
+      PostFundingDTO postFundingDto) {
+    if (postFundingUpdateXls.getDateFrom() != null || postFundingUpdateXls.getDateTo() != null) {
+      LocalDate dateFrom = null;
+      LocalDate dateTo = null;
+
+      if (postFundingUpdateXls.getDateFrom() != null) {
+        dateFrom = postFundingUpdateXls.getDateFrom();
+        if (dateFrom == null) {
+          postFundingUpdateXls.addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
+        } else {
+          postFundingDto.setStartDate(dateFrom);
+        }
+      }
+
+      if (postFundingUpdateXls.getDateTo() != null && postFundingUpdateXls.getDateFrom() != null) {
+        dateTo = postFundingUpdateXls.getDateTo();
+        if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
+          postFundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
+        } else {
+          postFundingDto.setEndDate(dateTo);
+        }
+      }
+    }
   }
 }
