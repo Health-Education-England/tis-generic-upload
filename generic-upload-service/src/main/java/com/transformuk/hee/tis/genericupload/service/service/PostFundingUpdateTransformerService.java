@@ -32,8 +32,10 @@ public class PostFundingUpdateTransformerService {
       "Funding type is required when funding subtype is filled.";
   protected static final String ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE =
       "Funding subtype \"%s\" does not match funding type \"%s\".";
-  protected static final String FUNDING_START_DATE_NULL_OR_EMPTY = "Post funding start date cannot be null or empty";
-  protected static final String FUNDING_END_DATE_VALIDATION_MSG = "Post funding end date must not be equal to or before start date if included.";
+  protected static final String FUNDING_START_DATE_NULL_OR_EMPTY =
+      "Post funding start date cannot be null or empty";
+  protected static final String FUNDING_END_DATE_VALIDATION_MSG =
+      "Post funding end date must not be equal to or before start date if included.";
 
   @Autowired
   private ReferenceServiceImpl referenceService;
