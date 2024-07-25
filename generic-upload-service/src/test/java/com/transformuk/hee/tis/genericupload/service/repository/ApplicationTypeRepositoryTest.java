@@ -1,31 +1,30 @@
 package com.transformuk.hee.tis.genericupload.service.repository;
 
-import com.transformuk.hee.tis.genericupload.service.Application;
+import static org.mockito.Mockito.when;
+
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import javax.persistence.EntityManager;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.annotation.Transactional;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = Application.class)
+@ExtendWith(MockitoExtension.class)
 public class ApplicationTypeRepositoryTest {
 
-  @Autowired
+  @Mock
   private ApplicationTypeRepository applicationTypeRepository;
-  @Autowired
+  @Mock
   private EntityManager em;
 
-  @Before
+  @BeforeEach
   public void setup() {
     ApplicationType applicationType = new ApplicationType();
     applicationType.setLogId(1L);
-    em.persist(applicationType);
+    when(applicationTypeRepository.findByLogId(1L)).thenReturn(applicationType);
   }
 
   @Transactional

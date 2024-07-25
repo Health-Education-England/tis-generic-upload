@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.api;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,34 +16,33 @@ import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.util.UriComponentsBuilder;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Application.class)
+@AutoConfigureMockMvc
 public class UploadFileResourceStatusTest {
 
   @Autowired
-  protected WebApplicationContext webApplicationContext;
-  @Autowired
   FileValidator fileValidator;
-  @Mock
+  @MockBean
   private UploadFileService uploadFileService;
   @InjectMocks
   private UploadFileResource uploadFileResource;
@@ -56,9 +56,9 @@ public class UploadFileResourceStatusTest {
   @Autowired
   private ExceptionTranslator exceptionTranslator;
 
-  @Before
+  @BeforeEach
   public void setup() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     UploadFileResource uploadFileResource = new UploadFileResource(uploadFileService,
         fileValidator);
     this.mockMvc = MockMvcBuilders.standaloneSetup(uploadFileResource)
@@ -86,19 +86,23 @@ public class UploadFileResourceStatusTest {
 
     mockMvc.perform(get(new URI("/api/status?searchQuery=James%5C%22"))).andExpect(status().isOk());
     String converted_searchString = argument_searchString.getValue();
-    Assert.assertThat("should sanitize search string", converted_searchString,
+    assertThat("should sanitize search string", converted_searchString,
         CoreMatchers.is("James\\\\\\\""));
 
-    mockMvc.perform(get(new URI(
-        "/api/status?file=TIS%20Placement%20Import.xls&user=James%5C%22&uploadedDate=2019-06-03%0D%0A")))
+    mockMvc.perform(get(UriComponentsBuilder.fromUriString("/api/status")
+        .queryParam("file", "TIS Placement Import.xls")
+        .queryParam("user", "James\\\"")
+        .queryParam("uploadedDate", "2019-06-03")
+        .build().toUri()))
         .andExpect(status().isOk());
+
     String converted_date = argument_date.getValue()
         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     String converted_file = argument_file.getValue();
     String converted_user = argument_user.getValue();
-    Assert.assertThat("should sanitize date", converted_date, CoreMatchers.is("2019-06-03"));
-    Assert.assertThat("should sanitize file", converted_file,
+    assertThat("should sanitize date", converted_date, CoreMatchers.is("2019-06-03"));
+    assertThat("should sanitize file", converted_file,
         CoreMatchers.is("TIS Placement Import.xls"));
-    Assert.assertThat("should sanitize user", converted_user, CoreMatchers.is("James\\\\\\\""));
+    assertThat("should sanitize user", converted_user, CoreMatchers.is("James\\\\\\\""));
   }
 }

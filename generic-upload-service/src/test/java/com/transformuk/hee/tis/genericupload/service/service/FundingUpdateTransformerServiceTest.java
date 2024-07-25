@@ -328,9 +328,6 @@ public class FundingUpdateTransformerServiceTest {
     fundingUpdateXls.setDateTo(cTo.getTime());
 
     when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
-    when(referenceServiceImpl
-        .findCurrentFundingSubTypesByLabels(Collections.singleton(FUNDING_SUBTYPE)))
-        .thenReturn(Collections.emptyList());
 
     fundingUpdateTransformerService
         .processFundingUpdateUpload(Collections.singletonList(fundingUpdateXls));
