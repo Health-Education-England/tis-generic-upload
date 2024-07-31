@@ -195,26 +195,27 @@ public class PostFundingUpdateTransformerService {
 
   private void validateFundingStartAndEndDate(PostFundingUpdateXLS postFundingUpdateXls,
       PostFundingDTO postFundingDto) {
-    if (postFundingUpdateXls.getDateFrom() != null || postFundingUpdateXls.getDateTo() != null) {
-      LocalDate dateFrom = null;
-      LocalDate dateTo = null;
+    LocalDate dateFrom = null;
+    LocalDate dateTo = null;
+    if (postFundingUpdateXls.getDateFrom() == null && postFundingUpdateXls.getDateTo() == null) {
+      return;
+    }
 
-      if (postFundingUpdateXls.getDateFrom() != null) {
-        dateFrom = postFundingUpdateXls.getDateFrom();
-        if (dateFrom == null) {
-          postFundingUpdateXls.addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
-        } else {
-          postFundingDto.setStartDate(dateFrom);
-        }
+    if (postFundingUpdateXls.getDateFrom() != null) {
+      dateFrom = postFundingUpdateXls.getDateFrom();
+      if (dateFrom == null) {
+        postFundingUpdateXls.addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
+      } else {
+        postFundingDto.setStartDate(dateFrom);
       }
+    }
 
-      if (postFundingUpdateXls.getDateTo() != null && postFundingUpdateXls.getDateFrom() != null) {
-        dateTo = postFundingUpdateXls.getDateTo();
-        if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
-          postFundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
-        } else {
-          postFundingDto.setEndDate(dateTo);
-        }
+    if (postFundingUpdateXls.getDateTo() != null && postFundingUpdateXls.getDateFrom() != null) {
+      dateTo = postFundingUpdateXls.getDateTo();
+      if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
+        postFundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
+      } else {
+        postFundingDto.setEndDate(dateTo);
       }
     }
   }

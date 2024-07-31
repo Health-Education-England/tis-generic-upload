@@ -3,6 +3,7 @@ package com.transformuk.hee.tis.genericupload.service.api.validation;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
@@ -27,7 +28,6 @@ import java.util.HashSet;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -82,7 +82,7 @@ public class FileValidatorTest {
       fileValidator.validate(Collections.singletonList(multipartFile), true, false);
     } catch (ValidationException ve) {
       BindingResult bindingResult = ve.getBindingResult();
-      Assert.assertEquals(2, bindingResult.getErrorCount());
+      assertThat(2, is(bindingResult.getErrorCount()));
     }
   }
 
@@ -97,7 +97,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
     }
   }
 
@@ -113,7 +113,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
     }
   }
 
@@ -129,7 +129,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "PlacementId missing"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "PlacementId missing"));
     }
   }
 
@@ -156,7 +156,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
     }
   }
 
@@ -171,7 +171,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Field is required"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Field is required"));
     }
   }
 

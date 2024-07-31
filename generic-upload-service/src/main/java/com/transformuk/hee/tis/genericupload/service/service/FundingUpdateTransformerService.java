@@ -229,8 +229,7 @@ public class FundingUpdateTransformerService {
             ImmutablePair.of(fundingType.toLowerCase(), fundingSubtype.toLowerCase()));
         if (fundingSubtypeId == null) {
           fundingUpdateXls.addErrorMessage(
-              String.format(FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE, fundingSubtype,
-                  fundingType));
+              String.format(FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE, fundingSubtype, fundingType));
         }
       }
     }
@@ -239,27 +238,27 @@ public class FundingUpdateTransformerService {
 
   private void validateFundingStartAndEndDate(FundingUpdateXLS fundingUpdateXls,
       PostFundingDTO postFundingDto) {
-    if (fundingUpdateXls.getDateFrom() != null || fundingUpdateXls.getDateTo() != null) {
-      LocalDate dateFrom = null;
-      LocalDate dateTo = null;
+    LocalDate dateFrom = null;
+    LocalDate dateTo = null;
+    if (fundingUpdateXls.getDateFrom() == null && fundingUpdateXls.getDateTo() == null) {
+      return;
+    }
 
-      if (fundingUpdateXls.getDateFrom() != null) {
-        dateFrom = convertDate(fundingUpdateXls.getDateFrom());
-        if (dateFrom == null) {
-          fundingUpdateXls
-              .addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
-        } else {
-          postFundingDto.setStartDate(dateFrom);
-        }
+    if (fundingUpdateXls.getDateFrom() != null) {
+      dateFrom = convertDate(fundingUpdateXls.getDateFrom());
+      if (dateFrom == null) {
+        fundingUpdateXls.addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
+      } else {
+        postFundingDto.setStartDate(dateFrom);
       }
+    }
 
-      if (fundingUpdateXls.getDateTo() != null && fundingUpdateXls.getDateFrom() != null) {
-        dateTo = convertDate(fundingUpdateXls.getDateTo());
-        if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
-          fundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
-        } else {
-          postFundingDto.setEndDate(dateTo);
-        }
+    if (fundingUpdateXls.getDateTo() != null && fundingUpdateXls.getDateFrom() != null) {
+      dateTo = convertDate(fundingUpdateXls.getDateTo());
+      if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
+        fundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
+      } else {
+        postFundingDto.setEndDate(dateTo);
       }
     }
   }
