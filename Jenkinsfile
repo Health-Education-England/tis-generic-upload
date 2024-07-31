@@ -4,7 +4,7 @@ def utils = new hee.tis.utils()
 
 node {
 
-    if (env.BRANCH_NAME != "main") {
+    if (env.BRANCH_NAME != "main" && env.BRANCH_NAME != "tmp-jenkins-build-check") {
         // PR and branch builds are done by GitHub Actions.
         return
     }
