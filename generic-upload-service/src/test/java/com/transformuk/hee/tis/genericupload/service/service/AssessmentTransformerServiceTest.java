@@ -450,5 +450,8 @@ public class AssessmentTransformerServiceTest {
         assessmentOutcomeDto.getReasons().get(0).getReasonCode(), is("OUTCOME_1"));
     assertThat("Is required other", assessmentOutcomeDto.getReasons().get(0).isRequireOther(),
         is(true));
+
+    assertThat(reasonJson.lines().count(),
+        is(Integer.toUnsignedLong(xlsList.toArray(AssessmentXLS[]::new).length)));
   }
 }
