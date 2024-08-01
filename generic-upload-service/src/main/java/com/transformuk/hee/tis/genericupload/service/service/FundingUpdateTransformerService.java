@@ -255,10 +255,10 @@ public class FundingUpdateTransformerService {
 
     if (fundingUpdateXls.getDateTo() != null && fundingUpdateXls.getDateFrom() != null) {
       dateTo = convertDate(fundingUpdateXls.getDateTo());
-      if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
-        fundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
-      } else {
+      if (dateTo != null && dateFrom != null && dateTo.isAfter(dateFrom)) {
         postFundingDto.setEndDate(dateTo);
+      } else {
+        fundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
       }
     }
   }

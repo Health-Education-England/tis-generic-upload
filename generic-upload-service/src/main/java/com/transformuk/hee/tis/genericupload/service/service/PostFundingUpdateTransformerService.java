@@ -212,10 +212,10 @@ public class PostFundingUpdateTransformerService {
 
     if (postFundingUpdateXls.getDateTo() != null && postFundingUpdateXls.getDateFrom() != null) {
       dateTo = postFundingUpdateXls.getDateTo();
-      if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
-        postFundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
-      } else {
+      if (dateTo != null && dateFrom != null && dateTo.isAfter(dateFrom)) {
         postFundingDto.setEndDate(dateTo);
+      } else {
+        postFundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
       }
     }
   }

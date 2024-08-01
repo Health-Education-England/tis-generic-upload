@@ -24,7 +24,7 @@ public class PostFundingUpdateXLS extends TemplateXLS {
   @ExcelColumn(name = "Funding Body")
   private String fundingBody;
 
-  @ExcelColumn(name = "Start date*")
+  @ExcelColumn(name = "Start date*", required = true)
   private LocalDate dateFrom;
 
   @ExcelColumn(name = "End date")

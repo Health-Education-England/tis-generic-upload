@@ -82,7 +82,7 @@ public class FileValidatorTest {
       fileValidator.validate(Collections.singletonList(multipartFile), true, false);
     } catch (ValidationException ve) {
       BindingResult bindingResult = ve.getBindingResult();
-      assertThat(2, is(bindingResult.getErrorCount()));
+      assertThat(bindingResult.getErrorCount(), is(2));
     }
   }
 
