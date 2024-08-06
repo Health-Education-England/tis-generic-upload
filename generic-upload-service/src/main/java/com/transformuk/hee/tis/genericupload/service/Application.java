@@ -106,7 +106,8 @@ public class Application {
       log.error("You have misconfigured your application! It should not " +
           "run with both the 'dev' and 'cloud' profiles at the same time.");
     }
-    //TODO check if job can connect to AWS here - run a healthcheck on a Scheduled job and do the check before a user attempts to upload a file
+    //TODO check if job can connect to AWS here - run a healthcheck on
+    // a Scheduled job and do the check before a user attempts to upload a file
   }
 
   @Bean

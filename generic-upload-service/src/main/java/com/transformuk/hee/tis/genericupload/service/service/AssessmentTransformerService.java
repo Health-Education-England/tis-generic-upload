@@ -233,32 +233,32 @@ public class AssessmentTransformerService {
       Map<Long, PersonBasicDetailsDTO> pbdMapByPH, Map<String, GdcDetailsDTO> gdcDetailsMap,
       Map<Long, PersonBasicDetailsDTO> pbdMapByGDC, Map<String, GmcDetailsDTO> gmcDetailsMap,
       Map<Long, PersonBasicDetailsDTO> pbdMapByGMC,
-      Map<String, GradeDTO> gradeMapByName, AssessmentXLS assessmentXLS,
+      Map<String, GradeDTO> gradeMapByName, AssessmentXLS assessmentXls,
       List<AssessmentTypeDto> assessmentTypeDtoListFromDb) {
     Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = getPersonBasicDetailsDTOFromRegNumber(
         phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC,
-        assessmentXLS);
+        assessmentXls);
 
     if (personBasicDetailsDTOOptional.isPresent()) {
       PersonBasicDetailsDTO personBasicDetailsDTO = personBasicDetailsDTOOptional.get();
 
-      if (!assessmentXLS.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
-        assessmentXLS
+      if (!assessmentXls.getSurname().equalsIgnoreCase(personBasicDetailsDTO.getLastName())) {
+        assessmentXls
             .addErrorMessage(SURNAME_DOES_NOT_MATCH_LAST_NAME_OBTAINED_VIA_REGISTRATION_NUMBER);
       }
 
-      String grade = assessmentXLS.getNextRotationGradeName();
+      String grade = assessmentXls.getNextRotationGradeName();
       if (!StringUtils.isEmpty(grade) && !gradeMapByName.containsKey(grade)) {
-        assessmentXLS.addErrorMessage(MULTIPLE_OR_NO_GRADES_FOUND_FOR + grade);
+        assessmentXls.addErrorMessage(MULTIPLE_OR_NO_GRADES_FOUND_FOR + grade);
       }
 
-      if (StringUtils.isEmpty(assessmentXLS.getType())) {
-        assessmentXLS.addErrorMessage(ASSESSMENT_TYPE_IS_REQUIRED);
+      if (StringUtils.isEmpty(assessmentXls.getType())) {
+        assessmentXls.addErrorMessage(ASSESSMENT_TYPE_IS_REQUIRED);
       }
 
       ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDTO = getProgrammeMembershipCurriculaDTO(
           personBasicDetailsDTO.getId(),
-          assessmentXLS, tcsServiceImpl::getProgrammeMembershipForTrainee);
+          assessmentXls, tcsServiceImpl::getProgrammeMembershipForTrainee);
       AssessmentDTO assessmentDTO = new AssessmentDTO();
       assessmentDTO.setFirstName(personBasicDetailsDTO.getFirstName());
       assessmentDTO.setLastName(personBasicDetailsDTO.getLastName());
@@ -266,7 +266,7 @@ public class AssessmentTransformerService {
       assessmentDTO.setGmcNumber(personBasicDetailsDTO.getGmcNumber());
       assessmentDTO.setGdcNumber(personBasicDetailsDTO.getGdcNumber());
       assessmentDTO.setPublicHealthNumber(personBasicDetailsDTO.getPublicHealthNumber());
-      assessmentDTO.setType(assessmentXLS.getType());
+      assessmentDTO.setType(assessmentXls.getType());
 
       if (programmeMembershipCurriculaDTO != null
           && programmeMembershipCurriculaDTO.getCurriculumMemberships() != null) {
@@ -276,12 +276,12 @@ public class AssessmentTransformerService {
         assessmentDTO.setCurriculumMembershipId(
             programmeMembershipCurriculaDTO.getCurriculumMemberships().get(0).getId());
       } else {
-        assessmentXLS.addErrorMessage(DID_NOT_FIND_PROGRAMME_CURRICULUM);
+        assessmentXls.addErrorMessage(DID_NOT_FIND_PROGRAMME_CURRICULUM);
       }
       try {
-        assessmentDTO.setReviewDate(convertDate(assessmentXLS.getReviewDate()));
+        assessmentDTO.setReviewDate(convertDate(assessmentXls.getReviewDate()));
       } catch (final IllegalArgumentException e) {
-        assessmentXLS.addErrorMessage(REVIEW_DATE_BEFORE_1753);
+        assessmentXls.addErrorMessage(REVIEW_DATE_BEFORE_1753);
       }
 
       // Assessment Details
@@ -294,13 +294,13 @@ public class AssessmentTransformerService {
         LocalDate curriculumStartDate = programmeMembershipCurriculaDTO.getCurriculumMemberships()
             .get(0).getCurriculumStartDate();
         if (curriculumStartDate.getYear() < 1753) {
-          assessmentXLS.addErrorMessage(CURRICULUM_START_DATE_BEFORE_1753);
+          assessmentXls.addErrorMessage(CURRICULUM_START_DATE_BEFORE_1753);
         }
         assessmentDetailDTO.setCurriculumStartDate(curriculumStartDate);
         LocalDate curriculumEndDate = programmeMembershipCurriculaDTO.getCurriculumMemberships()
             .get(0).getCurriculumEndDate();
         if (curriculumEndDate.getYear() < 1753) {
-          assessmentXLS.addErrorMessage(CURRICULUM_END_DATE_BEFORE_1753);
+          assessmentXls.addErrorMessage(CURRICULUM_END_DATE_BEFORE_1753);
         }
         assessmentDetailDTO.setCurriculumEndDate(curriculumEndDate);
         assessmentDetailDTO
@@ -310,32 +310,32 @@ public class AssessmentTransformerService {
         assessmentDetailDTO.setCurriculumSubType(curriculumDTO.getCurriculumSubType().name());
       }
 
-      if (NumberUtils.isDigits(assessmentXLS.getDaysOutOfTraining())) {
+      if (NumberUtils.isDigits(assessmentXls.getDaysOutOfTraining())) {
         assessmentDetailDTO
-            .setDaysOutOfTraining(Integer.parseInt(assessmentXLS.getDaysOutOfTraining()));
-      } else if (!StringUtils.isEmpty(assessmentXLS.getDaysOutOfTraining())) {
-        assessmentXLS.addErrorMessage(DAYS_OUT_OF_TRAINING_SHOULD_BE_NUMERIC);
+            .setDaysOutOfTraining(Integer.parseInt(assessmentXls.getDaysOutOfTraining()));
+      } else if (!StringUtils.isEmpty(assessmentXls.getDaysOutOfTraining())) {
+        assessmentXls.addErrorMessage(DAYS_OUT_OF_TRAINING_SHOULD_BE_NUMERIC);
       }
 
       try {
-        assessmentDetailDTO.setPeriodCoveredFrom(convertDate(assessmentXLS.getPeriodCoveredFrom()));
+        assessmentDetailDTO.setPeriodCoveredFrom(convertDate(assessmentXls.getPeriodCoveredFrom()));
       } catch (final IllegalArgumentException e) {
-        assessmentXLS.addErrorMessage(PERIOD_COVERED_FROM_DATE_BEFORE_1753);
+        assessmentXls.addErrorMessage(PERIOD_COVERED_FROM_DATE_BEFORE_1753);
       }
 
       try {
-        assessmentDetailDTO.setPeriodCoveredTo(convertDate(assessmentXLS.getPeriodCoveredTo()));
+        assessmentDetailDTO.setPeriodCoveredTo(convertDate(assessmentXls.getPeriodCoveredTo()));
       } catch (final IllegalArgumentException e) {
-        assessmentXLS.addErrorMessage(PERIOD_COVERED_TO_DATE_BEFORE_1753);
+        assessmentXls.addErrorMessage(PERIOD_COVERED_TO_DATE_BEFORE_1753);
       }
 
-      if (NumberUtils.isDigits(assessmentXLS.getMonthsCountedToTraining())) {
+      if (NumberUtils.isDigits(assessmentXls.getMonthsCountedToTraining())) {
         assessmentDetailDTO.setMonthsCountedToTraining(
-            Integer.parseInt(assessmentXLS.getMonthsCountedToTraining()));
-      } else if (!StringUtils.isEmpty(assessmentXLS.getMonthsCountedToTraining())) {
-        assessmentXLS.addErrorMessage(MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC);
+            Integer.parseInt(assessmentXls.getMonthsCountedToTraining()));
+      } else if (!StringUtils.isEmpty(assessmentXls.getMonthsCountedToTraining())) {
+        assessmentXls.addErrorMessage(MONTHS_OOPR_OOPT_COUNTED_TOWARDS_TRAINING_SHOULD_BE_NUMERIC);
       }
-      assessmentDetailDTO.setPya(BooleanUtil.parseBooleanObject(assessmentXLS.getPya()));
+      assessmentDetailDTO.setPya(BooleanUtil.parseBooleanObject(assessmentXls.getPya()));
 
       // Get placement of trainee at time of assessment review
       List<PlacementSummaryDTO> placementForTrainee = tcsServiceImpl
@@ -378,25 +378,25 @@ public class AssessmentTransformerService {
 
       // Outcome
       AssessmentOutcomeDTO assessmentOutcomeDTO = null;
-      if (!StringUtils.isEmpty(assessmentXLS.getOutcome())) {
+      if (!StringUtils.isEmpty(assessmentXls.getOutcome())) {
         assessmentOutcomeDTO = new AssessmentOutcomeDTO();
         Outcome outcome = this.allOutcomes.stream()
-            .filter(o -> o.getLabel().equalsIgnoreCase(assessmentXLS.getOutcome())).findAny()
+            .filter(o -> o.getLabel().equalsIgnoreCase(assessmentXls.getOutcome())).findAny()
             .orElse(null);
         if (outcome != null && outcome.getId() != null) {
           assessmentOutcomeDTO.setOutcomeId(outcome.getId());
           assessmentOutcomeDTO.setOutcome(outcome.getLabel());
         } else {
-          assessmentXLS.addErrorMessage(GIVEN_OUTCOME_IS_NOT_VALID);
+          assessmentXls.addErrorMessage(GIVEN_OUTCOME_IS_NOT_VALID);
         }
         assessmentOutcomeDTO
-            .setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXLS.getUnderAppeal()));
-        assessmentOutcomeDTO.setAcademicOutcome(assessmentXLS.getAcademicOutcome());
+            .setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXls.getUnderAppeal()));
+        assessmentOutcomeDTO.setAcademicOutcome(assessmentXls.getAcademicOutcome());
         assessmentOutcomeDTO
-            .setExternalTrainer(BooleanUtil.parseBooleanObject(assessmentXLS.getExternalTrainer()));
+            .setExternalTrainer(BooleanUtil.parseBooleanObject(assessmentXls.getExternalTrainer()));
         // Assessment outcome reasons
 
-        GradeDTO gradeDTO = gradeMapByName.get(assessmentXLS.getNextRotationGradeName());
+        GradeDTO gradeDTO = gradeMapByName.get(assessmentXls.getNextRotationGradeName());
         if (gradeDTO != null) {
           assessmentOutcomeDTO.setNextRotationGradeName(gradeDTO.getName());
           assessmentOutcomeDTO.setNextRotationGradeAbbr(gradeDTO.getAbbreviation());
@@ -404,34 +404,34 @@ public class AssessmentTransformerService {
         }
 
         try {
-          assessmentOutcomeDTO.setNextReviewDate(convertDate(assessmentXLS.getNextReviewDate()));
+          assessmentOutcomeDTO.setNextReviewDate(convertDate(assessmentXls.getNextReviewDate()));
         } catch (final IllegalArgumentException e) {
-          assessmentXLS.addErrorMessage(NEXT_REVIEW_DATE_BEFORE_1753);
+          assessmentXls.addErrorMessage(NEXT_REVIEW_DATE_BEFORE_1753);
         }
 
-        assessmentOutcomeDTO.setComments(assessmentXLS.getComments());
+        assessmentOutcomeDTO.setComments(assessmentXls.getComments());
         assessmentOutcomeDTO
-            .setTenPercentAudit(BooleanUtil.parseBooleanObject(assessmentXLS.getTenPercentAudit()));
-        assessmentOutcomeDTO.setDetailedReasons(assessmentXLS.getDetailedReasons());
-        assessmentOutcomeDTO.setMitigatingCircumstances(assessmentXLS.getMitigatingCircumstances());
+            .setTenPercentAudit(BooleanUtil.parseBooleanObject(assessmentXls.getTenPercentAudit()));
+        assessmentOutcomeDTO.setDetailedReasons(assessmentXls.getDetailedReasons());
+        assessmentOutcomeDTO.setMitigatingCircumstances(assessmentXls.getMitigatingCircumstances());
         assessmentOutcomeDTO
-            .setCompetencesToBeDeveloped(assessmentXLS.getCompetencesToBeDeveloped());
-        assessmentOutcomeDTO.setOtherRecommendedActions(assessmentXLS.getOtherRecommendedActions());
+            .setCompetencesToBeDeveloped(assessmentXls.getCompetencesToBeDeveloped());
+        assessmentOutcomeDTO.setOtherRecommendedActions(assessmentXls.getOtherRecommendedActions());
         assessmentOutcomeDTO.setRecommendedAdditionalTrainingTime(
-            assessmentXLS.getRecommendedAdditionalTrainingTime());
+            assessmentXls.getRecommendedAdditionalTrainingTime());
         assessmentOutcomeDTO
-            .setAdditionalCommentsFromPanel(assessmentXLS.getAdditionalCommentsFromPanel());
+            .setAdditionalCommentsFromPanel(assessmentXls.getAdditionalCommentsFromPanel());
 
         List<AssessmentOutcomeReasonDTO> assessmentOutcomeReasonDTOList = Lists.newArrayList();
         if (outcome != null) {
           Set<Reason> outcomeReasons = outcome.getReasons();
           // check if selected outcome has reasons and if outcome reason missing in excel then alert it
           if (!CollectionUtils.isEmpty(outcomeReasons) && StringUtils
-              .isEmpty(assessmentXLS.getOutcomeNotAssessed())) {
-            assessmentXLS.addErrorMessage(String
-                .format(OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S, assessmentXLS.getOutcome()));
+              .isEmpty(assessmentXls.getOutcomeNotAssessed())) {
+            assessmentXls.addErrorMessage(String
+                .format(OUTCOME_REASON_IS_REQUIRED_FOR_OUTCOME_S, assessmentXls.getOutcome()));
           } else if (!CollectionUtils.isEmpty(outcomeReasons)) {
-            String[] notAssessedReasons = assessmentXLS.getOutcomeNotAssessed().split(SEMI_COLON);
+            String[] notAssessedReasons = assessmentXls.getOutcomeNotAssessed().split(SEMI_COLON);
             Arrays.stream(notAssessedReasons).forEach(notAssessedReason -> {
               Reason assessmentReason = outcomeReasons.stream().
                   filter(or -> or.getLabel().equalsIgnoreCase(notAssessedReason.trim())).findAny()
@@ -443,15 +443,15 @@ public class AssessmentTransformerService {
                 assessmentOutcomeReasonDTO.setReasonCode(assessmentReason.getCode());
                 assessmentOutcomeReasonDTO.setRequireOther(assessmentReason.isRequireOther());
                 if (assessmentReason.isRequireOther()) {
-                  if (!StringUtils.isEmpty(assessmentXLS.getOutcomeNotAssessedOther())) {
-                    assessmentOutcomeReasonDTO.setOther(assessmentXLS.getOutcomeNotAssessedOther());
+                  if (!StringUtils.isEmpty(assessmentXls.getOutcomeNotAssessedOther())) {
+                    assessmentOutcomeReasonDTO.setOther(assessmentXls.getOutcomeNotAssessedOther());
                   } else {
-                    assessmentXLS.addErrorMessage(OTHER_REASON_IS_REQUIRED);
+                    assessmentXls.addErrorMessage(OTHER_REASON_IS_REQUIRED);
                   }
                 }
                 assessmentOutcomeReasonDTOList.add(assessmentOutcomeReasonDTO);
               } else {
-                assessmentXLS.addErrorMessage(ASSESSMENT_REASON_NOT_FOUND);
+                assessmentXls.addErrorMessage(ASSESSMENT_REASON_NOT_FOUND);
               }
             });
 
@@ -464,19 +464,19 @@ public class AssessmentTransformerService {
 
       String duplicateAssessments = getAnyDuplicateAssessmentsMessage(assessmentDTO);
       if (!duplicateAssessments.isEmpty()) {
-        assessmentXLS.addErrorMessage(duplicateAssessments);
+        assessmentXls.addErrorMessage(duplicateAssessments);
       }
 
       //Revalidation
       RevalidationDTO revalidationDTO = new RevalidationDTO();
       revalidationDTO
-          .setKnownConcerns(BooleanUtil.parseBooleanObject(assessmentXLS.getKnownConcerns()));
-      revalidationDTO.setConcernSummary(assessmentXLS.getConcernSummary());
-      revalidationDTO.setResponsibleOfficerComments(assessmentXLS.getResponsibleOfficerComments());
+          .setKnownConcerns(BooleanUtil.parseBooleanObject(assessmentXls.getKnownConcerns()));
+      revalidationDTO.setConcernSummary(assessmentXls.getConcernSummary());
+      revalidationDTO.setResponsibleOfficerComments(assessmentXls.getResponsibleOfficerComments());
       assessmentDTO.setRevalidation(revalidationDTO);
 
-      validateAndUpdateAssessmentType(assessmentTypeDtoListFromDb, assessmentDTO, assessmentXLS);
-      saveAssessment(personBasicDetailsDTO, assessmentXLS, assessmentDTO);
+      validateAndUpdateAssessmentType(assessmentTypeDtoListFromDb, assessmentDTO, assessmentXls);
+      saveAssessment(personBasicDetailsDTO, assessmentXls, assessmentDTO);
 
     }
   }

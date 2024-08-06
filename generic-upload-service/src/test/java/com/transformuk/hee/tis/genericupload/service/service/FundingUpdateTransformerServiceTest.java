@@ -224,7 +224,7 @@ public class FundingUpdateTransformerServiceTest {
   }
 
   @Test
-  public void ShouldUpdateInfoToNullWhenFundingDetailsIsEmpty() {
+  public void shouldUpdateInfoToNullWhenFundingDetailsAreEmpty() {
 
     postFundingDto.setFundingBodyId("2");
     postFundingDto.setFundingType(FUNDING_TYPE_ACADEMIC);
@@ -319,5 +319,22 @@ public class FundingUpdateTransformerServiceTest {
         containsString(
             String.format(FundingUpdateTransformerService.FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE,
                 FUNDING_SUBTYPE, FUNDING_TYPE_NEW)));
+  }
+
+  @Test
+  public void shouldThrowErrorWhenFundingEndDateIsBeforeStartDate() {
+    Calendar cTo = Calendar.getInstance();
+    cTo.set(2019, Calendar.JANUARY, 2);
+    fundingUpdateXls.setDateTo(cTo.getTime());
+
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+
+    fundingUpdateTransformerService
+        .processFundingUpdateUpload(Collections.singletonList(fundingUpdateXls));
+
+    assertThat("should throw error when funding end date is before start date",
+        fundingUpdateXls.getErrorMessage(),
+        containsString(
+            String.format(FundingUpdateTransformerService.FUNDING_END_DATE_VALIDATION_MSG)));
   }
 }

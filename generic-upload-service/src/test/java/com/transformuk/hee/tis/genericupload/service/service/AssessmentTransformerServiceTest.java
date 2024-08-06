@@ -10,10 +10,13 @@ import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentDetailDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentListDTO;
+import com.transformuk.hee.tis.assessment.api.dto.AssessmentOutcomeDTO;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.reference.api.dto.AssessmentTypeDto;
@@ -31,7 +34,9 @@ import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,6 +73,8 @@ public class AssessmentTransformerServiceTest {
 
   @Captor
   private ArgumentCaptor<AssessmentDTO> assessmentDTOArgCaptor;
+
+  private ObjectMapper objectMapper;
 
   @Before
   public void setUp() {
@@ -159,6 +166,7 @@ public class AssessmentTransformerServiceTest {
         .thenReturn(duplicateAssessmentsAnyOutcome);
     when(assessmentServiceMock.findAssessments(any(), any(), any(), notNull(String.class)))
         .thenReturn(duplicateAssessmentsSpecificOutcome);
+    objectMapper = new ObjectMapper();
   }
 
   @Test
@@ -207,6 +215,11 @@ public class AssessmentTransformerServiceTest {
     xls1.setType(assessmentType);
     List<AssessmentXLS> xlsList = Lists.newArrayList(xls1);
 
+    AssessmentTypeDto assessmentTypeDto1 = new AssessmentTypeDto();
+    assessmentTypeDto1.setId(1L);
+    assessmentTypeDto1.setLabel(assessmentType);
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto1));
+
     assessmentTransformerService.initialiseFetchers();
     assessmentTransformerService.processAssessmentsUpload(xlsList);
 
@@ -226,6 +239,11 @@ public class AssessmentTransformerServiceTest {
     xls1.setType(assessmentType);
     xls1.setOutcome(realOutcome);
     List<AssessmentXLS> xlsList = Lists.newArrayList(xls1);
+
+    AssessmentTypeDto assessmentTypeDto1 = new AssessmentTypeDto();
+    assessmentTypeDto1.setId(1L);
+    assessmentTypeDto1.setLabel(assessmentType);
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto1));
 
     assessmentTransformerService.initialiseFetchers();
     assessmentTransformerService.processAssessmentsUpload(xlsList);
@@ -278,6 +296,11 @@ public class AssessmentTransformerServiceTest {
     when(tcsServiceMock.getPlacementForTrainee(any())).thenReturn(
         Lists.newArrayList(placementSummaryDto));
 
+    AssessmentTypeDto assessmentTypeDto1 = new AssessmentTypeDto();
+    assessmentTypeDto1.setId(1L);
+    assessmentTypeDto1.setLabel(assessmentType);
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto1));
+
     when(assessmentServiceMock.createTraineeAssessment(assessmentDTOArgCaptor.capture(),
         any())).thenReturn(null);
 
@@ -311,6 +334,10 @@ public class AssessmentTransformerServiceTest {
     placementSummaryDto.setDateTo(null);
     when(tcsServiceMock.getPlacementForTrainee(any())).thenReturn(
         Lists.newArrayList(placementSummaryDto));
+    AssessmentTypeDto assessmentTypeDto1 = new AssessmentTypeDto();
+    assessmentTypeDto1.setId(1L);
+    assessmentTypeDto1.setLabel(assessmentType);
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto1));
 
     when(assessmentServiceMock.createTraineeAssessment(assessmentDTOArgCaptor.capture(),
         any())).thenReturn(null);
@@ -357,5 +384,71 @@ public class AssessmentTransformerServiceTest {
 
     assertThat("Should get an error", xlsList.get(0).getErrorMessage(),
         is(AssessmentTransformerService.ASSESSMENT_TYPE_NOT_MATCH));
+  }
+
+  @Test
+  public void testProcessAssessmentOutcomeReasonsWhenTheyHaveValidValues()
+      throws JsonProcessingException {
+
+    AssessmentXLS xls = new AssessmentXLS();
+    xls.setSurname(lastName);
+    xls.setProgrammeName(programmeName);
+    xls.setProgrammeNumber(programmeNumber);
+    xls.setCurriculumName(curriculumName);
+    xls.setGmcNumber(gmcNumber);
+    xls.setReviewDate(new Date());
+    xls.setNextReviewDate(new Date());
+    xls.setType(assessmentType);
+    xls.setOutcome(realOutcome);
+    xls.setOutcomeNotAssessed("1");
+    xls.setOutcomeNotAssessedOther("4");
+
+    List<AssessmentXLS> xlsList = Collections.singletonList(xls);
+
+    Reason reason = new Reason();
+    reason.setLabel("1");
+    reason.setId(2L);
+    reason.setCode("OUTCOME_1");
+    reason.setRequireOther(true);
+
+    Set<Reason> outcomeReasons = new HashSet<>();
+    outcomeReasons.add(reason);
+
+    String reasonJson = objectMapper.writeValueAsString(reason);
+
+    String outcomesJson = "[{" +
+        "\"id\": 2, " +
+        "\"uuid\": \"30386130-6132-3466-2d33-6566622d3131\", " +
+        "\"code\": \"OUTCOME_1\", " +
+        "\"label\": \"1\", " +
+        "\"reasons\": [" + reasonJson + "]" +
+        "}]";
+
+    when(assessmentServiceMock.getAllOutcomes()).thenReturn(outcomesJson);
+
+    List<AssessmentListDTO> duplicateAssessments = Collections.emptyList();
+
+    when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
+        .thenReturn(duplicateAssessments);
+
+    AssessmentTypeDto assessmentTypeDto = new AssessmentTypeDto();
+    assessmentTypeDto.setId(1L);
+    assessmentTypeDto.setLabel(assessmentType);
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto));
+
+    when(assessmentServiceMock.createTraineeAssessment(assessmentDTOArgCaptor.capture(),
+        any())).thenReturn(null);
+
+    assessmentTransformerService.initialiseFetchers();
+    assessmentTransformerService.processAssessmentsUpload(xlsList);
+
+    AssessmentOutcomeDTO assessmentOutcomeDto = assessmentDTOArgCaptor.getValue().getOutcome();
+    assertThat(1, is(assessmentOutcomeDto.getReasons().size()));
+    assertThat("Outcome reason label",
+        assessmentOutcomeDto.getReasons().get(0).getReasonLabel(), is("1"));
+    assertThat("Outcome reason code",
+        assessmentOutcomeDto.getReasons().get(0).getReasonCode(), is("OUTCOME_1"));
+    assertThat("Is required other", assessmentOutcomeDto.getReasons().get(0).isRequireOther(),
+        is(true));
   }
 }

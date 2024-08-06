@@ -591,9 +591,36 @@ public class PostCreateTransformerServiceTest {
 
     // Then.
     assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
-        is("Funding End Date cannot be before Start Date if included."));
+        is("Post funding end date must not be equal to or before start date if included."));
     assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
         is(false));
+  }
+
+  @Test
+  public void shouldNotThrowAnyErrorWhenPostFundingEndDateIsAfterStartDate() {
+    // Given.
+    xls1.setFundingStartDate(new Date(DAY_IN_MILLIS));
+    xls1.setFundingEndDate(new Date(2 * DAY_IN_MILLIS));
+    xls1.setFundingType("funding1");
+
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(List.of(fundingType1));
+
+    // When.
+    service.processUpload(xlsList);
+
+    // Then.
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is(nullValue()));
+    assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
+        is(true));
   }
 
   @Test

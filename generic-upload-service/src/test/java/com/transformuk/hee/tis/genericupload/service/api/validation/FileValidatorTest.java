@@ -2,6 +2,8 @@ package com.transformuk.hee.tis.genericupload.service.api.validation;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
@@ -19,40 +21,44 @@ import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
-import com.transformuk.hee.tis.genericupload.service.Application;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.multipart.MultipartFile;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = Application.class)
+@ExtendWith(MockitoExtension.class)
 public class FileValidatorTest {
 
   private static final Logger logger = getLogger(FileValidatorTest.class);
 
-  @Autowired
-  FileValidator fileValidator;
+  @InjectMocks
+  private FileValidator fileValidator;
 
-  @Test(expected = ValidationException.class)
+  @BeforeEach
+  void setUp() {
+    MockitoAnnotations.openMocks(this);
+  }
+
+  @Test
   public void shouldValidateMandatoryFields()
-      throws ReflectiveOperationException, InvalidFormatException, ValidationException, IOException {
+      throws IOException {
     String filename = "TIS Placement Import Template - Test 4 (multiple errors).xls";
     String filePath = new ClassPathResource(filename).getURI().getPath();
     FileInputStream inputStream = new FileInputStream(filePath);
@@ -60,7 +66,9 @@ public class FileValidatorTest {
         filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\n",
         IOUtils.toByteArray(inputStream));
 
-    fileValidator.validate(Collections.singletonList(multipartFile), true, false);
+    assertThrows(ValidationException.class, () -> {
+      fileValidator.validate(List.of(multipartFile), true, false);
+    });
   }
 
   @Test
@@ -75,7 +83,7 @@ public class FileValidatorTest {
       fileValidator.validate(Collections.singletonList(multipartFile), true, false);
     } catch (ValidationException ve) {
       BindingResult bindingResult = ve.getBindingResult();
-      Assert.assertEquals(2, bindingResult.getErrorCount());
+      assertThat(bindingResult.getErrorCount(), is(2));
     }
   }
 
@@ -90,7 +98,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
     }
   }
 
@@ -106,7 +114,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
     }
   }
 
@@ -122,7 +130,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "PlacementId missing"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "PlacementId missing"));
     }
   }
 
@@ -149,7 +157,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Date missing"));
     }
   }
 
@@ -164,7 +172,7 @@ public class FileValidatorTest {
     try {
       fileValidator.validate(Collections.singletonList(multipartFile), true, true);
     } catch (ValidationException ve) {
-      Assert.assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Field is required"));
+      assertTrue(oneOfTheFieldErrorsIs(ve.getBindingResult(), "Field is required"));
     }
   }
 
@@ -397,9 +405,11 @@ public class FileValidatorTest {
     assertThat(xlsCaptor.getValue(), is((Object) PostFundingUpdateXLS.class));
   }
 
-  @Test(expected = InvalidFormatException.class)
+  @Test
   public void getFileTypeShouldThrowExceptionIfTemplateNotIdentifiable() throws Exception {
     // When.
-    fileValidator.getFileType(null, null, null, Collections.emptySet());
+    assertThrows(InvalidFormatException.class, () -> {
+      fileValidator.getFileType(null, null, null, Collections.emptySet());
+    });
   }
 }
