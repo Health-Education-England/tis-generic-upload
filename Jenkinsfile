@@ -18,7 +18,7 @@ node {
     }
 
     env.GIT_COMMIT=sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
-    def mvn = "${tool 'Maven 3.3.9'}/bin/mvn"
+    def mvn = "${tool 'Maven 3.9.8'}/bin/mvn"
     def workspace = pwd()
     def parent_workspace = pwd()
     def repository = "${env.GIT_COMMIT}".split("TIS-")[-1].split(".git")[0]
