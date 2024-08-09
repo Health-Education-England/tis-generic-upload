@@ -218,7 +218,7 @@ public class AssessmentTransformerServiceTest {
     AssessmentTypeDto assessmentTypeDto1 = new AssessmentTypeDto();
     assessmentTypeDto1.setId(1L);
     assessmentTypeDto1.setLabel(assessmentType);
-    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto1));
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(Collections.singletonList(assessmentTypeDto1));
 
     assessmentTransformerService.initialiseFetchers();
     assessmentTransformerService.processAssessmentsUpload(xlsList);
@@ -243,7 +243,7 @@ public class AssessmentTransformerServiceTest {
     AssessmentTypeDto assessmentTypeDto1 = new AssessmentTypeDto();
     assessmentTypeDto1.setId(1L);
     assessmentTypeDto1.setLabel(assessmentType);
-    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto1));
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(Collections.singletonList(assessmentTypeDto1));
 
     assessmentTransformerService.initialiseFetchers();
     assessmentTransformerService.processAssessmentsUpload(xlsList);
@@ -299,7 +299,7 @@ public class AssessmentTransformerServiceTest {
     AssessmentTypeDto assessmentTypeDto1 = new AssessmentTypeDto();
     assessmentTypeDto1.setId(1L);
     assessmentTypeDto1.setLabel(assessmentType);
-    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto1));
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(Collections.singletonList(assessmentTypeDto1));
 
     when(assessmentServiceMock.createTraineeAssessment(assessmentDTOArgCaptor.capture(),
         any())).thenReturn(null);
@@ -337,7 +337,7 @@ public class AssessmentTransformerServiceTest {
     AssessmentTypeDto assessmentTypeDto1 = new AssessmentTypeDto();
     assessmentTypeDto1.setId(1L);
     assessmentTypeDto1.setLabel(assessmentType);
-    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto1));
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(Collections.singletonList(assessmentTypeDto1));
 
     when(assessmentServiceMock.createTraineeAssessment(assessmentDTOArgCaptor.capture(),
         any())).thenReturn(null);
@@ -434,7 +434,7 @@ public class AssessmentTransformerServiceTest {
     AssessmentTypeDto assessmentTypeDto = new AssessmentTypeDto();
     assessmentTypeDto.setId(1L);
     assessmentTypeDto.setLabel(assessmentType);
-    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(List.of(assessmentTypeDto));
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(Collections.singletonList(assessmentTypeDto));
 
     when(assessmentServiceMock.createTraineeAssessment(assessmentDTOArgCaptor.capture(),
         any())).thenReturn(null);

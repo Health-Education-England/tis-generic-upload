@@ -1,7 +1,7 @@
 package com.transformuk.hee.tis.genericupload.api.dto;
 
 import com.transformuk.hee.tis.genericupload.api.ExcelColumn;
-import java.time.LocalDate;
+import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -24,9 +24,9 @@ public class PostFundingUpdateXLS extends TemplateXLS {
   @ExcelColumn(name = "Funding Body")
   private String fundingBody;
 
-  @ExcelColumn(name = "Start date*", required = true)
-  private LocalDate dateFrom;
+  @ExcelColumn(name = "Start Date*", required = true)
+  private Date dateFrom;
 
-  @ExcelColumn(name = "End date")
-  private LocalDate dateTo;
+  @ExcelColumn(name = "End Date")
+  private Date dateTo;
 }

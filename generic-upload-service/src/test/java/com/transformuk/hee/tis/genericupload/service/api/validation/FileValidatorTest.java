@@ -25,7 +25,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -67,7 +66,7 @@ public class FileValidatorTest {
         IOUtils.toByteArray(inputStream));
 
     assertThrows(ValidationException.class, () -> {
-      fileValidator.validate(List.of(multipartFile), true, false);
+      fileValidator.validate(Collections.singletonList(multipartFile), true, false);
     });
   }
 

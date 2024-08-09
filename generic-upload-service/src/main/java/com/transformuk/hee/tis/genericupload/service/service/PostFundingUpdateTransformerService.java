@@ -1,5 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
+
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
 import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
@@ -197,26 +199,21 @@ public class PostFundingUpdateTransformerService {
       PostFundingDTO postFundingDto) {
     LocalDate dateFrom = null;
     LocalDate dateTo = null;
-    if (postFundingUpdateXls.getDateFrom() == null && postFundingUpdateXls.getDateTo() == null) {
-      return;
-    }
 
     if (postFundingUpdateXls.getDateFrom() != null) {
-      dateFrom = postFundingUpdateXls.getDateFrom();
-      if (dateFrom == null) {
-        postFundingUpdateXls.addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
-      } else {
-        postFundingDto.setStartDate(dateFrom);
-      }
+      dateFrom = convertDate(postFundingUpdateXls.getDateFrom());
+    } else {
+      postFundingUpdateXls.addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
     }
 
-    if (postFundingUpdateXls.getDateTo() != null && postFundingUpdateXls.getDateFrom() != null) {
-      dateTo = postFundingUpdateXls.getDateTo();
-      if (dateTo != null && dateFrom != null && dateTo.isAfter(dateFrom)) {
-        postFundingDto.setEndDate(dateTo);
-      } else {
-        postFundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
-      }
+    if (postFundingUpdateXls.getDateTo() != null) {
+      dateTo = convertDate(postFundingUpdateXls.getDateTo());
     }
+
+    if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
+      postFundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
+    }
+    postFundingDto.setStartDate(dateFrom);
+    postFundingDto.setEndDate(dateTo);
   }
 }
