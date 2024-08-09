@@ -200,20 +200,20 @@ public class PostFundingUpdateTransformerService {
     LocalDate dateFrom = null;
     LocalDate dateTo = null;
 
-    if (postFundingUpdateXls.getDateFrom() == null) {
-      postFundingUpdateXls.addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
-    } else {
+    if (postFundingUpdateXls.getDateFrom() != null) {
       dateFrom = convertDate(postFundingUpdateXls.getDateFrom());
-      postFundingDto.setStartDate(dateFrom);
+    } else {
+      postFundingUpdateXls.addErrorMessage(String.format(FUNDING_START_DATE_NULL_OR_EMPTY));
     }
 
-    if (postFundingUpdateXls.getDateTo() != null && postFundingUpdateXls.getDateFrom() != null) {
+    if (postFundingUpdateXls.getDateTo() != null) {
       dateTo = convertDate(postFundingUpdateXls.getDateTo());
-      if (dateTo != null && dateFrom != null && dateTo.isAfter(dateFrom)) {
-        postFundingDto.setEndDate(dateTo);
-      } else {
-        postFundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
-      }
     }
+
+    if (dateTo != null && dateFrom != null && !dateTo.isAfter(dateFrom)) {
+      postFundingUpdateXls.addErrorMessage(FUNDING_END_DATE_VALIDATION_MSG);
+    }
+    postFundingDto.setStartDate(dateFrom);
+    postFundingDto.setEndDate(dateTo);
   }
 }
