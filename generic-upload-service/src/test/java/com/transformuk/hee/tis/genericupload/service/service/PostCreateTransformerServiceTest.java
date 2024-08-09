@@ -603,15 +603,15 @@ public class PostCreateTransformerServiceTest {
     xls1.setFundingEndDate(new Date(2 * DAY_IN_MILLIS));
     xls1.setFundingType("funding1");
 
-    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(List.of(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(List.of(fundingType1));
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(Arrays.asList(fundingType1));
 
     // When.
     service.processUpload(xlsList);

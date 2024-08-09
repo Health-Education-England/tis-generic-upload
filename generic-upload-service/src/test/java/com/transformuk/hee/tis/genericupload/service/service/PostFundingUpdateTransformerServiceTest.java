@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
+import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE;
 import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,8 +18,9 @@ import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostFundingDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
-import java.time.LocalDate;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,6 +80,11 @@ class PostFundingUpdateTransformerServiceTest {
         Collections.singleton(FUNDING_SUBTYPE_LABEL)))
         .thenReturn(Collections.singletonList(fundingSubTypeDto));
 
+    Calendar calendar = Calendar.getInstance();
+    calendar.set(2023, Calendar.JANUARY, 2);
+    Date startDate = calendar.getTime();
+    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
+
     uploadService.processPostFundingUpdateUpload(
         Collections.singletonList(postFundingUpdateXls));
 
@@ -94,6 +101,11 @@ class PostFundingUpdateTransformerServiceTest {
     final String fundingSubtypeLabelInUpperCase = FUNDING_SUBTYPE_LABEL.toUpperCase();
     when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
     when(postFundingUpdateXls.getFundingSubtype()).thenReturn(fundingSubtypeLabelInUpperCase);
+
+    Calendar calendar = Calendar.getInstance();
+    calendar.set(2023, Calendar.JANUARY, 2);
+    Date startDate = calendar.getTime();
+    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
 
     when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
         Collections.singleton(fundingSubtypeLabelInUpperCase)))
@@ -147,8 +159,11 @@ class PostFundingUpdateTransformerServiceTest {
 
   @Test
   void shouldThrowErrorWhenFundingEndDateIsBeforeStartDate() {
-    LocalDate startDate = LocalDate.of(2023, 1, 2);
-    LocalDate endDate = LocalDate.of(2023, 1, 1);
+    Calendar calendar = Calendar.getInstance();
+    calendar.set(2023, Calendar.JANUARY, 2);
+    Date startDate = calendar.getTime();
+    calendar.set(2013, Calendar.JANUARY, 1);
+    Date endDate = calendar.getTime();
 
     when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
     when(postFundingUpdateXls.getDateTo()).thenReturn(endDate);
@@ -157,5 +172,43 @@ class PostFundingUpdateTransformerServiceTest {
 
     verify(postFundingUpdateXls, times(1))
         .addErrorMessage(PostFundingUpdateTransformerService.FUNDING_END_DATE_VALIDATION_MSG);
+  }
+
+  @Test
+  void shouldNotThrowErrorWhenFundingEndDateIsAfterStartDate() {
+    Calendar calendar = Calendar.getInstance();
+    calendar.set(2023, Calendar.JANUARY, 2);
+    Date startDate = calendar.getTime();
+    calendar.set(2025, Calendar.JANUARY, 1);
+    Date endDate = calendar.getTime();
+
+    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
+    when(postFundingUpdateXls.getDateTo()).thenReturn(endDate);
+
+    uploadService.processPostFundingUpdateUpload(Collections.singletonList(postFundingUpdateXls));
+
+    verify(postFundingUpdateXls, never())
+        .addErrorMessage(PostFundingUpdateTransformerService.FUNDING_END_DATE_VALIDATION_MSG);
+
+    ArgumentCaptor<PostDTO> postDtoCaptor = ArgumentCaptor.forClass(PostDTO.class);
+
+    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
+
+    PostDTO postDto = postDtoCaptor.getValue();
+    assertEquals(1, postDto.getFundings().size());
+    PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
+    assertEquals(convertDate(startDate), postFundingDto.getStartDate());
+    assertEquals(convertDate(endDate), postFundingDto.getEndDate());
+  }
+
+  @Test
+  void shouldThrowErrorWhenFundingStartDateIsNull() {
+    when(postFundingUpdateXls.getPostTisId()).thenReturn(POST_TIS_ID);
+    when(postFundingUpdateXls.getDateFrom()).thenReturn(null);
+
+    uploadService.processPostFundingUpdateUpload(Collections.singletonList(postFundingUpdateXls));
+
+    verify(postFundingUpdateXls, times(1))
+        .addErrorMessage(PostFundingUpdateTransformerService.FUNDING_START_DATE_NULL_OR_EMPTY);
   }
 }
