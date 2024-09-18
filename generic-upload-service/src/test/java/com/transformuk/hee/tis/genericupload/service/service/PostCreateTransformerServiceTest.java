@@ -86,6 +86,7 @@ public class PostCreateTransformerServiceTest {
 
   private FundingTypeDTO fundingType1;
   private FundingSubTypeDto fundingSubTypeDto1;
+  private String fundingReason;
 
   @Captor
   private ArgumentCaptor<List<PostDTO>> dtoCaptor;
@@ -105,6 +106,7 @@ public class PostCreateTransformerServiceTest {
     xls1.setOwner("owner1");
     xls1.setFundingType("funding1");
     xls1.setFundingStartDate(new Date(1L));
+    xls1.setFundingReason("reason1");
 
     xls2 = new PostCreateXls();
     xls2.setNationalPostNumber("npn2");
@@ -703,6 +705,36 @@ public class PostCreateTransformerServiceTest {
         is("Funding subtype \"boom!\" does not match funding type \"funding1\"."));
     assertThat("The success flag did not match the expected value.", xls1.isSuccessfullyImported(),
         is(false));
+  }
+
+  @Test
+  public void shouldFailValidationWhenFundingReasonNotFound() {
+    // Given.
+    xls1.setFundingReason("notARealReason");
+    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingSubTypesForFundingTypeId(any())).thenReturn(
+        Collections.emptyList());
+    when(referenceService.findCurrentFundingSubTypesForFundingTypeId(any())).thenReturn(
+        Collections.emptyList());
+    when(referenceService.findCurrentFundingSubTypesForFundingTypeId(any())).thenReturn(
+        Collections.emptyList());
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(Collections.emptyList())
+
+    // When.
+    service.processUpload(xlsList);
+
+    // Then.
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("No current funding reason found for 'notARealReason'."));
   }
 
   @Test

@@ -66,6 +66,9 @@ public class PostCreateXls extends TemplateXLS {
   @ExcelColumn(name = "Funding subtype")
   private String fundingSubtype;
 
+  @ExcelColumn(name = "Funding Reason")
+  private String fundingReason;
+
   @ExcelColumn(name = "Old Post")
   private String oldPost;
 }
