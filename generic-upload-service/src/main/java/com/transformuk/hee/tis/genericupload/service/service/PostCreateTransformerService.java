@@ -504,10 +504,11 @@ public class PostCreateTransformerService {
     final String fundingReason = xls.getFundingReason();
     if(StringUtils.isNotEmpty(fundingReason)) {
       updateFundingReasonCache(fundingReason);
-      if (fundingReasonToId.get(fundingReason) == null) {
+      UUID fundingReasonId = fundingReasonToId.get(fundingReason);
+      if (fundingReasonId == null) {
         validationError(String.format("No current funding reason found for '%s'.", fundingReason));
       } else {
-        fundingDto.setFundingReasonId(fundingReason);
+        fundingDto.setFundingReasonId(fundingReasonId);
       }
     }
 
@@ -533,7 +534,7 @@ public class PostCreateTransformerService {
 
   private void updateFundingReasonCache(String fundingReason) {
     if (!fundingReasonToId.containsKey(fundingReason)) {
-      referenceService.findCurrentFundingReasonsByReason(Collections.singleton(fundingReason))
+      referenceService.findCurrentFundingReasonsByReasonIn(Collections.singleton(fundingReason))
           .forEach(dto -> fundingReasonToId.put(dto.getReason(), dto.getId()));
     }
   }
