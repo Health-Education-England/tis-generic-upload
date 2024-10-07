@@ -3,6 +3,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
+import com.transformuk.hee.tis.reference.api.dto.FundingReasonDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
@@ -67,6 +68,14 @@ public class PostFundingUpdateTransformerService {
                 dto.getLabel().toLowerCase()),
             FundingSubTypeDto::getId));
 
+    // Get all funding reasons and retrieve matching funding body IDs.
+    Set<String> fundingReasons = postFundingUpdateXlss.stream()
+        .map(PostFundingUpdateXLS::getFundingReason).collect(Collectors.toSet());
+    List<FundingReasonDto> fundingReasonDtos = referenceService.findCurrentFundingReasonsByReasonIn(
+        fundingReasons);
+    Map<String, UUID> fundingReasonToId = fundingReasonDtos.stream()
+        .collect(Collectors.toMap(FundingReasonDto::getReason, dto -> dto.getId()));
+
     // Group rows by post ID.
     // TODO: There is an issue with validating the presence of required fields, this can be
     //  simplified again once that scenario is handled properly in FileValidator.
@@ -95,7 +104,8 @@ public class PostFundingUpdateTransformerService {
       String postId = postIdToPostFundingUpdateXls.getKey();
 
       Map<PostFundingDTO, PostFundingUpdateXLS> fundingDtosToSource = buildFundingDtos(
-          postIdToPostFundingUpdateXls.getValue(), fundingBodyNameToId, fundingSubTypeLabelToId);
+          postIdToPostFundingUpdateXls.getValue(), fundingBodyNameToId, fundingSubTypeLabelToId,
+          fundingReasonToId);
       Set<PostFundingDTO> builtPostFundingDtos = fundingDtosToSource.keySet();
       if (builtPostFundingDtos.isEmpty()) {
         continue;
@@ -140,12 +150,14 @@ public class PostFundingUpdateTransformerService {
   private Map<PostFundingDTO, PostFundingUpdateXLS> buildFundingDtos(
       Collection<PostFundingUpdateXLS> postFundingUpdateXlss,
       Map<String, String> fundingBodyNameToId,
-      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId) {
+      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId,
+      Map<String, UUID> fundingReasonToId) {
     Map<PostFundingDTO, PostFundingUpdateXLS> postFundingDtosToSource = new HashMap<>();
 
     for (PostFundingUpdateXLS postFundingUpdateXls : postFundingUpdateXlss) {
       String fundingBodyName = postFundingUpdateXls.getFundingBody();
       String fundingBodyId = fundingBodyNameToId.get(fundingBodyName);
+      String fundingReason = postFundingUpdateXls.getFundingReason();
 
       if (fundingBodyName != null && fundingBodyId == null) {
         postFundingUpdateXls
@@ -166,6 +178,8 @@ public class PostFundingUpdateTransformerService {
 
       postFundingDto.setFundingBodyId(fundingBodyId);
       postFundingDto.setFundingSubTypeId(fundingSubTypeId);
+
+      postFundingDto.setFundingReasonId(fundingReasonToId.get(fundingReason));
 
       postFundingDtosToSource.put(postFundingDto, postFundingUpdateXls);
     }
