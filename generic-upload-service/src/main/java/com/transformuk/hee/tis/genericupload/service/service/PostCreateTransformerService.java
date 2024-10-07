@@ -63,6 +63,7 @@ public class PostCreateTransformerService {
   private Map<String, PostDTO> postNpnToDto;
   private HashMap<String, FundingTypeDTO> fundingTypeToDto;
   private HashMap<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId;
+  private Map<String, UUID> fundingReasonToId;
 
   PostCreateTransformerService(ReferenceService referenceService, TcsServiceImpl tcsService) {
     this.tcsService = tcsService;
@@ -88,6 +89,7 @@ public class PostCreateTransformerService {
     postNpnToDto = new HashMap<>();
     fundingTypeToDto = new HashMap<>();
     fundingSubTypeLabelToId = new HashMap<>();
+    fundingReasonToId = new HashMap<>();
 
     List<PostDTO> postDtos = new ArrayList<>();
     Map<String, Long> npnToXls = xlsList.stream().collect(
@@ -499,6 +501,17 @@ public class PostCreateTransformerService {
       }
     }
 
+    final String fundingReason = xls.getFundingReason();
+    if(StringUtils.isNotEmpty(fundingReason)) {
+      updateFundingReasonCache(fundingReason);
+      UUID fundingReasonId = fundingReasonToId.get(fundingReason);
+      if (fundingReasonId == null) {
+        validationError(String.format("No current funding reason found for '%s'.", fundingReason));
+      } else {
+        fundingDto.setFundingReasonId(fundingReasonId);
+      }
+    }
+
     return fundingDto;
   }
 
@@ -516,6 +529,13 @@ public class PostCreateTransformerService {
           .forEach(dto -> fundingSubTypeLabelToId.put(
               ImmutablePair.of(dto.getFundingType().getLabel().toLowerCase(),
                   dto.getLabel().toLowerCase()), dto.getId()));
+    }
+  }
+
+  private void updateFundingReasonCache(String fundingReason) {
+    if (!fundingReasonToId.containsKey(fundingReason)) {
+      referenceService.findCurrentFundingReasonsByReasonIn(Collections.singleton(fundingReason))
+          .forEach(dto -> fundingReasonToId.put(dto.getReason(), dto.getId()));
     }
   }
 }

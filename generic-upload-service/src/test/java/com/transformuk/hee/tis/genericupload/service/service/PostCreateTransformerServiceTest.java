@@ -7,6 +7,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
+import com.transformuk.hee.tis.reference.api.dto.FundingReasonDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
@@ -50,6 +51,7 @@ public class PostCreateTransformerServiceTest {
 
   private static final long DAY_IN_MILLIS = 86400000L;
   private static final UUID FUNDING_SUBTYPE_ID = UUID.randomUUID();
+  private static final UUID FUNDING_REASON_ID = UUID.randomUUID();
   private PostCreateTransformerService service;
 
   @Mock
@@ -86,6 +88,7 @@ public class PostCreateTransformerServiceTest {
 
   private FundingTypeDTO fundingType1;
   private FundingSubTypeDto fundingSubTypeDto1;
+  private FundingReasonDto fundingReason;
 
   @Captor
   private ArgumentCaptor<List<PostDTO>> dtoCaptor;
@@ -105,6 +108,7 @@ public class PostCreateTransformerServiceTest {
     xls1.setOwner("owner1");
     xls1.setFundingType("funding1");
     xls1.setFundingStartDate(new Date(1L));
+    xls1.setFundingReason("reason1");
 
     xls2 = new PostCreateXls();
     xls2.setNationalPostNumber("npn2");
@@ -196,6 +200,11 @@ public class PostCreateTransformerServiceTest {
     fundingSubTypeDto1.setLabel("fundingSubtype1");
     fundingSubTypeDto1.setId(FUNDING_SUBTYPE_ID);
     fundingSubTypeDto1.setFundingType(fundingType1);
+
+    fundingReason = new FundingReasonDto();
+    fundingReason.setReason("reason1");
+    fundingReason.setId(FUNDING_REASON_ID);
+    fundingReason.setStatus(Status.CURRENT);
   }
 
   @Test
@@ -346,6 +355,8 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(new ArrayList<>());
     when(referenceService.findCurrentFundingTypesByLabelIn(any()))
         .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
+        Collections.singletonList(fundingReason));
 
     // When.
     service.processUpload(Arrays.asList(xls1, xls2));
@@ -402,6 +413,8 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(Arrays.asList(trainingBody1, employingBody1, employingBody2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
+        Collections.singletonList(fundingReason));
 
     // When.
     service.processUpload(xlsList);
@@ -429,6 +442,8 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
+        Collections.singletonList(fundingReason));
 
     // When.
     service.processUpload(xlsList);
@@ -457,6 +472,8 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
+        Collections.singletonList(fundingReason));
 
     // When.
     service.processUpload(xlsList);
@@ -486,6 +503,8 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(Arrays.asList(programme1, programme2, programme3));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
+        Collections.singletonList(fundingReason));
 
     // When.
     service.processUpload(xlsList);
@@ -517,6 +536,8 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
+        Collections.singletonList(fundingReason));
 
     // When.
     service.processUpload(xlsList);
@@ -554,6 +575,8 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(Collections.singletonList(post1));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
+        Collections.singletonList(fundingReason));
 
     // When.
     service.processUpload(xlsList);
@@ -611,7 +634,10 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(Arrays.asList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Arrays.asList(fundingType1));
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
+        Collections.singletonList(fundingReason));
 
     // When.
     service.processUpload(xlsList);
@@ -706,6 +732,29 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
+  public void shouldFailValidationWhenFundingReasonNotFound() {
+    // Given.
+    xls1.setFundingReason("notARealReason");
+    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
+        Collections.singletonList(fundingType1));
+
+    // When.
+    service.processUpload(xlsList);
+
+    // Then.
+    assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
+        is("No current funding reason found for 'notARealReason'."));
+  }
+
+  @Test
   public void shouldCreatePostsWhenValidationPasses() {
     // Given.
     xls1.setTrainingDescription("trainingDescription1");
@@ -742,6 +791,9 @@ public class PostCreateTransformerServiceTest {
         Collections.singletonList(fundingType1));
     when(referenceService.findCurrentFundingSubTypesForFundingTypeId(any())).thenReturn(
         Collections.singletonList(fundingSubTypeDto1));
+    when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
+        Collections.singletonList(fundingReason));
+
 
     when(tcsService.bulkCreateDto(dtoCaptor.capture(), any(), any()))
         .thenReturn(Collections.emptyList());
@@ -776,6 +828,7 @@ public class PostCreateTransformerServiceTest {
     expectedFunding1.setStartDate(LocalDate.of(1970, 1, 1));
     expectedFunding1.setInfo("included");
     expectedFunding1.setFundingSubTypeId(FUNDING_SUBTYPE_ID);
+    expectedFunding1.setFundingReasonId(FUNDING_REASON_ID);
     expected1.addFunding(expectedFunding1);
 
     PostDTO expected2 = new PostDTO();
