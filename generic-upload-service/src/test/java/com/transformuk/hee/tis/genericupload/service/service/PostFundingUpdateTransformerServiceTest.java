@@ -3,6 +3,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
 import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE;
 import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_REASON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -41,6 +42,7 @@ class PostFundingUpdateTransformerServiceTest {
   private static final UUID FUNDING_SUBTYPE_UUID = UUID.randomUUID();
   private static final String FUNDING_SUBTYPE_LABEL = "fundingSubtype";
   private static final String FUNDING_REASON = "fundingReason";
+  private static final String INVALID_FUNDING_REASON = "InvalidFundingReason";
   private static final UUID FUNDING_REASON_UUID = UUID.randomUUID();
   private static final String ERROR_INVALID_FUNDING_SUB_TYPE = String.format(
       ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE, FUNDING_SUBTYPE_LABEL, FUNDING_TYPE_LABEL);
@@ -106,7 +108,7 @@ class PostFundingUpdateTransformerServiceTest {
   }
 
   @Test
-  void shouldSetReasonIdWhenReasonIsFound(){
+  void shouldSetReasonIdWhenReasonIsFound() {
     when(postFundingUpdateXls.getFundingReason()).thenReturn(FUNDING_REASON);
     when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
     when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
@@ -132,6 +134,36 @@ class PostFundingUpdateTransformerServiceTest {
     PostDTO postDto = postDtoCaptor.getValue();
     PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
     assertEquals(postFundingDto.getFundingReasonId(), FUNDING_REASON_UUID);
+  }
+
+  @Test
+  void shouldLogErrorsForInvalidReasons() {
+    when(postFundingUpdateXls.getFundingReason()).thenReturn(INVALID_FUNDING_REASON);
+    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
+    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
+
+    when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
+        Collections.singleton(FUNDING_SUBTYPE_LABEL)))
+        .thenReturn(Collections.singletonList(fundingSubTypeDto));
+
+    Calendar calendar = Calendar.getInstance();
+    calendar.set(2023, Calendar.JANUARY, 2);
+    Date startDate = calendar.getTime();
+    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
+
+    when(referenceServiceMock.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(INVALID_FUNDING_REASON)))
+        .thenReturn(Collections.emptyList());
+
+    uploadService.processPostFundingUpdateUpload(
+        Collections.singletonList(postFundingUpdateXls));
+
+    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
+    verify(postFundingUpdateXls).addErrorMessage(
+        String.format(ERROR_INVALID_FUNDING_REASON, INVALID_FUNDING_REASON));
+    PostDTO postDto = postDtoCaptor.getValue();
+    PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
+    assertEquals(postFundingDto.getFundingReasonId(), null);
   }
 
   @Test
