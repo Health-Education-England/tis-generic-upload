@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -74,7 +73,7 @@ public class PostFundingUpdateTransformerService {
 
     // Get all funding reasons and retrieve matching funding body IDs.
     postFundingUpdateXlss.stream()
-        .forEach(update -> validateAndCacheFundingReasons(update));
+        .forEach(this::validateAndCacheFundingReasons);
 
     // Group rows by post ID.
     // TODO: There is an issue with validating the presence of required fields, this can be
