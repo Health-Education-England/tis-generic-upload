@@ -156,7 +156,6 @@ public class PostFundingUpdateTransformerService {
     for (PostFundingUpdateXLS postFundingUpdateXls : postFundingUpdateXlss) {
       String fundingBodyName = postFundingUpdateXls.getFundingBody();
       String fundingBodyId = fundingBodyNameToId.get(fundingBodyName);
-      String fundingReason = postFundingUpdateXls.getFundingReason();
 
       if (fundingBodyName != null && fundingBodyId == null) {
         postFundingUpdateXls
@@ -177,8 +176,8 @@ public class PostFundingUpdateTransformerService {
 
       postFundingDto.setFundingBodyId(fundingBodyId);
       postFundingDto.setFundingSubTypeId(fundingSubTypeId);
-
-      postFundingDto.setFundingReasonId(fundingReasonToIdMap.get(fundingReason));
+      postFundingDto.setFundingReasonId(
+          fundingReasonToIdMap.get(postFundingUpdateXls.getFundingReason()));
 
       postFundingDtosToSource.put(postFundingDto, postFundingUpdateXls);
     }
