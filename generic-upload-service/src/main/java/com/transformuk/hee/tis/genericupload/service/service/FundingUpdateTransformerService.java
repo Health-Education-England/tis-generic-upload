@@ -4,7 +4,6 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
 import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
@@ -96,8 +95,7 @@ public class FundingUpdateTransformerService {
   private void useMatchingCriteriaToUpdatePostFunding(
       FundingUpdateXLS fundingUpdateXls,
       Map<String, String> fundingBodyNameToId,
-      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId,
-      Map<String, UUID> fundingReasonToIdMap) {
+      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId) {
 
     String postFundingId = fundingUpdateXls.getPostFundingTisId();
 
@@ -108,7 +106,7 @@ public class FundingUpdateTransformerService {
           if (StringUtils.equals(postFundingDto.getPostId().toString(),
               fundingUpdateXls.getPostTisId())) {
             validateAndUpdatePostFundingDto(fundingUpdateXls, postFundingDto, fundingBodyNameToId,
-                fundingSubTypeLabelToId, fundingReasonToIdMap);
+                fundingSubTypeLabelToId);
           } else {
             fundingUpdateXls
                 .addErrorMessage(String.format(POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING,
@@ -143,8 +141,7 @@ public class FundingUpdateTransformerService {
       FundingUpdateXLS fundingUpdateXls,
       PostFundingDTO postFundingDto,
       Map<String, String> fundingBodyNameToId,
-      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId,
-      Map<String, UUID> fundingReasonToIdMap) {
+      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId) {
 
     validateAndUpdateFundingBody(fundingUpdateXls, postFundingDto, fundingBodyNameToId);
 
@@ -273,7 +270,8 @@ public class FundingUpdateTransformerService {
     }
   }
 
-  private void validateAndCacheFundingReasons(FundingUpdateXLS fundingUpdateXls, PostFundingDTO postFundingDto) {
+  private void validateAndCacheFundingReasons(FundingUpdateXLS fundingUpdateXls,
+      PostFundingDTO postFundingDto) {
     String fundingReason = fundingUpdateXls.getFundingReason();
     updateFundingReasonCache(fundingReason);
 

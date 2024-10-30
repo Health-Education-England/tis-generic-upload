@@ -172,7 +172,7 @@ public class FundingUpdateTransformerServiceTest {
     when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
         Collections.singleton(FUNDING_REASON)))
         .thenReturn(Collections.singletonList(fundingReasonDto));
-    
+
     fundingUpdateTransformerService.processFundingUpdateUpload(
         Collections.singletonList(fundingUpdateXls));
     assertThat("should throw error when fundingType is empty but fundingDetails is filled",

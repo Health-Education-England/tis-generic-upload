@@ -502,7 +502,7 @@ public class PostCreateTransformerService {
     }
 
     final String fundingReason = xls.getFundingReason();
-    if(StringUtils.isNotEmpty(fundingReason)) {
+    if (StringUtils.isNotEmpty(fundingReason)) {
       updateFundingReasonCache(fundingReason);
       UUID fundingReasonId = fundingReasonToId.get(fundingReason);
       if (fundingReasonId == null) {
