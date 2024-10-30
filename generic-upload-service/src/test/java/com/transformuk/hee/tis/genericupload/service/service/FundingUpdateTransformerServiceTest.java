@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_REASON;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -8,6 +9,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.when;
 
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
+import com.transformuk.hee.tis.reference.api.dto.FundingReasonDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
@@ -43,6 +45,8 @@ public class FundingUpdateTransformerServiceTest {
   private static final Long TRUST_ID = 1L;
   private static final String FUNDING_SUBTYPE = "fundingSubtype";
   private static final UUID FUNDING_SUBTYPE_ID = UUID.randomUUID();
+  private static final String FUNDING_REASON = "fundingReason";
+  private static final UUID FUNDING_REASON_UUID = UUID.randomUUID();
 
   @InjectMocks
   private FundingUpdateTransformerService fundingUpdateTransformerService;
@@ -61,6 +65,8 @@ public class FundingUpdateTransformerServiceTest {
 
   private FundingSubTypeDto fundingSubTypeDto;
 
+  private FundingReasonDto fundingReasonDto;
+
   @Before
   public void setUp() {
 
@@ -71,6 +77,7 @@ public class FundingUpdateTransformerServiceTest {
     fundingUpdateXls.setFundingTypeOther(FUNDING_TYPE_OTHER);
     fundingUpdateXls.setFundingBody(FUNDING_BODY_VALID);
     fundingUpdateXls.setPostTisId("1");
+    fundingUpdateXls.setFundingReason(FUNDING_REASON);
     Calendar cFrom = Calendar.getInstance();
     cFrom.set(2019, Calendar.SEPTEMBER, 1); // 2019-09-01
     fundingUpdateXls.setDateFrom(cFrom.getTime());
@@ -108,6 +115,10 @@ public class FundingUpdateTransformerServiceTest {
     fundingSubTypeDto.setLabel(FUNDING_SUBTYPE);
     fundingSubTypeDto.setId(FUNDING_SUBTYPE_ID);
     fundingSubTypeDto.setFundingType(fundingTypeDto);
+
+    fundingReasonDto = new FundingReasonDto();
+    fundingReasonDto.setId(FUNDING_REASON_UUID);
+    fundingReasonDto.setReason(FUNDING_REASON);
   }
 
   @Test
@@ -158,6 +169,9 @@ public class FundingUpdateTransformerServiceTest {
     fundingUpdateXls.setFundingTypeOther("details");
 
     when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.singletonList(fundingReasonDto));
 
     fundingUpdateTransformerService.processFundingUpdateUpload(
         Collections.singletonList(fundingUpdateXls));
@@ -165,6 +179,22 @@ public class FundingUpdateTransformerServiceTest {
         fundingUpdateXls.getErrorMessage(), CoreMatchers.containsString(
             FundingUpdateTransformerService.FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS));
   }
+
+  @Test
+  public void canHandleUnknownFundingReason() {
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    // Funding Reason not found in Reference Service
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.emptyList());
+
+    fundingUpdateTransformerService.processFundingUpdateUpload(
+        Collections.singletonList(fundingUpdateXls));
+    assertThat("should throw error when fundingReason does not exist in reference",
+        fundingUpdateXls.getErrorMessage(),
+        CoreMatchers.containsString(String.format(ERROR_INVALID_FUNDING_REASON, FUNDING_REASON)));
+  }
+
 
   @Test
   public void canUpdateFields() {
@@ -175,6 +205,9 @@ public class FundingUpdateTransformerServiceTest {
         .thenReturn(Collections.singletonList(fundingSubTypeDto));
     when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
         .thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.singletonList(fundingReasonDto));
 
     fundingUpdateTransformerService.processFundingUpdateUpload(
         Collections.singletonList(fundingUpdateXls));
@@ -193,6 +226,8 @@ public class FundingUpdateTransformerServiceTest {
         equalTo(convertDate(fundingUpdateXls.getDateTo())));
     assertThat("Should update fundingSubtype",
         postFundingDtoArgumentCaptorValue.getFundingSubTypeId(), equalTo(FUNDING_SUBTYPE_ID));
+    assertThat("Should update fundingReason",
+        postFundingDtoArgumentCaptorValue.getFundingReasonId(), equalTo(FUNDING_REASON_UUID));
   }
 
   @Test
@@ -202,6 +237,7 @@ public class FundingUpdateTransformerServiceTest {
     fundingUpdateXls.setFundingBody(null);
     fundingUpdateXls.setDateFrom(null);
     fundingUpdateXls.setDateTo(null);
+    fundingUpdateXls.setFundingReason(null);
 
     when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
     when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
@@ -221,6 +257,8 @@ public class FundingUpdateTransformerServiceTest {
         equalTo(postFundingDto.getStartDate()));
     assertThat("Should not update dateTo", postFundingDtoArgumentCaptorValue.getEndDate(),
         equalTo(postFundingDto.getEndDate()));
+    assertThat("Should not update fundingReason", postFundingDtoArgumentCaptorValue.getFundingReasonId(),
+        equalTo(postFundingDto.getFundingReasonId()));
   }
 
   @Test
@@ -235,6 +273,9 @@ public class FundingUpdateTransformerServiceTest {
     fundingUpdateXls.setPostFundingTisId("2");
     fundingUpdateXls.setFundingType(FUNDING_TYPE_NEW);
 
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.singletonList(fundingReasonDto));
     when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
         .thenReturn(postFundingDto);
     fundingUpdateTransformerService.processFundingUpdateUpload(
@@ -290,6 +331,9 @@ public class FundingUpdateTransformerServiceTest {
 
     when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
         .thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.singletonList(fundingReasonDto));
     fundingUpdateTransformerService.processFundingUpdateUpload(
         Collections.singletonList(fundingUpdateXls));
 

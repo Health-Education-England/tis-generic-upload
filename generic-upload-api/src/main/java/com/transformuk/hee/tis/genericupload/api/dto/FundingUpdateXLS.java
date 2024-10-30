@@ -27,6 +27,8 @@ public class FundingUpdateXLS extends TemplateXLS {
   @ExcelColumn(name = "Funding subtype")
   private String fundingSubtype;
 
+  @ExcelColumn(name = "Funding Reason")
+  private String fundingReason;
   @ExcelColumn(name = "Start Date*", required = true)
   private Date dateFrom;
 

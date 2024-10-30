@@ -12,6 +12,7 @@ import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,9 @@ public class PostFundingUpdateTransformerService {
       "Post funding start date cannot be null or empty";
   protected static final String FUNDING_END_DATE_VALIDATION_MSG =
       "Post funding end date must not be equal to or before start date if included.";
+  protected static final String ERROR_INVALID_FUNDING_REASON =
+      "Funding reason could not be found for the name \"%s\".";
+  private Map<String, UUID> fundingReasonToIdMap = new HashMap<>();
 
   @Autowired
   private ReferenceServiceImpl referenceService;
@@ -67,6 +71,10 @@ public class PostFundingUpdateTransformerService {
                 dto.getLabel().toLowerCase()),
             FundingSubTypeDto::getId));
 
+    // Get all funding reasons and retrieve matching funding body IDs.
+    postFundingUpdateXlss.stream()
+        .forEach(this::validateAndCacheFundingReasons);
+
     // Group rows by post ID.
     // TODO: There is an issue with validating the presence of required fields, this can be
     //  simplified again once that scenario is handled properly in FileValidator.
@@ -95,7 +103,8 @@ public class PostFundingUpdateTransformerService {
       String postId = postIdToPostFundingUpdateXls.getKey();
 
       Map<PostFundingDTO, PostFundingUpdateXLS> fundingDtosToSource = buildFundingDtos(
-          postIdToPostFundingUpdateXls.getValue(), fundingBodyNameToId, fundingSubTypeLabelToId);
+          postIdToPostFundingUpdateXls.getValue(), fundingBodyNameToId, fundingSubTypeLabelToId,
+          fundingReasonToIdMap);
       Set<PostFundingDTO> builtPostFundingDtos = fundingDtosToSource.keySet();
       if (builtPostFundingDtos.isEmpty()) {
         continue;
@@ -140,7 +149,8 @@ public class PostFundingUpdateTransformerService {
   private Map<PostFundingDTO, PostFundingUpdateXLS> buildFundingDtos(
       Collection<PostFundingUpdateXLS> postFundingUpdateXlss,
       Map<String, String> fundingBodyNameToId,
-      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId) {
+      Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId,
+      Map<String, UUID> fundingReasonToIdMap) {
     Map<PostFundingDTO, PostFundingUpdateXLS> postFundingDtosToSource = new HashMap<>();
 
     for (PostFundingUpdateXLS postFundingUpdateXls : postFundingUpdateXlss) {
@@ -166,6 +176,8 @@ public class PostFundingUpdateTransformerService {
 
       postFundingDto.setFundingBodyId(fundingBodyId);
       postFundingDto.setFundingSubTypeId(fundingSubTypeId);
+      postFundingDto.setFundingReasonId(
+          fundingReasonToIdMap.get(postFundingUpdateXls.getFundingReason()));
 
       postFundingDtosToSource.put(postFundingDto, postFundingUpdateXls);
     }
@@ -215,5 +227,22 @@ public class PostFundingUpdateTransformerService {
     }
     postFundingDto.setStartDate(dateFrom);
     postFundingDto.setEndDate(dateTo);
+  }
+
+  private void validateAndCacheFundingReasons(PostFundingUpdateXLS postFundingUpdateXls) {
+    String fundingReason = postFundingUpdateXls.getFundingReason();
+    updateFundingReasonCache(fundingReason);
+
+    if (fundingReason != null && !fundingReasonToIdMap.containsKey(fundingReason)) {
+      postFundingUpdateXls.addErrorMessage(
+          String.format(ERROR_INVALID_FUNDING_REASON, fundingReason));
+    }
+  }
+
+  private void updateFundingReasonCache(String fundingReason) {
+    if (!fundingReasonToIdMap.containsKey(fundingReason)) {
+      referenceService.findCurrentFundingReasonsByReasonIn(Collections.singleton(fundingReason))
+          .forEach(dto -> fundingReasonToIdMap.put(dto.getReason(), dto.getId()));
+    }
   }
 }
