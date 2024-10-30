@@ -79,7 +79,7 @@ public class FundingUpdateTransformerService {
 
     for (FundingUpdateXLS fundingUpdateXlS : fundingUpdateXlSs) {
       useMatchingCriteriaToUpdatePostFunding(fundingUpdateXlS, fundingBodyNameToId,
-          fundingSubTypeLabelToId, fundingReasonToIdMap);
+          fundingSubTypeLabelToId);
     }
   }
 
