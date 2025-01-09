@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class CurriculumMembershipCreateXLS extends TemplateXLS {
   @ExcelColumn(name = "TIS_ProgrammeMembership_ID*", required = true)
-  private String tisProgrammeMembershipId;
+  private String programmeMembershipUuid;
   @ExcelColumn(name = "Curriculum Start Date*", required = true)
   private LocalDate curriculumStartDate;
 

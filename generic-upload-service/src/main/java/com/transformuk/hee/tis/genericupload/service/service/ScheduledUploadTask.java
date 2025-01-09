@@ -7,6 +7,7 @@ import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
@@ -86,6 +87,8 @@ public class ScheduledUploadTask {
   private AssessmentUpdateTransformerService assessmentUpdateTransformerService;
   @Autowired
   private ProgrammeMembershipUpdateTransformerService pmUpdateTransformerService;
+  @Autowired
+  private CurriculumMembershipCreateTransformerService cmCreateTransformerService;
 
   @Autowired
   public ScheduledUploadTask(
@@ -220,6 +223,14 @@ public class ScheduledUploadTask {
             pmUpdateTransformerService.processProgrammeMembershipsUpdateUpload(
                 programmeMembershipUpdateXlsList);
             setJobToCompleted(applicationType, programmeMembershipUpdateXlsList);
+            break;
+
+          case CURRICULUM_MEMBERSHIP_CREATE:
+            List<CurriculumMembershipCreateXLS> cmCreateXlsList =
+                excelToObjectMapper.map(CurriculumMembershipCreateXLS.class,
+                    new ColumnMapper(CurriculumMembershipCreateXLS.class).getFieldMap());
+            cmCreateTransformerService.processCurriculumMembershipCreateUpload(cmCreateXlsList);
+            setJobToCompleted(applicationType, cmCreateXlsList);
             break;
 
           default:
