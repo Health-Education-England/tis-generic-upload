@@ -3,7 +3,7 @@ package com.transformuk.hee.tis.genericupload.api.enumeration;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
@@ -31,7 +31,7 @@ public enum FileType {
   POSTS_FUNDING_UPDATE(PostFundingUpdateXLS.class),
   ASSESSMENTS_UPDATE(AssessmentUpdateXLS.class),
   PROGRAMME_MEMBERSHIP_UPDATE(ProgrammeMembershipUpdateXls.class),
-  CURRICULUM_MEMBERSHIP_CREATE(CurriculumMembershipCreateXLS.class);
+  CURRICULUM_MEMBERSHIP_CREATE(CurriculumMembershipCreateXls.class);
 
   /**
    * The class of the XLS DTO related to this FileType.

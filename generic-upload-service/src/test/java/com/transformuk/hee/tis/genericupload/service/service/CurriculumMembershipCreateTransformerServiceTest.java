@@ -9,7 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
-import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.CurriculumMembershipMapper;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumMembershipDTO;
@@ -46,18 +46,18 @@ class CurriculumMembershipCreateTransformerServiceTest {
   CurriculumMembershipMapper cmMapper;
   @Captor
   ArgumentCaptor<CurriculumMembershipDTO> cmCaptor;
-  private CurriculumMembershipCreateXLS xls1, xls2;
+  private CurriculumMembershipCreateXls xls1, xls2;
   private CurriculumMembershipDTO dto1, dto2;
 
   @BeforeEach
   void setUp() {
-    xls1 = new CurriculumMembershipCreateXLS();
+    xls1 = new CurriculumMembershipCreateXls();
     xls1.setProgrammeMembershipUuid(PROGRAMME_MEMBERSHIP_UUID.toString());
     xls1.setCurriculumName(CURRICULUM_NAME);
     xls1.setCurriculumStartDate(CURRICULUM_START_DATE);
     xls1.setCurriculumEndDate(CURRICULUM_END_DATE);
 
-    xls2 = new CurriculumMembershipCreateXLS();
+    xls2 = new CurriculumMembershipCreateXls();
     xls2.setProgrammeMembershipUuid("123456");
     xls2.setCurriculumName(CURRICULUM_NAME);
     xls2.setCurriculumStartDate(CURRICULUM_START_DATE);

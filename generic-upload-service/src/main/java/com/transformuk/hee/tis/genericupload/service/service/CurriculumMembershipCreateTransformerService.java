@@ -1,6 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
-import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.CurriculumMembershipMapper;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumMembershipDTO;
@@ -37,7 +37,7 @@ public class CurriculumMembershipCreateTransformerService {
    * @param cmXlsList The Xls list from the Excel that user input
    */
   public void processCurriculumMembershipCreateUpload(
-      List<CurriculumMembershipCreateXLS> cmXlsList) {
+      List<CurriculumMembershipCreateXls> cmXlsList) {
     cmXlsList.forEach(
         xls -> {
           xls.initialiseSuccessfullyImported();
@@ -64,7 +64,7 @@ public class CurriculumMembershipCreateTransformerService {
         });
   }
 
-  private Long checkCurriculum(CurriculumMembershipCreateXLS xls) {
+  private Long checkCurriculum(CurriculumMembershipCreateXls xls) {
     String curriculumName = xls.getCurriculumName();
 
     List<CurriculumDTO> curriculumDtos = tcsService.getCurriculaByName(curriculumName);

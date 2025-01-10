@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumMembershipDTO;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -27,7 +27,7 @@ class CurriculumMembershipMapperTest {
 
   @Test
   void shouldConvertXlsToDto() {
-    CurriculumMembershipCreateXLS xls = initialiseXls();
+    CurriculumMembershipCreateXls xls = initialiseXls();
 
     CurriculumMembershipDTO dto = cmMapper.toDto(xls);
 
@@ -39,14 +39,14 @@ class CurriculumMembershipMapperTest {
 
   @Test
   void shouldThrowExceptionWhenUuidNotValid() {
-    CurriculumMembershipCreateXLS xls = initialiseXls();
+    CurriculumMembershipCreateXls xls = initialiseXls();
     xls.setProgrammeMembershipUuid("invalidUuid");
 
     assertThrows(IllegalArgumentException.class, () -> cmMapper.toDto(xls));
   }
 
-  CurriculumMembershipCreateXLS initialiseXls() {
-    CurriculumMembershipCreateXLS xls = new CurriculumMembershipCreateXLS();
+  CurriculumMembershipCreateXls initialiseXls() {
+    CurriculumMembershipCreateXls xls = new CurriculumMembershipCreateXls();
     xls.setProgrammeMembershipUuid(PROGRAMME_MEMBERSHIP_UUID.toString());
     xls.setCurriculumName(CURRICULUM_NAME);
     xls.setCurriculumStartDate(START_DATE);
