@@ -50,7 +50,7 @@ class CurriculumMembershipMapperTest {
     xls.setProgrammeMembershipUuid(PROGRAMME_MEMBERSHIP_UUID.toString());
     xls.setCurriculumName(CURRICULUM_NAME);
     xls.setCurriculumStartDate(START_DATE);
-    xls.setCurriculumStartDate(END_DATE);
+    xls.setCurriculumEndDate(END_DATE);
     return xls;
   }
 }

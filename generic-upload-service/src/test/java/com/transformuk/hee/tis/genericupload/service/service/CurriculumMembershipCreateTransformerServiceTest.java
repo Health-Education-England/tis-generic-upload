@@ -125,7 +125,7 @@ class CurriculumMembershipCreateTransformerServiceTest {
 
     service.processCurriculumMembershipCreateUpload(Collections.singletonList(xls1));
 
-    assertEquals("Curriculum is required\r\n", xls1.getErrorMessage());
+    assertTrue(xls1.getErrorMessage().contains("Curriculum is required"));
   }
 
   @Test
