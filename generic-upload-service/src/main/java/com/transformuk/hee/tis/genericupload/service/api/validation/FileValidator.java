@@ -2,7 +2,6 @@ package com.transformuk.hee.tis.genericupload.service.api.validation;
 
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
-import com.transformuk.hee.tis.genericupload.service.api.UploadFileResource;
 import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import java.io.IOException;
@@ -32,7 +31,7 @@ public class FileValidator {
   public static final String DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD =
       "Date missing or incorrect format on mandatory field (%1$s)";
   public static final String FIELD_IS_REQUIRED_AT_LINE_NO = "%s Field is required at line no %d ";
-  private final Logger logger = LoggerFactory.getLogger(UploadFileResource.class);
+  private final Logger logger = LoggerFactory.getLogger(FileValidator.class);
 
   /**
    * Custom validator used during file upload checks for mandatory fields
@@ -93,9 +92,13 @@ public class FileValidator {
       fileType = FileType.FUNDING_UPDATE;
     } else if (headers.contains("TIS_Assessment_ID*")) {
       fileType = FileType.ASSESSMENTS_UPDATE;
-    } else if (headers.contains("TIS_ProgrammeMembership_ID*")) {
+    } else if (headers.contains("TIS_ProgrammeMembership_ID*")
+        && headers.contains("Programme Membership Type")) {
       fileType = FileType.PROGRAMME_MEMBERSHIP_UPDATE;
-    }else {
+    } else if (headers.contains("TIS_ProgrammeMembership_ID*")
+        && headers.contains("Curriculum Name*")) {
+      fileType = FileType.CURRICULUM_MEMBERSHIP_CREATE;
+    } else {
       throw new InvalidFormatException("Unrecognised upload template");
     }
 

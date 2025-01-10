@@ -7,6 +7,7 @@ import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
@@ -29,12 +30,12 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
@@ -86,6 +87,8 @@ public class ScheduledUploadTask {
   private AssessmentUpdateTransformerService assessmentUpdateTransformerService;
   @Autowired
   private ProgrammeMembershipUpdateTransformerService pmUpdateTransformerService;
+  @Autowired
+  private CurriculumMembershipCreateTransformerService cmCreateTransformerService;
 
   @Autowired
   public ScheduledUploadTask(
@@ -222,6 +225,14 @@ public class ScheduledUploadTask {
             setJobToCompleted(applicationType, programmeMembershipUpdateXlsList);
             break;
 
+          case CURRICULUM_MEMBERSHIP_CREATE:
+            List<CurriculumMembershipCreateXls> cmCreateXlsList =
+                excelToObjectMapper.map(CurriculumMembershipCreateXls.class,
+                    new ColumnMapper(CurriculumMembershipCreateXls.class).getFieldMap());
+            cmCreateTransformerService.processCurriculumMembershipCreateUpload(cmCreateXlsList);
+            setJobToCompleted(applicationType, cmCreateXlsList);
+            break;
+
           default:
             logger.error(UNKNOWN_FILE_TYPE);
         }
@@ -268,7 +279,7 @@ public class ScheduledUploadTask {
     for (TemplateXLS templateXLS : templateXLSS) {
       if (templateXLS.isSuccessfullyImported()) {
         successCount++;
-      } else if (!StringUtils.isEmpty(templateXLS.getErrorMessage())) {
+      } else if (StringUtils.isNotEmpty(templateXLS.getErrorMessage())) {
         errorCount++;
         fir.addError(templateXLS.getRowNumber(), templateXLS.getErrorMessage());
       }
