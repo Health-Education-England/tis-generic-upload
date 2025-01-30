@@ -8,6 +8,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
@@ -89,6 +90,9 @@ public class ScheduledUploadTask {
   private ProgrammeMembershipUpdateTransformerService pmUpdateTransformerService;
   @Autowired
   private CurriculumMembershipCreateTransformerService cmCreateTransformerService;
+
+  @Autowired
+  private CurriculumMembershipUpdateTransformerService cmUpdateTransformerService;
 
   @Autowired
   public ScheduledUploadTask(
@@ -231,6 +235,14 @@ public class ScheduledUploadTask {
                     new ColumnMapper(CurriculumMembershipCreateXls.class).getFieldMap());
             cmCreateTransformerService.processCurriculumMembershipCreateUpload(cmCreateXlsList);
             setJobToCompleted(applicationType, cmCreateXlsList);
+            break;
+
+          case CURRICULUM_MEMBERSHIP_UPDATE:
+            List<CurriculumMembershipUpdateXls> cmUpdateXlsList =
+                excelToObjectMapper.map(CurriculumMembershipUpdateXls.class,
+                    new ColumnMapper(CurriculumMembershipUpdateXls.class).getFieldMap());
+            cmUpdateTransformerService.processCurriculumMembershipUpdateUpload(cmUpdateXlsList);
+            setJobToCompleted(applicationType, cmUpdateXlsList);
             break;
 
           default:

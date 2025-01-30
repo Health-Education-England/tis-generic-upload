@@ -98,6 +98,8 @@ public class FileValidator {
     } else if (headers.contains("TIS_ProgrammeMembership_ID*")
         && headers.contains("Curriculum Name*")) {
       fileType = FileType.CURRICULUM_MEMBERSHIP_CREATE;
+    } else if (headers.contains("TIS_CurriculumMembership_ID*")) {
+      fileType = FileType.CURRICULUM_MEMBERSHIP_UPDATE;
     } else {
       throw new InvalidFormatException("Unrecognised upload template");
     }

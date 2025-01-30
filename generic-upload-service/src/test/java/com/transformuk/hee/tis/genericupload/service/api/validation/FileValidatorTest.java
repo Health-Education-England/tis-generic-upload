@@ -11,6 +11,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
@@ -379,6 +380,26 @@ public class FileValidatorTest {
     // Then.
     assertThat(fileType, is(FileType.POSTS_UPDATE));
     assertThat(xlsCaptor.getValue(), is((Object) PostUpdateXLS.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyCurriculumMembershipUpdateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null,
+            Collections.singleton("TIS_CurriculumMembership_ID*"));
+
+    // Then.
+    assertThat(fileType, is(FileType.CURRICULUM_MEMBERSHIP_UPDATE));
+    assertThat(xlsCaptor.getValue(), is((Object) CurriculumMembershipUpdateXls.class));
   }
 
   @Test

@@ -4,6 +4,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
@@ -31,7 +32,8 @@ public enum FileType {
   POSTS_FUNDING_UPDATE(PostFundingUpdateXLS.class),
   ASSESSMENTS_UPDATE(AssessmentUpdateXLS.class),
   PROGRAMME_MEMBERSHIP_UPDATE(ProgrammeMembershipUpdateXls.class),
-  CURRICULUM_MEMBERSHIP_CREATE(CurriculumMembershipCreateXls.class);
+  CURRICULUM_MEMBERSHIP_CREATE(CurriculumMembershipCreateXls.class),
+  CURRICULUM_MEMBERSHIP_UPDATE(CurriculumMembershipUpdateXls.class);
 
   /**
    * The class of the XLS DTO related to this FileType.
