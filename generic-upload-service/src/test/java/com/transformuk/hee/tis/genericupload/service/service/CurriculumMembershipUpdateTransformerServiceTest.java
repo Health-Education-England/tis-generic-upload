@@ -46,7 +46,6 @@ class CurriculumMembershipUpdateTransformerServiceTest {
   ArgumentCaptor<CurriculumMembershipDTO> cmCaptor;
   private CurriculumMembershipUpdateXls xls1, xls2;
   private CurriculumMembershipDTO dto1, dto2;
-  private CurriculumMembershipDTO patchedCmDto;
 
   @BeforeEach
   void setUp() {
@@ -73,9 +72,6 @@ class CurriculumMembershipUpdateTransformerServiceTest {
     dto2.setProgrammeMembershipUuid(PROGRAMME_MEMBERSHIP_UUID);
     dto2.setCurriculumStartDate(CURRICULUM_START_DATE);
     dto2.setCurriculumEndDate(CURRICULUM_END_DATE);
-
-    patchedCmDto = new CurriculumMembershipDTO();
-    patchedCmDto.addMessage("Test error message");
   }
 
   @Test
@@ -117,18 +113,6 @@ class CurriculumMembershipUpdateTransformerServiceTest {
     assertFalse(xls1.hasErrors());
     assertTrue(xls1.isSuccessfullyImported());
     assertEquals(Long.valueOf(CURRICULUM_MEMEBERSHIP_ID_1), cmCaptor.getValue().getId());
-  }
-
-  @Test
-  void shouldAddErrorMessagesWhenProcessUpdateReturnsErrors() {
-    when(cmMapper.toDto(xls1)).thenReturn(dto1);
-
-    when(tcsService.patchCurriculumMembership(cmCaptor.capture())).thenReturn(patchedCmDto);
-
-    service.processCurriculumMembershipUpdateUpload(Collections.singletonList(xls1));
-
-    assertTrue(xls1.hasErrors());
-    assertFalse(xls1.isSuccessfullyImported());
   }
 
   @Test

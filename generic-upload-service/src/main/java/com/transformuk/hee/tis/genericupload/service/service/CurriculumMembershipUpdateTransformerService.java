@@ -56,15 +56,8 @@ public class CurriculumMembershipUpdateTransformerService {
 
           if (!xls.hasErrors()) {
             try {
-              CurriculumMembershipDTO curriculumMembershipDTO = tcsService.patchCurriculumMembership(
-                  cmDto);
-              if (curriculumMembershipDTO.getMessageList().size() == 0) {
-                xls.setSuccessfullyImported(true);
-              } else {
-                for (String msg : curriculumMembershipDTO.getMessageList()) {
-                  xls.addErrorMessage(msg);
-                }
-              }
+              tcsService.patchCurriculumMembership(cmDto);
+              xls.setSuccessfullyImported(true);
             } catch (ResourceAccessException rae) {
               new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(xls, rae);
             }
