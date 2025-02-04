@@ -136,4 +136,11 @@ class CurriculumMembershipUpdateTransformerServiceTest {
     assertEquals("Start date and end date cannot both be empty.", xls1.getErrorMessage());
     assertFalse(xls1.isSuccessfullyImported());
   }
+
+  @Test
+  void shouldReturnWhenListIsEmpty() {
+    List<CurriculumMembershipUpdateXls> emptyList = Collections.emptyList();
+
+    service.processCurriculumMembershipUpdateUpload(emptyList);
+  }
 }
