@@ -18,7 +18,6 @@ public interface CurriculumMembershipMapper {
       expression = "java(java.util.UUID.fromString(updateXls.getTisProgrammeMembershipId()))")
   @Mapping(target = "id",
       expression = "java(Long.valueOf(updateXls.getTisCurriculumMembershipId()))")
-  @Mapping(target = "curriculumId", ignore = true)
   CurriculumMembershipDTO toDto(CurriculumMembershipUpdateXls updateXls)
       throws IllegalArgumentException;
 }

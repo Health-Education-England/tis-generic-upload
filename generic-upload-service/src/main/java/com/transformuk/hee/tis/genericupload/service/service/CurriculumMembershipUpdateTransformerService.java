@@ -12,6 +12,7 @@ import org.springframework.web.client.ResourceAccessException;
 public class CurriculumMembershipUpdateTransformerService {
 
   protected static final String PM_ID_NOT_UUID = "Programme membership ID is not a valid UUID.";
+  protected static final String CM_ID_NOT_NUMBER = "Curriculum membership is not numerical";
   private final TcsServiceImpl tcsService;
   private final CurriculumMembershipMapper cmMapper;
 
@@ -42,7 +43,11 @@ public class CurriculumMembershipUpdateTransformerService {
           xls.initialiseSuccessfullyImported();
           CurriculumMembershipDTO cmDto;
           try {
+            Long.parseLong(xls.getTisCurriculumMembershipId());
             cmDto = cmMapper.toDto(xls);
+          } catch (NumberFormatException nfe) {
+            xls.addErrorMessage(CM_ID_NOT_NUMBER);
+            return;
           } catch (IllegalArgumentException e) {
             xls.addErrorMessage(PM_ID_NOT_UUID);
             return;

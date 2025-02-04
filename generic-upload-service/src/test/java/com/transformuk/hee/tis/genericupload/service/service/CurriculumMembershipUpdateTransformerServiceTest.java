@@ -1,6 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.service.CurriculumMembershipCreateTransformerService.PM_ID_NOT_UUID;
+import static com.transformuk.hee.tis.genericupload.service.service.CurriculumMembershipUpdateTransformerService.CM_ID_NOT_NUMBER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -9,12 +10,12 @@ import static org.mockito.Mockito.when;
 
 import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.CurriculumMembershipMapper;
-import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumMembershipDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,6 @@ class CurriculumMembershipUpdateTransformerServiceTest {
   private static final UUID PROGRAMME_MEMBERSHIP_UUID = UUID.randomUUID();
   private static final LocalDate CURRICULUM_START_DATE = LocalDate.now().minusDays(1);
   private static final LocalDate CURRICULUM_END_DATE = LocalDate.now().plusDays(1);
-  private static final Long CURRICULUM_ID = 1L;
   private static final String CURRICULUM_MEMEBERSHIP_ID_1 = "111";
   private static final String CURRICULUM_MEMEBERSHIP_ID_2 = "112";
 
@@ -85,21 +85,30 @@ class CurriculumMembershipUpdateTransformerServiceTest {
   }
 
   @Test
+  void shouldHandleNumberFormatExceptionAndAddErrorMessage() {
+    xls1.setTisCurriculumMembershipId("INVALID_NUMBER");
+
+    List<CurriculumMembershipUpdateXls> cmXlsList = Collections.singletonList(xls1);
+
+    service.processCurriculumMembershipUpdateUpload(cmXlsList);
+
+    assertEquals(CM_ID_NOT_NUMBER, xls1.getErrorMessage());
+  }
+
+  @Test
   void shouldFailValidationWhenUpdateCMReturnsMethodArgumentNotValidException() {
     when(cmMapper.toDto(xls1)).thenReturn(dto1);
-    CurriculumDTO curriculumDto1 = new CurriculumDTO();
-    curriculumDto1.setId(CURRICULUM_ID);
 
     String errorJson = "{\"message\":\"error.validation\",\"description\":null,\"fieldErrors\":"
-        + "[{\"objectName\":\"curriculumMembershipDTO\",\"field\":\"curriculumId\","
-        + "\"message\": \"Curriculum is required\"}]}";
+        + "[{\"objectName\":\"curriculumMembershipDTO\",\"field\":\"cmId\","
+        + "\"message\": \"Could not find curriculum membership for id 1\"}]}";
 
     ResourceAccessException rae = new ResourceAccessException("message",
         new IOException(errorJson));
     doThrow(rae).when(tcsService).patchCurriculumMembership(dto1);
 
     service.processCurriculumMembershipUpdateUpload(Collections.singletonList(xls1));
-    assertTrue(xls1.getErrorMessage().contains("Curriculum is required"));
+    assertTrue(xls1.getErrorMessage().contains("Could not find curriculum membership for id 1"));
   }
 
   @Test
