@@ -35,9 +35,6 @@ public class CurriculumMembershipUpdateTransformerService {
    */
   public void processCurriculumMembershipUpdateUpload(
       List<CurriculumMembershipUpdateXls> cmXlsList) {
-    if (cmXlsList.isEmpty()) {
-      return;
-    }
     cmXlsList.forEach(
         xls -> {
           xls.initialiseSuccessfullyImported();
