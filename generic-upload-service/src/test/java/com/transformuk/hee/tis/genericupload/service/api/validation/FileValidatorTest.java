@@ -10,7 +10,10 @@ import static org.mockito.Mockito.spy;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentDeleteXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
+import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
@@ -20,6 +23,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -379,6 +383,90 @@ public class FileValidatorTest {
     // Then.
     assertThat(fileType, is(FileType.POSTS_UPDATE));
     assertThat(xlsCaptor.getValue(), is((Object) PostUpdateXLS.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyCurriculumMembershipUpdateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null,
+            Collections.singleton("TIS_CurriculumMembership_ID*"));
+
+    // Then.
+    assertThat(fileType, is(FileType.CURRICULUM_MEMBERSHIP_UPDATE));
+    assertThat(xlsCaptor.getValue(), is((Object) CurriculumMembershipUpdateXls.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyCurriculumMembershipCreateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
+
+    Set<String> headers = new HashSet<>();
+    headers.add("TIS_ProgrammeMembership_ID*");
+    headers.add("Curriculum Name*");
+
+    // When.
+    FileType fileType = fileValidator.getFileType(null, null, null, headers);
+
+    // Then.
+    assertThat(fileType, is(FileType.CURRICULUM_MEMBERSHIP_CREATE));
+    assertThat(xlsCaptor.getValue(), is((Object) CurriculumMembershipCreateXls.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyAssessmentsUpdateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
+
+    // When.
+    FileType fileType =
+        fileValidator.getFileType(null, null, null,
+            Collections.singleton("TIS_Assessment_ID*"));
+
+    // Then.
+    assertThat(fileType, is(FileType.ASSESSMENTS_UPDATE));
+    assertThat(xlsCaptor.getValue(), is((Object) AssessmentUpdateXLS.class));
+  }
+
+  @Test
+  public void getFileTypeShouldIdentifyProgrammeMembershipUpdateTemplate() throws Exception {
+    // Given.
+    FileValidator fileValidator = spy(this.fileValidator);
+
+    ArgumentCaptor<Class> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+
+    doNothing().when(fileValidator)
+        .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
+
+    Set<String> headers = new HashSet<>();
+    headers.add("TIS_ProgrammeMembership_ID*");
+    headers.add("Programme Membership Type");
+
+    // When.
+    FileType fileType = fileValidator.getFileType(null, null, null, headers);
+
+    // Then.
+    assertThat(fileType, is(FileType.PROGRAMME_MEMBERSHIP_UPDATE));
+    assertThat(xlsCaptor.getValue(), is((Object) ProgrammeMembershipUpdateXls.class));
   }
 
   @Test
