@@ -78,8 +78,8 @@ public class PlacementTransformerService {
       "Multiple posts found for National Post Number: ";
   private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER =
       "Could not find post by National Post Number: ";
-  private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER =
-      "POST status is set to DELETE for National Post Number: ";
+  private static final String POST_STATUS_IS_SET_TO_INACTIVE_FOR_NATIONAL_POST_NUMBER =
+      "POST status is set to INACTIVE for National Post Number: ";
   private static final String DID_NOT_FIND_A_PERSON_FOR_REGISTRATION_NUMBER =
       "Did not find a person for registration number: ";
   private static final String SPECIALTY1_IS_MANDATORY =
@@ -259,9 +259,9 @@ public class PlacementTransformerService {
       if (isNPNValid(placementXLS, nationalPostNumber, postsMappedByNPNs, duplicateNPNKeys)) {
         PostDTO postDTO = postsMappedByNPNs.get(nationalPostNumber);
         if (postDTO != null) {
-          if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
+          if ("INACTIVE".equalsIgnoreCase(postDTO.getStatus().toString())) {
             placementXLS.addErrorMessage(
-                POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
+                POST_STATUS_IS_SET_TO_INACTIVE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
           } else {
             updatePlacement(regNumberToDTOLookup, siteMapByName, gradeMapByName, placementXLS,
                 personBasicDetailsDTO, postDTO, username);

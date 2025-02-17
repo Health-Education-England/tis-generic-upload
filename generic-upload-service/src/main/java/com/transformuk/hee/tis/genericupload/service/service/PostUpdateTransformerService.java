@@ -54,7 +54,6 @@ public class PostUpdateTransformerService {
   private static final String FOUND_MULTIPLE_SITES_FOR_NAME = "Found multiple sites for name \"%s\".";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name \"%s\".";
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME = "Found multiple specialties for name \"%s\".";
-  private static final String GIVEN_POST_STATUS_IS_NOT_VALID = "Given post status is not valid. ";
   private static final String GIVEN_OLD_POST_IS_NOT_VALID = "Given old post is not valid. ";
   private static final String DID_NOT_FIND_OWNER_FOR_NAME = "Owner name not found in the database ";
   private static final String FOUND_MULTIPLE_OWNERS_FOR_NAME = "Multiple owners are found in the database ";
@@ -106,16 +105,6 @@ public class PostUpdateTransformerService {
     updateProgrammes(postUpdateXLS, dbPostDTO, tcsServiceImpl::findProgrammesIn);
     updateTrustReferences(postUpdateXLS, dbPostDTO, referenceServiceImpl::findTrustByTrustKnownAs);
     updateRotations(postUpdateXLS, dbPostDTO);
-
-    // check status
-    String postStatus = postUpdateXLS.getStatus();
-    if (!StringUtils.isEmpty(postStatus)) {
-      if (EnumUtils.isValidEnum(Status.class, postStatus.toUpperCase())) {
-        dbPostDTO.setStatus(Status.valueOf(postStatus.toUpperCase()));
-      } else {
-        postUpdateXLS.addErrorMessage(GIVEN_POST_STATUS_IS_NOT_VALID);
-      }
-    }
 
     // check old post
     String oldPost = postUpdateXLS.getOldPost();

@@ -62,7 +62,7 @@ public class PlacementUpdateTransformerService {
       "Multiple posts were found for National Post Number: ";
   private static final String COULD_NOT_FIND_POST_BY_NATIONAL_POST_NUMBER =
       "Could not find post by THIS National Post Number: ";
-  private static final String POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER =
+  private static final String POST_STATUS_IS_SET_TO_INACTIVE_FOR_NATIONAL_POST_NUMBER =
       "POST status is set to DELETE for National Post Number: ";
   private static final String DID_NOT_FIND_SPECIALTY_FOR_NAME = "Did not find specialty for name: ";
   private static final String FOUND_MULTIPLE_SPECIALTIES_FOR_NAME =
@@ -142,9 +142,9 @@ public class PlacementUpdateTransformerService {
             dbPlacementDetailsDTO.setNationalPostNumber(nationalPostNumber);
             postDTO = postsMappedByNPNs.get(nationalPostNumber);
             if (postDTO != null) {
-              if ("DELETE".equalsIgnoreCase(postDTO.getStatus().toString())) {
+              if ("INACTIVE".equalsIgnoreCase(postDTO.getStatus().toString())) {
                 placementXLS.addErrorMessage(
-                    POST_STATUS_IS_SET_TO_DELETE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
+                    POST_STATUS_IS_SET_TO_INACTIVE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
               } else {
                 updatePlacement(regNumberToDTOLookup, dbPlacementDetailsDTO, siteMapByName,
                     gradeMapByName, placementXLS, postDTO, username);
