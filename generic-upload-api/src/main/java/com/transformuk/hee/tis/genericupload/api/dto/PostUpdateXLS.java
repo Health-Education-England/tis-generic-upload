@@ -50,9 +50,6 @@ public class PostUpdateXLS extends TemplateXLS {
   @ExcelColumn(name = "Rotations")
   private String rotations;
 
-  @ExcelColumn(name = "Status")
-  private String status;
-
   @ExcelColumn(name = "Old Post")
   private String oldPost;
 }

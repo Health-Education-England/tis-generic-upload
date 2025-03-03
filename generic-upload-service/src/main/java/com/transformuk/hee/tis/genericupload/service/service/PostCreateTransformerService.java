@@ -186,8 +186,6 @@ public class PostCreateTransformerService {
       }
     }
 
-    // Default the post to CURRENT.
-    postDto.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
     postDto.setBypassNPNGeneration(true);
 
     return postDto;

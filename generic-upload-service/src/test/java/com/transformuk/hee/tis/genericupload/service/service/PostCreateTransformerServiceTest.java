@@ -773,7 +773,6 @@ public class PostCreateTransformerServiceTest {
 
     PostDTO post1 = new PostDTO();
     post1.setNationalPostNumber("oldPost1");
-    post1.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
 
     when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
     when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty3));
@@ -805,7 +804,6 @@ public class PostCreateTransformerServiceTest {
     expected1.setOwner("owner1");
     expected1.setTrainingDescription("trainingDescription1");
     expected1.setOldPost(post1);
-    expected1.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
     expected1.setBypassNPNGeneration(true);
     expected1.setProgrammes(Stream.of(programme1, programme2).collect(Collectors.toSet()));
     expected1.setGrades(Stream.of(
@@ -836,7 +834,6 @@ public class PostCreateTransformerServiceTest {
     expected2.setTrainingBodyId(2L);
     expected2.setEmployingBodyId(4L);
     expected2.setOwner("owner2");
-    expected2.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
     expected2.setBypassNPNGeneration(true);
     expected2.setProgrammes(Stream.of(programme3, programme4).collect(Collectors.toSet()));
     expected2.setGrades(Collections.singleton(new PostGradeDTO(null, 2L, PostGradeType.APPROVED)));
