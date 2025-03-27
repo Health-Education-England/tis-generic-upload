@@ -6,13 +6,13 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.5.2</version>
+    <version>2.5.15</version>
     <relativePath/>
   </parent>
 
   <groupId>com.transformuk.hee.tis</groupId>
   <artifactId>generic-upload-service</artifactId>
-  <version>1.27.2</version>
+  <version>1.26.0</version>
 
   <packaging>war</packaging>
 
@@ -116,7 +116,7 @@
     <dependency>
       <groupId>com.transformuk.hee</groupId>
       <artifactId>profile-client</artifactId>
-      <version>2.6.5</version>
+      <version>3.3.0</version>
     </dependency>
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
@@ -136,7 +136,7 @@
     <dependency>
       <groupId>com.transformuk.hee.tis</groupId>
       <artifactId>generic-upload-api</artifactId>
-      <version>1.17.1</version>
+      <version>1.18.0</version>
     </dependency>
     <dependency>
       <groupId>uk.nhs.tis</groupId>

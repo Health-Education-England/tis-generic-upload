@@ -93,14 +93,14 @@ public class ExcelToObjectMapper {
    * @param cls Class of Type T.
    * @param <T> Generic type T, result will list of type T objects.
    * @return List of object of type T.
-   * @throws Exception if failed to generate mapping.
+   * @throws ReflectiveOperationException if failed to generate mapping.
    */
   public <T> List<T> map(Class<T> cls, Map<String, String> columnMap)
       throws ReflectiveOperationException {
-    List<T> list = new ArrayList();
+    List<T> list = new ArrayList<T>();
 
-    Field rowNumberFieldInXLS = cls.getSuperclass().getDeclaredField(ROW_NUMBER);
-    rowNumberFieldInXLS.setAccessible(true);
+    Field rowNumberFieldInXls = cls.getSuperclass().getDeclaredField(ROW_NUMBER);
+    rowNumberFieldInXls.setAccessible(true);
     Sheet sheet = workbook.getSheetAt(0);
     int lastRow = sheet.getLastRowNum();
     for (int rowNumber = 1; rowNumber <= lastRow; rowNumber++) {
@@ -124,12 +124,12 @@ public class ExcelToObjectMapper {
         try {
           setObjectFieldValueFromCell(obj, classField, cell);
         } catch (DateTimeParseException | ParseException | IllegalArgumentException e) {
-          logger.info("Error while extracting cell value from object : {} ", e.getMessage());
+          logger.info("Error while extracting cell value from object.", e);
           Method method = obj.getClass().getMethod("addErrorMessage", String.class);
           method.invoke(obj, e.getMessage());
         }
       }
-      rowNumberFieldInXLS.setInt(obj, rowNumber);
+      rowNumberFieldInXls.setInt(obj, rowNumber);
       if (!isAllBlanks(obj)) {
         list.add((T) obj);
       }
@@ -186,6 +186,8 @@ public class ExcelToObjectMapper {
             field.set(obj, getDate(trim));
           } else if (cls == Float.class) {
             field.set(obj, Float.valueOf(trim));
+          } else if (cls == Long.class) {
+            field.set(obj, Long.valueOf(trim));
           } else {
             String setStr = StringConverter.getConverter(trim).escapeForJson().toString();
             field.set(obj, setStr);
@@ -200,6 +202,8 @@ public class ExcelToObjectMapper {
             }
           } else if (cls == Float.class) {
             field.set(obj, (float) cell.getNumericCellValue());
+          } else if (cls == Long.class) {
+            field.set(obj, (long) cell.getNumericCellValue());
           } else {
             double numericValue = cell.getNumericCellValue();
             String stringValue;
@@ -225,14 +229,14 @@ public class ExcelToObjectMapper {
   /**
    * set null value if the value is not found
    *
-   * @param obj
-   * @param field
+   * @param obj   The object containing the field to be nulled
+   * @param field The field to set to null
    */
   private void setNullValueToObject(Object obj, Field field) {
     try {
       field.set(obj, null);
-    } catch (IllegalAccessException e1) {
-      logger.error(e1.getMessage());
+    } catch (IllegalAccessException e) {
+      logger.error("Unable to set target value to null", e);
     }
   }
 

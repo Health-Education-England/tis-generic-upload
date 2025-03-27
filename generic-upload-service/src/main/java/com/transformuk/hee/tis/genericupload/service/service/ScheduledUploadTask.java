@@ -14,7 +14,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
@@ -140,11 +140,11 @@ public class ScheduledUploadTask {
             break;
 
           case PLACEMENTS:
-            List<PlacementXLS> placementXLSS = excelToObjectMapper
-                .map(PlacementXLS.class, new ColumnMapper(PlacementXLS.class).getFieldMap());
+            List<PlacementXls> xlsRows = excelToObjectMapper
+                .map(PlacementXls.class, new ColumnMapper(PlacementXls.class).getFieldMap());
             placementTransformerService
-                .processPlacementsUpload(placementXLSS, applicationType.getUsername());
-            setJobToCompleted(applicationType, placementXLSS);
+                .processPlacementsUpload(xlsRows, applicationType.getUsername());
+            setJobToCompleted(applicationType, xlsRows);
             break;
 
           case PLACEMENTS_DELETE:
