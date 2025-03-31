@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -28,6 +29,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
+import org.springframework.util.ObjectUtils;
 import uk.nhs.tis.StringConverter;
 
 public class ExcelToObjectMapper {
@@ -39,7 +41,7 @@ public class ExcelToObjectMapper {
   // The valid date formats defined in DATE_REGEX are d/mm/yyyy and dd/mm/yyyy
   private static final String DATE_REGEX = "(([1-9]|0[1-9]|[12]\\d|3[01])/([1-9]|0[1-9]|1[0-2])/[12]\\d{3})";
 
-  private Workbook workbook;
+  private final Workbook workbook;
 
 
   public ExcelToObjectMapper(InputStream excelFile, boolean validateDates)
@@ -80,7 +82,7 @@ public class ExcelToObjectMapper {
    *
    * @param excelFile the excel file passed to the method.
    * @return Workbook.
-   * @throws IOException
+   * @throws IOException Thrown when the workbook cannot be created, e.g. for an empty stream
    */
   private Workbook createWorkBook(InputStream excelFile)
       throws IOException {
@@ -97,7 +99,7 @@ public class ExcelToObjectMapper {
    */
   public <T> List<T> map(Class<T> cls, Map<String, String> columnMap)
       throws ReflectiveOperationException {
-    List<T> list = new ArrayList<T>();
+    List<T> list = new ArrayList<>();
 
     Field rowNumberFieldInXls = cls.getSuperclass().getDeclaredField(ROW_NUMBER);
     rowNumberFieldInXls.setAccessible(true);
@@ -108,7 +110,7 @@ public class ExcelToObjectMapper {
       if (sheet.getRow(rowNumber) == null || poiUtil.isEmptyRow(sheet.getRow(rowNumber))) {
         continue;
       }
-      Object obj = cls.newInstance();
+      T obj = cls.newInstance();
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
@@ -131,7 +133,7 @@ public class ExcelToObjectMapper {
       }
       rowNumberFieldInXls.setInt(obj, rowNumber);
       if (!isAllBlanks(obj)) {
-        list.add((T) obj);
+        list.add(obj);
       }
     }
     return list;
@@ -146,16 +148,11 @@ public class ExcelToObjectMapper {
   }
 
   private boolean isAllBlanks(Object obj) throws IllegalAccessException {
-    boolean allBlanks = true;
-    for (Field f : obj.getClass().getDeclaredFields()) {
-      if (f.getName().startsWith("$")) //skip surefire jacoco fields
-      {
-        continue;
-      }
-      f.setAccessible(true);
-      allBlanks = allBlanks && org.springframework.util.StringUtils.isEmpty(f.get(obj));
-    }
-    return allBlanks;
+    // Note the inversions in the operations and return, done to avoid processing all elements.
+    return !Arrays.stream(obj.getClass().getDeclaredFields())
+        //skip surefire jacoco fields
+        .filter(f -> !f.getName().startsWith("$"))
+        .anyMatch(o -> !ObjectUtils.isEmpty(o));
   }
 
   /**
@@ -187,7 +184,8 @@ public class ExcelToObjectMapper {
           } else if (cls == Float.class) {
             field.set(obj, Float.valueOf(trim));
           } else if (cls == Long.class) {
-            field.set(obj, Long.valueOf(trim));
+            // Parse and then convert for consistency across {@link CellType}s
+            field.set(obj, Double.valueOf(trim).longValue());
           } else {
             String setStr = StringConverter.getConverter(trim).escapeForJson().toString();
             field.set(obj, setStr);
@@ -244,10 +242,10 @@ public class ExcelToObjectMapper {
   /**
    * Read first row/header of Excel file, match given header name and return its index.
    *
-   * @param headerName
-   * @param workbook
-   * @return Index number of header name.
-   * @throws Exception
+   * @param headerName The complete field name as in the header row
+   * @param workbook   the spreadsheet to search for the header
+   * @return The numeric column index for the field.
+   * @throws NoSuchFieldException Thrown when a field is not found
    */
   private int getHeaderIndex(String headerName, Workbook workbook) throws NoSuchFieldException {
     Sheet sheet = workbook.getSheetAt(0);

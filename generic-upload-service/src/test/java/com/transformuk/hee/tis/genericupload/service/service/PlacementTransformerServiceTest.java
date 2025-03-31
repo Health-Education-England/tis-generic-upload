@@ -73,7 +73,7 @@ class PlacementTransformerServiceTest {
   static List<SiteDTO> getSitesForString(String siteName) {
     List<SiteDTO> ret = siteByName.get(siteName);
     if (ret == null) {
-      return new ArrayList<SiteDTO>();
+      return new ArrayList<>();
     } else {
       return ret;
     }
