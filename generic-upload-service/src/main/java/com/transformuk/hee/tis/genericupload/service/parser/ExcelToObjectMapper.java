@@ -147,7 +147,7 @@ public class ExcelToObjectMapper {
         .collect(Collectors.toSet());
   }
 
-  private boolean isAllBlanks(Object obj) throws IllegalAccessException {
+  private boolean isAllBlanks(Object obj) {
     // Note the inversions in the operations and return, done to avoid processing all elements.
     return !Arrays.stream(obj.getClass().getDeclaredFields())
         //skip surefire jacoco fields
