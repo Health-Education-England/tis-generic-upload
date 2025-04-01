@@ -134,8 +134,15 @@ public class PlacementTransformerService {
   private PeopleByIdFetcher peopleByIdFetcher;
   private PostFetcher postFetcher;
 
+  /**
+   * Appends a new PlacementSupervisor to the Placement supplied.
+   *
+   * @param placementDto   The placement to receive the additional supervisor record
+   * @param supervisorType The type of the placement supervisor
+   * @param regNumberDto   The DTO, containing the Person ID of the supervisor
+   */
   public static void addNewSupervisorToPlacement(PlacementDetailsDTO placementDto,
-      String supervisorType, RegNumberDTO regNumberDto) {
+      String supervisorType, RegNumberDTO<?> regNumberDto) {
     PersonLiteDTO personLiteDTO = new PersonLiteDTO();
     personLiteDTO.setId(regNumberDto.getId());
     PlacementSupervisorDTO placementSupervisorDTO = new PlacementSupervisorDTO();
@@ -745,7 +752,7 @@ public class PlacementTransformerService {
   private <DTO_KEY> Set<DTO_KEY> collectRegNumbersForPlacements(List<PlacementXls> xlsRows,
       Function<PlacementXls, DTO_KEY> extractRegistrationNumber) {
     return xlsRows.stream()
-        .map(extractRegistrationNumber::apply)
+        .map(extractRegistrationNumber)
         .collect(Collectors.toSet());
   }
 
