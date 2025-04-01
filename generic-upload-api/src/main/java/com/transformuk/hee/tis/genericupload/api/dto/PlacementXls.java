@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class PlacementXLS extends TemplateXLS implements PlacementSupervisor {
+public class PlacementXls extends TemplateXLS implements PlacementSupervisor {
 
   @ExcelColumn(name = "Surname*", required = true)
   private String surname;
@@ -20,6 +20,9 @@ public class PlacementXLS extends TemplateXLS implements PlacementSupervisor {
 
   @ExcelColumn(name = "Public Health Number")
   private String publicHealthNumber;
+
+  @ExcelColumn(name = "TIS Person ID")
+  private Long personId;
 
   @ExcelColumn(name = "National Post Number*", required = true)
   private String nationalPostNumber;

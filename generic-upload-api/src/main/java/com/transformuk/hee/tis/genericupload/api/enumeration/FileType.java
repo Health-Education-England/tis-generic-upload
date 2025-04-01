@@ -10,7 +10,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
@@ -24,7 +24,7 @@ public enum FileType {
   FUNDING_UPDATE(FundingUpdateXLS.class),
   PEOPLE(PersonXLS.class),
   PEOPLE_UPDATE(PersonUpdateXls.class),
-  PLACEMENTS(PlacementXLS.class),
+  PLACEMENTS(PlacementXls.class),
   PLACEMENTS_DELETE(PlacementDeleteXLS.class),
   PLACEMENTS_UPDATE(PlacementUpdateXLS.class),
   POSTS_CREATE(PostCreateXls.class),
@@ -37,8 +37,7 @@ public enum FileType {
 
   /**
    * The class of the XLS DTO related to this FileType.
-   *
-   * @return The associated class.
+   * The `dtoClass` holds associated Class.
    */
   @Getter
   private final Class<? extends TemplateXLS> dtoClass;

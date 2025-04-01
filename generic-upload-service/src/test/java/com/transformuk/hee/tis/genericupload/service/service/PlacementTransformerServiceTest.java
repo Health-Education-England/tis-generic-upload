@@ -4,7 +4,7 @@ import static com.transformuk.hee.tis.genericupload.service.service.PlacementTra
 import static com.transformuk.hee.tis.genericupload.service.util.MultiValueUtil.MULTI_VALUE_SEPARATOR;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.transformuk.hee.tis.genericupload.api.dto.PlacementXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PlacementXls;
 import com.transformuk.hee.tis.reference.api.dto.SiteDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementDetailsDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PlacementSpecialtyDTO;
@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class PlacementTransformerServiceTest {
+class PlacementTransformerServiceTest {
 
-  public static final String ANOTHER = "12345another";
+  static final String ANOTHER = "12345another";
   private static final String DID_NOT_FIND_OTHER_SITE_FOR_NAME = "Did not find other site for name";
   private static final String DID_NOT_FIND_OTHER_SITE_IN_PARENT_POST_FOR_NAME = "Did not find other site in parent post for name";
   private static final String FOUND_MULTIPLE_OTHER_SITES_FOR_NAME = "Found multiple other sites for name";
@@ -37,7 +37,7 @@ public class PlacementTransformerServiceTest {
   static Map<String, List<SiteDTO>> siteByName;
   PlacementTransformerService placementTransformerService;
   PlacementDetailsDTO placementDTO;
-  private PlacementXLS placementXLS;
+  private PlacementXls placementXLS;
   private PostDTO postDTO;
 
   private static SpecialtyDTO createSpeciltyDTO(Long id, String intrepidId, String name,
@@ -61,31 +61,31 @@ public class PlacementTransformerServiceTest {
     return siteDTO;
   }
 
-  public static List<SpecialtyDTO> getSpecialtiesForString(String specialtyName) {
+  static List<SpecialtyDTO> getSpecialtiesForString(String specialtyName) {
     return specialtyByName.get(specialtyName);
   }
 
-  public static List<SpecialtyDTO> getSpecialtiesWithDuplicatesForSpecialtyName(
+  static List<SpecialtyDTO> getSpecialtiesWithDuplicatesForSpecialtyName(
       String specialtyName) {
     return specialtyByNameWithDuplicate.get(specialtyName);
   }
 
-  public static List<SiteDTO> getSitesForString(String siteName) {
+  static List<SiteDTO> getSitesForString(String siteName) {
     List<SiteDTO> ret = siteByName.get(siteName);
     if (ret == null) {
-      return new ArrayList<SiteDTO>();
+      return new ArrayList<>();
     } else {
       return ret;
     }
   }
 
-  @Before
-  public void initialise() throws Exception {
+  @BeforeEach
+  void initialise() throws Exception {
     placementTransformerService = new PlacementTransformerService();
     initialiseData();
   }
 
-  public void initialiseData() throws Exception {
+  void initialiseData() throws Exception {
     SpecialtyDTO specialtyDTO = createSpeciltyDTO(12345L, "12345", "12345", "A MEDIA COLLEGE",
         "NHS_CODE", Status.CURRENT);
     SpecialtyDTO specialtyDTOWithSameName = createSpeciltyDTO(123456L, "123456", "12345",
@@ -121,9 +121,9 @@ public class PlacementTransformerServiceTest {
     postDTO.setSites(sites);
   }
 
-  public PlacementXLS createPlacementXLS(String forename, String surname, String gmcNumber,
+  PlacementXls createPlacementXLS(String forename, String surname, String gmcNumber,
       String npn, String specialtyName) {
-    PlacementXLS placementXLS = new PlacementXLS();
+    PlacementXls placementXLS = new PlacementXls();
     placementXLS.setSurname(surname);
     placementXLS.setGmcNumber(gmcNumber);
     placementXLS.setNationalPostNumber(npn);
@@ -131,7 +131,7 @@ public class PlacementTransformerServiceTest {
     return placementXLS;
   }
 
-  public void createSingleListWithSpecialty(Map<String, List<SpecialtyDTO>> specialtyByName,
+  void createSingleListWithSpecialty(Map<String, List<SpecialtyDTO>> specialtyByName,
       SpecialtyDTO specialtyDTO) throws Exception {
     if (specialtyByName.get(specialtyDTO.getName()) == null) {
       specialtyByName.put(specialtyDTO.getName(), new ArrayList<>());
@@ -141,15 +141,13 @@ public class PlacementTransformerServiceTest {
     }
   }
 
-  public void addSitesList(Map<String, List<SiteDTO>> siteByName, SiteDTO siteDTO) {
-    if (siteByName.get(siteDTO.getSiteKnownAs()) == null) {
-      siteByName.put(siteDTO.getSiteKnownAs(), new ArrayList<>());
-    }
+  void addSitesList(Map<String, List<SiteDTO>> siteByName, SiteDTO siteDTO) {
+    siteByName.computeIfAbsent(siteDTO.getSiteKnownAs(), k -> new ArrayList<>());
     siteByName.get(siteDTO.getSiteKnownAs()).add(siteDTO);
   }
 
   @Test
-  public void canHandleAnUnknownSpecialty() {
+  void canHandleAnUnknownSpecialty() {
     placementXLS.setSpecialty1("Unknown");
     placementTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementTransformerServiceTest::getSpecialtiesForString);
@@ -157,7 +155,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void canBuildSpecialtiesForPlacement() {
+  void canBuildSpecialtiesForPlacement() {
     placementTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementTransformerServiceTest::getSpecialtiesForString);
     assertThat(placementDTO.getSpecialties().size()).isEqualTo(1);
@@ -168,14 +166,14 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void doesNotBuildSpecialtiesIfDuplicatesSpecialtiesExist() {
+  void doesNotBuildSpecialtiesIfDuplicatesSpecialtiesExist() {
     placementTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementTransformerServiceTest::getSpecialtiesWithDuplicatesForSpecialtyName);
     assertThat(placementDTO.getSpecialties().size()).isEqualTo(0);
   }
 
   @Test
-  public void canBuildMultipleSpecialtiesForPlacement() {
+  void canBuildMultipleSpecialtiesForPlacement() {
     placementXLS.setSpecialty2(ANOTHER);
     placementTransformerService.setSpecialties(placementXLS, placementDTO,
         PlacementTransformerServiceTest::getSpecialtiesForString);
@@ -183,7 +181,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void handlesDuplicationOnOther() {
+  void handlesDuplicationOnOther() {
     placementXLS.setSpecialty2(ANOTHER);
     placementXLS.setSpecialty3(ANOTHER);
 
@@ -194,7 +192,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void shouldHandleOtherSpecialtyWhenDuplicationOnPrimary() {
+  void shouldHandleOtherSpecialtyWhenDuplicationOnPrimary() {
     placementXLS.setSpecialty2(ANOTHER);
     placementXLS.setSpecialty3("12345"); // duplication
 
@@ -208,7 +206,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void overwritesSpecialtiesIfOneSpecialtyExistsOnUpload() {
+  void overwritesSpecialtiesIfOneSpecialtyExistsOnUpload() {
     PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
     placementSpecialtyDTO.setSpecialtyId(10L);
     placementSpecialtyDTO.setPlacementId(10L);
@@ -229,7 +227,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void shouldHandleMultipleOtherSpecialties() {
+  void shouldHandleMultipleOtherSpecialties() {
     PlacementSpecialtyDTO placementSpecialtyDto = new PlacementSpecialtyDTO();
     placementSpecialtyDto.setSpecialtyId(10L);
     placementSpecialtyDto.setPlacementId(10L);
@@ -247,12 +245,12 @@ public class PlacementTransformerServiceTest {
         .filter(s -> s.getPlacementSpecialtyType().equals(PostSpecialtyType.OTHER)).collect(
             Collectors.toList());
     assertThat(placementSpecialtyDtos.size()).isEqualTo(2);
-    assertThat(placementSpecialtyDtos.stream().map(s -> s.getSpecialtyName())
+    assertThat(placementSpecialtyDtos.stream().map(PlacementSpecialtyDTO::getSpecialtyName)
         .collect(Collectors.toList())).contains(ANOTHER, "11111");
   }
 
   @Test
-  public void shouldHandleSubSpecialtyWhenDuplicationOnPrimary() {
+  void shouldHandleSubSpecialtyWhenDuplicationOnPrimary() {
     placementXLS.setSubSpecialty("12345");
 
     placementTransformerService.setSpecialties(placementXLS, placementDTO,
@@ -267,7 +265,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void shouldHandleSubSpecialtyWhenDuplicationOnOtherSpecialties() {
+  void shouldHandleSubSpecialtyWhenDuplicationOnOtherSpecialties() {
     placementXLS.setSpecialty2(ANOTHER);
     placementXLS.setSpecialty3("11111");
     placementXLS.setSubSpecialty(ANOTHER);
@@ -286,7 +284,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void shouldNotSetAnUnknownOtherSites() {
+  void shouldNotSetAnUnknownOtherSites() {
     placementXLS.setOtherSites("Unknown");
     placementTransformerService.setOtherSites(placementXLS, placementDTO,
         PlacementTransformerServiceTest::getSitesForString, postDTO);
@@ -295,7 +293,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void ShouldSetOtherSitesOnParentPost() {
+  void shouldSetOtherSitesOnParentPost() {
     placementXLS.setOtherSites("mockedSite");
     placementTransformerService.setOtherSites(placementXLS, placementDTO,
         PlacementTransformerServiceTest::getSitesForString, postDTO);
@@ -304,7 +302,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void ShouldNotSetOtherSitesNotOnParentPost() {
+  void shouldNotSetOtherSitesNotOnParentPost() {
     placementXLS.setOtherSites("mockedSite");
 
     Set<PostSiteDTO> sites = new HashSet<>();
@@ -320,7 +318,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void ShouldNotSetOtherSitesWhenMultipleFound() {
+  void shouldNotSetOtherSitesWhenMultipleFound() {
     placementXLS.setOtherSites("mockedSite");
 
     SiteDTO siteDTO = createSiteDTO(2L, "mockedSite",
@@ -333,7 +331,7 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void shouldAcceptMultipleOtherSites() {
+  void shouldAcceptMultipleOtherSites() {
     String mockedSite1 = "mockedSite1";
     String mockedSite2 = "mockedSite2";
     placementXLS.setOtherSites(mockedSite1 + MULTI_VALUE_SEPARATOR + mockedSite2);
@@ -354,26 +352,26 @@ public class PlacementTransformerServiceTest {
   }
 
   @Test
-  public void shouldAddErrorWithInvalidPlacementGrade() {
+  void shouldAddErrorWithInvalidPlacementGrade() {
     //WHEN
     List<String> gradesValidForPlacements = Arrays.asList("Valid grade 1", "Valid grade 2");
     String gradeName = "Specialty Registrar - HENE";
     placementXLS.setGrade(gradeName); //not a placement grade
-    List<PlacementXLS> placementXLSS = Collections.singletonList(placementXLS);
-    placementTransformerService.isPlacementGradeValid(placementXLSS, gradeName,
+    List<PlacementXls> xlsRows = Collections.singletonList(placementXLS);
+    placementTransformerService.isPlacementGradeValid(xlsRows, gradeName,
         gradesValidForPlacements);
     //THEN
     assertThat(placementXLS.getErrorMessage()).contains(EXPECTED_A_PLACEMENT_GRADE_FOR);
   }
 
   @Test
-  public void shouldNotAddErrorWithValidPlacementGrade() {
+  void shouldNotAddErrorWithValidPlacementGrade() {
     //WHEN
     List<String> gradesValidForPlacements = Arrays.asList("Valid grade 1", "Valid grade 2");
     String gradeName = "Valid grade 1";
     placementXLS.setGrade(gradeName); //placement grade
-    List<PlacementXLS> placementXLSS = Collections.singletonList(placementXLS);
-    placementTransformerService.isPlacementGradeValid(placementXLSS, gradeName,
+    List<PlacementXls> xlsRows = Collections.singletonList(placementXLS);
+    placementTransformerService.isPlacementGradeValid(xlsRows, gradeName,
         gradesValidForPlacements);
     //THEN
     assertThat(placementXLS.getErrorMessage()).isNull();

@@ -2,6 +2,13 @@
 
 ## How to use this service
 
+### AWS configuration
+When running with a custom profile, the cloud storage bucket can be configured using
+`GENERIC_UPLOAD_AWS_BUCKET_NAME`.  This defaults to a predefined bucket for local deployment.
+
+Environment variables or configuration isused to grant access to the bucket.
+
+### Azure configuration (unsupported)
 This service is controlled through environment variables, so there is no need to
 mess with any configuration files. While doing development locally, the following environment 
 variables have to be set
