@@ -4,7 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -24,6 +24,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
+import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -184,7 +185,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -203,7 +204,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -225,7 +226,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -247,7 +248,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -266,7 +267,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -285,7 +286,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -304,7 +305,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -326,7 +327,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -348,7 +349,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -367,7 +368,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -470,7 +471,7 @@ public class FileValidatorTest {
     // Given.
     FileValidator fileValidator = spy(this.fileValidator);
 
-    ArgumentCaptor<Class<AssessmentXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
+    ArgumentCaptor<Class<TemplateXLS>> xlsCaptor = ArgumentCaptor.forClass(Class.class);
 
     doNothing().when(fileValidator)
         .validateMandatoryFieldsOrThrowException(any(), any(), xlsCaptor.capture(), any());
@@ -488,10 +489,9 @@ public class FileValidatorTest {
   }
 
   @Test
-  public void getFileTypeShouldThrowExceptionIfTemplateNotIdentifiable() throws Exception {
+  public void getFileTypeShouldThrowExceptionIfTemplateNotIdentifiable() {
     // When.
-    assertThrows(InvalidFormatException.class, () -> {
-      fileValidator.getFileType(null, null, null, Collections.emptySet());
-    });
+    assertThrows(InvalidFormatException.class,
+        () -> fileValidator.getFileType(null, null, null, Collections.emptySet()));
   }
 }
