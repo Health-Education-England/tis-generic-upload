@@ -156,12 +156,12 @@ public class PlacementTransformerService {
     placementDto.getSupervisors().add(placementSupervisorDTO);
   }
 
-  public static boolean supervisorHasRole(PersonDTO personDTO, Set<String> supervisorRoles) {
-    if (ObjectUtils.isEmpty(personDTO.getRole())) {
+  public static boolean supervisorHasRole(PersonDTO personDto, Set<String> supervisorRoles) {
+    if (ObjectUtils.isEmpty(personDto.getRole())) {
       return false;
     }
     Set<String> supervisorRolesAssignedToPerson = new HashSet<>(
-        Arrays.asList(personDTO.getRole().split(",")));
+        Arrays.asList(personDto.getRole().split(",")));
     return supervisorRolesAssignedToPerson.stream()
         .anyMatch(roleAssignedToPerson -> supervisorRoles
             .contains(roleAssignedToPerson.toLowerCase().trim()));
@@ -193,7 +193,7 @@ public class PlacementTransformerService {
       Function<PlacementXls, DTO_KEY> getRegNumberFunction, DTOFetcher<DTO_KEY, DTO> fetcher) {
     return fetcher.findWithKeys(
         collectRegNumbersForPlacements(
-            getRowsWithRegistrationNumberForPlacements(xlsRows, getRegNumberFunction),
+            getRowsWithPopulatedIdentifier(xlsRows, getRegNumberFunction),
             getRegNumberFunction));
   }
 
@@ -210,7 +210,7 @@ public class PlacementTransformerService {
     }
     xlsRows.forEach(PlacementXls::initialiseSuccessfullyImported);
     List<PlacementSupervisor> placementSupervisorList = new ArrayList<>(xlsRows);
-    RegNumberToDTOLookup regNumberToDTOLookup = supervisorRegNumberIdService
+    RegNumberToDTOLookup regNumberToDtoLookup = supervisorRegNumberIdService
         .getRegNumbersForSheetOrMarkAsError(placementSupervisorList);
     Map<Long, PersonDTO> personIdDetailsMap = buildRegNumberDetailsMap(xlsRows, getPersonId,
         peopleByIdFetcher);
@@ -235,45 +235,45 @@ public class PlacementTransformerService {
     Map<String, PostDTO> postsMappedByNpns =
         !placementNpns.isEmpty() ? postFetcher.findWithKeys(placementNpns)
             : new HashMap<>();//TODO filter posts CURRENT/INACTIVE
-    Set<String> duplicateNPNKeys =
+    Set<String> duplicateNpnKeys =
         !placementNpns.isEmpty() ? postFetcher.getDuplicateKeys() : new HashSet<>();
     Map<String, SiteDTO> siteMapByName = getSiteDtoMap(xlsRows);
     Map<String, GradeDTO> gradeMapByName = getGradeDtoMap(xlsRows);
     for (PlacementXls placementXls : xlsRows) {
-      useMatchingCriteriaToUpdatePlacement(regNumberToDTOLookup, phnDetailsMap, pbdMapByPH,
+      useMatchingCriteriaToUpdatePlacement(regNumberToDtoLookup, phnDetailsMap, pbdMapByPH,
           gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC, personIdDetailsMap, pbdMapById,
-          postsMappedByNpns, duplicateNPNKeys, siteMapByName, gradeMapByName, placementXls,
+          postsMappedByNpns, duplicateNpnKeys, siteMapByName, gradeMapByName, placementXls,
           username);
     }
   }
 
-  private void useMatchingCriteriaToUpdatePlacement(RegNumberToDTOLookup regNumberToDTOLookup,
+  private void useMatchingCriteriaToUpdatePlacement(RegNumberToDTOLookup regNumberToDtoLookup,
       Map<String, PersonDTO> phnDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByPH,
       Map<String, GdcDetailsDTO> gdcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGDC,
       Map<String, GmcDetailsDTO> gmcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGMC,
       Map<Long, PersonDTO> personIdDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapById,
-      Map<String, PostDTO> postsMappedByNpns, Set<String> duplicateNPNKeys,
+      Map<String, PostDTO> postsMappedByNpns, Set<String> duplicateNpnKeys,
       Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName,
       PlacementXls placementXls, String username) {
-    Optional<PersonBasicDetailsDTO> personBasicDetailsDTOOptional = getPersonBasicDetailsDTOFromRegNumber(
+    Optional<PersonBasicDetailsDTO> personBasicDetailsDtoOOptional = getPersonBasicDetailsDtoFromRegNumber(
         phnDetailsMap, pbdMapByPH, gdcDetailsMap, pbdMapByGDC, gmcDetailsMap, pbdMapByGMC,
         personIdDetailsMap, pbdMapById, placementXls);
-    if (personBasicDetailsDTOOptional.isPresent() && checkSpecialty1ExistsOrRecordError(
+    if (personBasicDetailsDtoOOptional.isPresent() && checkSpecialty1ExistsOrRecordError(
         placementXls)) {
-      PersonBasicDetailsDTO personBasicDetailsDto = personBasicDetailsDTOOptional.get();
+      PersonBasicDetailsDTO personBasicDetailsDto = personBasicDetailsDtoOOptional.get();
       if (!placementXls.getSurname().equalsIgnoreCase(personBasicDetailsDto.getLastName())) {
         placementXls
             .addErrorMessage(SURNAME_DOES_NOT_MATCH_PERSON_OBTAINED_VIA_IDENTIFIER);
       }
       String nationalPostNumber = placementXls.getNationalPostNumber();
-      if (isNpmValid(placementXls, nationalPostNumber, postsMappedByNpns, duplicateNPNKeys)) {
+      if (isNpmValid(placementXls, nationalPostNumber, postsMappedByNpns, duplicateNpnKeys)) {
         PostDTO postDto = postsMappedByNpns.get(nationalPostNumber);
         if (postDto != null) {
           if ("INACTIVE".equalsIgnoreCase(postDto.getStatus().toString())) {
             placementXls.addErrorMessage(
                 POST_STATUS_IS_INACTIVE_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
           } else {
-            updatePlacement(regNumberToDTOLookup, siteMapByName, gradeMapByName, placementXls,
+            updatePlacement(regNumberToDtoLookup, siteMapByName, gradeMapByName, placementXls,
                 personBasicDetailsDto, postDto, username);
           }
         }
@@ -289,14 +289,14 @@ public class PlacementTransformerService {
    *                           onto. The {@code nationalPostNumber} is typically from this row
    * @param nationalPostNumber The NPN to check
    * @param postsMappedByNpns  A map of valid NPNs
-   * @param duplicateNPNKeys   A collection of NPNs which match multiple {@link PostDTO}s
+   * @param duplicateNpnKeys   A collection of NPNs which match multiple {@link PostDTO}s
    */
   public boolean isNpmValid(PlacementXls placementXls, String nationalPostNumber,
-      Map<String, PostDTO> postsMappedByNpns, Set<String> duplicateNPNKeys) {
+      Map<String, PostDTO> postsMappedByNpns, Set<String> duplicateNpnKeys) {
     if (nationalPostNumber == null) {
       placementXls.addErrorMessage(NATIONAL_POST_NUMBER_IS_MANDATORY);
       return false;
-    } else if (duplicateNPNKeys.contains(nationalPostNumber)) {
+    } else if (duplicateNpnKeys.contains(nationalPostNumber)) {
       placementXls
           .addErrorMessage(MULTIPLE_POSTS_FOUND_FOR_NATIONAL_POST_NUMBER + nationalPostNumber);
       return false;
@@ -338,7 +338,7 @@ public class PlacementTransformerService {
     return gradeValid;
   }
 
-  private Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDTOFromRegNumber(
+  private Optional<PersonBasicDetailsDTO> getPersonBasicDetailsDtoFromRegNumber(
       Map<String, PersonDTO> phnDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByPH,
       Map<String, GdcDetailsDTO> gdcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGDC,
       Map<String, GmcDetailsDTO> gmcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGMC,
@@ -362,7 +362,7 @@ public class PlacementTransformerService {
     }
   }
 
-  private void updatePlacement(RegNumberToDTOLookup regNumberToDTOLookup,
+  private void updatePlacement(RegNumberToDTOLookup regNumberToDtoLookup,
       Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName,
       PlacementXls placementXls, PersonBasicDetailsDTO personBasicDetailsDto, PostDTO postDto,
       String username) {
@@ -373,7 +373,7 @@ public class PlacementTransformerService {
       LocalDate dateTo = convertDate(placementXls.getDateTo());
       boolean existingPlacementUpdatedOrDeleted = false;
       if (!placementsByPostIdAndPersonId.isEmpty()) {
-        existingPlacementUpdatedOrDeleted = updateOrDeleteExistingPlacement(regNumberToDTOLookup,
+        existingPlacementUpdatedOrDeleted = updateOrDeleteExistingPlacement(regNumberToDtoLookup,
             siteMapByName, gradeMapByName, placementXls, placementsByPostIdAndPersonId, dateFrom,
             dateTo, existingPlacementUpdatedOrDeleted, username, postDto);
       }
@@ -385,12 +385,12 @@ public class PlacementTransformerService {
         placementDto.setDateFrom(dateFrom);
         placementDto.setDateTo(dateTo);
         saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXls, placementDto,
-            regNumberToDTOLookup, false, username, postDto);
+            regNumberToDtoLookup, false, username, postDto);
       }
     }
   }
 
-  private boolean updateOrDeleteExistingPlacement(RegNumberToDTOLookup regNumberToDTOLookup,
+  private boolean updateOrDeleteExistingPlacement(RegNumberToDTOLookup regNumberToDtoLookup,
       Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName,
       PlacementXls placementXls, List<PlacementDetailsDTO> placementsByPostIdAndPersonId,
       LocalDate dateFrom, LocalDate dateTo, boolean existingPlacementUpdatedOrDeleted,
@@ -402,7 +402,7 @@ public class PlacementTransformerService {
           placementXls.setSuccessfullyImported(true);
         } else {
           saveOrUpdatePlacement(siteMapByName, gradeMapByName, placementXls, placementDto,
-              regNumberToDTOLookup, true, username, postDto);
+              regNumberToDtoLookup, true, username, postDto);
         }
         existingPlacementUpdatedOrDeleted = true;
         break;
@@ -429,19 +429,19 @@ public class PlacementTransformerService {
 
   private void saveOrUpdatePlacement(Map<String, SiteDTO> siteMapByName,
       Map<String, GradeDTO> gradeMapByName, PlacementXls placementXls,
-      PlacementDetailsDTO placementDto, RegNumberToDTOLookup regNumberToDTOLookup,
+      PlacementDetailsDTO placementDto, RegNumberToDTOLookup regNumberToDtoLookup,
       boolean updatePlacement, String username, PostDTO postDto) {
     setOtherMandatoryFields(siteMapByName, gradeMapByName, placementXls, placementDto);
     setSpecialties(placementXls, placementDto,
         tcsServiceImpl::getSpecialtyByName); //NOTE : specialties won't have a placement Id here and relies on the api to assign the Id
     setOtherSites(placementXls, placementDto, referenceServiceImpl::findSitesByName, postDto);
     Set<String> clinicalSupervisorRoles = referenceServiceImpl.getRolesByCategory(1L).stream()
-        .map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
+        .map(roleDto -> roleDto.getCode().toLowerCase().trim())
         .collect(Collectors.toSet());
     Set<String> educationalSupervisorRoles = referenceServiceImpl.getRolesByCategory(2L).stream()
-        .map(roleDTO -> roleDTO.getCode().toLowerCase().trim())
+        .map(roleDto -> roleDto.getCode().toLowerCase().trim())
         .collect(Collectors.toSet());
-    addSupervisorsToPlacement(placementXls, placementDto, regNumberToDTOLookup,
+    addSupervisorsToPlacement(placementXls, placementDto, regNumberToDtoLookup,
         clinicalSupervisorRoles, educationalSupervisorRoles);
     if (!placementXls.hasErrors()) {
       placementDto.setLifecycleState(LifecycleState.APPROVED);
@@ -465,50 +465,50 @@ public class PlacementTransformerService {
       if (placementDto.getComments() == null) {
         placementDto.setComments(new HashSet<>());
       }
-      PlacementCommentDTO placementCommentDTO;
+      PlacementCommentDTO placementCommentDto;
       Optional<PlacementCommentDTO> commentsByGenericUpload = placementDto.getComments().stream()
           .filter(anExistingCommentForPlacement ->
               !ObjectUtils.isEmpty(anExistingCommentForPlacement.getSource())
                   && anExistingCommentForPlacement.getSource().equals(CommentSource.GENERIC_UPLOAD))
           .findAny();
       if (commentsByGenericUpload.isPresent()) {
-        placementCommentDTO = commentsByGenericUpload.get();
+        placementCommentDto = commentsByGenericUpload.get();
       } else {
-        placementCommentDTO = new PlacementCommentDTO();
-        placementDto.getComments().add(placementCommentDTO);
-        placementCommentDTO.setSource(CommentSource.GENERIC_UPLOAD);
+        placementCommentDto = new PlacementCommentDTO();
+        placementDto.getComments().add(placementCommentDto);
+        placementCommentDto.setSource(CommentSource.GENERIC_UPLOAD);
       }
-      placementCommentDTO.setBody(placementXls.getComments());
-      placementCommentDTO.setAuthor(username);
+      placementCommentDto.setBody(placementXls.getComments());
+      placementCommentDto.setAuthor(username);
     }
   }
 
   private void addSupervisorsToPlacement(PlacementXls placementXls,
-      PlacementDetailsDTO placementDto, RegNumberToDTOLookup regNumberToDTOLookup,
+      PlacementDetailsDTO placementDto, RegNumberToDTOLookup regNumberToDtoLookup,
       Set<String> clinicalSupervisorRoles, Set<String> educationalSupervisorRoles) {
-    addSupervisorToPlacement(placementXls, placementDto, regNumberToDTOLookup,
-        regNumberToDTOLookup::getDTOForClinicalSupervisor, PlacementXls::getClinicalSupervisor,
+    addSupervisorToPlacement(placementXls, placementDto, regNumberToDtoLookup,
+        regNumberToDtoLookup::getDTOForClinicalSupervisor, PlacementXls::getClinicalSupervisor,
         CLINICAL_SUPERVISOR, clinicalSupervisorRoles);
-    addSupervisorToPlacement(placementXls, placementDto, regNumberToDTOLookup,
-        regNumberToDTOLookup::getDTOForEducationalSupervisor,
+    addSupervisorToPlacement(placementXls, placementDto, regNumberToDtoLookup,
+        regNumberToDtoLookup::getDTOForEducationalSupervisor,
         PlacementXls::getEducationalSupervisor, EDUCATIONAL_SUPERVISOR, educationalSupervisorRoles);
   }
 
   private void addSupervisorToPlacement(PlacementXls placementXls, PlacementDetailsDTO placementDto,
-      RegNumberToDTOLookup regNumberToDTOLookup,
-      Function<String, Optional<RegNumberDTO>> getDTOForRegNumber,
+      RegNumberToDTOLookup regNumberToDtoLookup,
+      Function<String, Optional<RegNumberDTO>> getDtoForRegNumber,
       Function<PlacementXls, String> getSupervisor, String supervisorType,
       Set<String> supervisorRoles) {
     if (!ObjectUtils.isEmpty(getSupervisor.apply(placementXls))) {
-      Optional<RegNumberDTO> dtoForSupervisor = getDTOForRegNumber
+      Optional<RegNumberDTO> dtoForSupervisor = getDtoForRegNumber
           .apply(getSupervisor.apply(placementXls));
       if (dtoForSupervisor.isPresent()) {
         RegNumberDTO regNumberDto = dtoForSupervisor.get();
-        PersonDTO personDTO = regNumberDto.getRegNumberType() == RegNumberType.PH
+        PersonDTO personDto = regNumberDto.getRegNumberType() == RegNumberType.PH
             ? ((PhnDTO) regNumberDto).getRegNumberDTO()
-            : regNumberToDTOLookup.getPersonDetailsMapForSupervisorsByGmcAndGdc()
+            : regNumberToDtoLookup.getPersonDetailsMapForSupervisorsByGmcAndGdc()
                 .get(regNumberDto.getId());
-        if (!supervisorHasRole(personDTO, supervisorRoles)) {
+        if (!supervisorHasRole(personDto, supervisorRoles)) {
           placementXls.addErrorMessage(String
               .format(IS_NOT_A_ROLE_FOR_PERSON_WITH_REGISTRATION_NUMBER, supervisorType,
                   getSupervisor.apply(placementXls)));
@@ -549,33 +549,33 @@ public class PlacementTransformerService {
     // primary specialty is mandatory.
     // When it's populated in the template,
     // clean the existing specialty/other specialties/sub specialty.
-    Set<PlacementSpecialtyDTO> placementSpecialtyDtos = initialiseNewPlacementSpecialtyDTOS(
+    Set<PlacementSpecialtyDTO> placementSpecialtyDtos = initialiseNewPlacementSpecialtyDtos(
         placementDto);
 
     // Primary specialty
-    Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional1 = buildPlacementSpecialtyDto(
+    Optional<PlacementSpecialtyDTO> placementSpecialtyDtoOptional1 = buildPlacementSpecialtyDto(
         placementXls, placementDto, getSpecialtyDtosForName, placementXls.getSpecialty1(),
         PostSpecialtyType.PRIMARY);
-    if (placementSpecialtyDTOOptional1.isPresent()) {
-      PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional1.get();
-      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDTO,
+    if (placementSpecialtyDtoOptional1.isPresent()) {
+      PlacementSpecialtyDTO placementSpecialtyDto = placementSpecialtyDtoOptional1.get();
+      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDto,
           placementXls);
     }
     // Other specialties
-    Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional2 = buildPlacementSpecialtyDto(
+    Optional<PlacementSpecialtyDTO> placementSpecialtyDtoOptional2 = buildPlacementSpecialtyDto(
         placementXls, placementDto, getSpecialtyDtosForName, placementXls.getSpecialty2(),
         PostSpecialtyType.OTHER);
-    if (placementSpecialtyDTOOptional2.isPresent()) {
-      PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional2.get();
-      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDTO,
+    if (placementSpecialtyDtoOptional2.isPresent()) {
+      PlacementSpecialtyDTO placementSpecialtyDto = placementSpecialtyDtoOptional2.get();
+      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDto,
           placementXls);
     }
-    Optional<PlacementSpecialtyDTO> placementSpecialtyDTOOptional3 = buildPlacementSpecialtyDto(
+    Optional<PlacementSpecialtyDTO> placementSpecialtyDtoOptional3 = buildPlacementSpecialtyDto(
         placementXls, placementDto, getSpecialtyDtosForName, placementXls.getSpecialty3(),
         PostSpecialtyType.OTHER);
-    if (placementSpecialtyDTOOptional3.isPresent()) {
-      PlacementSpecialtyDTO placementSpecialtyDTO = placementSpecialtyDTOOptional3.get();
-      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDTO,
+    if (placementSpecialtyDtoOptional3.isPresent()) {
+      PlacementSpecialtyDTO placementSpecialtyDto = placementSpecialtyDtoOptional3.get();
+      addPlacementSpecialtyDtoIfUnique(placementSpecialtyDtos, placementSpecialtyDto,
           placementXls);
     }
     // Sub specialty
@@ -589,11 +589,11 @@ public class PlacementTransformerService {
     }
   }
 
-  public Set<PlacementSpecialtyDTO> initialiseNewPlacementSpecialtyDTOS(
+  public Set<PlacementSpecialtyDTO> initialiseNewPlacementSpecialtyDtos(
       PlacementDetailsDTO placementDto) {
-    Set<PlacementSpecialtyDTO> placementSpecialtyDTOS = new HashSet<>();
-    placementDto.setSpecialties(placementSpecialtyDTOS);
-    return placementSpecialtyDTOS;
+    Set<PlacementSpecialtyDTO> placementSpecialtyDtos = new HashSet<>();
+    placementDto.setSpecialties(placementSpecialtyDtos);
+    return placementSpecialtyDtos;
   }
 
   void addPlacementSpecialtyDtoIfUnique(Set<PlacementSpecialtyDTO> placementSpecialtyDtos,
@@ -621,13 +621,13 @@ public class PlacementTransformerService {
     Optional<SpecialtyDTO> singleValidSpecialty = getASingleValidSpecialtyFromTheReferenceService(
         placementXls, getSpecialtyDtosForName, specialtyName);
     if (singleValidSpecialty.isPresent()) {
-      SpecialtyDTO specialtyDTO = singleValidSpecialty.get();
-      PlacementSpecialtyDTO placementSpecialtyDTO = new PlacementSpecialtyDTO();
-      placementSpecialtyDTO.setPlacementId(placementDto.getId());
-      placementSpecialtyDTO.setSpecialtyId(specialtyDTO.getId());
-      placementSpecialtyDTO.setSpecialtyName(specialtyName);
-      placementSpecialtyDTO.setPlacementSpecialtyType(specialtyType);
-      return Optional.of(placementSpecialtyDTO);
+      SpecialtyDTO specialtyDto = singleValidSpecialty.get();
+      PlacementSpecialtyDTO placementSpecialtyDto = new PlacementSpecialtyDTO();
+      placementSpecialtyDto.setPlacementId(placementDto.getId());
+      placementSpecialtyDto.setSpecialtyId(specialtyDto.getId());
+      placementSpecialtyDto.setSpecialtyName(specialtyName);
+      placementSpecialtyDto.setPlacementSpecialtyType(specialtyType);
+      return Optional.of(placementSpecialtyDto);
     }
     return Optional.empty();
   }
@@ -678,9 +678,9 @@ public class PlacementTransformerService {
     if (!ObjectUtils.isEmpty(site) && !siteMapByName.containsKey(site)) {
       placementXls.addErrorMessage(MULTIPLE_OR_NO_SITES_FOUND_FOR + site);
     } else {
-      SiteDTO siteDTO = siteMapByName.get(site);
-      placementDto.setSiteCode(siteDTO.getSiteCode());
-      placementDto.setSiteId(siteDTO.getId());
+      SiteDTO siteDto = siteMapByName.get(site);
+      placementDto.setSiteCode(siteDto.getSiteCode());
+      placementDto.setSiteId(siteDto.getId());
     }
   }
 
@@ -749,7 +749,7 @@ public class PlacementTransformerService {
         .collect(Collectors.toSet());
   }
 
-  private <DTO_KEY> List<PlacementXls> getRowsWithRegistrationNumberForPlacements(
+  private <DTO_KEY> List<PlacementXls> getRowsWithPopulatedIdentifier(
       List<PlacementXls> xlsRows, Function<PlacementXls, DTO_KEY> extractRegistrationNumber) {
     return xlsRows.stream()
         .filter(placementXls -> {
@@ -762,47 +762,47 @@ public class PlacementTransformerService {
 
   // ***** Other Sites *****
   void setOtherSites(PlacementXls placementXls, PlacementDetailsDTO placementDto,
-      Function<String, List<SiteDTO>> getSiteDTOsForName, PostDTO postDto) {
-    Set<PlacementSiteDTO> placementSiteDTOS = placementDto.getSites();
-    if (placementSiteDTOS == null) {
-      placementSiteDTOS = initialiseNewPlacementSiteDTOS(placementDto);
+      Function<String, List<SiteDTO>> getSiteDtosForName, PostDTO postDto) {
+    Set<PlacementSiteDTO> placementSiteDtos = placementDto.getSites();
+    if (placementSiteDtos == null) {
+      placementSiteDtos = initialiseNewPlacementSiteDtos(placementDto);
     }
     String otherSitesStr = placementXls.getOtherSites();
     if (otherSitesStr != null) {
       List<String> otherSites = splitMultiValueField(otherSitesStr);
       for (String otherSite : otherSites) {
         Optional<PlacementSiteDTO> placementSiteDtoOOptional2 = buildPlacementSiteDto(placementXls,
-            placementDto, getSiteDTOsForName, otherSite, PlacementSiteType.OTHER, postDto);
+            placementDto, getSiteDtosForName, otherSite, PlacementSiteType.OTHER, postDto);
         if (placementSiteDtoOOptional2.isPresent()) {
-          PlacementSiteDTO placementSiteDTO = placementSiteDtoOOptional2.get();
-          addDTOIfNotPresentAsPrimaryOrOther1(placementSiteDTOS, placementSiteDTO);
+          PlacementSiteDTO placementSiteDto = placementSiteDtoOOptional2.get();
+          addDtoIfNotPresentAsPrimaryOrOther1(placementSiteDtos, placementSiteDto);
         }
       }
     }
   }
 
-  private Set<PlacementSiteDTO> initialiseNewPlacementSiteDTOS(PlacementDetailsDTO placementDto) {
-    Set<PlacementSiteDTO> placementSiteDTOS = new HashSet<>();
-    placementDto.setSites(placementSiteDTOS);
-    return placementSiteDTOS;
+  private Set<PlacementSiteDTO> initialiseNewPlacementSiteDtos(PlacementDetailsDTO placementDto) {
+    Set<PlacementSiteDTO> placementSiteDtos = new HashSet<>();
+    placementDto.setSites(placementSiteDtos);
+    return placementSiteDtos;
   }
 
-  private void addDTOIfNotPresentAsPrimaryOrOther1(Set<PlacementSiteDTO> placmentSiteDTOS,
-      PlacementSiteDTO placmentSiteDTO) {
-    if (placmentSiteDTOS.isEmpty()) {
-      placmentSiteDTOS.add(placmentSiteDTO);
-    } else if (!placmentSiteDTOS.contains(placmentSiteDTO)) {
-      placmentSiteDTO.setPlacementSiteType(PlacementSiteType.OTHER);
-      placmentSiteDTOS.add(placmentSiteDTO);
+  private void addDtoIfNotPresentAsPrimaryOrOther1(Set<PlacementSiteDTO> placmentSiteDtos,
+      PlacementSiteDTO placmentSiteDto) {
+    if (placmentSiteDtos.isEmpty()) {
+      placmentSiteDtos.add(placmentSiteDto);
+    } else if (!placmentSiteDtos.contains(placmentSiteDto)) {
+      placmentSiteDto.setPlacementSiteType(PlacementSiteType.OTHER);
+      placmentSiteDtos.add(placmentSiteDto);
     }
   }
 
   private Optional<PlacementSiteDTO> buildPlacementSiteDto(PlacementXls placementXls,
       PlacementDetailsDTO placementDto,
-      Function<String, List<SiteDTO>> getSiteDTOsForName,
+      Function<String, List<SiteDTO>> getSiteDtosForName,
       String siteName, PlacementSiteType siteType, PostDTO postDto) {
     Optional<SiteDTO> singleValidSite = getSingleValidSite(placementXls,
-        getSiteDTOsForName, siteName, postDto);
+        getSiteDtosForName, siteName, postDto);
     if (singleValidSite.isPresent()) {
       SiteDTO siteDTO = singleValidSite.get();
       PlacementSiteDTO placementSiteDTO = new PlacementSiteDTO(placementDto.getId(),
@@ -813,11 +813,11 @@ public class PlacementTransformerService {
   }
 
   private Optional<SiteDTO> getSingleValidSite(PlacementXls placementXls,
-      Function<String, List<SiteDTO>> getSiteDTOsForName, String siteName, PostDTO postDto) {
+      Function<String, List<SiteDTO>> getSiteDtosForName, String siteName, PostDTO postDto) {
     if (ObjectUtils.isEmpty(siteName)) {
       return Optional.empty();
     }
-    List<SiteDTO> siteByName = getSiteDTOsForName.apply(siteName);
+    List<SiteDTO> siteByName = getSiteDtosForName.apply(siteName);
     if (siteByName == null) {
       return Optional.empty();
     }
