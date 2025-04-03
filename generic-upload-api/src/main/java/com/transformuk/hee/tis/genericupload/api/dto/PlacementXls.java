@@ -22,7 +22,7 @@ public class PlacementXls extends TemplateXLS implements PlacementSupervisor {
   private String publicHealthNumber;
 
   @ExcelColumn(name = "TIS Person ID")
-  private Long personId;
+  private String personId;
 
   @ExcelColumn(name = "National Post Number*", required = true)
   private String nationalPostNumber;

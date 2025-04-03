@@ -120,7 +120,7 @@ public class PlacementTransformerService {
   Function<PlacementXls, String> getPhNumber = PlacementXls::getPublicHealthNumber;
   Function<PlacementXls, String> getGdcNumber = PlacementXls::getGdcNumber;
   Function<PlacementXls, String> getGmcNumber = PlacementXls::getGmcNumber;
-  Function<PlacementXls, Long> getPersonId = PlacementXls::getPersonId;
+  Function<PlacementXls, String> getPersonId = PlacementXls::getPersonId;
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
   @Autowired
@@ -219,7 +219,7 @@ public class PlacementTransformerService {
     List<PlacementSupervisor> placementSupervisorList = new ArrayList<>(xlsRows);
     RegNumberToDTOLookup regNumberToDtoLookup = supervisorRegNumberIdService
         .getRegNumbersForSheetOrMarkAsError(placementSupervisorList);
-    Map<Long, PersonDTO> personIdDetailsMap = buildRegNumberDetailsMap(xlsRows, getPersonId,
+    Map<String, PersonDTO> personIdDetailsMap = buildRegNumberDetailsMap(xlsRows, getPersonId,
         peopleByIdFetcher);
     Map<Long, PersonBasicDetailsDTO> pbdMapById = buildPersonBasicDetailsMapForRegNumber(
         personIdDetailsMap, peopleByIdFetcher, PersonDTO::getId);
@@ -241,7 +241,7 @@ public class PlacementTransformerService {
         .collect(Collectors.toSet());
     Map<String, PostDTO> postsMappedByNpns =
         !placementNpns.isEmpty() ? postFetcher.findWithKeys(placementNpns)
-            : new HashMap<>();//TODO filter posts CURRENT/INACTIVE
+            : new HashMap<>();
     Set<String> duplicateNpnKeys =
         !placementNpns.isEmpty() ? postFetcher.getDuplicateKeys() : new HashSet<>();
     Map<String, SiteDTO> siteMapByName = getSiteDtoMap(xlsRows);
@@ -258,7 +258,7 @@ public class PlacementTransformerService {
       Map<String, PersonDTO> phnDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByPH,
       Map<String, GdcDetailsDTO> gdcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGDC,
       Map<String, GmcDetailsDTO> gmcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGMC,
-      Map<Long, PersonDTO> personIdDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapById,
+      Map<String, PersonDTO> personIdDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapById,
       Map<String, PostDTO> postsMappedByNpns, Set<String> duplicateNpnKeys,
       Map<String, SiteDTO> siteMapByName, Map<String, GradeDTO> gradeMapByName,
       PlacementXls placementXls, String username) {
@@ -349,7 +349,7 @@ public class PlacementTransformerService {
       Map<String, PersonDTO> phnDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByPH,
       Map<String, GdcDetailsDTO> gdcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGDC,
       Map<String, GmcDetailsDTO> gmcDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapByGMC,
-      Map<Long, PersonDTO> personIdDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapById,
+      Map<String, PersonDTO> personIdDetailsMap, Map<Long, PersonBasicDetailsDTO> pbdMapById,
       PlacementXls placementXls) {
     if (getPersonId.apply(placementXls) != null) {
       return getPersonBasicDetailsDto(getPersonId, personIdDetailsMap, pbdMapById, placementXls,
