@@ -185,7 +185,12 @@ public class ExcelToObjectMapper {
             field.set(obj, Float.valueOf(trim));
           } else if (cls == Long.class) {
             // Parse and then convert for consistency across {@link CellType}s
-            field.set(obj, Double.valueOf(trim).longValue());
+            final double d = Double.parseDouble(trim);
+            if ((long) d != d) {
+              throw new NumberFormatException(
+                  String.format("A whole number was expected instead of '%s'.", trim));
+            }
+            field.set(obj, (long) d);
           } else {
             String setStr = StringConverter.getConverter(trim).escapeForJson().toString();
             field.set(obj, setStr);
@@ -201,7 +206,12 @@ public class ExcelToObjectMapper {
           } else if (cls == Float.class) {
             field.set(obj, (float) cell.getNumericCellValue());
           } else if (cls == Long.class) {
-            field.set(obj, (long) cell.getNumericCellValue());
+            final double d = cell.getNumericCellValue();
+            if (d != (long) d) {
+              throw new NumberFormatException(
+                  String.format("A whole number was expected instead of '%s'.", d));
+            }
+            field.set(obj, (long) d);
           } else {
             double numericValue = cell.getNumericCellValue();
             String stringValue;
