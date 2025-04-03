@@ -42,11 +42,23 @@ public class ExcelToObjectMapper {
   private static final String DATE_REGEX = "(([1-9]|0[1-9]|[12]\\d|3[01])/([1-9]|0[1-9]|1[0-2])/[12]\\d{3})";
 
   private final Workbook workbook;
+  private final boolean ignoreUnmapped;
 
-
-  public ExcelToObjectMapper(InputStream excelFile, boolean validateDates)
+  /**
+   * Create a mapper for converting the provided spreadsheet rows into typed Java representations.
+   *
+   * @param excelFile      The spreadsheet as an input stream, including a header and data rows
+   * @param ignoreUnmapped Whether to map target types when their fields are missing.
+   *                       <strong>N.B.</strong>This class will still extract fields where the
+   *                       header matches the field name, e.g. a target field `foo` will be
+   *                       populated when there is a header cell with the value `Foo`
+   * @param validateDates  Whether to require strict matches to the date format
+   * @throws IOException Thrown when there is an issue reading the input stream as a workbook
+   */
+  public ExcelToObjectMapper(InputStream excelFile, boolean ignoreUnmapped, boolean validateDates)
       throws IOException {
     workbook = createWorkBook(excelFile);
+    this.ignoreUnmapped = ignoreUnmapped;
     dateFormat.setLenient(!validateDates);
   }
 
@@ -114,12 +126,19 @@ public class ExcelToObjectMapper {
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
+        if (fieldName.startsWith("$")) {
+          //skip surefire jacoco fields
+          continue;
+        }
         String xlsColumnName = columnMap.get(fieldName);
         int index;
         if (StringUtils.isNotEmpty(xlsColumnName)) {
           index = getHeaderIndex(xlsColumnName, workbook);
         } else {
           index = getHeaderIndex(fieldName, workbook);
+        }
+        if (index < 0) {
+          continue;
         }
         Cell cell = sheet.getRow(rowNumber).getCell(index);
         Field classField = obj.getClass().getDeclaredField(fieldName);
@@ -258,18 +277,18 @@ public class ExcelToObjectMapper {
    * @throws NoSuchFieldException Thrown when a field is not found
    */
   private int getHeaderIndex(String headerName, Workbook workbook) throws NoSuchFieldException {
-    Sheet sheet = workbook.getSheetAt(0);
-    int totalColumns = sheet.getRow(0).getLastCellNum();
-    int index = -1;
-    for (index = 0; index < totalColumns; index++) {
-      Cell cell = sheet.getRow(0).getCell(index);
-      if (cell.getStringCellValue().trim().equalsIgnoreCase(headerName)) {
-        break;
+    Row row = workbook.getSheetAt(0).getRow(0);
+    int totalColumns = row.getLastCellNum();
+    for (int i = 0; i < totalColumns; i++) {
+      Cell cell = row.getCell(i);
+      if (headerName.equalsIgnoreCase(cell.getStringCellValue().trim())) {
+        return i;
       }
     }
-    if (index == -1) {
-      throw new NoSuchFieldException("Invalid object field name provided.");
+    if (ignoreUnmapped) {
+      return -1;
+    } else {
+      throw new NoSuchFieldException(String.format("No Spreadsheet header named '%s", headerName));
     }
-    return index;
   }
 }
