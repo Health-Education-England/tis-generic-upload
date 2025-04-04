@@ -70,7 +70,7 @@ public class UploadFileResourceTest {
   @Test
   @Transactional
   public void uploadFile() throws Exception {
-    String FILE_NAME = "Intrepid Recruitment Import Template v9.xls";
+    String FILE_NAME = "TIS People Import Template - empty row.xlsx";
     MockMultipartFile multipartFile = new MockMultipartFile("file", FILE_NAME,
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         new ClassPathResource(FILE_NAME).getInputStream());

@@ -23,9 +23,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -78,11 +77,8 @@ public class UploadFileResource {
 
     MultipartHttpServletRequest mRequest = (MultipartHttpServletRequest) request;
     // extract files from MIME body
-    List<MultipartFile> fileList = mRequest.getFileMap()
-        .entrySet()
-        .stream()
-        .map(Map.Entry::getValue)
-        .collect(Collectors.toList());
+    List<MultipartFile> fileList = new ArrayList<>(mRequest.getFileMap().values());
+
     if (fileList.isEmpty()) {
       log.error("Expected to receive file(s) as part of the upload");
       return new ResponseEntity<>("expecting a file to be uploaded", HttpStatus.BAD_REQUEST);
@@ -109,29 +105,30 @@ public class UploadFileResource {
               profileFromContext.getFirstName(), profileFromContext.getLastName());
     } catch (InvalidKeyException | StorageException | URISyntaxException e) {
       return logAndReturnResponseEntity("Application error while storing the file : ",
-          e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+          e.getMessage(), e, HttpStatus.INTERNAL_SERVER_ERROR);
     } catch (IOException | ReflectiveOperationException | InvalidFormatException e) {
       return logAndReturnResponseEntity("File uploaded cannot be processed : ", e.getMessage(),
-          HttpStatus.BAD_REQUEST);
+          e, HttpStatus.BAD_REQUEST);
     } catch (ValidationException ve) {
       StringBuilder sb = new StringBuilder();
       for (FieldError fieldError : ve.getBindingResult().getFieldErrors()) {
         sb.append(System.lineSeparator()).append(fieldError.getDefaultMessage());
       }
       return logAndReturnResponseEntity("File uploaded failed validation : ", sb.toString(),
-          HttpStatus.BAD_REQUEST);
+          ve, HttpStatus.BAD_REQUEST);
     } catch (Exception e) {
       return logAndReturnResponseEntity("Unexpected Exception : ", e.getMessage(),
-          HttpStatus.BAD_REQUEST);
+          e, HttpStatus.BAD_REQUEST);
     }
 
     return new ResponseEntity<>(applicationType, HttpStatus.OK);
   }
 
   private ResponseEntity<String> logAndReturnResponseEntity(String messagePrefix,
-      String exceptionMessage, HttpStatus httpStatus) {
-    log.error(messagePrefix, exceptionMessage);
-    return new ResponseEntity<>(messagePrefix + exceptionMessage, httpStatus);
+      String exceptionMessage, Throwable exception, HttpStatus httpStatus) {
+    final String message = messagePrefix.concat(exceptionMessage);
+    log.error(message, exception);
+    return new ResponseEntity<>(message, httpStatus);
   }
 
 

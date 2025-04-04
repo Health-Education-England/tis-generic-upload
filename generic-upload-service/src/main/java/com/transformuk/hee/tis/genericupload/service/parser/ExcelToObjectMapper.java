@@ -2,12 +2,12 @@ package com.transformuk.hee.tis.genericupload.service.parser;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration;
 import com.transformuk.hee.tis.genericupload.service.util.POIUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -34,7 +34,6 @@ import uk.nhs.tis.StringConverter;
 
 public class ExcelToObjectMapper {
 
-  public static final String ROW_NUMBER = "rowNumber";
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M/yyyy");
 
@@ -42,11 +41,23 @@ public class ExcelToObjectMapper {
   private static final String DATE_REGEX = "(([1-9]|0[1-9]|[12]\\d|3[01])/([1-9]|0[1-9]|1[0-2])/[12]\\d{3})";
 
   private final Workbook workbook;
+  private final boolean ignoreUnmapped;
 
-
-  public ExcelToObjectMapper(InputStream excelFile, boolean validateDates)
+  /**
+   * Create a mapper for converting the provided spreadsheet rows into typed Java representations.
+   *
+   * @param excelFile      The spreadsheet as an input stream, including a header and data rows
+   * @param ignoreUnmapped Whether to map target types when their fields are missing.
+   *                       <strong>N.B.</strong>This class will still extract fields where the
+   *                       header matches the field name, e.g. a target field `foo` will be
+   *                       populated when there is a header cell with the value `Foo`
+   * @param validateDates  Whether to require strict matches to the date format
+   * @throws IOException Thrown when there is an issue reading the input stream as a workbook
+   */
+  public ExcelToObjectMapper(InputStream excelFile, boolean ignoreUnmapped, boolean validateDates)
       throws IOException {
     workbook = createWorkBook(excelFile);
+    this.ignoreUnmapped = ignoreUnmapped;
     dateFormat.setLenient(!validateDates);
   }
 
@@ -97,41 +108,40 @@ public class ExcelToObjectMapper {
    * @return List of object of type T.
    * @throws ReflectiveOperationException if failed to generate mapping.
    */
-  public <T> List<T> map(Class<T> cls, Map<String, String> columnMap)
+  public <T extends TemplateXLS> List<T> map(Class<T> cls, Map<String, String> columnMap)
       throws ReflectiveOperationException {
     List<T> list = new ArrayList<>();
 
-    Field rowNumberFieldInXls = cls.getSuperclass().getDeclaredField(ROW_NUMBER);
-    rowNumberFieldInXls.setAccessible(true);
     Sheet sheet = workbook.getSheetAt(0);
     int lastRow = sheet.getLastRowNum();
     for (int rowNumber = 1; rowNumber <= lastRow; rowNumber++) {
       POIUtil poiUtil = new POIUtil();
-      if (sheet.getRow(rowNumber) == null || poiUtil.isEmptyRow(sheet.getRow(rowNumber))) {
+      if (poiUtil.isEmptyRow(sheet.getRow(rowNumber))) {
         continue;
       }
       T obj = cls.newInstance();
       Field[] fields = obj.getClass().getDeclaredFields();
       for (Field field : fields) {
         String fieldName = field.getName();
-        String xlsColumnName = columnMap.get(fieldName);
-        int index;
-        if (StringUtils.isNotEmpty(xlsColumnName)) {
-          index = getHeaderIndex(xlsColumnName, workbook);
-        } else {
-          index = getHeaderIndex(fieldName, workbook);
+        if (fieldName.startsWith("$")) {
+          //skip surefire jacoco fields
+          continue;
         }
-        Cell cell = sheet.getRow(rowNumber).getCell(index);
-        Field classField = obj.getClass().getDeclaredField(fieldName);
-        try {
-          setObjectFieldValueFromCell(obj, classField, cell);
-        } catch (DateTimeParseException | ParseException | IllegalArgumentException e) {
-          logger.info("Error while extracting cell value from object.", e);
-          Method method = obj.getClass().getMethod("addErrorMessage", String.class);
-          method.invoke(obj, e.getMessage());
+        String columnName = columnMap.get(fieldName);
+        int index = getHeaderIndex(StringUtils.isNotEmpty(columnName) ? columnName : fieldName,
+            workbook);
+        if (index >= 0) {
+          Cell cell = sheet.getRow(rowNumber).getCell(index);
+          Field classField = obj.getClass().getDeclaredField(fieldName);
+          try {
+            setObjectFieldValueFromCell(obj, classField, cell);
+          } catch (DateTimeParseException | ParseException | IllegalArgumentException e) {
+            logger.info("Error while extracting cell value from object.", e);
+            obj.addErrorMessage(e.getMessage());
+          }
         }
       }
-      rowNumberFieldInXls.setInt(obj, rowNumber);
+      obj.setRowNumber(rowNumber);
       if (!isAllBlanks(obj)) {
         list.add(obj);
       }
@@ -185,7 +195,12 @@ public class ExcelToObjectMapper {
             field.set(obj, Float.valueOf(trim));
           } else if (cls == Long.class) {
             // Parse and then convert for consistency across {@link CellType}s
-            field.set(obj, Double.valueOf(trim).longValue());
+            final double d = Double.parseDouble(trim);
+            if (d != (long) d) {
+              throw new NumberFormatException(
+                  String.format("A whole number was expected instead of '%s'.", trim));
+            }
+            field.set(obj, (long) d);
           } else {
             String setStr = StringConverter.getConverter(trim).escapeForJson().toString();
             field.set(obj, setStr);
@@ -201,18 +216,16 @@ public class ExcelToObjectMapper {
           } else if (cls == Float.class) {
             field.set(obj, (float) cell.getNumericCellValue());
           } else if (cls == Long.class) {
-            field.set(obj, (long) cell.getNumericCellValue());
+            final double d = cell.getNumericCellValue();
+            if (d != (long) d) {
+              throw new NumberFormatException(
+                  String.format("A whole number was expected instead of '%s'.", d));
+            }
+            field.set(obj, (long) d);
           } else {
             double numericValue = cell.getNumericCellValue();
-            String stringValue;
-
-            if (numericValue == (long) numericValue) {
-              stringValue = String.valueOf((long) numericValue);
-            } else {
-              stringValue = String.valueOf(numericValue);
-            }
-
-            field.set(obj, stringValue);
+            field.set(obj, String.valueOf(numericValue == (long) numericValue
+                ? (long) numericValue : String.valueOf(numericValue)));
           }
           break;
         case BLANK:
@@ -248,18 +261,18 @@ public class ExcelToObjectMapper {
    * @throws NoSuchFieldException Thrown when a field is not found
    */
   private int getHeaderIndex(String headerName, Workbook workbook) throws NoSuchFieldException {
-    Sheet sheet = workbook.getSheetAt(0);
-    int totalColumns = sheet.getRow(0).getLastCellNum();
-    int index = -1;
-    for (index = 0; index < totalColumns; index++) {
-      Cell cell = sheet.getRow(0).getCell(index);
-      if (cell.getStringCellValue().trim().equalsIgnoreCase(headerName)) {
-        break;
+    Row row = workbook.getSheetAt(0).getRow(0);
+    int totalColumns = row.getLastCellNum();
+    for (int i = 0; i < totalColumns; i++) {
+      Cell cell = row.getCell(i);
+      if (headerName.equalsIgnoreCase(cell.getStringCellValue().trim())) {
+        return i;
       }
     }
-    if (index == -1) {
-      throw new NoSuchFieldException("Invalid object field name provided.");
+    if (ignoreUnmapped) {
+      return -1;
+    } else {
+      throw new NoSuchFieldException(String.format("No Spreadsheet header named '%s", headerName));
     }
-    return index;
   }
 }
