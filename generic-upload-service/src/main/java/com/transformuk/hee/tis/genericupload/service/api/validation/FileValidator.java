@@ -37,7 +37,7 @@ public class FileValidator {
    *
    * @param files                   The provided files to validate
    * @param validateMandatoryFields Whether to ensure mandatory fields are populated
-   * @param validateDates           See {@link  ExcelToObjectMapper
+   * @param validateDates           See {@link  ExcelToObjectMapper}
    * @return The FileType when {@code validateMandatoryFields} is true, otherwise {@code null}
    * @throws IOException                  If there are issues using the files
    * @throws InvalidFormatException       If the type of file is not recognised
@@ -159,26 +159,26 @@ public class FileValidator {
 
   private void validateField(List<FieldError> fieldErrors,
       Class<? extends TemplateXLS> mappedToClass,
-      AtomicInteger rowIndex, Object row, String columnNameToMandatoryColumnsMapKey)
+      AtomicInteger rowIndex, Object row, String fieldName)
       throws NoSuchFieldException, IllegalAccessException {
-    Field currentField = row.getClass().getDeclaredField(columnNameToMandatoryColumnsMapKey);
+    Field currentField = row.getClass().getDeclaredField(fieldName);
+    //TODO: Simplify
     if (currentField != null) {
       currentField.setAccessible(true);
       if (currentField.getType() == String.class) {
         String value = (String) currentField.get(row);
         if (StringUtils.isBlank(value)) {
           fieldErrors
-              .add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
-                  String.format(FIELD_IS_REQUIRED_AT_LINE_NO, columnNameToMandatoryColumnsMapKey,
+              .add(new FieldError(mappedToClass.getSimpleName(), fieldName,
+                  String.format(FIELD_IS_REQUIRED_AT_LINE_NO, fieldName,
                       rowIndex.get())));
         }
       } else if (currentField.getType() == Date.class) {
         Date date = (Date) currentField.get(row);//TODO should throw an exception on invalid date
         if (date == null) {
           fieldErrors
-              .add(new FieldError(mappedToClass.getSimpleName(), columnNameToMandatoryColumnsMapKey,
-                  String.format(DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD,
-                      columnNameToMandatoryColumnsMapKey)));
+              .add(new FieldError(mappedToClass.getSimpleName(), fieldName,
+                  String.format(DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD, fieldName)));
         }
       } else if (currentField.getType() == Float.class) {
         //TODO validate Float Fields

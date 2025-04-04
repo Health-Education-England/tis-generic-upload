@@ -2,12 +2,12 @@ package com.transformuk.hee.tis.genericupload.service.parser;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration;
 import com.transformuk.hee.tis.genericupload.service.util.POIUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -34,7 +34,6 @@ import uk.nhs.tis.StringConverter;
 
 public class ExcelToObjectMapper {
 
-  public static final String ROW_NUMBER = "rowNumber";
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M/yyyy");
 
@@ -109,17 +108,15 @@ public class ExcelToObjectMapper {
    * @return List of object of type T.
    * @throws ReflectiveOperationException if failed to generate mapping.
    */
-  public <T> List<T> map(Class<T> cls, Map<String, String> columnMap)
+  public <T extends TemplateXLS> List<T> map(Class<T> cls, Map<String, String> columnMap)
       throws ReflectiveOperationException {
     List<T> list = new ArrayList<>();
 
-    Field rowNumberFieldInXls = cls.getSuperclass().getDeclaredField(ROW_NUMBER);
-    rowNumberFieldInXls.setAccessible(true);
     Sheet sheet = workbook.getSheetAt(0);
     int lastRow = sheet.getLastRowNum();
     for (int rowNumber = 1; rowNumber <= lastRow; rowNumber++) {
       POIUtil poiUtil = new POIUtil();
-      if (sheet.getRow(rowNumber) == null || poiUtil.isEmptyRow(sheet.getRow(rowNumber))) {
+      if (poiUtil.isEmptyRow(sheet.getRow(rowNumber))) {
         continue;
       }
       T obj = cls.newInstance();
@@ -130,27 +127,21 @@ public class ExcelToObjectMapper {
           //skip surefire jacoco fields
           continue;
         }
-        String xlsColumnName = columnMap.get(fieldName);
-        int index;
-        if (StringUtils.isNotEmpty(xlsColumnName)) {
-          index = getHeaderIndex(xlsColumnName, workbook);
-        } else {
-          index = getHeaderIndex(fieldName, workbook);
-        }
-        if (index < 0) {
-          continue;
-        }
-        Cell cell = sheet.getRow(rowNumber).getCell(index);
-        Field classField = obj.getClass().getDeclaredField(fieldName);
-        try {
-          setObjectFieldValueFromCell(obj, classField, cell);
-        } catch (DateTimeParseException | ParseException | IllegalArgumentException e) {
-          logger.info("Error while extracting cell value from object.", e);
-          Method method = obj.getClass().getMethod("addErrorMessage", String.class);
-          method.invoke(obj, e.getMessage());
+        String columnName = columnMap.get(fieldName);
+        int index = getHeaderIndex(StringUtils.isNotEmpty(columnName) ? columnName : fieldName,
+            workbook);
+        if (index >= 0) {
+          Cell cell = sheet.getRow(rowNumber).getCell(index);
+          Field classField = obj.getClass().getDeclaredField(fieldName);
+          try {
+            setObjectFieldValueFromCell(obj, classField, cell);
+          } catch (DateTimeParseException | ParseException | IllegalArgumentException e) {
+            logger.info("Error while extracting cell value from object.", e);
+            obj.addErrorMessage(e.getMessage());
+          }
         }
       }
-      rowNumberFieldInXls.setInt(obj, rowNumber);
+      obj.setRowNumber(rowNumber);
       if (!isAllBlanks(obj)) {
         list.add(obj);
       }
@@ -233,15 +224,8 @@ public class ExcelToObjectMapper {
             field.set(obj, (long) d);
           } else {
             double numericValue = cell.getNumericCellValue();
-            String stringValue;
-
-            if (numericValue == (long) numericValue) {
-              stringValue = String.valueOf((long) numericValue);
-            } else {
-              stringValue = String.valueOf(numericValue);
-            }
-
-            field.set(obj, stringValue);
+            field.set(obj, String.valueOf(numericValue == (long) numericValue
+                ? (long) numericValue : String.valueOf(numericValue)));
           }
           break;
         case BLANK:

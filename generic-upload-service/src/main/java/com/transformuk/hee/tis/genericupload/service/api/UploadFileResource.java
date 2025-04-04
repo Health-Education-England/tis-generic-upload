@@ -126,8 +126,9 @@ public class UploadFileResource {
 
   private ResponseEntity<String> logAndReturnResponseEntity(String messagePrefix,
       String exceptionMessage, Throwable exception, HttpStatus httpStatus) {
-    log.error(messagePrefix.concat(exceptionMessage), exception);
-    return new ResponseEntity<>(messagePrefix.concat(exceptionMessage), httpStatus);
+    final String message = messagePrefix.concat(exceptionMessage);
+    log.error(message, exception);
+    return new ResponseEntity<>(message, httpStatus);
   }
 
 
