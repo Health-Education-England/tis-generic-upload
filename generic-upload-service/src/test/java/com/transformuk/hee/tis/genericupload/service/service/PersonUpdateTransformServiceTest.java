@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,7 +17,6 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -106,7 +106,7 @@ public class PersonUpdateTransformServiceTest {
     List<PersonDTO> personDTOList = Lists.newArrayList(personDto);
 
     when(personMapperMock.toDto(xls)).thenReturn(personDto);
-    when(tcsServiceImplMock.patchPeople(Matchers.any())).thenReturn(personDTOList);
+    when(tcsServiceImplMock.patchPeople(any())).thenReturn(personDTOList);
 
     // When.
     personUpdateTransformerService.processUpload(xlsList);
@@ -132,7 +132,7 @@ public class PersonUpdateTransformServiceTest {
     List<PersonDTO> personDTOList = Lists.newArrayList(personDto);
 
     when(personMapperMock.toDto(xls)).thenReturn(personDto);
-    when(tcsServiceImplMock.patchPeople(Matchers.any())).thenReturn(personDTOList);
+    when(tcsServiceImplMock.patchPeople(any())).thenReturn(personDTOList);
 
     // When.
     personUpdateTransformerService.processUpload(xlsList);

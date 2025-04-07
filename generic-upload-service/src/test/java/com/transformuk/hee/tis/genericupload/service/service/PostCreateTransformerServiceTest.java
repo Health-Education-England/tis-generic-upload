@@ -2,8 +2,8 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
@@ -30,7 +30,6 @@ import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -44,7 +43,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PostCreateTransformerServiceTest {
@@ -122,7 +121,7 @@ public class PostCreateTransformerServiceTest {
     xls2.setFundingType("funding1");
     xls2.setFundingStartDate(new Date(1L));
 
-    xlsList = Arrays.asList(xls1, xls2);
+    xlsList = List.of(xls1, xls2);
 
     grade1 = new GradeDTO();
     grade1.setId(1L);
@@ -233,7 +232,7 @@ public class PostCreateTransformerServiceTest {
     post1.setNationalPostNumber("npn1");
     PostDTO post2 = new PostDTO();
     post2.setNationalPostNumber("npn2");
-    List<PostDTO> posts = Arrays.asList(post1, post2);
+    List<PostDTO> posts = List.of(post1, post2);
 
     when(tcsService.findPostsByNationalPostNumbersIn(any())).thenReturn(posts);
 
@@ -267,7 +266,7 @@ public class PostCreateTransformerServiceTest {
     grade3.setTrainingGrade(true);
 
     when(referenceService.findGradesByName(any()))
-        .thenReturn(Arrays.asList(grade1, grade2, grade3));
+        .thenReturn(List.of(grade1, grade2, grade3));
 
     // When.
     service.processUpload(xlsList);
@@ -298,12 +297,12 @@ public class PostCreateTransformerServiceTest {
     specialty3.setName("specialty3");
     specialty3.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
     when(tcsService.getSpecialtyByName(any()))
-        .thenReturn(Arrays.asList(specialty1, specialty2, specialty3));
+        .thenReturn(List.of(specialty1, specialty2, specialty3));
 
     // When.
-    service.processUpload(Arrays.asList(xls1, xls2, xls3));
+    service.processUpload(List.of(xls1, xls2, xls3));
 
     // Then.
     assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
@@ -339,13 +338,13 @@ public class PostCreateTransformerServiceTest {
     specialty4.setSpecialtyTypes(new HashSet<>(Collections.singletonList(SpecialtyType.PLACEMENT)));
     xls2.setSubSpecialties("specialty4");
 
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(tcsService.getSpecialtyByName("specialty1"))
         .thenReturn(Collections.singletonList((specialty1)));
 
@@ -359,7 +358,7 @@ public class PostCreateTransformerServiceTest {
         Collections.singletonList(fundingReason));
 
     // When.
-    service.processUpload(Arrays.asList(xls1, xls2));
+    service.processUpload(List.of(xls1, xls2));
 
     // Then.
     assertThat("The error did not match the expected value.", xls1.getErrorMessage(),
@@ -383,9 +382,9 @@ public class PostCreateTransformerServiceTest {
     site3.setSiteKnownAs("site3");
     site3.setStatus(Status.CURRENT);
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2, site3));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2, site3));
 
     // When.
     service.processUpload(xlsList);
@@ -406,11 +405,11 @@ public class PostCreateTransformerServiceTest {
     // Given.
     trainingBody1.setStatus(Status.INACTIVE);
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, employingBody1, employingBody2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
@@ -435,11 +434,11 @@ public class PostCreateTransformerServiceTest {
     // Given.
     employingBody1.setStatus(Status.INACTIVE);
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
@@ -465,11 +464,11 @@ public class PostCreateTransformerServiceTest {
     xls1.setProgrammeTisId("id1");
     xls2.setProgrammeTisId("id2");
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
@@ -494,13 +493,13 @@ public class PostCreateTransformerServiceTest {
     // Given.
     programme1.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.INACTIVE);
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3));
+        .thenReturn(List.of(programme1, programme2, programme3));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
@@ -526,14 +525,14 @@ public class PostCreateTransformerServiceTest {
     owner1.setStatus(Status.INACTIVE);
     owner2.setStatus(Status.INACTIVE);
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
@@ -563,14 +562,14 @@ public class PostCreateTransformerServiceTest {
     post1.setNationalPostNumber("oldPost1");
     post1.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.INACTIVE);
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(tcsService.findPostsByNationalPostNumbersIn(any()))
         .thenReturn(Collections.singletonList(post1));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
@@ -598,14 +597,14 @@ public class PostCreateTransformerServiceTest {
     xls1.setFundingEndDate(new Date(DAY_IN_MILLIS));
     xls1.setFundingType("funding1");
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
 
@@ -626,16 +625,16 @@ public class PostCreateTransformerServiceTest {
     xls1.setFundingEndDate(new Date(2 * DAY_IN_MILLIS));
     xls1.setFundingType("funding1");
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Arrays.asList(fundingType1));
+        List.of(fundingType1));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
         Collections.singletonList(fundingReason));
 
@@ -655,14 +654,14 @@ public class PostCreateTransformerServiceTest {
     xls1.setFundingType("funding1");
     xls1.setFundingBody("funder1");
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
 
@@ -682,14 +681,14 @@ public class PostCreateTransformerServiceTest {
     xls1.setFundingType("funding1");
     xls1.setFundingDetails("boom!");
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
 
@@ -708,14 +707,14 @@ public class PostCreateTransformerServiceTest {
     // Given.
     xls1.setFundingType("funding1");
     xls1.setFundingSubtype("boom!");
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
     when(referenceService.findCurrentFundingSubTypesForFundingTypeId(any())).thenReturn(
@@ -735,14 +734,14 @@ public class PostCreateTransformerServiceTest {
   public void shouldFailValidationWhenFundingReasonNotFound() {
     // Given.
     xls1.setFundingReason("notARealReason");
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
         Collections.singletonList(fundingType1));
 
@@ -774,16 +773,16 @@ public class PostCreateTransformerServiceTest {
     PostDTO post1 = new PostDTO();
     post1.setNationalPostNumber("oldPost1");
 
-    when(referenceService.findGradesByName(any())).thenReturn(Arrays.asList(grade1, grade2));
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialty1, specialty3));
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty3));
     when(tcsService.getSpecialtyByName("specialty2", SpecialtyType.SUB_SPECIALTY))
         .thenReturn(Collections.singletonList(specialty2));
-    when(referenceService.findSitesByName(any())).thenReturn(Arrays.asList(site1, site2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
-        .thenReturn(Arrays.asList(trainingBody1, trainingBody2, employingBody1, employingBody2));
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
-        .thenReturn(Arrays.asList(programme1, programme2, programme3, programme4));
-    when(referenceService.findLocalOfficesByName(any())).thenReturn(Arrays.asList(owner1, owner2));
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(tcsService.findPostsByNationalPostNumbersIn(any()))
         .thenReturn(Collections.singletonList(post1));
     when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
@@ -792,7 +791,6 @@ public class PostCreateTransformerServiceTest {
         Collections.singletonList(fundingSubTypeDto1));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
         Collections.singletonList(fundingReason));
-
 
     when(tcsService.bulkCreateDto(dtoCaptor.capture(), any(), any()))
         .thenReturn(Collections.emptyList());

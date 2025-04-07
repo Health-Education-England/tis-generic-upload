@@ -4,10 +4,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import com.transformuk.hee.tis.genericupload.service.api.vm.LoggerVM;
 import io.micrometer.core.annotation.Timed;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.LoggerFactory;
@@ -37,12 +33,10 @@ public class LogsResource {
   }
 
 
-  @ApiOperation(value = "Change the log level", notes = "Change the log level")
-  @ApiResponses(value = {@ApiResponse(code = 200, message = "Log level changed successfully")})
   @PutMapping("/logs")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Timed
-  public void changeLevel(@ApiParam("jsonLogger") @RequestBody LoggerVM jsonLogger) {
+  public void changeLevel(@RequestBody LoggerVM jsonLogger) {
     LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
     context.getLogger(jsonLogger.getName()).setLevel(Level.valueOf(jsonLogger.getLevel()));
   }

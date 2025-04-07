@@ -115,6 +115,16 @@ public class FileValidator {
     return fileType;
   }
 
+  /**
+   * Validates the mandatory fields on the template object.
+   *
+   * @param files               The List of files, the first of which is validated
+   * @param fieldErrors         The list to populate with binding errors
+   * @param templateXls         The target template object
+   * @param excelToObjectMapper The mapper
+   * @throws ReflectiveOperationException If the target class or fields are unavailable
+   * @throws ValidationException          If validated fields contain invalid data
+   */
   public void validateMandatoryFieldsOrThrowException(List<MultipartFile> files,
       List<FieldError> fieldErrors, Class<? extends TemplateXLS> templateXls,
       ExcelToObjectMapper excelToObjectMapper)
@@ -162,26 +172,24 @@ public class FileValidator {
       AtomicInteger rowIndex, Object row, String fieldName)
       throws NoSuchFieldException, IllegalAccessException {
     Field currentField = row.getClass().getDeclaredField(fieldName);
-    //TODO: Simplify
-    if (currentField != null) {
-      currentField.setAccessible(true);
-      if (currentField.getType() == String.class) {
-        String value = (String) currentField.get(row);
-        if (StringUtils.isBlank(value)) {
-          fieldErrors
-              .add(new FieldError(mappedToClass.getSimpleName(), fieldName,
-                  String.format(FIELD_IS_REQUIRED_AT_LINE_NO, fieldName,
-                      rowIndex.get())));
-        }
-      } else if (currentField.getType() == Date.class) {
-        Date date = (Date) currentField.get(row);//TODO should throw an exception on invalid date
-        if (date == null) {
-          fieldErrors
-              .add(new FieldError(mappedToClass.getSimpleName(), fieldName,
-                  String.format(DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD, fieldName)));
-        }
-      } else if (currentField.getType() == Float.class) {
-        //TODO validate Float Fields
+    currentField.setAccessible(true);
+    if (currentField.getType() == String.class) {
+      String value = (String) currentField.get(row);
+      if (StringUtils.isBlank(value)) {
+        fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), fieldName,
+            String.format(FIELD_IS_REQUIRED_AT_LINE_NO, fieldName, rowIndex.get())));
+      }
+    } else if (currentField.getType() == Date.class) {
+      Date date = (Date) currentField.get(row);//TODO should throw an exception on invalid date
+      if (date == null) {
+        fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), fieldName,
+            String.format(DATE_MISSING_OR_INVALID_ON_MANDATORY_FIELD, fieldName)));
+      }
+    } else if (currentField.getType() == Float.class) {
+      Float f = (Float) currentField.get(row);
+      if (f == null) {
+        fieldErrors.add(new FieldError(mappedToClass.getSimpleName(), fieldName,
+            String.format(FIELD_IS_REQUIRED_AT_LINE_NO, fieldName, rowIndex.get())));
       }
     }
   }

@@ -4,8 +4,9 @@ import static com.transformuk.hee.tis.genericupload.service.service.PostUpdateTr
 import static com.transformuk.hee.tis.genericupload.service.service.PostUpdateTransformerServiceTest.createTrustDTO;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
@@ -16,29 +17,26 @@ import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.SpecialtyDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(Parameterized.class)
+@ExtendWith(MockitoExtension.class)
 public class PostUpdateTransformerParameterizedTest {
-
-  private final Status status;
-  private final boolean isTrainingGrade;
-  private final boolean isPostGrade;
 
   private PostUpdateXLS xls1;
   private List<PostUpdateXLS> xlsList;
 
+  @InjectMocks
   private PostUpdateTransformerService service;
   private GradeDTO grade1, grade2;
 
@@ -48,38 +46,26 @@ public class PostUpdateTransformerParameterizedTest {
   @Mock
   private TcsServiceImpl tcsService;
 
-  public PostUpdateTransformerParameterizedTest(Status status, boolean isTrainingGrade,
-      boolean isPostGrade) {
-    this.status = status;
-    this.isTrainingGrade = isTrainingGrade;
-    this.isPostGrade = isPostGrade;
+  public static Stream<Arguments> gradeVariables() {
+    return Stream.of(
+        arguments(Status.INACTIVE, false, false),
+        arguments(Status.INACTIVE, true, true),
+        arguments(Status.INACTIVE, false, true),
+        arguments(Status.INACTIVE, true, false),
+        arguments(Status.CURRENT, false, true),
+        arguments(Status.CURRENT, true, false),
+        arguments(Status.CURRENT, false, false)
+    );
   }
 
-  @Parameters
-  public static Collection<Object[]> gradeTestCases() {
-    return Arrays.asList(new Object[][]{
-        {Status.INACTIVE, false, false},
-        {Status.INACTIVE, true, true},
-        {Status.INACTIVE, false, true},
-        {Status.INACTIVE, true, false},
-        {Status.CURRENT, false, true},
-        {Status.CURRENT, true, false},
-        {Status.CURRENT, false, false}
-    });
-  }
-
-  @Before
+  @BeforeEach
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
     service = new PostUpdateTransformerService();
     ReflectionTestUtils.setField(service, "referenceServiceImpl", referenceService);
     ReflectionTestUtils.setField(service, "tcsServiceImpl", tcsService);
 
     grade1 = new GradeDTO();
     grade1.setName("grade1");
-    grade1.setStatus(status);
-    grade1.setTrainingGrade(isTrainingGrade);
-    grade1.setPostGrade(isPostGrade);
 
     xls1 = new PostUpdateXLS();
     xls1.setPostTISId("1");
@@ -105,16 +91,21 @@ public class PostUpdateTransformerParameterizedTest {
     PostDTO postDTO = new PostDTO();
     postDTO.setId(1L);
     when(tcsService.getPostById(1L)).thenReturn(postDTO);
-    when(tcsService.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialtyDTO));
-    when(referenceService.findTrustByTrustKnownAs(any())).thenReturn(Arrays.asList(trustDTO));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialtyDTO));
+    when(referenceService.findTrustByTrustKnownAs(any())).thenReturn(List.of(trustDTO));
     when(referenceService.findGradesByName("grade1")).thenReturn(Collections.singletonList(grade1));
     when(referenceService.findGradesByName("grade2")).thenReturn(Collections.singletonList(grade2));
   }
 
-  @Test
-  public void shouldThrowErrorMessageWhenApprovedGradeStatusIsNotCurrentWithPostGradeAndTrainingGradeValueNotTrue() {
-    xls1.setApprovedGrade("grade1");
-    xls1.setOtherGrades("grade2");
+  @ParameterizedTest
+  @MethodSource("gradeVariables")
+  public void shouldThrowErrorMessageWhenApprovedGradeStatusIsNotCurrentWithPostGradeAndTrainingGradeValueNotTrue(
+      Status status, boolean isTrainingGrade, boolean isPostGrade) {
+    grade1.setStatus(status);
+    grade1.setTrainingGrade(isTrainingGrade);
+    grade1.setPostGrade(isPostGrade);
+    xls1.setApprovedGrade(grade1.getName());
+    xls1.setOtherGrades(grade2.getName());
 
     service.processPostUpdateUpload(xlsList, "foo");
 
@@ -124,8 +115,13 @@ public class PostUpdateTransformerParameterizedTest {
         is(false));
   }
 
-  @Test
-  public void shouldThrowErrorMessageWhenOtherGradesStatusIsNotCurrentWithPostGradeAndTrainingGradeValueNotTrue() {
+  @ParameterizedTest
+  @MethodSource("gradeVariables")
+  public void shouldThrowErrorMessageWhenOtherGradesStatusIsNotCurrentWithPostGradeAndTrainingGradeValueNotTrue(
+      Status status, boolean isTrainingGrade, boolean isPostGrade) {
+    grade1.setStatus(status);
+    grade1.setTrainingGrade(isTrainingGrade);
+    grade1.setPostGrade(isPostGrade);
     xls1.setApprovedGrade(grade2.getName());
     xls1.setOtherGrades(grade1.getName());
 

@@ -1,8 +1,8 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
@@ -30,7 +30,6 @@ public class PostCreateTransformerParameterizedTest {
   private final boolean isPostGrade;
 
   private PostCreateXls xls1;
-  private PostCreateXls xls2;
   private List<PostCreateXls> xlsList;
 
   private PostCreateTransformerService service;

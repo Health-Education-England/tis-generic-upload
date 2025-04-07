@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,7 +30,6 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.Status;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -299,7 +298,7 @@ public class PostUpdateTransformerServiceTest {
     postXLS.setApprovedGrade(APPROVED_GRADE_NAME);
 
     // set existing other grades
-    PostGradeDTO postGradeDTO = new PostGradeDTO(1l, 2L, PostGradeType.APPROVED);
+    PostGradeDTO postGradeDTO = new PostGradeDTO(1L, 2L, PostGradeType.APPROVED);
     postDTO.setGrades(Sets.newHashSet(postGradeDTO));
 
     postUpdateTransformerService
@@ -387,8 +386,8 @@ public class PostUpdateTransformerServiceTest {
 
     // Record expectations.
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
-    when(tcsServiceImpl.getRotationByProgrammeIdsIn(Arrays.asList(2L, 3L)))
-        .thenReturn(Arrays.asList(rotation1, rotation2, rotation3));
+    when(tcsServiceImpl.getRotationByProgrammeIdsIn(List.of(2L, 3L)))
+        .thenReturn(List.of(rotation1, rotation2, rotation3));
 
     // Call the code under test.
     postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
@@ -458,7 +457,7 @@ public class PostUpdateTransformerServiceTest {
 
     // Record expectations.
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
-    when(tcsServiceImpl.getRotationByProgrammeIdsIn(Arrays.asList(2L, 3L)))
+    when(tcsServiceImpl.getRotationByProgrammeIdsIn(List.of(2L, 3L)))
         .thenReturn(Collections.singletonList(rotation1));
 
     // Call the code under test.
@@ -503,8 +502,8 @@ public class PostUpdateTransformerServiceTest {
 
     // Record expectations.
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
-    when(tcsServiceImpl.getRotationByProgrammeIdsIn(Arrays.asList(2L, 3L)))
-        .thenReturn(Arrays.asList(rotation1, rotation2));
+    when(tcsServiceImpl.getRotationByProgrammeIdsIn(List.of(2L, 3L)))
+        .thenReturn(List.of(rotation1, rotation2));
 
     // Call the code under test.
     postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
@@ -542,7 +541,7 @@ public class PostUpdateTransformerServiceTest {
     createSingleListWithGrade(gradeByName, gradeDto2);
 
     // set existing other grades
-    PostGradeDTO postGradeDto = new PostGradeDTO(1l, 4L, PostGradeType.OTHER);
+    PostGradeDTO postGradeDto = new PostGradeDTO(1L, 4L, PostGradeType.OTHER);
     postDTO.setGrades(Sets.newHashSet(postGradeDto));
 
     postUpdateTransformerService.updateGrades(postXLS, postDTO,
@@ -574,7 +573,7 @@ public class PostUpdateTransformerServiceTest {
     // set existing other specialties
     SpecialtyDTO specialtyDto1 = createSpecialtyDTO(1L, "intrepid_1",
         mockedSpecialty1, "college", "code1", Status.CURRENT);
-    PostSpecialtyDTO postSpecialtyDto = new PostSpecialtyDTO(1l, specialtyDto1,
+    PostSpecialtyDTO postSpecialtyDto = new PostSpecialtyDTO(1L, specialtyDto1,
         PostSpecialtyType.OTHER);
     postDTO.setSpecialties(Sets.newHashSet(postSpecialtyDto));
 
@@ -608,7 +607,7 @@ public class PostUpdateTransformerServiceTest {
     // set existing sub specialties
     SpecialtyDTO specialtyDto1 = createSpecialtyDTO(1L, "intrepid_1",
         mockedSpecialty1, "college", "code1", Status.CURRENT);
-    PostSpecialtyDTO postSpecialtyDto = new PostSpecialtyDTO(1l, specialtyDto1,
+    PostSpecialtyDTO postSpecialtyDto = new PostSpecialtyDTO(1L, specialtyDto1,
         PostSpecialtyType.SUB_SPECIALTY);
     postDTO.setSpecialties(Sets.newHashSet(postSpecialtyDto));
 
@@ -675,8 +674,8 @@ public class PostUpdateTransformerServiceTest {
     postDTO.setProgrammes(Sets.newHashSet(programmeDto1));
 
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
-    when(tcsServiceImpl.findProgrammesIn(Arrays.asList("2", "3")))
-        .thenReturn(Arrays.asList(programmeDto2, programmeDto3));
+    when(tcsServiceImpl.findProgrammesIn(List.of("2", "3")))
+        .thenReturn(List.of(programmeDto2, programmeDto3));
 
     postUpdateTransformerService.processPostUpdateUpload(
         Collections.singletonList(postUpdateXls), "");
@@ -723,13 +722,13 @@ public class PostUpdateTransformerServiceTest {
 
     when(tcsServiceImpl.getPostById(1L)).thenReturn(postDTO);
     when(referenceServiceImpl.findGradesByName("Approved grade"))
-        .thenReturn(Arrays.asList(approvedGrade));
+        .thenReturn(List.of(approvedGrade));
     when(referenceServiceImpl.findGradesByName("Other grade 1"))
-        .thenReturn(Arrays.asList(otherGrade1));
+        .thenReturn(List.of(otherGrade1));
     when(referenceServiceImpl.findGradesByName("Other grade 3"))
-        .thenReturn(Arrays.asList(otherGrade3));
-    when(tcsServiceImpl.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialtyDTO));
-    when(referenceServiceImpl.findTrustByTrustKnownAs(any())).thenReturn(Arrays.asList(trustDTO));
+        .thenReturn(List.of(otherGrade3));
+    when(tcsServiceImpl.getSpecialtyByName(any())).thenReturn(List.of(specialtyDTO));
+    when(referenceServiceImpl.findTrustByTrustKnownAs(any())).thenReturn(List.of(trustDTO));
 
     //Code under test
     postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
@@ -773,8 +772,8 @@ public class PostUpdateTransformerServiceTest {
         .thenReturn(Collections.emptyList());
     when(referenceServiceImpl.findGradesByName("Other grade 1"))
         .thenReturn(Collections.emptyList());
-    when(tcsServiceImpl.getSpecialtyByName(any())).thenReturn(Arrays.asList(specialtyDTO));
-    when(referenceServiceImpl.findTrustByTrustKnownAs(any())).thenReturn(Arrays.asList(trustDTO));
+    when(tcsServiceImpl.getSpecialtyByName(any())).thenReturn(List.of(specialtyDTO));
+    when(referenceServiceImpl.findTrustByTrustKnownAs(any())).thenReturn(List.of(trustDTO));
 
     // Code under test
     postUpdateTransformerService.processPostUpdateUpload(Collections.singletonList(postXLS), "");
