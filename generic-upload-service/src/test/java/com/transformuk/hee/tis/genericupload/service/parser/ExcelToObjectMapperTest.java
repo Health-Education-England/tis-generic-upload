@@ -77,7 +77,7 @@ class ExcelToObjectMapperTest {
         new ClassPathResource("XlsFieldNotFoundTestData.xlsx",
             ExcelToObjectMapperTest.class).getInputStream(), false, false);
 
-    assertThrows(NoSuchFieldException.class, () -> obj.map(TestTarget.class, columnMap));
+    assertThrows(IllegalArgumentException.class, () -> obj.map(TestTarget.class, columnMap));
   }
 
   @Test
@@ -88,5 +88,4 @@ class ExcelToObjectMapperTest {
 
     obj.map(TestTarget.class, Collections.emptyMap());
   }
-
 }

@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -36,6 +37,7 @@ public class ExcelToObjectMapper {
 
   private static final Logger logger = getLogger(ExcelToObjectMapper.class);
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("d/M/yyyy");
+  POIUtil poiUtil = new POIUtil();
 
   // The valid date formats defined in DATE_REGEX are d/mm/yyyy and dd/mm/yyyy
   private static final String DATE_REGEX = "(([1-9]|0[1-9]|[12]\\d|3[01])/([1-9]|0[1-9]|1[0-2])/[12]\\d{3})";
@@ -112,36 +114,33 @@ public class ExcelToObjectMapper {
       throws ReflectiveOperationException {
     List<T> list = new ArrayList<>();
 
+    Map<Field, Integer> fieldToIndex = Stream.of(cls.getDeclaredFields())
+        //skip surefire jacoco fields
+        .filter(f -> !f.getName().startsWith("$"))
+        .collect(Collectors.toMap(k -> k,
+            s -> getHeaderIndex(columnMap.getOrDefault(s.getName(), s.getName()), workbook)));
+
     Sheet sheet = workbook.getSheetAt(0);
     int lastRow = sheet.getLastRowNum();
     for (int rowNumber = 1; rowNumber <= lastRow; rowNumber++) {
-      POIUtil poiUtil = new POIUtil();
+      int rowIndex = rowNumber;
       if (poiUtil.isEmptyRow(sheet.getRow(rowNumber))) {
         continue;
       }
       T obj = cls.newInstance();
-      Field[] fields = obj.getClass().getDeclaredFields();
-      for (Field field : fields) {
-        String fieldName = field.getName();
-        if (fieldName.startsWith("$")) {
-          //skip surefire jacoco fields
-          continue;
-        }
-        String columnName = columnMap.get(fieldName);
-        int index = getHeaderIndex(StringUtils.isNotEmpty(columnName) ? columnName : fieldName,
-            workbook);
+      fieldToIndex.forEach((field, index) -> {
         if (index >= 0) {
-          Cell cell = sheet.getRow(rowNumber).getCell(index);
-          Field classField = obj.getClass().getDeclaredField(fieldName);
+          Cell cell = sheet.getRow(rowIndex).getCell(index);
           try {
-            setObjectFieldValueFromCell(obj, classField, cell);
-          } catch (DateTimeParseException | ParseException | IllegalArgumentException e) {
+            setObjectFieldValueFromCell(obj, field, cell);
+          } catch (DateTimeParseException | ParseException | IllegalArgumentException |
+                   IllegalAccessException e) {
             logger.info("Error while extracting cell value from object.", e);
             obj.addErrorMessage(e.getMessage());
           }
         }
-      }
-      obj.setRowNumber(rowNumber);
+      });
+      obj.setRowNumber(rowIndex);
       if (!isAllBlanks(obj)) {
         list.add(obj);
       }
@@ -258,9 +257,9 @@ public class ExcelToObjectMapper {
    * @param headerName The complete field name as in the header row
    * @param workbook   the spreadsheet to search for the header
    * @return The numeric column index for the field.
-   * @throws NoSuchFieldException Thrown when a field is not found
+   * @throws IllegalArgumentException Thrown when a field is not found
    */
-  private int getHeaderIndex(String headerName, Workbook workbook) throws NoSuchFieldException {
+  private int getHeaderIndex(String headerName, Workbook workbook) throws IllegalArgumentException {
     Row row = workbook.getSheetAt(0).getRow(0);
     int totalColumns = row.getLastCellNum();
     for (int i = 0; i < totalColumns; i++) {
@@ -272,7 +271,8 @@ public class ExcelToObjectMapper {
     if (ignoreUnmapped) {
       return -1;
     } else {
-      throw new NoSuchFieldException(String.format("No Spreadsheet header named '%s", headerName));
+      throw new IllegalArgumentException(
+          String.format("No Spreadsheet header named '%s", headerName));
     }
   }
 }
