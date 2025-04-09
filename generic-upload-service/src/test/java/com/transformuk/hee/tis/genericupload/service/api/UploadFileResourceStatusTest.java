@@ -1,7 +1,7 @@
 package com.transformuk.hee.tis.genericupload.service.api;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -72,7 +72,7 @@ public class UploadFileResourceStatusTest {
     ApplicationType at = new ApplicationType();
     at.setFirstName("James\\\"");
     at.setFileName("TIS Placement Import.xls");
-    Page<ApplicationType> page = new PageImpl<ApplicationType>(Lists.newArrayList(at));
+    Page<ApplicationType> page = new PageImpl<>(Lists.newArrayList(at));
 
     ArgumentCaptor<LocalDateTime> argument_date = ArgumentCaptor.forClass(LocalDateTime.class);
     ArgumentCaptor<String> argument_file = ArgumentCaptor.forClass(String.class);
@@ -90,10 +90,10 @@ public class UploadFileResourceStatusTest {
         CoreMatchers.is("James\\\\\\\""));
 
     mockMvc.perform(get(UriComponentsBuilder.fromUriString("/api/status")
-        .queryParam("file", "TIS Placement Import.xls")
-        .queryParam("user", "James\\\"")
-        .queryParam("uploadedDate", "2019-06-03")
-        .build().toUri()))
+            .queryParam("file", "TIS Placement Import.xls")
+            .queryParam("user", "James\\\"")
+            .queryParam("uploadedDate", "2019-06-03")
+            .build().toUri()))
         .andExpect(status().isOk());
 
     String converted_date = argument_date.getValue()

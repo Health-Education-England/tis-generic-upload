@@ -2,7 +2,7 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,7 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.web.client.ResourceAccessException;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -99,11 +99,11 @@ public class ProgrammeMembershipUpdateTransformerServiceTest {
     testObj.processProgrammeMembershipsUpdateUpload(xlsList);
 
     assertEquals(String.format(
-        ProgrammeMembershipUpdateTransformerService.PM_ID_NOT_UUID,
-        PROGRAMME_MEMBERSHIP_ID), xlsList.get(0).getErrorMessage());
+            ProgrammeMembershipUpdateTransformerService.PM_ID_NOT_UUID),
+        xlsList.get(0).getErrorMessage());
     assertEquals(String.format(
-        ProgrammeMembershipUpdateTransformerService.PM_ID_NOT_UUID,
-        PROGRAMME_MEMBERSHIP_ID), xlsList.get(1).getErrorMessage());
+            ProgrammeMembershipUpdateTransformerService.PM_ID_NOT_UUID),
+        xlsList.get(1).getErrorMessage());
   }
 
   @Test

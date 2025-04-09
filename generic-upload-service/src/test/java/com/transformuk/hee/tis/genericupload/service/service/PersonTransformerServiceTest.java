@@ -8,7 +8,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -539,7 +539,8 @@ public class PersonTransformerServiceTest {
     personXls4.setGmcNumber(regNumber);
     personXls4.setAddress1("address1");
 
-    List<PersonXLS> personXlsList = Lists.newArrayList(personXls1, personXls2, personXls3, personXls4);
+    List<PersonXLS> personXlsList = Lists.newArrayList(personXls1, personXls2, personXls3,
+        personXls4);
 
     // Call code under test.
     personTransformerService.processPeopleUpload(personXlsList);
@@ -548,22 +549,29 @@ public class PersonTransformerServiceTest {
     verify(tcsServiceImpl, times(0)).updatePersonForBulkWithAssociatedDTOs(any());
 
     assertThat("should validate address1 when address2 is populated",
-        personXls1.getErrorMessage(), containsString("address1 is required when address2 is populated."));
+        personXls1.getErrorMessage(),
+        containsString("address1 is required when address2 is populated."));
     assertThat("should validate postCode when address2 is populated",
-        personXls1.getErrorMessage(), containsString("postCode is required when address is populated."));
+        personXls1.getErrorMessage(),
+        containsString("postCode is required when address is populated."));
 
     assertThat("should validate address1 when address3 is populated",
-        personXls2.getErrorMessage(), containsString("address1 is required when address3 is populated."));
+        personXls2.getErrorMessage(),
+        containsString("address1 is required when address3 is populated."));
     assertThat("should validate address2 when address3 is populated",
-        personXls2.getErrorMessage(), containsString("address2 is required when address3 is populated."));
+        personXls2.getErrorMessage(),
+        containsString("address2 is required when address3 is populated."));
     assertThat("should validate postCode when address3 is populated",
-        personXls2.getErrorMessage(), containsString("postCode is required when address is populated."));
+        personXls2.getErrorMessage(),
+        containsString("postCode is required when address is populated."));
 
     assertThat("should validate address1 when postCode is populated",
-        personXls3.getErrorMessage(), containsString("address1 is required when postCode is populated."));
+        personXls3.getErrorMessage(),
+        containsString("address1 is required when postCode is populated."));
 
     assertThat("should validate postCode when address1 is populated",
-        personXls4.getErrorMessage(), containsString("postCode is required when address is populated."));
+        personXls4.getErrorMessage(),
+        containsString("postCode is required when address is populated."));
   }
 
   @Test
@@ -589,9 +597,9 @@ public class PersonTransformerServiceTest {
     verify(tcsServiceImpl, times(0)).updatePersonForBulkWithAssociatedDTOs(any());
 
     assertThat("should reject invalid email address",
-            personXls1.getErrorMessage(), containsString("Valid email address required."));
+        personXls1.getErrorMessage(), containsString("Valid email address required."));
     assertThat("should reject invalid email address",
-            personXls2.getErrorMessage(), containsString("Valid email address required."));
+        personXls2.getErrorMessage(), containsString("Valid email address required."));
   }
 
   @Test
