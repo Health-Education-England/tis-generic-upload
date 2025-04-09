@@ -133,8 +133,8 @@ public class ExcelToObjectMapper {
           Cell cell = sheet.getRow(rowIndex).getCell(index);
           try {
             setObjectFieldValueFromCell(obj, field, cell);
-          } catch (DateTimeParseException | ParseException | IllegalArgumentException |
-                   IllegalAccessException e) {
+          } catch (DateTimeParseException | ParseException | IllegalArgumentException
+                   | IllegalAccessException e) {
             logger.info("Error while extracting cell value from object.", e);
             obj.addErrorMessage(e.getMessage());
           }
