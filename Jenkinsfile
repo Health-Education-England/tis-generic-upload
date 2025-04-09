@@ -66,6 +66,7 @@ node {
           env.GROUP_ID = utils.getMvnToPom(workspace, 'groupId')
           env.ARTIFACT_ID = utils.getMvnToPom(workspace, 'artifactId')
           env.PACKAGING = utils.getMvnToPom(workspace, 'packaging')
+          def imageRepository = "430723991443.dkr.ecr.eu-west-2.amazonaws.com"
           imageName = env.ARTIFACT_ID
           imageVersionTag = env.GIT_COMMIT
 
@@ -74,8 +75,13 @@ node {
               env.IMAGE_NAME = imageName
           }
 
-          sh "aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 430723991443.dkr.ecr.eu-west-2.amazonaws.com"
-          sh "ansible-playbook -i $env.DEVOPS_BASE/ansible/inventory/dev $env.DEVOPS_BASE/ansible/tasks/spring-boot-build.yml"
+          sh """
+            aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin ${imageRepository}
+            cd generic-upload-service
+            '${mvn}' spring-boot:build-image -Dspring-boot.build-image.imageName=${imageRepository}/${imageName}:${imageVersionTag} -DskipTests
+            docker tag ${imageRepository}/${imageName}:${imageVersionTag}  ${imageRepository}/${imageName}:latest
+            docker push -a ${imageRepository}/${imageName}
+          """
 
           println "[Jenkinsfile INFO] Stage Dockerize completed..."
         }
