@@ -155,14 +155,6 @@ public class UploadFileServiceImpl implements UploadFileService {
     Map<Integer, String> lineNumberErrors = fileImportResults.getLineNumberErrors();
     Set<Integer> setOfLineNumbersWithErrors = lineNumberErrors.keySet();
 
-    try {
-      logger.debug("Remote file is {} bytes",
-          fileStorageRepository.download(logId, azureProperties.getContainerName(),
-              applicationType.getFileName()).length);
-    } catch (IOException e) {
-      logger.debug("Failed to download file", e);
-      throw new RuntimeException(e);
-    }
     try (InputStream bis = new ByteArrayInputStream(fileStorageRepository
         .download(applicationType.getLogId(), azureProperties.getContainerName(),
             applicationType.getFileName()));
