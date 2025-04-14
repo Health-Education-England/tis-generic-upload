@@ -3,7 +3,7 @@
   <property name="LOG_FILE_NAME" value="generic-upload.log"/>
   <include resource="org/springframework/boot/logging/logback/base.xml"/>
   <include resource="audit-logback.xml"/>
-  <logger name="com.transformuk.hee.tis" level="INFO"/>
+  <logger name="com.transformuk.hee.tis" level="${LOG_LEVEL_TIS}"/>
 
   <logger name="javax.activation" level="WARN"/>
   <logger name="javax.mail" level="WARN"/>
