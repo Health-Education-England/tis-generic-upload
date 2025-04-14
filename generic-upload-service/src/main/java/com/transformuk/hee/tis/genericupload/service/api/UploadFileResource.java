@@ -187,6 +187,7 @@ public class UploadFileResource {
   public ResponseEntity<byte[]> getUploadedFileErrors(
       @ApiParam(value = "The stored file log id", required = true) @PathVariable(value = "logId") final Long logId) {
     try (ByteArrayOutputStream fileWithErrorsOnly = new ByteArrayOutputStream()) {
+      log.info("Getting errors for {}", logId);
       String filename = uploadFileService.findErrorsByLogId(logId, fileWithErrorsOnly);
       HttpHeaders headers = new HttpHeaders();
       headers.setContentDispositionFormData(filename, filename);

@@ -85,15 +85,16 @@ public class UploadFileServiceImpl implements UploadFileService {
 
   //Helper method to shift rows up to remove a row as the removeRow method only blanks it out - https://stackoverflow.com/a/3554129
   public static void removeRow(Sheet sheet, int rowIndex) {
+    Row removingRow = sheet.getRow(rowIndex);
+    if (removingRow == null) {
+      return;
+    }
     int lastRowNum = sheet.getLastRowNum();
     if (rowIndex >= 0 && rowIndex < lastRowNum) {
       sheet.shiftRows(rowIndex + 1, lastRowNum, -1);
     }
     if (rowIndex == lastRowNum) {
-      Row removingRow = sheet.getRow(rowIndex);
-      if (removingRow != null) {
-        sheet.removeRow(removingRow);
-      }
+      sheet.removeRow(removingRow);
     }
   }
 
@@ -145,7 +146,9 @@ public class UploadFileServiceImpl implements UploadFileService {
 
   @Override
   public String findErrorsByLogId(Long logId, OutputStream fileWithErrorsOnly) {
+    logger.debug("Fetching file details from repository");
     ApplicationType applicationType = applicationTypeRepository.findByLogId(logId);
+    logger.debug("Used persisted upload with id: {}", applicationType.getId());
     Gson gson = new Gson();
     FileImportResults fileImportResults = gson
         .fromJson(applicationType.getErrorJson(), FileImportResults.class);
@@ -156,6 +159,7 @@ public class UploadFileServiceImpl implements UploadFileService {
         .download(applicationType.getLogId(), azureProperties.getContainerName(),
             applicationType.getFileName()));
         Workbook workbook = WorkbookFactory.create(bis)) {
+      logger.debug("Opened workbook for file with log id: '{}'", logId);
       Sheet sheet = workbook.getSheetAt(0);
       int errorReportingColumnIndex = sheet.getRow(0).getLastCellNum();
       if (sheet.getRow(0).getCell(errorReportingColumnIndex - 1).getStringCellValue()
@@ -166,23 +170,23 @@ public class UploadFileServiceImpl implements UploadFileService {
       removeCommentsForRemovedRows(sheet, setOfLineNumbersWithErrors);
 
       for (int rowNumber = sheet.getLastRowNum(); rowNumber > 0; rowNumber--) {
+        logger.debug("Working with row {}", rowNumber);
         Row row = sheet.getRow(rowNumber);
         POIUtil poiUtil = new POIUtil();
-        if (row == null) { //TODO sonar complains about using 'continue' twice !
-          continue;
-        } else if (poiUtil.isEmptyRow(row) || !setOfLineNumbersWithErrors.contains(rowNumber)) {
+        if (row == null || poiUtil.isEmptyRow(row)
+            || !setOfLineNumbersWithErrors.contains(rowNumber)) {
           removeRow(sheet, rowNumber);
+          logger.debug("Removed row '{}' which had no errors.", rowNumber);
           continue;
         }
 
         Cell errorReportingCell = row.createCell(errorReportingColumnIndex, CellType.STRING);
+        logger.debug("Setting error cell {}", errorReportingCell.getAddress());
         errorReportingCell.setCellValue(lineNumberErrors.get(rowNumber));
       }
-
-      sheet.autoSizeColumn(errorReportingColumnIndex);
       workbook.write(fileWithErrorsOnly);
     } catch (IOException e) {
-      logger.error("Error building errors with uploaded template : {}", e.getMessage());
+      logger.error("Error building errors with uploaded template : {}", logId, e);
     }
 
     return applicationType.getFileName();
