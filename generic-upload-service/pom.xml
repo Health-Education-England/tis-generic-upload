@@ -12,7 +12,7 @@
 
   <groupId>com.transformuk.hee.tis</groupId>
   <artifactId>generic-upload-service</artifactId>
-  <version>1.29.0</version>
+  <version>1.29.1</version>
 
   <packaging>war</packaging>
 
@@ -103,7 +103,7 @@
     <dependency>
       <groupId>com.transformuk.hee</groupId>
       <artifactId>file-storage</artifactId>
-      <version>4.1.0</version>
+      <version>4.2.4</version>
       <exclusions>
         <exclusion>
           <groupId>com.sun.jersey</groupId>

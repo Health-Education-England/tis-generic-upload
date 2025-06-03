@@ -22,21 +22,6 @@ kc:
 logging:
   file: ${LOG_DIR:${HOME}}/generic-upload.log
 
-# ===================================================================
-# Azure block blob storage properties
-# ===================================================================
-azure:
-  accountName: ${CLOUD_BLOB_ACCOUNT_NAME:}
-  accountKey: ${CLOUD_BLOB_ACCOUNT_KEY:}
-  containerName: ${CLOUD_BLOB_CONTAINER_NAME:fileupload}
-  servicebus:
-    connection-string: ${SERVICE_BUS_CONNECTION_STRING:Endpoint=sb://heetisdevsb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=USyHBoGzI0Q+dS0rchjGYFurWlJBe5C7omLSxo6KYeY=}
-    queue-name: ${SERVICE_BUS_QUEUE_NAME:heetisdevq}
-    queue-receive-mode: ${SERVICE_BUS_Q_RECEIVE_MODE:peeklock}
-    topic-name: ${SERVICE_BUS_TOPIC_NAME:heetisdevt}
-    subscription-name: ${SERVICE_BUS_SUBSCRIPTION_NAME:heetisdevs}
-    subscription-receive-mode: ${SERVICE_BUS_S_RECEIVE_MODE:peeklock}
-
 deadletterDirectory: ${DEADLETER_DIR:/tmp/deadletter}
 
 application:

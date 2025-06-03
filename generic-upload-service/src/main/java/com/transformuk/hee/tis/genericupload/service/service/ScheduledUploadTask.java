@@ -21,7 +21,6 @@ import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
-import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
 import com.transformuk.hee.tis.genericupload.service.parser.ColumnMapper;
 import com.transformuk.hee.tis.genericupload.service.parser.ExcelToObjectMapper;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
@@ -60,7 +59,6 @@ public class ScheduledUploadTask {
   private static final String UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE =
       "Unknown Error while processing excel file : {}";
   private final ApplicationTypeRepository applicationTypeRepository;
-  private final AzureProperties azureProperties;
   private final FileStorageRepository fileStorageRepository;
   @Autowired
   private PlacementTransformerService placementTransformerService;
@@ -97,11 +95,9 @@ public class ScheduledUploadTask {
   @Autowired
   public ScheduledUploadTask(
       @Qualifier("awsFileStorageRepository") FileStorageRepository fileStorageRepository,
-      ApplicationTypeRepository applicationTypeRepository,
-      AzureProperties azureProperties) {
+      ApplicationTypeRepository applicationTypeRepository) {
     this.fileStorageRepository = fileStorageRepository;
     this.applicationTypeRepository = applicationTypeRepository;
-    this.azureProperties = azureProperties;
   }
 
   @Scheduled(fixedDelay = 1000, initialDelay = 2000) //TODO externalise this wait interval,
@@ -119,7 +115,7 @@ public class ScheduledUploadTask {
       applicationTypeRepository.save(applicationType);
 
       try (InputStream bis = new ByteArrayInputStream(fileStorageRepository
-          .download(applicationType.getLogId(), azureProperties.getContainerName(),
+          .download(applicationType.getLogId(), "fileupload",
               applicationType.getFileName()))) {
         ExcelToObjectMapper excelToObjectMapper = new ExcelToObjectMapper(bis, true, true);
 

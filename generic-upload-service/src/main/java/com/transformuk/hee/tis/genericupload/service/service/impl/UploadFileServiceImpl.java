@@ -7,7 +7,6 @@ import com.microsoft.azure.storage.StorageException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
-import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
 import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeRepository;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import com.transformuk.hee.tis.genericupload.service.service.FileImportResults;
@@ -59,16 +58,13 @@ public class UploadFileServiceImpl implements UploadFileService {
 
   private final FileStorageRepository fileStorageRepository;
   private final ApplicationTypeRepository applicationTypeRepository;
-  private final AzureProperties azureProperties;
 
   @Autowired
   public UploadFileServiceImpl(
       @Qualifier("awsFileStorageRepository") FileStorageRepository fileStorageRepository,
-      ApplicationTypeRepository applicationTypeRepository,
-      AzureProperties azureProperties) {
+      ApplicationTypeRepository applicationTypeRepository) {
     this.fileStorageRepository = fileStorageRepository;
     this.applicationTypeRepository = applicationTypeRepository;
-    this.azureProperties = azureProperties;
   }
 
   static void removeCommentsForRemovedRows(Sheet sheet,
@@ -133,7 +129,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 
     ApplicationType applicationType = null;
     if (!ObjectUtils.isEmpty(files)) {
-      fileStorageRepository.store(logId, azureProperties.getContainerName(), files);
+      fileStorageRepository.store(logId, "fileupload", files);
       for (MultipartFile file : files) {
         if (!ObjectUtils.isEmpty(file) && StringUtils.isNotEmpty(file.getContentType())) {
           applicationType = save(file.getOriginalFilename(), fileType, logId, username, firstName,
@@ -156,7 +152,7 @@ public class UploadFileServiceImpl implements UploadFileService {
     Set<Integer> setOfLineNumbersWithErrors = lineNumberErrors.keySet();
 
     try (InputStream bis = new ByteArrayInputStream(fileStorageRepository
-        .download(applicationType.getLogId(), azureProperties.getContainerName(),
+        .download(applicationType.getLogId(), "fileupload",
             applicationType.getFileName()));
         Workbook workbook = WorkbookFactory.create(bis)) {
       logger.debug("Opened workbook for file with log id: '{}'", logId);

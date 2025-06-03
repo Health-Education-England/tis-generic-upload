@@ -26,19 +26,6 @@ kc:
   password: ${KC_PASSWORD}
   timeout: ${KC_TIMEOUT}
 
-azure:
-  accountName: ${CLOUD_BLOB_ACCOUNT_NAME}
-  accountKey: ${CLOUD_BLOB_ACCOUNT_KEY}
-  containerName: ${CLOUD_BLOB_CONTAINER_NAME}
-  servicebus:
-    connection-string: ${SERVICE_BUS_CONNECTION_STRING}
-    queue-name: ${SERVICE_BUS_QUEUE_NAME}
-    queue-receive-mode: ${SERVICE_BUS_Q_RECEIVE_MODE}
-    topic-name: ${SERVICE_BUS_TOPIC_NAME}
-    subscription-name: ${SERVICE_BUS_SUBSCRIPTION_NAME}
-    subscription-receive-mode: ${SERVICE_BUS_S_RECEIVE_MODE}
-
-
 deadletterDirectory: ${DEADLETER_DIR}
 
 application:
