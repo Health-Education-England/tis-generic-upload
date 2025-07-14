@@ -189,7 +189,7 @@ jobs:
         with:
           task-definition: .aws/tis-generic-upload-preprod.json
           container-name: tis-generic-upload
-          image: ${{ steps.login-ecr.outputs.registry }}/generic-upload:${{ github.sha }}
+          image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         id: ecs-deploy
