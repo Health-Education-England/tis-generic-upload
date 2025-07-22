@@ -183,11 +183,17 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Prepare environment-specific task definition
+        run: |
+          envsubst < .aws/task-definition-template.json > rendered-task-def.json
+        env:
+          environment: preprod
+
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: .aws/tis-generic-upload-preprod.json
+          task-definition: rendered-task-def.json
           container-name: tis-generic-upload
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
 
@@ -231,11 +237,17 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Prepare environment-specific task definition
+        run: |
+          envsubst < .aws/task-definition-template.json > rendered-task-def.json
+        env:
+          environment: prod
+
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: .aws/tis-generic-upload-prod.json
+          task-definition: rendered-task-def.json
           container-name: tis-generic-upload
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
 
@@ -264,6 +276,7 @@ jobs:
     environment: nimdta
     needs: deploy-pre-prod
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -278,11 +291,17 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Prepare environment-specific task definition
+        run: |
+          envsubst < .aws/task-definition-template.json > rendered-task-def.json
+        env:
+          environment: nimdta
+
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: .aws/tis-generic-upload-nimdta.json
+          task-definition: rendered-task-def.json
           container-name: tis-generic-upload
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
 
