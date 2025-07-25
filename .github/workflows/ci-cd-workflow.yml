@@ -183,18 +183,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Prepare environment-specific task definition
+      - name: Prepare ECS Task Definition
+        id: task-def
         run: |
           envsubst < .aws/task-definition-template.json > rendered-task-def.json
         env:
           environment: preprod
-
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: rendered-task-def.json
-          container-name: tis-generic-upload
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
@@ -237,18 +231,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Prepare environment-specific task definition
+      - name: Prepare ECS Task Definition
+        id: task-def
         run: |
           envsubst < .aws/task-definition-template.json > rendered-task-def.json
         env:
-          environment: prod
-
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: rendered-task-def.json
-          container-name: tis-generic-upload
+          environment: preprod
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
@@ -291,18 +279,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Prepare environment-specific task definition
+      - name: Prepare ECS Task Definition
+        id: task-def
         run: |
           envsubst < .aws/task-definition-template.json > rendered-task-def.json
         env:
-          environment: nimdta
-
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: rendered-task-def.json
-          container-name: tis-generic-upload
+          environment: preprod
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
