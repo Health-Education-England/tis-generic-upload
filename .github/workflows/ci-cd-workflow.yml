@@ -186,7 +186,7 @@ jobs:
       - name: Prepare ECS Task Definition
         id: task-def
         run: |
-          envsubst < .aws/task-definition-template.json > rendered-task-def.json
+          envsubst < .aws/task-definition-template.json > ${{ runner.temp }}/task-definition.json
         env:
           environment: preprod
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
@@ -234,7 +234,7 @@ jobs:
       - name: Prepare ECS Task Definition
         id: task-def
         run: |
-          envsubst < .aws/task-definition-template.json > rendered-task-def.json
+          envsubst < .aws/task-definition-template.json > ${{ runner.temp }}/task-definition.json
         env:
           environment: preprod
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
@@ -282,7 +282,7 @@ jobs:
       - name: Prepare ECS Task Definition
         id: task-def
         run: |
-          envsubst < .aws/task-definition-template.json > rendered-task-def.json
+          envsubst < .aws/task-definition-template.json > ${{ runner.temp }}/task-definition.json
         env:
           environment: preprod
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
