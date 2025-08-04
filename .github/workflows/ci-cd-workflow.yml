@@ -184,10 +184,8 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Prepare ECS Task Definition
-        id: task-def
         run: |
           envsubst < .aws/task-definition-template.json > ${{ runner.temp }}/task-definition.json
-          echo "task-definition=${{ runner.temp }}/task-definition.json" >> $GITHUB_OUTPUT
         env:
           environment: preprod
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
@@ -196,7 +194,7 @@ jobs:
         id: ecs-deploy
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          task-definition: ${{ runner.temp }}/task-definition.json
           service: tis-generic-upload
           cluster: tis-preprod
           wait-for-service-stability: true
@@ -233,19 +231,17 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Prepare ECS Task Definition
-        id: task-def
         run: |
           envsubst < .aws/task-definition-template.json > ${{ runner.temp }}/task-definition.json
-          echo "task-definition=${{ runner.temp }}/task-definition.json" >> $GITHUB_OUTPUT
         env:
-          environment: preprod
+          environment: prod
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         id: ecs-deploy
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          task-definition: ${{ runner.temp }}/task-definition.json
           service: tis-generic-upload
           cluster: tis-prod
           wait-for-service-stability: true
@@ -282,19 +278,17 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Prepare ECS Task Definition
-        id: task-def
         run: |
           envsubst < .aws/task-definition-template.json > ${{ runner.temp }}/task-definition.json
-          echo "task-definition=${{ runner.temp }}/task-definition.json" >> $GITHUB_OUTPUT
         env:
-          environment: preprod
+          environment: nimdta
           image: ${{ steps.login-ecr.outputs.registry }}/tis-generic-upload:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         id: ecs-deploy
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          task-definition: ${{ runner.temp }}/task-definition.json
           service: tis-generic-upload
           cluster: tis-nimdta
           wait-for-service-stability: true
