@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           cache: maven
           distribution: temurin
@@ -60,7 +60,7 @@ jobs:
         run: mvn test
 
       - name: Set up quality analysis JDK
-        uses: actions/setup-java@v3.4.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -110,7 +110,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           cache: maven
           distribution: temurin
