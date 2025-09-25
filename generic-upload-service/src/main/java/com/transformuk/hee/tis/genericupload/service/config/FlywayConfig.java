@@ -37,12 +37,13 @@ public class FlywayConfig {
 
   @Bean(initMethod = "migrate")
   Flyway flyway() {
-    Flyway flyway = new Flyway();
-    flyway.setBaselineOnMigrate(baseLineOnMigrate);
-    flyway.setLocations(migrationFilesLocations);
-    flyway.setDataSource(url, user, password);
-    flyway.setCleanOnValidationError(cleanOnValidationError);
-    flyway.setOutOfOrder(outOfOrder);
+    Flyway flyway = Flyway.configure()
+            .baselineOnMigrate(baseLineOnMigrate)
+            .locations(migrationFilesLocations)
+            .dataSource(url, user, password)
+            .cleanOnValidationError(cleanOnValidationError)
+            .outOfOrder(outOfOrder)
+            .load();
     flyway.info();
     return flyway;
   }
