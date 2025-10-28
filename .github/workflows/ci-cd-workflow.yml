@@ -60,7 +60,7 @@ jobs:
         run: mvn test
 
       - name: Set up quality analysis JDK
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
