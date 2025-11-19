@@ -83,7 +83,7 @@ public class FileValidator {
       fileType = FileType.ASSESSMENTS_DELETE;
     } else if (headers.contains("Review date*")) {
       fileType = FileType.ASSESSMENTS;
-    } else if (headers.contains("TIS_Placement_ID*") && headers.contains("Intrepid_Placement_ID")) {
+    } else if (headers.contains("TIS_Placement_ID*") && headers.contains("National Post Number")) {
       fileType = FileType.PLACEMENTS_UPDATE;
     } else if (headers.contains("TIS_Post_ID*") && headers.contains("Funding type")
         && !headers.contains(TIS_POSTFUNDING_ID_MANDATORY)) {
