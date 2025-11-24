@@ -334,7 +334,7 @@ public class FileValidatorTest {
 
     Set<String> headers = new HashSet<>();
     headers.add("TIS_Placement_ID*");
-    headers.add("Intrepid_Placement_ID");
+    headers.add("National Post Number");
 
     // When.
     FileType fileType = fileValidator.getFileType(null, null, null, headers);

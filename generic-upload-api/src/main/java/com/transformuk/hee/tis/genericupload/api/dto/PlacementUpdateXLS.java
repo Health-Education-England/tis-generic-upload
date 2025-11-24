@@ -12,9 +12,6 @@ public class PlacementUpdateXLS extends TemplateXLS implements PlacementSupervis
   @ExcelColumn(name = "TIS_Placement_ID*", required = true)
   private String placementId;
 
-  @ExcelColumn(name = "Intrepid_Placement_ID")
-  private String intrepidId;
-
   @ExcelColumn(name = "National Post Number")
   private String nationalPostNumber;
 

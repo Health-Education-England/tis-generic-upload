@@ -130,7 +130,6 @@ public class PlacementUpdateTransformerServiceTest {
       String specialtyName) {
     PlacementUpdateXLS placementXLS = new PlacementUpdateXLS();
     placementXLS.setPlacementId(placementId);
-    placementXLS.setIntrepidId(intrepidId);
     placementXLS.setNationalPostNumber(npn);
     placementXLS.setSpecialty1(specialtyName);
     return placementXLS;
@@ -170,20 +169,6 @@ public class PlacementUpdateTransformerServiceTest {
     assertThat(placementSpecialtyDTO.getPlacementSpecialtyType()).isNotNull();
     assertThat(placementSpecialtyDTO.getPlacementSpecialtyType())
         .isEqualTo(PostSpecialtyType.PRIMARY);
-  }
-
-  @Test
-  public void canUpdateIntrepidIdForPlacementWhenDbIntrepidIdIsNull() {
-    placementUpdateTransformerService.updateIntrepidId(placementXLS, placementDTO);
-    assertThat(placementDTO.getIntrepidId()).isEqualToIgnoringCase(placementXLS.getIntrepidId());
-  }
-
-  @Test
-  public void canUpdateIntrepidIdForPlacementWhenDbIntrepidIdIsNotNull() {
-    String expectedIntrepidId = "222";
-    placementDTO.setIntrepidId(expectedIntrepidId);
-    placementUpdateTransformerService.updateIntrepidId(placementXLS, placementDTO);
-    assertThat(placementDTO.getIntrepidId()).isEqualToIgnoringCase(expectedIntrepidId);
   }
 
   @Test
