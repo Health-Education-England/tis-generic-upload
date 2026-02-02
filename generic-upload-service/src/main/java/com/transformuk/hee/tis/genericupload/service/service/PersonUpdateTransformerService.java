@@ -26,7 +26,7 @@ public class PersonUpdateTransformerService {
   public static final String ROLE_ERROR_SEPARATOR = "Role '%s' should not use ',' as a separator, please use ';' instead.";
   public static final String PERSON_ID_MUST_BE_VALID =
       "Tis_Person_ID (%s) is invalid."
-          + " Should be a number and not contain whitespace or special characters";
+          + "It should be a number and not contain blank space or special characters.";
   private final TcsServiceImpl tcsService;
   private final PersonMapper personMapper;
   private final TrainerApprovalMapper trainerApprovalMapper;
@@ -61,14 +61,9 @@ public class PersonUpdateTransformerService {
         xls.addErrorMessage(String.format(PERSON_ID_DUPLICATE, xls.getTisPersonId()));
       }
 
-      // Handle invalid person IDs
-      if (!validateTisPersonId(xls.getTisPersonId())) {
-        xls.addErrorMessage(
-            String.format(PERSON_ID_MUST_BE_VALID, xls.getTisPersonId()));
-      }
-
-      // Handle validation of enumerations and role.
+      // Handle validation of id, enumerations and role.
       List<String> initialErrorMessages = initialValidate(xls);
+      xls.addErrorMessages(initialErrorMessages);
 
       if (xls.hasErrors()) {
         // Do not send to TCS to process
@@ -83,9 +78,6 @@ public class PersonUpdateTransformerService {
         personDto.setTrainerApprovals(Collections.singleton(trainerApprovalDto));
       }
 
-      if (!initialErrorMessages.isEmpty()) {
-        personDto.getMessageList().addAll(initialErrorMessages);
-      }
       personIdToXls.put(personDto.getId(), xls);
       personDtos.add(personDto);
     }
@@ -134,15 +126,13 @@ public class PersonUpdateTransformerService {
     if (StringUtils.contains(role, ',')) {
       errorMessages.add(String.format(ROLE_ERROR_SEPARATOR, role));
     }
-    return errorMessages;
-  }
 
-  private boolean validateTisPersonId(String tisPersonIdString) {
     try {
-      Long.parseLong(tisPersonIdString);
+      Long.parseLong(xls.getTisPersonId());
     } catch (NumberFormatException e) {
-      return false;
+      errorMessages.add(
+          String.format(PERSON_ID_MUST_BE_VALID, xls.getTisPersonId()));
     }
-    return true;
+    return errorMessages;
   }
 }

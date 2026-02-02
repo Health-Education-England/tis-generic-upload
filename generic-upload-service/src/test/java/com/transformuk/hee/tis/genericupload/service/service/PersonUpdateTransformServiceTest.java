@@ -35,6 +35,7 @@ public class PersonUpdateTransformServiceTest {
   @Test
   public void ShouldReturnErrorMessageWhenTrainerApprovalStatusDoesNotExists() {
     PersonUpdateXls xls = new PersonUpdateXls();
+    xls.setTisPersonId("1111111");
     xls.setTrainerApprovalStatus("invalid");
 
     List<String> errorMessages = personUpdateTransformerService.initialValidate(xls);
@@ -48,6 +49,7 @@ public class PersonUpdateTransformServiceTest {
   @Test
   public void ShouldNotReturnErrorMessageWhenTrainerApprovalStatusExists() {
     PersonUpdateXls xls = new PersonUpdateXls();
+    xls.setTisPersonId("1111111");
     xls.setTrainerApprovalStatus("CURRENT");
 
     List<String> errorMessages = personUpdateTransformerService.initialValidate(xls);
@@ -57,6 +59,7 @@ public class PersonUpdateTransformServiceTest {
   @Test
   public void ShouldReturnErrorMessageWhenCommaExistsInRole() {
     PersonUpdateXls xls = new PersonUpdateXls();
+    xls.setTisPersonId("1111111");
     xls.setRole("role1, role2");
 
     List<String> errorMessages = personUpdateTransformerService.initialValidate(xls);
@@ -70,6 +73,7 @@ public class PersonUpdateTransformServiceTest {
   @Test
   public void ShouldNotReturnErrorMessageWhenCommaDoesNotExistInRole() {
     PersonUpdateXls xls = new PersonUpdateXls();
+    xls.setTisPersonId("1111111");
     xls.setRole("role");
 
     List<String> errorMessages = personUpdateTransformerService.initialValidate(xls);
