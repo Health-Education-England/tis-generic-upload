@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -139,5 +140,37 @@ public class PersonUpdateTransformServiceTest {
     // Then.
     verify(xls).addErrorMessages(errorMsgs);
     assertThat("", xlsList.get(0).getErrorMessage(), is(errorMsg));
+  }
+
+  @Test
+  public void shouldLogErrorWhenTisPersonIdInvalid() {
+    String nbspId = "111&nbsp1111";
+    PersonUpdateXls xls1 = new PersonUpdateXls();
+    xls1.setTisPersonId(nbspId);
+
+    String spaceId = "    1111111";
+    PersonUpdateXls xls2 = new PersonUpdateXls();
+    xls2.setTisPersonId(spaceId);
+
+    String nonNumericId = "111a111";
+    PersonUpdateXls xls3 = new PersonUpdateXls();
+    xls3.setTisPersonId(nonNumericId);
+
+    List<PersonUpdateXls> xlsList = List.of(xls1, xls2, xls3);
+
+    personUpdateTransformerService.processUpload(xlsList);
+
+    assertThat("", xlsList.get(0).getErrorMessage(),
+        is(String.format(PersonUpdateTransformerService.PERSON_ID_MUST_BE_VALID,
+            nbspId)));
+    assertThat("", xlsList.get(1).getErrorMessage(),
+        is(String.format(PersonUpdateTransformerService.PERSON_ID_MUST_BE_VALID,
+            spaceId)));
+    assertThat("", xlsList.get(2).getErrorMessage(),
+        is(String.format(PersonUpdateTransformerService.PERSON_ID_MUST_BE_VALID,
+            nonNumericId)));
+
+    verify(personMapperMock, never()).toDto(any());
+    verify(tcsServiceImplMock, never()).patchPeople(any());
   }
 }

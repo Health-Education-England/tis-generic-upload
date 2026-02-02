@@ -24,6 +24,8 @@ public class PersonUpdateTransformerService {
   public static final String PERSON_ID_DUPLICATE = "Duplicate Tis_Person_ID: %s.";
   public static final String TRAINER_APPROVAL_STATUS_NOT_EXISTS = "Trainer Approval Status '%s' does not exist.";
   public static final String ROLE_ERROR_SEPARATOR = "Role '%s' should not use ',' as a separator, please use ';' instead.";
+  public static final String PERSON_ID_MUST_BE_VALID =
+      "Tis_Person_ID (%s) is invalid. Should be a number and not contain whitespace or special characters";
   private final TcsServiceImpl tcsService;
   private final PersonMapper personMapper;
   private final TrainerApprovalMapper trainerApprovalMapper;
@@ -56,6 +58,12 @@ public class PersonUpdateTransformerService {
       // Handle exclusion of duplicate ids
       if (numberOfIds.get(xls.getTisPersonId()) > 1) {
         xls.addErrorMessage(String.format(PERSON_ID_DUPLICATE, xls.getTisPersonId()));
+        continue;
+      }
+
+      if (!validateTisPersonId(xls.getTisPersonId())) {
+        xls.addErrorMessage(
+            String.format(PERSON_ID_MUST_BE_VALID, xls.getTisPersonId()));
         continue;
       }
 
@@ -122,5 +130,14 @@ public class PersonUpdateTransformerService {
       errorMessages.add(String.format(ROLE_ERROR_SEPARATOR, role));
     }
     return errorMessages;
+  }
+
+  private boolean validateTisPersonId(String tisPersonIdString) {
+    try {
+      Long.parseLong(tisPersonIdString);
+    } catch (NumberFormatException e) {
+      return false;
+    }
+    return true;
   }
 }
