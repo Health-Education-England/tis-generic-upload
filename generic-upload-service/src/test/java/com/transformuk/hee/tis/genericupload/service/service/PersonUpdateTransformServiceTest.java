@@ -38,7 +38,7 @@ public class PersonUpdateTransformServiceTest {
   private PersonUpdateTransformerService personUpdateTransformerService;
 
   @Test
-  public void ShouldReturnErrorMessageWhenTrainerApprovalStatusDoesNotExists() {
+  public void shouldReturnErrorMessageWhenTrainerApprovalStatusDoesNotExists() {
     PersonUpdateXls xls = new PersonUpdateXls();
     xls.setTisPersonId("1111111");
     xls.setTrainerApprovalStatus("invalid");
@@ -51,7 +51,7 @@ public class PersonUpdateTransformServiceTest {
   }
 
   @Test
-  public void ShouldNotReturnErrorMessageWhenTrainerApprovalStatusExists() {
+  public void shouldNotReturnErrorMessageWhenTrainerApprovalStatusExists() {
     PersonUpdateXls xls = new PersonUpdateXls();
     xls.setTisPersonId("1111111");
     xls.setRole("role1");
@@ -73,7 +73,7 @@ public class PersonUpdateTransformServiceTest {
   }
 
   @Test
-  public void ShouldReturnErrorMessageWhenCommaExistsInRole() {
+  public void shouldReturnErrorMessageWhenCommaExistsInRole() {
     PersonUpdateXls xls = new PersonUpdateXls();
     xls.setTisPersonId("1111111");
     xls.setRole("role1, role2");
@@ -86,7 +86,7 @@ public class PersonUpdateTransformServiceTest {
   }
 
   @Test
-  public void ShouldNotReturnErrorMessageWhenCommaDoesNotExistInRole() {
+  public void shouldNotReturnErrorMessageWhenCommaDoesNotExistInRole() {
     PersonUpdateXls xls = new PersonUpdateXls();
     xls.setTisPersonId("1111111");
     xls.setRole("role");
@@ -173,7 +173,7 @@ public class PersonUpdateTransformServiceTest {
   }
 
   @Test
-  public void ShouldReturnErrorMessageWhenTisPersonIdInvalid() {
+  public void shouldReturnErrorMessageWhenTisPersonIdInvalid() {
     String nbspId = "111&nbsp1111";
     PersonUpdateXls xls1 = new PersonUpdateXls();
     xls1.setTisPersonId(nbspId);
