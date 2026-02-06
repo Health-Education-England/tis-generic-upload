@@ -61,9 +61,8 @@ public class PersonUpdateTransformerService {
         xls.addErrorMessage(String.format(PERSON_ID_DUPLICATE, xls.getTisPersonId()));
       }
 
-      // Handle validation of id, enumerations and role.
-      List<String> initialErrorMessages = initialValidate(xls);
-      xls.addErrorMessages(initialErrorMessages);
+      // Handle validation of id, enumerations and role and set errors
+      initialValidate(xls);
 
       if (xls.hasErrors()) {
         // Do not send to TCS to process
@@ -108,12 +107,11 @@ public class PersonUpdateTransformerService {
   }
 
   /**
-   * Those validation can not be handled in TCS.
+   * Validate fields that can not be handled in TCS and record error messages.
    *
    * @param xls PersonUpdateXls to be validated
-   * @return errorMessages list
    */
-  List<String> initialValidate(PersonUpdateXls xls) {
+  private void initialValidate(PersonUpdateXls xls) {
 
     List<String> errorMessages = new ArrayList<>();
 
@@ -133,6 +131,6 @@ public class PersonUpdateTransformerService {
       errorMessages.add(
           String.format(PERSON_ID_MUST_BE_VALID, xls.getTisPersonId()));
     }
-    return errorMessages;
+    xls.addErrorMessages(errorMessages);
   }
 }
