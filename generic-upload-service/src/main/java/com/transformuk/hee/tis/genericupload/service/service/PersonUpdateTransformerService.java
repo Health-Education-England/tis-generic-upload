@@ -115,6 +115,9 @@ public class PersonUpdateTransformerService {
 
     List<String> errorMessages = new ArrayList<>();
 
+    String trimmedId = xls.getTisPersonId().trim();
+    xls.setTisPersonId(trimmedId);
+
     String trainerApprovalStatus = xls.getTrainerApprovalStatus();
     if (!StringUtils.isEmpty(trainerApprovalStatus) && !EnumUtils.isValidEnum(
         ApprovalStatus.class, trainerApprovalStatus)) {
