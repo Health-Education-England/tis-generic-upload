@@ -178,7 +178,7 @@ public class PersonUpdateTransformServiceTest {
     PersonUpdateXls xls1 = new PersonUpdateXls();
     xls1.setTisPersonId(nbspId);
 
-    String spaceId = "    1111111";
+    String spaceId = "1111 111";
     PersonUpdateXls xls2 = new PersonUpdateXls();
     xls2.setTisPersonId(spaceId);
 
@@ -202,5 +202,26 @@ public class PersonUpdateTransformServiceTest {
 
     verify(personMapperMock, never()).toDto(any());
     verify(tcsServiceImplMock, never()).patchPeople(any());
+  }
+
+  @Test
+  public void shouldNotReturnErrorMessageWhenTrimmedIdIsValid() {
+    PersonUpdateXls xls = new PersonUpdateXls();
+    xls.setTisPersonId(" 1111111  ");
+    xls.setRole("role");
+
+    PersonDTO personDto = new PersonDTO();
+    personDto.setId(1111111L);
+    personDto.setRole(xls.getRole());
+
+    TrainerApprovalDTO taDto = new TrainerApprovalDTO();
+    taDto.setPerson(personDto);
+    taDto.setApprovalStatus(ApprovalStatus.CURRENT);
+
+    when(personMapperMock.toDto(xls)).thenReturn(personDto);
+    when(trainerApprovalMapper.toDto(xls)).thenReturn(taDto);
+
+    personUpdateTransformerService.processUpload(List.of(xls));
+    assertNull(xls.getErrorMessage());
   }
 }

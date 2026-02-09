@@ -40,6 +40,7 @@ public class PersonUpdateTransformerService {
 
   public void processUpload(List<PersonUpdateXls> xlsList) {
     xlsList.forEach(TemplateXLS::initialiseSuccessfullyImported);
+    xlsList.forEach(update -> update.setTisPersonId(update.getTisPersonId().trim()));
 
     Map<Long, PersonUpdateXls> personIdToXls = new HashMap<>();
     List<PersonDTO> personDtos = new ArrayList<>();
