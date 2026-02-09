@@ -40,6 +40,7 @@ public class PersonUpdateTransformerService {
 
   public void processUpload(List<PersonUpdateXls> xlsList) {
     xlsList.forEach(TemplateXLS::initialiseSuccessfullyImported);
+    xlsList.forEach(update -> update.setTisPersonId(update.getTisPersonId().trim()));
 
     Map<Long, PersonUpdateXls> personIdToXls = new HashMap<>();
     List<PersonDTO> personDtos = new ArrayList<>();
@@ -114,9 +115,6 @@ public class PersonUpdateTransformerService {
   private void initialValidate(PersonUpdateXls xls) {
 
     List<String> errorMessages = new ArrayList<>();
-
-    String trimmedId = xls.getTisPersonId().trim();
-    xls.setTisPersonId(trimmedId);
 
     String trainerApprovalStatus = xls.getTrainerApprovalStatus();
     if (!StringUtils.isEmpty(trainerApprovalStatus) && !EnumUtils.isValidEnum(
