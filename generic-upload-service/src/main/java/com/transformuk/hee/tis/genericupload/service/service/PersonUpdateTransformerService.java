@@ -24,6 +24,9 @@ public class PersonUpdateTransformerService {
   public static final String PERSON_ID_DUPLICATE = "Duplicate Tis_Person_ID: %s.";
   public static final String TRAINER_APPROVAL_STATUS_NOT_EXISTS = "Trainer Approval Status '%s' does not exist.";
   public static final String ROLE_ERROR_SEPARATOR = "Role '%s' should not use ',' as a separator, please use ';' instead.";
+  public static final String PERSON_ID_MUST_BE_VALID =
+      "Tis_Person_ID (%s) is invalid."
+          + "It should be a number and not contain blank space or special characters.";
   private final TcsServiceImpl tcsService;
   private final PersonMapper personMapper;
   private final TrainerApprovalMapper trainerApprovalMapper;
@@ -56,11 +59,15 @@ public class PersonUpdateTransformerService {
       // Handle exclusion of duplicate ids
       if (numberOfIds.get(xls.getTisPersonId()) > 1) {
         xls.addErrorMessage(String.format(PERSON_ID_DUPLICATE, xls.getTisPersonId()));
-        continue;
       }
 
-      // Handle validation of enumerations and role.
-      List<String> initialErrorMessages = initialValidate(xls);
+      // Handle validation of id, enumerations and role and set errors
+      initialValidate(xls);
+
+      if (xls.hasErrors()) {
+        // Do not send to TCS to process
+        continue;
+      }
 
       PersonDTO personDto = personMapper.toDto(xls);
 
@@ -70,9 +77,6 @@ public class PersonUpdateTransformerService {
         personDto.setTrainerApprovals(Collections.singleton(trainerApprovalDto));
       }
 
-      if (!initialErrorMessages.isEmpty()) {
-        personDto.getMessageList().addAll(initialErrorMessages);
-      }
       personIdToXls.put(personDto.getId(), xls);
       personDtos.add(personDto);
     }
@@ -103,12 +107,11 @@ public class PersonUpdateTransformerService {
   }
 
   /**
-   * Those validation can not be handled in TCS.
+   * Validate fields that can not be handled in TCS and record error messages.
    *
    * @param xls PersonUpdateXls to be validated
-   * @return errorMessages list
    */
-  List<String> initialValidate(PersonUpdateXls xls) {
+  private void initialValidate(PersonUpdateXls xls) {
 
     List<String> errorMessages = new ArrayList<>();
 
@@ -121,6 +124,13 @@ public class PersonUpdateTransformerService {
     if (StringUtils.contains(role, ',')) {
       errorMessages.add(String.format(ROLE_ERROR_SEPARATOR, role));
     }
-    return errorMessages;
+
+    try {
+      Long.parseLong(xls.getTisPersonId());
+    } catch (NumberFormatException e) {
+      errorMessages.add(
+          String.format(PERSON_ID_MUST_BE_VALID, xls.getTisPersonId()));
+    }
+    xls.addErrorMessages(errorMessages);
   }
 }
