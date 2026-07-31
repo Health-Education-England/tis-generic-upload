@@ -29,6 +29,7 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -88,6 +89,7 @@ public class PostCreateTransformerServiceTest {
   private FundingTypeDTO fundingType1;
   private FundingSubTypeDto fundingSubTypeDto1;
   private FundingReasonDto fundingReason;
+  private FundingTypeDTO fundingType2;
 
   @Captor
   private ArgumentCaptor<List<PostDTO>> dtoCaptor;
@@ -118,7 +120,7 @@ public class PostCreateTransformerServiceTest {
     xls2.setEmployingBody("employingBody2");
     xls2.setProgrammeTisId("3;4");
     xls2.setOwner("owner2");
-    xls2.setFundingType("funding1");
+    xls2.setFundingType("funding2");
     xls2.setFundingStartDate(new Date(1L));
 
     xlsList = List.of(xls1, xls2);
@@ -194,6 +196,10 @@ public class PostCreateTransformerServiceTest {
     fundingType1.setStatus(Status.CURRENT);
     fundingType1.setLabel("funding1");
     fundingType1.setId(1L);
+    fundingType2 = new FundingTypeDTO();
+    fundingType2.setStatus(Status.CURRENT);
+    fundingType2.setLabel("funding2");
+    fundingType2.setId(2L);
 
     fundingSubTypeDto1 = new FundingSubTypeDto();
     fundingSubTypeDto1.setLabel("fundingSubtype1");
@@ -410,8 +416,10 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
         .thenReturn(List.of(trainingBody1, employingBody1, employingBody2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
         Collections.singletonList(fundingReason));
 
@@ -439,8 +447,10 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
         .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
         Collections.singletonList(fundingReason));
 
@@ -469,8 +479,10 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
     when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
         .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
         Collections.singletonList(fundingReason));
 
@@ -500,8 +512,10 @@ public class PostCreateTransformerServiceTest {
         .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(List.of(programme1, programme2, programme3));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
         Collections.singletonList(fundingReason));
 
@@ -533,8 +547,10 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(List.of(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
         Collections.singletonList(fundingReason));
 
@@ -572,8 +588,10 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(tcsService.findPostsByNationalPostNumbersIn(any()))
         .thenReturn(Collections.singletonList(post1));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
         Collections.singletonList(fundingReason));
 
@@ -605,8 +623,10 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(List.of(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
 
     // When.
     service.processUpload(xlsList);
@@ -662,8 +682,10 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(List.of(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
 
     // When.
     service.processUpload(xlsList);
@@ -689,8 +711,10 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(List.of(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
 
     // When.
     service.processUpload(xlsList);
@@ -715,8 +739,10 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(List.of(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
     when(referenceService.findCurrentFundingSubTypesForFundingTypeId(any())).thenReturn(
         Collections.emptyList());
 
@@ -742,8 +768,10 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(List.of(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
 
     // When.
     service.processUpload(xlsList);
@@ -785,8 +813,10 @@ public class PostCreateTransformerServiceTest {
     when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
     when(tcsService.findPostsByNationalPostNumbersIn(any()))
         .thenReturn(Collections.singletonList(post1));
-    when(referenceService.findCurrentFundingTypesByLabelIn(any())).thenReturn(
-        Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
     when(referenceService.findCurrentFundingSubTypesForFundingTypeId(any())).thenReturn(
         Collections.singletonList(fundingSubTypeDto1));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
@@ -821,7 +851,7 @@ public class PostCreateTransformerServiceTest {
     ).collect(Collectors.toSet()));
     PostFundingDTO expectedFunding1 = new PostFundingDTO();
     expectedFunding1.setFundingType("funding1");
-    expectedFunding1.setStartDate(LocalDate.of(1970, 1, 1));
+    expectedFunding1.setStartDate(LocalDate.of(1970, Month.JANUARY, 1));
     expectedFunding1.setInfo("included");
     expectedFunding1.setFundingSubTypeId(FUNDING_SUBTYPE_ID);
     expectedFunding1.setFundingReasonId(FUNDING_REASON_ID);
@@ -839,8 +869,8 @@ public class PostCreateTransformerServiceTest {
     expected2.specialties(
         Collections.singleton(new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.PRIMARY)));
     PostFundingDTO expectedFunding2 = new PostFundingDTO();
-    expectedFunding2.setFundingType("funding1");
-    expectedFunding2.setStartDate(LocalDate.of(1970, 1, 1));
+    expectedFunding2.setFundingType("funding2");
+    expectedFunding2.setStartDate(LocalDate.of(1970, Month.JANUARY, 1));
     expected2.addFunding(expectedFunding2);
 
     // When.
