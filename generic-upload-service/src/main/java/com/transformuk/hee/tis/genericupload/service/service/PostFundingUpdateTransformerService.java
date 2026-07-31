@@ -187,7 +187,8 @@ public class PostFundingUpdateTransformerService {
       final UUID fundingSubTypeId = checkAndGetFundingSubtype(postFundingUpdateXls,
           fundingSubTypeLabelToId);
       boolean expired = postFundingUpdateXls.getDateTo() != null
-          && postFundingUpdateXls.getDateTo().before(Date.from(clock.instant()));
+          && postFundingUpdateXls.getDateTo().toInstant().atZone(clock.getZone()).toLocalDate()
+          .isBefore(LocalDate.now(clock));
       /*
       Rather than using "FundingStatus = CURRENT", the requirement is a subtype is required when:
       - The funding has not expired (i.e. the end date is null or no earlier than today)
@@ -284,7 +285,7 @@ public class PostFundingUpdateTransformerService {
     }
   }
 
-  public void setClock(Clock clock) {
+  void setClock(Clock clock) {
     this.clock = clock;
   }
 }

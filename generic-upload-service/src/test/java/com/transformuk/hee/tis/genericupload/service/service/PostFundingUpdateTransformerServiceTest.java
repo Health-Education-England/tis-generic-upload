@@ -51,6 +51,8 @@ class PostFundingUpdateTransformerServiceTest {
   private static final UUID FUNDING_REASON_UUID = UUID.randomUUID();
   private static final String ERROR_INVALID_FUNDING_SUB_TYPE = String.format(
       ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE, FUNDING_SUBTYPE_LABEL, FUNDING_TYPE_LABEL);
+  private static final Clock CLOCK =
+      Clock.fixed(Instant.parse("2025-08-16T00:05:01Z"), ZoneOffset.UTC);
   private FundingTypeDTO fundingTypeDto;
   private FundingSubTypeDto fundingSubTypeDto;
 
@@ -86,7 +88,7 @@ class PostFundingUpdateTransformerServiceTest {
     fundingReasonDto.setId(FUNDING_REASON_UUID);
     fundingReasonDto.setReason(FUNDING_REASON);
 
-    uploadService.setClock(Clock.fixed(Instant.parse("2025-08-16T00:00:00Z"), ZoneOffset.UTC));
+    uploadService.setClock(CLOCK);
   }
 
   @Test
@@ -239,6 +241,7 @@ class PostFundingUpdateTransformerServiceTest {
     when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
     when(postFundingUpdateXls.getFundingSubtype()).thenReturn(null);
     when(postFundingUpdateXls.getErrorMessage()).thenReturn(FUNDING_TYPE_REQUIRES_SUBTYPE);
+    when(postFundingUpdateXls.getDateTo()).thenReturn(Date.from(CLOCK.instant().minusSeconds(40)));
 
     when(referenceServiceMock.findCurrentFundingTypesByLabelIn(
         Collections.singleton(FUNDING_TYPE_LABEL)))
