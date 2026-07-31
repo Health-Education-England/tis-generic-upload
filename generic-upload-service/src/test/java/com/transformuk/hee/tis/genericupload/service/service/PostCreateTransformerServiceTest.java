@@ -28,8 +28,12 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -49,6 +53,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class PostCreateTransformerServiceTest {
 
+  private static final Clock CLOCK = Clock
+      .fixed(Instant.parse("1970-10-08T10:52:05Z"), ZoneOffset.UTC);
   private static final long DAY_IN_MILLIS = 86400000L;
   private static final UUID FUNDING_SUBTYPE_ID = UUID.randomUUID();
   private static final UUID FUNDING_REASON_ID = UUID.randomUUID();
@@ -97,6 +103,7 @@ public class PostCreateTransformerServiceTest {
   @Before
   public void setUp() {
     service = new PostCreateTransformerService(referenceService, tcsService);
+    service.setClock(CLOCK);
 
     xls1 = new PostCreateXls();
     xls1.setNationalPostNumber("npn1");
@@ -320,7 +327,8 @@ public class PostCreateTransformerServiceTest {
     assertThat("The success flag did not match the expected value.", xls2.isSuccessfullyImported(),
         is(false));
     assertThat("The error did not match the expected value.", xls3.getErrorMessage(),
-        is("One of the following Sub specialties is not a CURRENT specialty of type SUB_SPECIALTY: 'specialty5\",\"specialty6'."));
+        is("One of the following Sub specialties is not a CURRENT specialty of type "
+            + "SUB_SPECIALTY: 'specialty5\",\"specialty6'."));
     assertThat("The success flag did not match the expected value.", xls3.isSuccessfullyImported(),
         is(false));
   }
@@ -757,6 +765,33 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
+  public void shouldFailValidationWhenPostFundingSubtypeMissing() {
+    when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
+    when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
+    when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
+    when(referenceService.findCurrentTrustsByTrustKnownAsIn(any()))
+        .thenReturn(List.of(trainingBody1, trainingBody2, employingBody1, employingBody2));
+    when(tcsService.findProgrammesIn(any()))
+        .thenReturn(List.of(programme1, programme2, programme3, programme4));
+    when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding1")))
+        .thenReturn(Collections.singletonList(fundingType1));
+    when(referenceService.findCurrentFundingTypesByLabelIn(Collections.singleton("funding2")))
+        .thenReturn(Collections.singletonList(fundingType2));
+    when(referenceService.findCurrentFundingSubTypesForFundingTypeId(1L)).thenReturn(
+        Collections.singletonList(fundingSubTypeDto1));
+    when(referenceService.findCurrentFundingSubTypesForFundingTypeId(2L)).thenReturn(
+        Collections.emptyList());
+
+    service.processUpload(xlsList);
+
+    assertThat(xls1.getErrorMessage(),
+        is(PostFundingUpdateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE));
+    assertThat(xls1.isSuccessfullyImported(),
+        is(false));
+  }
+
+  @Test
   public void shouldFailValidationWhenFundingReasonNotFound() {
     // Given.
     xls1.setFundingReason("notARealReason");
@@ -793,6 +828,7 @@ public class PostCreateTransformerServiceTest {
     xls1.setFundingDetails("included");
     xls1.setFundingSubtype("fundingSubtype1");
     fundingType1.setAllowDetails(true);
+    xls2.setFundingEndDate(Date.from(CLOCK.instant().minus(1, ChronoUnit.DAYS)));
 
     SpecialtyDTO specialty3 = new SpecialtyDTO();
     specialty3.setName("specialty3");
@@ -871,6 +907,7 @@ public class PostCreateTransformerServiceTest {
     PostFundingDTO expectedFunding2 = new PostFundingDTO();
     expectedFunding2.setFundingType("funding2");
     expectedFunding2.setStartDate(LocalDate.of(1970, Month.JANUARY, 1));
+    expectedFunding2.setEndDate(LocalDate.of(1970, Month.OCTOBER, 7));
     expected2.addFunding(expectedFunding2);
 
     // When.
