@@ -34,7 +34,6 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -42,22 +41,23 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
-public class PostCreateTransformerServiceTest {
+@ExtendWith(MockitoExtension.class)
+class PostCreateTransformerServiceTest {
 
   private static final Clock CLOCK = Clock
       .fixed(Instant.parse("1970-10-08T10:52:05Z"), ZoneOffset.UTC);
   private static final long DAY_IN_MILLIS = 86400000L;
   private static final UUID FUNDING_SUBTYPE_ID = UUID.randomUUID();
   private static final UUID FUNDING_REASON_ID = UUID.randomUUID();
+
   private PostCreateTransformerService service;
 
   @Mock
@@ -100,8 +100,8 @@ public class PostCreateTransformerServiceTest {
   @Captor
   private ArgumentCaptor<List<PostDTO>> dtoCaptor;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     service = new PostCreateTransformerService(referenceService, tcsService);
     service.setClock(CLOCK);
 
@@ -220,7 +220,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenNpnDuplicated() {
+  void shouldFailValidationWhenNpnDuplicated() {
     // Given.
     xls2.setNationalPostNumber("npn1");
 
@@ -239,7 +239,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenNpnAlreadyExists() {
+  void shouldFailValidationWhenNpnAlreadyExists() {
     // Given.
     PostDTO post1 = new PostDTO();
     post1.setNationalPostNumber("npn1");
@@ -296,7 +296,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenCurrentSpecialtyNotFound() {
+  void shouldFailValidationWhenCurrentSpecialtyNotFound() {
     // Given.
     xls2.setOtherSpecialties("specialty3;specialty4");
     PostCreateXls xls3 = new PostCreateXls();
@@ -334,7 +334,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenTryingToUseSpecialtyNotOfTypeSubspecialtyAsPostSubSpecialty() {
+  void shouldFailValidationWhenTryingToUseSpecialtyNotOfTypeSubspecialtyAsPostSubSpecialty() {
     // Given.
 
     // Should be uploaded successfully
@@ -346,10 +346,6 @@ public class PostCreateTransformerServiceTest {
     xls1.setSubSpecialties("specialty3");
 
     // Should not be uploaded and have error
-    SpecialtyDTO specialty4 = new SpecialtyDTO();
-    specialty4.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.CURRENT);
-    specialty4.setName("specialty4");
-    specialty4.setSpecialtyTypes(new HashSet<>(Collections.singletonList(SpecialtyType.PLACEMENT)));
     xls2.setSubSpecialties("specialty4");
 
     when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
@@ -359,13 +355,13 @@ public class PostCreateTransformerServiceTest {
     when(tcsService.findProgrammesIn(any()))
         .thenReturn(List.of(programme1, programme2, programme3, programme4));
     when(referenceService.findLocalOfficesByName(any())).thenReturn(List.of(owner1, owner2));
-    when(tcsService.getSpecialtyByName("specialty1"))
-        .thenReturn(Collections.singletonList((specialty1)));
-
+    when(tcsService.getSpecialtyByName(any()))
+        .thenReturn(Collections.singletonList(specialty1))
+        .thenReturn(List.of());
     when(tcsService.getSpecialtyByName("specialty3", SpecialtyType.SUB_SPECIALTY))
         .thenReturn(Collections.singletonList(specialty3));
     when(tcsService.getSpecialtyByName("specialty4", SpecialtyType.SUB_SPECIALTY))
-        .thenReturn(new ArrayList<>());
+        .thenReturn(List.of());
     when(referenceService.findCurrentFundingTypesByLabelIn(any()))
         .thenReturn(Collections.singletonList(fundingType1));
     when(referenceService.findCurrentFundingReasonsByReasonIn(any())).thenReturn(
@@ -387,7 +383,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenCurrentSiteNotFound() {
+  void shouldFailValidationWhenCurrentSiteNotFound() {
     // Given.
     xls2.setOtherSites("site3;site4");
 
@@ -415,7 +411,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenCurrentTrainingBodyNotFound() {
+  void shouldFailValidationWhenCurrentTrainingBodyNotFound() {
     // Given.
     trainingBody1.setStatus(Status.INACTIVE);
 
@@ -446,7 +442,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenCurrentEmployingBodyNotFound() {
+  void shouldFailValidationWhenCurrentEmployingBodyNotFound() {
     // Given.
     employingBody1.setStatus(Status.INACTIVE);
 
@@ -477,7 +473,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenProgrammeIdNotNumeric() {
+  void shouldFailValidationWhenProgrammeIdNotNumeric() {
     // Given.
     xls1.setProgrammeTisId("id1");
     xls2.setProgrammeTisId("id2");
@@ -509,7 +505,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenCurrentProgrammeNotFound() {
+  void shouldFailValidationWhenCurrentProgrammeNotFound() {
     // Given.
     programme1.setStatus(com.transformuk.hee.tis.tcs.api.enumeration.Status.INACTIVE);
 
@@ -542,7 +538,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenCurrentOwnerNotFound() {
+  void shouldFailValidationWhenCurrentOwnerNotFound() {
     // Given.
     owner1.setStatus(Status.INACTIVE);
     owner2.setStatus(Status.INACTIVE);
@@ -577,7 +573,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenOldPostNotFound() {
+  void shouldFailValidationWhenOldPostNotFound() {
     // Given.
     xls1.setOldPost("oldPost1");
     xls2.setOldPost("oldPost2");
@@ -617,7 +613,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenPostFundingDatesInvalid() {
+  void shouldFailValidationWhenPostFundingDatesInvalid() {
     // Given.
     xls1.setFundingStartDate(new Date(2 * DAY_IN_MILLIS));
     xls1.setFundingEndDate(new Date(DAY_IN_MILLIS));
@@ -647,7 +643,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldNotThrowAnyErrorWhenPostFundingEndDateIsAfterStartDate() {
+  void shouldNotThrowAnyErrorWhenPostFundingEndDateIsAfterStartDate() {
     // Given.
     xls1.setFundingStartDate(new Date(DAY_IN_MILLIS));
     xls1.setFundingEndDate(new Date(2 * DAY_IN_MILLIS));
@@ -677,7 +673,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenPostFundingBodyInvalid() {
+  void shouldFailValidationWhenPostFundingBodyInvalid() {
     // Given.
     xls1.setFundingType("funding1");
     xls1.setFundingBody("funder1");
@@ -706,7 +702,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenPostFundingDetailsProvidedButNotAllowed() {
+  void shouldFailValidationWhenPostFundingDetailsProvidedButNotAllowed() {
     // Given.
     xls1.setFundingType("funding1");
     xls1.setFundingDetails("boom!");
@@ -735,7 +731,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenPostFundingSubtypeNotMatchFundingType() {
+  void shouldFailValidationWhenPostFundingSubtypeNotMatchFundingType() {
     // Given.
     xls1.setFundingType("funding1");
     xls1.setFundingSubtype("boom!");
@@ -765,7 +761,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenPostFundingSubtypeMissing() {
+  void shouldFailValidationWhenPostFundingSubtypeMissing() {
     when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
     when(tcsService.getSpecialtyByName(any())).thenReturn(List.of(specialty1, specialty2));
     when(referenceService.findSitesByName(any())).thenReturn(List.of(site1, site2));
@@ -792,7 +788,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldFailValidationWhenFundingReasonNotFound() {
+  void shouldFailValidationWhenFundingReasonNotFound() {
     // Given.
     xls1.setFundingReason("notARealReason");
     when(referenceService.findGradesByName(any())).thenReturn(List.of(grade1, grade2));
@@ -817,7 +813,7 @@ public class PostCreateTransformerServiceTest {
   }
 
   @Test
-  public void shouldCreatePostsWhenValidationPasses() {
+  void shouldCreatePostsWhenValidationPasses() {
     // Given.
     xls1.setTrainingDescription("trainingDescription1");
     xls1.setOtherGrades("grade1;grade2");
