@@ -7,6 +7,7 @@ import com.google.common.collect.Multimap;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.service.util.DateUtils;
+import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
 import com.transformuk.hee.tis.reference.api.dto.LocalOfficeDTO;
@@ -26,6 +27,7 @@ import com.transformuk.hee.tis.tcs.api.enumeration.PostSiteType;
 import com.transformuk.hee.tis.tcs.api.enumeration.PostSpecialtyType;
 import com.transformuk.hee.tis.tcs.api.enumeration.SpecialtyType;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,15 +37,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 public class PostCreateTransformerService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PostCreateTransformerService.class);
@@ -62,8 +66,10 @@ public class PostCreateTransformerService {
   private Map<String, LocalOfficeDTO> localOfficeNameToDto;
   private Map<String, PostDTO> postNpnToDto;
   private HashMap<String, FundingTypeDTO> fundingTypeToDto;
+  private Map<String, List<FundingSubTypeDto>> fundingTypeToSubTypes;
   private HashMap<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId;
   private Map<String, UUID> fundingReasonToId;
+  private Clock clock = Clock.systemDefaultZone();
 
   PostCreateTransformerService(ReferenceService referenceService, TcsServiceImpl tcsService) {
     this.tcsService = tcsService;
@@ -88,6 +94,7 @@ public class PostCreateTransformerService {
     localOfficeNameToDto = new HashMap<>();
     postNpnToDto = new HashMap<>();
     fundingTypeToDto = new HashMap<>();
+    fundingTypeToSubTypes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     fundingSubTypeLabelToId = new HashMap<>();
     fundingReasonToId = new HashMap<>();
 
@@ -466,8 +473,9 @@ public class PostCreateTransformerService {
     }
 
     fundingDto.setStartDate(DateUtils.toLocalDate(xls.getFundingStartDate()));
+    LocalDate endDate = null;
     if (xls.getFundingEndDate() != null) {
-      final LocalDate endDate = DateUtils.toLocalDate(xls.getFundingEndDate());
+      endDate = DateUtils.toLocalDate(xls.getFundingEndDate());
       if (endDate != null && !endDate.isAfter(fundingDto.getStartDate())) {
         validationError(
             "Post funding end date must not be equal to or before start date if included.");
@@ -487,8 +495,8 @@ public class PostCreateTransformerService {
     }
 
     final String fundingSubtype = xls.getFundingSubtype();
+    updateFundingSubtypeCaches(fundingTypeDto);
     if (StringUtils.isNotEmpty(fundingSubtype)) {
-      updateFundingSubtypeCache(fundingTypeDto, fundingSubtype);
       UUID fundingSubtypeId = fundingSubTypeLabelToId.get(
           ImmutablePair.of(fundingType.toLowerCase(), fundingSubtype.toLowerCase()));
       if (fundingSubtypeId == null) {
@@ -497,6 +505,9 @@ public class PostCreateTransformerService {
       } else {
         fundingDto.setFundingSubTypeId(fundingSubtypeId);
       }
+    } else if (CollectionUtils.isNotEmpty(fundingTypeToSubTypes.get(fundingType))
+        && (endDate == null || !endDate.isBefore(LocalDate.now(clock)))) {
+      validationError(PostFundingUpdateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE);
     }
 
     final String fundingReason = xls.getFundingReason();
@@ -520,13 +531,14 @@ public class PostCreateTransformerService {
     }
   }
 
-  private void updateFundingSubtypeCache(FundingTypeDTO fundingTypeDto, String fundingSubtype) {
-    if (!fundingSubTypeLabelToId.containsKey(
-        ImmutablePair.of(fundingTypeDto.getLabel().toLowerCase(), fundingSubtype.toLowerCase()))) {
-      referenceService.findCurrentFundingSubTypesForFundingTypeId(fundingTypeDto.getId())
-          .forEach(dto -> fundingSubTypeLabelToId.put(
-              ImmutablePair.of(dto.getFundingType().getLabel().toLowerCase(),
-                  dto.getLabel().toLowerCase()), dto.getId()));
+  private void updateFundingSubtypeCaches(FundingTypeDTO fundingTypeDto) {
+    if (!fundingTypeToSubTypes.containsKey(fundingTypeDto.getLabel())) {
+      List<FundingSubTypeDto> dtos = referenceService
+          .findCurrentFundingSubTypesForFundingTypeId(fundingTypeDto.getId());
+      dtos.forEach(dto -> fundingSubTypeLabelToId.put(
+          ImmutablePair.of(dto.getFundingType().getLabel().toLowerCase(),
+              dto.getLabel().toLowerCase()), dto.getId()));
+      fundingTypeToSubTypes.put(fundingTypeDto.getLabel(), dtos);
     }
   }
 
@@ -535,5 +547,9 @@ public class PostCreateTransformerService {
       referenceService.findCurrentFundingReasonsByReasonIn(Collections.singleton(fundingReason))
           .forEach(dto -> fundingReasonToId.put(dto.getReason(), dto.getId()));
     }
+  }
+
+  void setClock(Clock clock) {
+    this.clock = clock;
   }
 }
