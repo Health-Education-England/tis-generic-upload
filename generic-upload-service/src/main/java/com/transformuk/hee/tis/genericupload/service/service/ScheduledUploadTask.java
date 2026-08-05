@@ -300,7 +300,6 @@ public class ScheduledUploadTask {
     if (errorCount + successCount != templateXLSS.size()) {
       logger.warn(FILE_IMPORT_SUCCESS_AND_ERROR_COUNTS_DON_T_MATCH_INPUT_NUMBER_OF_ROWS);
     }
-
     applicationType.setNumberOfErrors(errorCount);
     logger.info("Success count or number imported {}", successCount);
     applicationType.setNumberImported(successCount);

@@ -139,13 +139,16 @@ public class PostFundingUpdateTransformerService {
           List<String> errorMessages = fundingDto.getMessageList();
 
           // Get the source XLS for the DTO and add error messages or success.
+          /* N.B. DTOs are populated from spreadsheet values and are normalised in TCS.
+          This results in unexpected misses. postFundingUpdateXls can be null.
+           */
           fundingDto.setMessageList(new ArrayList<>());
-          PostFundingUpdateXLS postFundingUpdateXsl = fundingDtosToSource.get(fundingDto);
+          PostFundingUpdateXLS postFundingUpdateXls = fundingDtosToSource.get(fundingDto);
 
           if (errorMessages.isEmpty()) {
-            postFundingUpdateXsl.setSuccessfullyImported(true);
+            postFundingUpdateXls.setSuccessfullyImported(true);
           } else {
-            postFundingUpdateXsl.addErrorMessages(errorMessages);
+            postFundingUpdateXls.addErrorMessages(errorMessages);
           }
         }
       } catch (RestClientException e) {
@@ -186,8 +189,7 @@ public class PostFundingUpdateTransformerService {
       final UUID fundingSubTypeId = checkAndGetFundingSubtype(postFundingUpdateXls,
           fundingSubTypeLabelToId);
       boolean expired = postFundingUpdateXls.getDateTo() != null
-          && postFundingUpdateXls.getDateTo().toInstant().atZone(clock.getZone()).toLocalDate()
-          .isBefore(LocalDate.now(clock));
+          && convertDate(postFundingUpdateXls.getDateTo()).isBefore(LocalDate.now(clock));
       /*
       Rather than using "FundingStatus = CURRENT", the requirement is a subtype is required when:
       - The funding has not expired (i.e. the end date is null or no earlier than today)
@@ -207,7 +209,7 @@ public class PostFundingUpdateTransformerService {
         continue;
       }
       PostFundingDTO postFundingDto = new PostFundingDTO();
-      postFundingDto.setFundingType(postFundingUpdateXls.getFundingType());
+      postFundingDto.setFundingType(fundingType);
       postFundingDto.setInfo(postFundingUpdateXls.getFundingTypeOther());
 
       validateFundingStartAndEndDate(postFundingUpdateXls, postFundingDto);

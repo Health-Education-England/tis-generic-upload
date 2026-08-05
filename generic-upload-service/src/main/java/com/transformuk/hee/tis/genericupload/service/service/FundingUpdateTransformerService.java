@@ -129,24 +129,18 @@ public class FundingUpdateTransformerService {
     if (StringUtils.isNotEmpty(postFundingId)) {
       try {
         PostFundingDTO postFundingDto = tcsService.getPostFundingById(Long.valueOf(postFundingId));
-        if (postFundingDto != null) {
-          if (StringUtils.equals(postFundingDto.getPostId().toString(),
-              fundingUpdateXls.getPostTisId())) {
-            validateAndUpdatePostFundingDto(fundingUpdateXls, postFundingDto, fundingBodyNameToId,
-                fundingSubTypeLabelToId, fundingTypeToSubtypes);
-          } else {
-            fundingUpdateXls
-                .addErrorMessage(String.format(POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING,
-                    fundingUpdateXls.getPostTisId()));
-          }
-        } else {
+        if (postFundingDto == null) {
           fundingUpdateXls
               .addErrorMessage(String.format(DID_NOT_FIND_POST_FUNDING_FOR_ID, postFundingId));
+        } else if (postFundingDto.getPostId().toString().equals(fundingUpdateXls.getPostTisId())) {
+          validateAndUpdatePostFundingDto(fundingUpdateXls, postFundingDto, fundingBodyNameToId,
+              fundingSubTypeLabelToId, fundingTypeToSubtypes);
+        } else {
+          fundingUpdateXls.addErrorMessage(String.format(POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING,
+                  fundingUpdateXls.getPostTisId()));
         }
-      } catch (ResourceAccessException e) {
-        fundingUpdateXls
-            .addErrorMessage(String.format(DID_NOT_FIND_POST_FUNDING_FOR_ID, postFundingId));
-      } catch (NumberFormatException e) {
+      } catch (ResourceAccessException | NumberFormatException e) {
+        logger.warn("Unable to find post funding record for id: [{}]", postFundingId, e);
         fundingUpdateXls
             .addErrorMessage(String.format(DID_NOT_FIND_POST_FUNDING_FOR_ID, postFundingId));
       }
