@@ -18,17 +18,18 @@ public class FundingUpdateXLS extends TemplateXLS {
   @ExcelColumn(name = "Funding type")
   private String fundingType;
 
+  @ExcelColumn(name = "Funding subtype")
+  private String fundingSubtype;
+
   @ExcelColumn(name = "Funding Details")
   private String fundingTypeOther;
 
   @ExcelColumn(name = "Funding Body")
   private String fundingBody;
 
-  @ExcelColumn(name = "Funding subtype")
-  private String fundingSubtype;
-
   @ExcelColumn(name = "Funding Reason")
   private String fundingReason;
+
   @ExcelColumn(name = "Start Date*", required = true)
   private Date dateFrom;
 

@@ -29,9 +29,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -236,12 +241,14 @@ class PostFundingUpdateTransformerServiceTest {
     verify(postFundingUpdateXls).addErrorMessage(ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
   }
 
-  @Test
-  void shouldAddErrorWhenFundingTypeRequiresSubtypeButSubtypeMissing() {
+  @ParameterizedTest
+  @NullSource
+  @MethodSource("getEndDatesWhenFundingSubtypeRequired")
+  void shouldAddErrorWhenFundingTypeRequiresSubtypeButSubtypeMissing(Date endDate) {
     when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
     when(postFundingUpdateXls.getFundingSubtype()).thenReturn(null);
     when(postFundingUpdateXls.getErrorMessage()).thenReturn(FUNDING_TYPE_REQUIRES_SUBTYPE);
-    when(postFundingUpdateXls.getDateTo()).thenReturn(Date.from(CLOCK.instant().minusSeconds(40)));
+    when(postFundingUpdateXls.getDateTo()).thenReturn(endDate);
 
     when(referenceServiceMock.findCurrentFundingTypesByLabelIn(
         Collections.singleton(FUNDING_TYPE_LABEL)))
@@ -360,5 +367,9 @@ class PostFundingUpdateTransformerServiceTest {
 
     verify(postFundingUpdateXls)
         .addErrorMessage(PostFundingUpdateTransformerService.FUNDING_START_DATE_NULL_OR_EMPTY);
+  }
+
+  public static Stream<Arguments> getEndDatesWhenFundingSubtypeRequired() {
+    return Stream.of(Arguments.of(Date.from(CLOCK.instant().minusSeconds(40))));
   }
 }
