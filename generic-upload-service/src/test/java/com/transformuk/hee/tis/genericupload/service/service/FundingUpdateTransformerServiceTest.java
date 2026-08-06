@@ -330,7 +330,7 @@ class FundingUpdateTransformerServiceTest {
         .thenReturn(Collections.singletonList(trustDto));
     when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
     when(referenceServiceImpl.findCurrentFundingSubTypesByLabels(Collections.emptySet()))
-        .thenReturn(Collections.singletonList(fundingSubTypeDto));
+        .thenReturn(Collections.emptyList());
     when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
         Collections.singleton(FUNDING_TYPE_NEW)))
         .thenReturn(Collections.singletonList(fundingTypeDto));

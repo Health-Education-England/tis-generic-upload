@@ -52,7 +52,7 @@ public class FundingUpdateTransformerService {
       "Funding reason could not be found for the name \"%s\".";
   protected static final String UPDATE_FAILED = "Update failed.";
 
-  private static final org.slf4j.Logger logger = getLogger(PostUpdateTransformerService.class);
+  private static final org.slf4j.Logger logger = getLogger(FundingUpdateTransformerService.class);
 
   private final Map<String, UUID> fundingReasonToIdMap = new HashMap<>();
   private Clock clock = Clock.systemDefaultZone();
@@ -62,8 +62,13 @@ public class FundingUpdateTransformerService {
   @Autowired
   private TcsServiceImpl tcsService;
 
+  /**
+   * Validates and applies valid updates to existing post funding records. Problems are added to the
+   * XLS row.
+   *
+   * @param fundingUpdateXlss List of Spreadsheet rows containing updates for post funding records.
+   */
   public void processFundingUpdateUpload(List<FundingUpdateXLS> fundingUpdateXlss) {
-    fundingUpdateXlss.forEach(FundingUpdateXLS::initialiseSuccessfullyImported);
     Set<String> fundingBodies = new HashSet<>();
     Set<String> fundingSubTypeLabels = new HashSet<>();
     Set<String> fundingTypeLabels = new HashSet<>();
