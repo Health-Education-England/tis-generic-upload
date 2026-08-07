@@ -87,14 +87,14 @@ public class FileValidator {
       fileType = FileType.PLACEMENTS_UPDATE;
     } else if (headers.contains("TIS_Post_ID*") && headers.contains("Funding type")
         && !headers.contains(TIS_POSTFUNDING_ID_MANDATORY)) {
-      fileType = FileType.POSTS_FUNDING_UPDATE;
+      fileType = FileType.POSTS_FUNDING_CREATE;
     } else if (headers.contains("National Post Number*")) {
       fileType = FileType.POSTS_CREATE;
     } else if (headers.contains("TIS_Post_ID*") && !headers.contains(
         TIS_POSTFUNDING_ID_MANDATORY)) {
       fileType = FileType.POSTS_UPDATE;
     } else if (headers.contains(TIS_POSTFUNDING_ID_MANDATORY)) {
-      fileType = FileType.FUNDING_UPDATE;
+      fileType = FileType.POSTS_FUNDING_UPDATE;
     } else if (headers.contains("TIS_Assessment_ID*")) {
       fileType = FileType.ASSESSMENTS_UPDATE;
     } else if (headers.contains("TIS_ProgrammeMembership_ID*")

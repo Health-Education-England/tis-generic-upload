@@ -507,7 +507,7 @@ public class PostCreateTransformerService {
       }
     } else if (CollectionUtils.isNotEmpty(fundingTypeToSubTypes.get(fundingType))
         && (endDate == null || !endDate.isBefore(LocalDate.now(clock)))) {
-      validationError(PostFundingUpdateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE);
+      validationError(PostFundingCreateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE);
     }
 
     final String fundingReason = xls.getFundingReason();

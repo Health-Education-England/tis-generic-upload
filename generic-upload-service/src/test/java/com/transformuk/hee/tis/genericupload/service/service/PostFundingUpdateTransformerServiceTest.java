@@ -1,375 +1,445 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
-import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE;
-import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE;
-import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_REASON;
-import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingCreateTransformerService.ERROR_INVALID_FUNDING_REASON;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingCreateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateRow;
 import com.transformuk.hee.tis.reference.api.dto.FundingReasonDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
+import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
-import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
 import com.transformuk.hee.tis.tcs.api.dto.PostFundingDTO;
 import com.transformuk.hee.tis.tcs.client.service.impl.TcsServiceImpl;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+/**
+ * The unit tests for {@link PostFundingUpdateTransformerService}.
+ */
 @ExtendWith(MockitoExtension.class)
 class PostFundingUpdateTransformerServiceTest {
 
-  private static final String POST_TIS_ID = "1";
-  private static final Long FUNDING_TYPE_ID = 1L;
-  private static final String FUNDING_TYPE_LABEL = "fundingType";
-  private static final UUID FUNDING_SUBTYPE_UUID = UUID.randomUUID();
-  private static final String FUNDING_SUBTYPE_LABEL = "fundingSubtype";
+  private static final Long POST_FUNDING_ID = 1L;
+  private static final String FUNDING_TYPE_ORIGINAL = "originalType";
+  private static final String FUNDING_TYPE_NEW = "newType";
+  private static final String FUNDING_TYPE_OTHER = "Other";
+  private static final String FUNDING_TYPE_ACADEMIC = "academicType";
+  private static final String FUNDING_BODY_VALID = "validFundingBody";
+  private static final Long TRUST_ID = 1L;
+  private static final String FUNDING_SUBTYPE = "fundingSubtype";
+  private static final UUID FUNDING_SUBTYPE_ID = UUID.randomUUID();
   private static final String FUNDING_REASON = "fundingReason";
-  private static final String INVALID_FUNDING_REASON = "InvalidFundingReason";
   private static final UUID FUNDING_REASON_UUID = UUID.randomUUID();
-  private static final String ERROR_INVALID_FUNDING_SUB_TYPE = String.format(
-      ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE, FUNDING_SUBTYPE_LABEL, FUNDING_TYPE_LABEL);
-  private static final Clock CLOCK =
-      Clock.fixed(Instant.parse("2025-08-16T00:05:01Z"), ZoneOffset.UTC);
-  private FundingTypeDTO fundingTypeDto;
-  private FundingSubTypeDto fundingSubTypeDto;
-
-  private FundingReasonDto fundingReasonDto;
 
   @InjectMocks
-  private PostFundingUpdateTransformerService uploadService;
-  @Mock
-  private TcsServiceImpl tcsServiceMock;
-  @Mock
-  private ReferenceServiceImpl referenceServiceMock;
+  private PostFundingUpdateTransformerService transformerService;
 
   @Mock
-  private PostFundingUpdateXLS postFundingUpdateXls;
+  private TcsServiceImpl tcsServiceImpl;
+  @Mock
+  private ReferenceServiceImpl referenceServiceImpl;
 
   @Captor
-  private ArgumentCaptor<PostDTO> postDtoCaptor;
+  private ArgumentCaptor<PostFundingDTO> postFundingDtoArgumentCaptor;
+
+  private PostFundingUpdateRow postFundingUpdateRow;
+  private PostFundingDTO postFundingDto;
+  private FundingTypeDTO fundingTypeDto;
+  private FundingSubTypeDto fundingSubTypeDto;
+  private FundingReasonDto fundingReasonDto;
 
   @BeforeEach
-  void setUp() {
-    when(postFundingUpdateXls.getPostTisId()).thenReturn(POST_TIS_ID);
+  public void setUp() {
+
+    postFundingUpdateRow = new PostFundingUpdateRow();
+    postFundingUpdateRow.setPostFundingTisId(POST_FUNDING_ID.toString());
+    postFundingUpdateRow.setFundingType(FUNDING_TYPE_NEW);
+    postFundingUpdateRow.setFundingTypeOther(FUNDING_TYPE_OTHER);
+    postFundingUpdateRow.setFundingBody(FUNDING_BODY_VALID);
+    postFundingUpdateRow.setPostTisId("1");
+    postFundingUpdateRow.setFundingReason(FUNDING_REASON);
+    Calendar cFrom = Calendar.getInstance();
+    cFrom.set(2019, Calendar.SEPTEMBER, 1);
+    postFundingUpdateRow.setDateFrom(cFrom.getTime());
+    Calendar cTo = Calendar.getInstance();
+    cTo.set(2019, Calendar.SEPTEMBER, 2);
+    postFundingUpdateRow.setDateTo(cTo.getTime());
 
     fundingTypeDto = new FundingTypeDTO();
-    fundingTypeDto.setId(FUNDING_TYPE_ID);
-    fundingTypeDto.setLabel(FUNDING_TYPE_LABEL);
+    fundingTypeDto.setId(3L);
+    fundingTypeDto.setLabel(FUNDING_TYPE_NEW);
+    fundingTypeDto.setAllowDetails(false);
+
+    postFundingDto = new PostFundingDTO();
+    postFundingDto.setFundingBodyId("2");
+    postFundingDto.setFundingType(FUNDING_TYPE_ORIGINAL);
+    postFundingDto.setInfo(null);
+    postFundingDto.setStartDate(LocalDate.now());
+    postFundingDto.setEndDate(LocalDate.now().plusDays(1));
+    postFundingDto.setPostId(1L);
 
     fundingSubTypeDto = new FundingSubTypeDto();
-    fundingSubTypeDto.setId(FUNDING_SUBTYPE_UUID);
-    fundingSubTypeDto.setLabel(FUNDING_SUBTYPE_LABEL);
+    fundingSubTypeDto.setLabel(FUNDING_SUBTYPE);
+    fundingSubTypeDto.setId(FUNDING_SUBTYPE_ID);
     fundingSubTypeDto.setFundingType(fundingTypeDto);
 
     fundingReasonDto = new FundingReasonDto();
     fundingReasonDto.setId(FUNDING_REASON_UUID);
     fundingReasonDto.setReason(FUNDING_REASON);
-
-    uploadService.setClock(CLOCK);
   }
 
   @Test
-  void shouldSetFundingSubTypeIdWhenLabelIsFound() {
-    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
+  void canHandleUnknownPostFundingId() {
+    String id = "999";
+    postFundingUpdateRow.setPostFundingTisId(id);
+    when(tcsServiceImpl.getPostFundingById(999L)).thenReturn(null);
 
-    when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
-        Collections.singleton(FUNDING_SUBTYPE_LABEL)))
-        .thenReturn(Collections.singletonList(fundingSubTypeDto));
+    transformerService.processRows(
+        Collections.singletonList(postFundingUpdateRow));
 
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2023, Calendar.JANUARY, 2);
-    Date startDate = calendar.getTime();
-    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
-
-    uploadService.processPostFundingUpdateUpload(
-        Collections.singletonList(postFundingUpdateXls));
-
-    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
-    verify(postFundingUpdateXls, never()).addErrorMessage(anyString());
-    PostDTO postDto = postDtoCaptor.getValue();
-    assertEquals(1, postDto.getFundings().size());
-    PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
-    assertEquals(FUNDING_SUBTYPE_UUID, postFundingDto.getFundingSubTypeId());
+    assertThat("Can handle unknown post funding id", postFundingUpdateRow.getErrorMessage(),
+        containsString(String
+            .format(PostFundingUpdateTransformerService.DID_NOT_FIND_POST_FUNDING_FOR_ID, id)));
   }
 
   @Test
-  void shouldSetReasonIdWhenReasonIsFound() {
-    when(postFundingUpdateXls.getFundingReason()).thenReturn(FUNDING_REASON);
-    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
+  void canHandNonNumberPostFundingId() {
+    String id = "XXX";
+    postFundingUpdateRow.setPostFundingTisId(id);
 
-    when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
-        Collections.singleton(FUNDING_SUBTYPE_LABEL)))
-        .thenReturn(Collections.singletonList(fundingSubTypeDto));
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
 
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2023, Calendar.JANUARY, 2);
-    Date startDate = calendar.getTime();
-    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
+    assertThat("Can handle non-number post funding id", postFundingUpdateRow.getErrorMessage(),
+        containsString(
+            String
+                .format(PostFundingUpdateTransformerService.DID_NOT_FIND_POST_FUNDING_FOR_ID, id)));
+  }
 
-    when(referenceServiceMock.findCurrentFundingReasonsByReasonIn(
+  @Test
+  void canHandleUnknownFundingBody() {
+    String fundingBodyName = "Unknown";
+    postFundingUpdateRow.setFundingBody(fundingBodyName);
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+
+    assertThat("Can handle unknown funding body", postFundingUpdateRow.getErrorMessage(),
+        containsString(
+            String.format(PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_BODY_NAME,
+                fundingBodyName)));
+  }
+
+  @Test
+  void canHandleRequiredFundingTypeWhenDetailsIsFilled() {
+    postFundingUpdateRow.setFundingType(null);
+    postFundingUpdateRow.setFundingTypeOther("details");
+
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
         Collections.singleton(FUNDING_REASON)))
         .thenReturn(Collections.singletonList(fundingReasonDto));
 
-    uploadService.processPostFundingUpdateUpload(
-        Collections.singletonList(postFundingUpdateXls));
-
-    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
-    verify(postFundingUpdateXls, never()).addErrorMessage(anyString());
-    PostDTO postDto = postDtoCaptor.getValue();
-    PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
-    assertEquals(FUNDING_REASON_UUID, postFundingDto.getFundingReasonId());
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+    assertThat("should throw error when fundingType is empty but fundingDetails is filled",
+        postFundingUpdateRow.getErrorMessage(), containsString(
+            PostFundingUpdateTransformerService.FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS));
   }
 
   @Test
-  void shouldLogErrorsForInvalidReasons() {
-    when(postFundingUpdateXls.getFundingReason()).thenReturn(INVALID_FUNDING_REASON);
-    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
-
-    when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
-        Collections.singleton(FUNDING_SUBTYPE_LABEL)))
-        .thenReturn(Collections.singletonList(fundingSubTypeDto));
-
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2023, Calendar.JANUARY, 2);
-    Date startDate = calendar.getTime();
-    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
-
-    when(referenceServiceMock.findCurrentFundingReasonsByReasonIn(
-        Collections.singleton(INVALID_FUNDING_REASON)))
+  void canHandleUnknownFundingReason() {
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    // Funding Reason not found in Reference Service
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
         .thenReturn(Collections.emptyList());
 
-    uploadService.processPostFundingUpdateUpload(
-        Collections.singletonList(postFundingUpdateXls));
-
-    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
-    verify(postFundingUpdateXls).addErrorMessage(
-        String.format(ERROR_INVALID_FUNDING_REASON, INVALID_FUNDING_REASON));
-    PostDTO postDto = postDtoCaptor.getValue();
-    PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
-    assertNull(postFundingDto.getFundingReasonId());
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+    assertThat("should throw error when fundingReason does not exist in reference",
+        postFundingUpdateRow.getErrorMessage(),
+        containsString(String.format(ERROR_INVALID_FUNDING_REASON, FUNDING_REASON)));
   }
 
+
   @Test
-  void shouldSetFundingSubTypeIdCaseInsensitively() {
-    final String fundingSubtypeLabelInUpperCase = FUNDING_SUBTYPE_LABEL.toUpperCase();
-    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(fundingSubtypeLabelInUpperCase);
-
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2023, Calendar.JANUARY, 2);
-    Date startDate = calendar.getTime();
-    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
-
-    when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
-        Collections.singleton(fundingSubtypeLabelInUpperCase)))
+  void canUpdateFields() {
+    postFundingUpdateRow.setFundingSubtype(FUNDING_SUBTYPE);
+    TrustDTO trustDto = new TrustDTO();
+    trustDto.setTrustKnownAs(FUNDING_BODY_VALID);
+    trustDto.setId(TRUST_ID);
+    when(referenceServiceImpl.findCurrentTrustsByTrustKnownAsIn(
+        Collections.singleton(FUNDING_BODY_VALID)))
+        .thenReturn(Collections.singletonList(trustDto));
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingSubTypesByLabels(
+        Collections.singleton(FUNDING_SUBTYPE)))
         .thenReturn(Collections.singletonList(fundingSubTypeDto));
+    when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
+        .thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.singletonList(fundingReasonDto));
 
-    uploadService.processPostFundingUpdateUpload(
-        Collections.singletonList(postFundingUpdateXls));
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
 
-    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
-    verify(postFundingUpdateXls, never()).addErrorMessage(anyString());
-    PostDTO postDto = postDtoCaptor.getValue();
-    assertEquals(1, postDto.getFundings().size());
-    PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
-    assertEquals(FUNDING_SUBTYPE_UUID, postFundingDto.getFundingSubTypeId());
+    PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
+
+    assertThat("Should update fundingType", postFundingDtoArgumentCaptorValue.getFundingType(),
+        equalTo(postFundingUpdateRow.getFundingType()));
+    assertThat("Should update fundingTypeOther", postFundingDtoArgumentCaptorValue.getInfo(),
+        equalTo(FUNDING_TYPE_OTHER));
+    assertThat("Should update fundingBody", postFundingDtoArgumentCaptorValue.getFundingBodyId(),
+        equalTo("1"));
+    assertThat("Should update dateFrom", postFundingDtoArgumentCaptorValue.getStartDate(),
+        equalTo(convertDate(postFundingUpdateRow.getDateFrom())));
+    assertThat("Should update dateTo", postFundingDtoArgumentCaptorValue.getEndDate(),
+        equalTo(convertDate(postFundingUpdateRow.getDateTo())));
+    assertThat("Should update fundingSubtype",
+        postFundingDtoArgumentCaptorValue.getFundingSubTypeId(), equalTo(FUNDING_SUBTYPE_ID));
+    assertThat("Should update fundingReason",
+        postFundingDtoArgumentCaptorValue.getFundingReasonId(), equalTo(FUNDING_REASON_UUID));
   }
 
   @Test
-  void shouldAddErrorWhenLabelNotFound() {
-    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
-    when(postFundingUpdateXls.getErrorMessage()).thenReturn(ERROR_INVALID_FUNDING_SUB_TYPE);
+  void shouldNotUpdateFieldsWhenNull() {
+    postFundingUpdateRow.setFundingType(null);
+    postFundingUpdateRow.setFundingTypeOther(null);
+    postFundingUpdateRow.setFundingBody(null);
+    postFundingUpdateRow.setDateFrom(null);
+    postFundingUpdateRow.setDateTo(null);
+    postFundingUpdateRow.setFundingReason(null);
 
-    when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
-        Collections.singleton(FUNDING_SUBTYPE_LABEL)))
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
+        .thenReturn(postFundingDto);
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+
+    PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
+    assertThat("Should not update fundingType", postFundingDtoArgumentCaptorValue.getFundingType(),
+        equalTo(postFundingDto.getFundingType()));
+    assertThat("Should not update fundingTypeOther", postFundingDtoArgumentCaptorValue.getInfo(),
+        equalTo(postFundingDto.getInfo()));
+    assertThat("Should not update fundingBody",
+        postFundingDtoArgumentCaptorValue.getFundingBodyId(),
+        equalTo(postFundingDto.getFundingBodyId()));
+    assertThat("Should not update dateFrom", postFundingDtoArgumentCaptorValue.getStartDate(),
+        equalTo(postFundingDto.getStartDate()));
+    assertThat("Should not update dateTo", postFundingDtoArgumentCaptorValue.getEndDate(),
+        equalTo(postFundingDto.getEndDate()));
+    assertThat("Should not update fundingReason",
+        postFundingDtoArgumentCaptorValue.getFundingReasonId(),
+        equalTo(postFundingDto.getFundingReasonId()));
+  }
+
+  @Test
+  void shouldUpdateInfoToNullWhenFundingDetailsAreEmpty() {
+
+    postFundingDto.setFundingBodyId("2");
+    postFundingDto.setFundingType(FUNDING_TYPE_ACADEMIC);
+    postFundingDto.setInfo("info");
+    postFundingDto.setId(2L);
+    TrustDTO trustDto = new TrustDTO();
+    trustDto.setTrustKnownAs(FUNDING_BODY_VALID);
+    trustDto.setId(TRUST_ID);
+    when(referenceServiceImpl.findCurrentTrustsByTrustKnownAsIn(
+        Collections.singleton(FUNDING_BODY_VALID)))
+        .thenReturn(Collections.singletonList(trustDto));
+    when(tcsServiceImpl.getPostFundingById(2L)).thenReturn(postFundingDto);
+
+    postFundingUpdateRow.setPostFundingTisId("2");
+    postFundingUpdateRow.setFundingType(FUNDING_TYPE_NEW);
+
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.singletonList(fundingReasonDto));
+    when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
+        .thenReturn(postFundingDto);
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+
+    PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
+
+    assertThat("Should update fundingType", postFundingDtoArgumentCaptorValue.getFundingType(),
+        equalTo(FUNDING_TYPE_NEW));
+    assertThat("Should update fundingTypeOther", postFundingDtoArgumentCaptorValue.getInfo(),
+        equalTo(postFundingUpdateRow.getFundingTypeOther())); // value is null
+  }
+
+  @Test
+  void shouldGiveErrorWhenPostIdDoesNotMatch() {
+    String postId = "999";
+    postFundingUpdateRow.setPostTisId(postId);
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+
+    assertThat(postFundingUpdateRow.getErrorMessage(), containsString(
+        String.format(PostFundingUpdateTransformerService.POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING,
+            postId)));
+  }
+
+  @Test
+  void shouldErrorWhenFundingSubtypeIsFilledAndFundingTypeEmpty() {
+    postFundingUpdateRow.setFundingTypeOther(null);
+    postFundingUpdateRow.setFundingType(null);
+    postFundingUpdateRow.setFundingSubtype(FUNDING_SUBTYPE);
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+    assertThat(
+        "should throw error when fundingType is empty but fundingSubtype is filled",
+        postFundingUpdateRow.getErrorMessage(),
+        containsString(
+            PostFundingUpdateTransformerService.FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE));
+  }
+
+  @Test
+  void shouldErrorWhenFundingSubtypeIsRequiredAndMissing() {
+    postFundingUpdateRow.setDateTo(null);
+    TrustDTO trustDto = new TrustDTO();
+    trustDto.setTrustKnownAs(FUNDING_BODY_VALID);
+    trustDto.setId(TRUST_ID);
+    when(referenceServiceImpl.findCurrentTrustsByTrustKnownAsIn(
+        Collections.singleton(FUNDING_BODY_VALID)))
+        .thenReturn(Collections.singletonList(trustDto));
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingSubTypesByLabels(Collections.emptySet()))
+        .thenReturn(Collections.emptyList());
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
+        Collections.singleton(FUNDING_TYPE_NEW)))
+        .thenReturn(Collections.singletonList(fundingTypeDto));
+    when(referenceServiceImpl.findCurrentFundingSubTypesForFundingTypeId(fundingTypeDto.getId()))
+        .thenReturn(Collections.singletonList(fundingSubTypeDto));
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.singletonList(fundingReasonDto));
+
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+    verify(tcsServiceImpl, never()).updateFunding(any());
+    assertThat(postFundingUpdateRow.getErrorMessage(),
+        containsString(FUNDING_TYPE_REQUIRES_SUBTYPE));
+  }
+
+  @Test
+  void shouldNotErrorWhenFundingSubtypeIsNotRequiredAndMissing() {
+    postFundingUpdateRow.setDateTo(null);
+    TrustDTO trustDto = new TrustDTO();
+    trustDto.setTrustKnownAs(FUNDING_BODY_VALID);
+    trustDto.setId(TRUST_ID);
+    when(referenceServiceImpl.findCurrentTrustsByTrustKnownAsIn(
+        Collections.singleton(FUNDING_BODY_VALID)))
+        .thenReturn(Collections.singletonList(trustDto));
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingSubTypesByLabels(Collections.emptySet()))
+        .thenReturn(Collections.singletonList(fundingSubTypeDto));
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
+        Collections.singleton(FUNDING_TYPE_NEW)))
+        .thenReturn(Collections.singletonList(fundingTypeDto));
+    when(referenceServiceImpl.findCurrentFundingSubTypesForFundingTypeId(fundingTypeDto.getId()))
+        .thenReturn(Collections.emptyList());
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.singletonList(fundingReasonDto));
+    when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
+        .thenReturn(postFundingDto);
+
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+    PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
+
+    assertThat(postFundingDtoArgumentCaptorValue.getFundingType(),
+        equalTo(postFundingUpdateRow.getFundingType()));
+    assertThat(postFundingDtoArgumentCaptorValue.getInfo(), equalTo(FUNDING_TYPE_OTHER));
+    assertThat(postFundingDtoArgumentCaptorValue.getFundingBodyId(), equalTo("1"));
+    assertThat(postFundingDtoArgumentCaptorValue.getStartDate(),
+        equalTo(convertDate(postFundingUpdateRow.getDateFrom())));
+    assertThat(postFundingDtoArgumentCaptorValue.getFundingSubTypeId(),
+        nullValue());
+    assertThat(postFundingDtoArgumentCaptorValue.getFundingReasonId(),
+        equalTo(FUNDING_REASON_UUID));
+  }
+
+  @Test
+  void shouldUpdateFundingSubtypeIdToNullWhenFundingFundingSubtypeLabelIsEmpty() {
+
+    postFundingDto.setFundingType(FUNDING_TYPE_ACADEMIC);
+    postFundingDto.setFundingSubTypeId(FUNDING_SUBTYPE_ID);
+    postFundingDto.setId(2L);
+    when(tcsServiceImpl.getPostFundingById(2L)).thenReturn(postFundingDto);
+
+    postFundingUpdateRow.setPostFundingTisId("2");
+    postFundingUpdateRow.setFundingType(FUNDING_TYPE_NEW);
+
+    TrustDTO trustDto = new TrustDTO();
+    trustDto.setTrustKnownAs(FUNDING_BODY_VALID);
+    trustDto.setId(TRUST_ID);
+    when(referenceServiceImpl.findCurrentTrustsByTrustKnownAsIn(
+        Collections.singleton(FUNDING_BODY_VALID)))
+        .thenReturn(Collections.singletonList(trustDto));
+    when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
+        .thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
+        Collections.singleton(FUNDING_REASON)))
+        .thenReturn(Collections.singletonList(fundingReasonDto));
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+
+    PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
+
+    assertThat("Should update fundingType",
+        postFundingDtoArgumentCaptorValue.getFundingType(),
+        equalTo(FUNDING_TYPE_NEW));
+    assertThat("Should update fundingSubtype",
+        postFundingDtoArgumentCaptorValue.getFundingSubTypeId(), nullValue()); // value is null
+  }
+
+  @Test
+  void shouldErrorWhenFundingSubTypeNotFound() {
+    postFundingUpdateRow.setFundingSubtype(FUNDING_SUBTYPE);
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingSubTypesByLabels(
+        Collections.singleton(FUNDING_SUBTYPE)))
         .thenReturn(Collections.emptyList());
 
-    uploadService.processPostFundingUpdateUpload(
-        Collections.singletonList(postFundingUpdateXls));
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
 
-    verify(tcsServiceMock, never()).updatePostFundings(any());
-    verify(postFundingUpdateXls).addErrorMessage(ERROR_INVALID_FUNDING_SUB_TYPE);
-  }
-
-  @Test
-  void shouldAddErrorWhenFundingTypeIsNotSpecifiedForFundingSubType() {
-    when(postFundingUpdateXls.getFundingType()).thenReturn(null);
-    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
-    when(postFundingUpdateXls.getErrorMessage()).thenReturn(
-        ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
-
-    when(referenceServiceMock.findCurrentFundingSubTypesByLabels(
-        Collections.singleton(FUNDING_SUBTYPE_LABEL)))
-        .thenReturn(Collections.singletonList(fundingSubTypeDto));
-
-    uploadService.processPostFundingUpdateUpload(
-        Collections.singletonList(postFundingUpdateXls));
-
-    verify(tcsServiceMock, never()).updatePostFundings(any());
-    verify(postFundingUpdateXls).addErrorMessage(ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE);
-  }
-
-  @ParameterizedTest
-  @NullSource
-  @MethodSource("getEndDatesWhenFundingSubtypeRequired")
-  void shouldAddErrorWhenFundingTypeRequiresSubtypeButSubtypeMissing(Date endDate) {
-    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(null);
-    when(postFundingUpdateXls.getErrorMessage()).thenReturn(FUNDING_TYPE_REQUIRES_SUBTYPE);
-    when(postFundingUpdateXls.getDateTo()).thenReturn(endDate);
-
-    when(referenceServiceMock.findCurrentFundingTypesByLabelIn(
-        Collections.singleton(FUNDING_TYPE_LABEL)))
-        .thenReturn(Collections.singletonList(fundingTypeDto));
-    when(referenceServiceMock.findCurrentFundingSubTypesForFundingTypeId(FUNDING_TYPE_ID))
-        .thenReturn(Collections.singletonList(fundingSubTypeDto));
-
-    uploadService.processPostFundingUpdateUpload(Collections.singletonList(postFundingUpdateXls));
-
-    verify(tcsServiceMock, never()).updatePostFundings(any());
-    verify(postFundingUpdateXls).addErrorMessage(FUNDING_TYPE_REQUIRES_SUBTYPE);
-  }
-
-  @Test
-  void shouldUpdateWhenFundingTypeDoesNotRequireSubtype() {
-    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    when(postFundingUpdateXls.getFundingSubtype()).thenReturn(null);
-
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2023, Calendar.JANUARY, 2);
-    when(postFundingUpdateXls.getDateFrom()).thenReturn(calendar.getTime());
-
-    when(referenceServiceMock.findCurrentFundingTypesByLabelIn(
-        Collections.singleton(FUNDING_TYPE_LABEL)))
-        .thenReturn(Collections.singletonList(fundingTypeDto));
-    when(referenceServiceMock.findCurrentFundingSubTypesForFundingTypeId(FUNDING_TYPE_ID))
-        .thenReturn(Collections.emptyList());
-
-    uploadService.processPostFundingUpdateUpload(Collections.singletonList(postFundingUpdateXls));
-
-    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
-    verify(postFundingUpdateXls, never()).addErrorMessage(FUNDING_TYPE_REQUIRES_SUBTYPE);
-    Set<PostFundingDTO> fundings = postDtoCaptor.getValue().getFundings();
-    assertEquals(1, fundings.size());
-    fundings.forEach(funding -> {
-      assertEquals(FUNDING_TYPE_LABEL, funding.getFundingType());
-      assertNull(funding.getFundingSubTypeId());
-    });
-  }
-
-  @Test
-  void shouldUpdateWhenEndedAndSubtypeMissing() {
-    when(postFundingUpdateXls.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2023, Calendar.JANUARY, 2);
-    when(postFundingUpdateXls.getDateTo()).thenReturn(calendar.getTime());
-
-    when(referenceServiceMock.findCurrentFundingTypesByLabelIn(
-        Collections.singleton(FUNDING_TYPE_LABEL)))
-        .thenReturn(Collections.singletonList(fundingTypeDto));
-    when(referenceServiceMock.findCurrentFundingSubTypesForFundingTypeId(FUNDING_TYPE_ID))
-        .thenReturn(Collections.singletonList(fundingSubTypeDto));
-
-    uploadService.processPostFundingUpdateUpload(Collections.singletonList(postFundingUpdateXls));
-
-    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
-    verify(postFundingUpdateXls, never()).addErrorMessage(FUNDING_TYPE_REQUIRES_SUBTYPE);
-    Set<PostFundingDTO> fundings = postDtoCaptor.getValue().getFundings();
-    assertEquals(1, fundings.size());
-    fundings.forEach(funding -> {
-      assertEquals(FUNDING_TYPE_LABEL, funding.getFundingType());
-      assertNull(funding.getFundingSubTypeId());
-    });
+    assertThat(
+        "should throw error when fundingSubtype not found",
+        postFundingUpdateRow.getErrorMessage(),
+        containsString(
+            String.format(
+                PostFundingUpdateTransformerService.FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE,
+                FUNDING_SUBTYPE, FUNDING_TYPE_NEW)));
   }
 
   @Test
   void shouldThrowErrorWhenFundingEndDateIsBeforeStartDate() {
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2023, Calendar.JANUARY, 2);
-    Date startDate = calendar.getTime();
-    calendar.set(2013, Calendar.JANUARY, 1);
-    Date endDate = calendar.getTime();
+    Calendar cTo = Calendar.getInstance();
+    cTo.set(2019, Calendar.JANUARY, 2);
+    postFundingUpdateRow.setDateTo(cTo.getTime());
 
-    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
-    when(postFundingUpdateXls.getDateTo()).thenReturn(endDate);
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
 
-    uploadService.processPostFundingUpdateUpload(Collections.singletonList(postFundingUpdateXls));
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
 
-    verify(postFundingUpdateXls)
-        .addErrorMessage(PostFundingUpdateTransformerService.FUNDING_END_DATE_VALIDATION_MSG);
-  }
-
-  @Test
-  void shouldNotThrowErrorWhenFundingEndDateIsAfterStartDate() {
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2023, Calendar.JANUARY, 2);
-    Date startDate = calendar.getTime();
-    calendar.set(2025, Calendar.JANUARY, 1);
-    Date endDate = calendar.getTime();
-
-    when(postFundingUpdateXls.getDateFrom()).thenReturn(startDate);
-    when(postFundingUpdateXls.getDateTo()).thenReturn(endDate);
-
-    uploadService.processPostFundingUpdateUpload(Collections.singletonList(postFundingUpdateXls));
-
-    verify(postFundingUpdateXls, never())
-        .addErrorMessage(PostFundingUpdateTransformerService.FUNDING_END_DATE_VALIDATION_MSG);
-
-    ArgumentCaptor<PostDTO> postDtoCaptor = ArgumentCaptor.forClass(PostDTO.class);
-
-    verify(tcsServiceMock).updatePostFundings(postDtoCaptor.capture());
-
-    PostDTO postDto = postDtoCaptor.getValue();
-    assertEquals(1, postDto.getFundings().size());
-    PostFundingDTO postFundingDto = postDto.getFundings().iterator().next();
-    assertEquals(convertDate(startDate), postFundingDto.getStartDate());
-    assertEquals(convertDate(endDate), postFundingDto.getEndDate());
-  }
-
-  @Test
-  void shouldThrowErrorWhenFundingStartDateIsNull() {
-    when(postFundingUpdateXls.getPostTisId()).thenReturn(POST_TIS_ID);
-    when(postFundingUpdateXls.getDateFrom()).thenReturn(null);
-
-    uploadService.processPostFundingUpdateUpload(Collections.singletonList(postFundingUpdateXls));
-
-    verify(postFundingUpdateXls)
-        .addErrorMessage(PostFundingUpdateTransformerService.FUNDING_START_DATE_NULL_OR_EMPTY);
-  }
-
-  public static Stream<Arguments> getEndDatesWhenFundingSubtypeRequired() {
-    return Stream.of(Arguments.of(Date.from(CLOCK.instant().minusSeconds(40))));
+    assertThat("should throw error when funding end date is before start date",
+        postFundingUpdateRow.getErrorMessage(),
+        containsString(
+            String.format(PostFundingUpdateTransformerService.FUNDING_END_DATE_VALIDATION_MSG)));
   }
 }
