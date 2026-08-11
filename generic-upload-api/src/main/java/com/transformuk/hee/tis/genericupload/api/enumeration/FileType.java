@@ -5,7 +5,6 @@ import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipUpdateXls;
-import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateRow;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
@@ -13,6 +12,7 @@ import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingCreateRow;
+import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateRow;
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
@@ -36,8 +36,7 @@ public enum FileType {
   CURRICULUM_MEMBERSHIP_UPDATE(CurriculumMembershipUpdateXls.class);
 
   /**
-   * The class of the XLS DTO related to this FileType.
-   * The `dtoClass` holds associated Class.
+   * The class of the XLS DTO related to this FileType. The `dtoClass` holds associated Class.
    */
   @Getter
   private final Class<? extends TemplateXLS> dtoClass;

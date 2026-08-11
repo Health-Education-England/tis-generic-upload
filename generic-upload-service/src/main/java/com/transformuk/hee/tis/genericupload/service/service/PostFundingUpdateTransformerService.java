@@ -65,7 +65,7 @@ public class PostFundingUpdateTransformerService {
 
   /**
    * Validates and applies valid updates to existing post funding records. Problems are added to the
-   * XLS row.
+   * spreadsheet row.
    *
    * @param postFundingUpdateRows List of Spreadsheet rows containing updates for post funding
    *                              records.
@@ -74,11 +74,11 @@ public class PostFundingUpdateTransformerService {
     Set<String> fundingBodies = new HashSet<>();
     Set<String> fundingSubTypeLabels = new HashSet<>();
     Set<String> fundingTypeLabels = new HashSet<>();
-    postFundingUpdateRows.forEach(xls -> {
-      xls.initialiseSuccessfullyImported();
-      Optional.ofNullable(xls.getFundingBody()).ifPresent(fundingBodies::add);
-      Optional.ofNullable(xls.getFundingType()).ifPresent(fundingTypeLabels::add);
-      Optional.ofNullable(xls.getFundingSubtype()).ifPresent(fundingSubTypeLabels::add);
+    postFundingUpdateRows.forEach(row -> {
+      row.initialiseSuccessfullyImported();
+      Optional.ofNullable(row.getFundingBody()).ifPresent(fundingBodies::add);
+      Optional.ofNullable(row.getFundingType()).ifPresent(fundingTypeLabels::add);
+      Optional.ofNullable(row.getFundingSubtype()).ifPresent(fundingSubTypeLabels::add);
     });
 
     // Get all funding bodies and retrieve matching funding body IDs.

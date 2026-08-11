@@ -123,7 +123,7 @@ class PostFundingUpdateTransformerServiceTest {
   }
 
   @Test
-  void canHandNonNumberPostFundingId() {
+  void canHandleNonNumberPostFundingId() {
     String id = "XXX";
     postFundingUpdateRow.setPostFundingTisId(id);
 
@@ -267,6 +267,7 @@ class PostFundingUpdateTransformerServiceTest {
 
     postFundingUpdateRow.setPostFundingTisId("2");
     postFundingUpdateRow.setFundingType(FUNDING_TYPE_NEW);
+    postFundingUpdateRow.setFundingTypeOther(null);
 
     when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
         Collections.singleton(FUNDING_REASON)))
@@ -280,7 +281,7 @@ class PostFundingUpdateTransformerServiceTest {
     assertThat("Should update fundingType", postFundingDtoArgumentCaptorValue.getFundingType(),
         equalTo(FUNDING_TYPE_NEW));
     assertThat("Should update fundingTypeOther", postFundingDtoArgumentCaptorValue.getInfo(),
-        equalTo(postFundingUpdateRow.getFundingTypeOther())); // value is null
+        nullValue());
   }
 
   @Test

@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -63,16 +64,16 @@ public class PostFundingCreateTransformerService {
     Map<String, List<PostFundingCreateRow>> postIdsToInputRows = new HashMap<>();
     postFundingCreateRows.forEach(row -> {
       row.initialiseSuccessfullyImported();
-      fundingBodies.add(row.getFundingBody());
-      fundingTypeLabels.add(row.getFundingType());
-      fundingSubTypeLabels.add(row.getFundingSubtype());
+      Optional.ofNullable(row.getFundingBody()).ifPresent(fundingBodies::add);
+      Optional.ofNullable(row.getFundingType()).ifPresent(fundingTypeLabels::add);
+      Optional.ofNullable(row.getFundingSubtype()).ifPresent(fundingSubTypeLabels::add);
       String postId = row.getPostTisId();
       if (postId != null) {
-        List<PostFundingCreateRow> groupedXls = postIdsToInputRows
+        List<PostFundingCreateRow> groupedRows = postIdsToInputRows
             .getOrDefault(postId, new ArrayList<>());
 
-        groupedXls.add(row);
-        postIdsToInputRows.put(postId, groupedXls);
+        groupedRows.add(row);
+        postIdsToInputRows.put(postId, groupedRows);
       } else {
         row.addErrorMessage("TIS_Post_ID is a required field.");
       }
@@ -125,7 +126,7 @@ public class PostFundingCreateTransformerService {
         for (PostFundingDTO fundingDto : postFundingDtos) {
           List<String> errorMessages = fundingDto.getMessageList();
 
-          // Get the source XLS for the DTO and add error messages or success.
+          // Get the source row for the DTO and add error messages or success.
           /* N.B. DTOs are populated from spreadsheet values and are normalised in TCS.
           This results in unexpected misses. postFundingCreateRow can be null.
            */
