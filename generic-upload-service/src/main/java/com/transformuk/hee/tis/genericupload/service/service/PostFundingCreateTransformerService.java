@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 
@@ -52,11 +51,20 @@ public class PostFundingCreateTransformerService {
   private final Map<String, UUID> fundingReasonToIdMap = new HashMap<>();
   private Clock clock = Clock.systemDefaultZone();
 
-  @Autowired
-  private ReferenceServiceImpl referenceService;
-  @Autowired
-  private TcsServiceImpl tcsService;
+  private final ReferenceServiceImpl referenceService;
+  private final TcsServiceImpl tcsService;
 
+  public PostFundingCreateTransformerService(ReferenceServiceImpl referenceService,
+      TcsServiceImpl tcsService) {
+    this.referenceService = referenceService;
+    this.tcsService = tcsService;
+  }
+
+  /**
+   * Creates PostFundingDTOs from the PostFundingCreateRow and calls TCS to create valid records.
+   *
+   * @param postFundingCreateRows The rows from an uploaded spreadsheet.
+   */
   public void processRows(List<PostFundingCreateRow> postFundingCreateRows) {
     Set<String> fundingBodies = new HashSet<>();
     Set<String> fundingSubTypeLabels = new HashSet<>();
