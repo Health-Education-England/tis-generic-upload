@@ -46,7 +46,8 @@ public class FileValidator {
    */
   public FileType validate(List<MultipartFile> files, boolean validateMandatoryFields,
       boolean validateDates)
-      throws IOException, InvalidFormatException, ValidationException, ReflectiveOperationException {
+      throws IOException, InvalidFormatException, ValidationException,
+      ReflectiveOperationException {
     List<FieldError> fieldErrors = new ArrayList<>();
     FileType fileType = null;
 
