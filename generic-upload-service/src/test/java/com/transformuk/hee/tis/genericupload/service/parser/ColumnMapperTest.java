@@ -24,13 +24,15 @@ public class ColumnMapperTest {
     Map<String, String> fieldMap = mapper.getFieldMap();
 
     // Then.
-    assertThat("Unexpected number of fields.", fieldMap.size(), is(4));
+    assertThat("Unexpected number of fields.", fieldMap.size(), is(5));
     assertThat("Unexpected field mapping value.", fieldMap.get("requiredField1"),
         is("Required Field 1*"));
     assertThat("Unexpected field mapping value.", fieldMap.get("requiredField2"),
         is("Required Field 2"));
     assertThat("Unexpected field mapping value.", fieldMap.get("field1"), is("Field 1*"));
     assertThat("Unexpected field mapping value.", fieldMap.get("field2"), is("Field 2"));
+    assertThat("Unexpected field mapping value.", fieldMap.get("inheritedField"),
+        is("Inherited Field"));
   }
 
   @Test
@@ -50,7 +52,7 @@ public class ColumnMapperTest {
    * A private DTO to test the behaviour of the ColumnMapper in a controlled way.
    */
   @SuppressWarnings("unused")
-  private static class TestDto extends TemplateXLS {
+  private static class TestDto extends TestParentDto {
 
     @ExcelColumn(name = "Required Field 1*", required = true)
     private String requiredField1;
@@ -65,5 +67,14 @@ public class ColumnMapperTest {
     private String field2;
 
     private String unmappedField;
+  }
+
+  /**
+   * A DTO to test inherited fields are mapped.
+   */
+  private static class TestParentDto extends TemplateXLS {
+
+    @ExcelColumn(name = "Inherited Field")
+    private String inheritedField;
   }
 }

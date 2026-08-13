@@ -46,6 +46,7 @@ class ExcelToObjectMapperTest {
     assertThat(actual.get(0).getMyFloat(), equalTo(1.2F));
     assertThat(actual.get(1).getMyLong(), equalTo(1L));
     assertThat(actual.get(1).getMyFloat(), equalTo(1F));
+    assertThat(actual.get(2).getMyInheritedLong(), equalTo(3L));
     for (int i = 2; i < actual.size(); i++) {
       assertThat(actual.get(i).getMyLong(), equalTo(1L));
       assertThat(actual.get(i).getMyFloat(), equalTo(1F));
