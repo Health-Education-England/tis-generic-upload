@@ -14,14 +14,14 @@ import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipCreateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.CurriculumMembershipUpdateXls;
-import com.transformuk.hee.tis.genericupload.api.dto.FundingUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PersonXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementDeleteXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.PlacementXls;
 import com.transformuk.hee.tis.genericupload.api.dto.PostCreateXls;
-import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateXLS;
+import com.transformuk.hee.tis.genericupload.api.dto.PostFundingCreateRow;
+import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateRow;
 import com.transformuk.hee.tis.genericupload.api.dto.PostUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.ProgrammeMembershipUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
@@ -239,8 +239,8 @@ public class FileValidatorTest {
     FileType fileType = fileValidator.getFileType(null, null, null, headers);
 
     // Then.
-    assertThat(fileType, is(FileType.FUNDING_UPDATE));
-    assertThat(xlsCaptor.getValue(), is((Object) FundingUpdateXLS.class));
+    assertThat(fileType, is(FileType.POSTS_FUNDING_UPDATE));
+    assertThat(xlsCaptor.getValue(), is((Object) PostFundingUpdateRow.class));
   }
 
   @Test
@@ -484,8 +484,8 @@ public class FileValidatorTest {
     FileType fileType = fileValidator.getFileType(null, null, null, headers);
 
     // Then.
-    assertThat(fileType, is(FileType.POSTS_FUNDING_UPDATE));
-    assertThat(xlsCaptor.getValue(), is((Object) PostFundingUpdateXLS.class));
+    assertThat(fileType, is(FileType.POSTS_FUNDING_CREATE));
+    assertThat(xlsCaptor.getValue(), is((Object) PostFundingCreateRow.class));
   }
 
   @Test

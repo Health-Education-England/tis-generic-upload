@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class PostFundingUpdateXLS extends TemplateXLS {
+public abstract class PostFundingAbstractRow extends TemplateXLS {
 
   @ExcelColumn(name = "TIS_Post_ID*", required = true)
   private String postTisId;

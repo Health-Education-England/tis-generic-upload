@@ -1,0 +1,7 @@
+UPDATE ApplicationType
+SET fileType = 'POSTS_FUNDING_CREATE'
+WHERE fileType = 'POSTS_FUNDING_UPDATE';
+
+UPDATE ApplicationType
+SET fileType = 'POSTS_FUNDING_UPDATE'
+WHERE fileType = 'FUNDING_UPDATE';

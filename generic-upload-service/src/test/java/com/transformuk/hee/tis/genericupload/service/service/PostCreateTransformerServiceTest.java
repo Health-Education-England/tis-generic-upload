@@ -782,7 +782,7 @@ class PostCreateTransformerServiceTest {
     service.processUpload(xlsList);
 
     assertThat(xls1.getErrorMessage(),
-        is(PostFundingUpdateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE));
+        is(PostFundingCreateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE));
     assertThat(xls1.isSuccessfullyImported(),
         is(false));
   }
