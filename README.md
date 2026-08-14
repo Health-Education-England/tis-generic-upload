@@ -1,7 +1,7 @@
 # TIS-GENERIC-UPLOAD
 
 ## How to use this service
-This service is controlled through environment variables, avoid changing configuration files in a way that would not want to be committed.
+This service is controlled through environment variables; avoid changing configuration files in a way you wouldn't want to commit.
 
 ### AWS configuration
 When running with a custom profile, the cloud storage bucket can be configured using
@@ -54,7 +54,7 @@ The expectation is that they are all provided by the dev environment setup:
 **Infrastructure - documented below for local development environment**
 * mysql - a database `genericupload` needs to be created in the mysql server that the service has access to; (refer to [confluence](https://hee-tis.atlassian.net/wiki/spaces/TISDEV/pages/13402197/Development+set+up+on+Mac#DevelopmentsetuponMac-Createdatabases) for how this is done on 
 other TIS projects)
-* nginx (optional, as in dev environemnt setup)
+* nginx (optional, as in dev environment setup)
 * Cloud storage (e.g. S3 or localstack)
 
 **Uploading a revised template**
@@ -103,7 +103,7 @@ Results from the upload are stored in the database. In the case of errors, the o
 
 * **Remove dead code associated with the service being made generic; on the very first commit**
 * anything associated with azure queues POCs `com.transformuk.hee.tis.genericupload.service.service.EventBusService`
-* the [File Process Service](./generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/service/impl/FileProcessService.java)
+* the [File Process Service](./generic-upload-service/src/main/java/com/transformuk/hee/tis/genericupload/service/service/FileProcessService.java)
  code. It appears the implementation has been removed.
 
 ### TODO - Documentation
