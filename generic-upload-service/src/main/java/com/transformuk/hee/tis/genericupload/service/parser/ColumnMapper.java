@@ -3,10 +3,10 @@ package com.transformuk.hee.tis.genericupload.service.parser;
 import com.transformuk.hee.tis.genericupload.api.ExcelColumn;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -22,19 +22,20 @@ public class ColumnMapper {
    * @param dtoClass The class of the XLS DTO to create mappings for.
    */
   public ColumnMapper(Class<? extends TemplateXLS> dtoClass) {
-    List<ColumnMapping> mappings = new ArrayList<>();
+    this.columnMappings = List.copyOf(buildMappings(dtoClass));
+  }
 
-    for (Field field : dtoClass.getDeclaredFields()) {
+  private Set<ColumnMapping> buildMappings(Class<? extends TemplateXLS> clazz) {
+    Set<ColumnMapping> mappings = TemplateXLS.class.equals(clazz) ? new HashSet<>()
+        : buildMappings((Class<? extends TemplateXLS>) clazz.getSuperclass());
+    for (Field field : clazz.getDeclaredFields()) {
       ExcelColumn excelColumn = field.getAnnotation(ExcelColumn.class);
-
       if (excelColumn != null) {
-        ColumnMapping mapping =
-            new ColumnMapping(field.getName(), excelColumn.name(), excelColumn.required());
-        mappings.add(mapping);
+        mappings.add(
+            new ColumnMapping(field.getName(), excelColumn.name(), excelColumn.required()));
       }
     }
-
-    this.columnMappings = Collections.unmodifiableList(mappings);
+    return mappings;
   }
 
   List<ColumnMapping> getColumnMappings() {

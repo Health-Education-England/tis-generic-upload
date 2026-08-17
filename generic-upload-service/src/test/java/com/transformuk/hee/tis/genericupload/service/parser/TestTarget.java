@@ -1,10 +1,9 @@
 package com.transformuk.hee.tis.genericupload.service.parser;
 
-import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import java.time.LocalDate;
 import java.util.Date;
 
-public class TestTarget extends TemplateXLS {
+public class TestTarget extends TestParentTarget {
 
   private Long myLong;
   private String myString;

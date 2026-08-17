@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -114,7 +113,7 @@ public class ExcelToObjectMapper {
       throws ReflectiveOperationException {
     List<T> list = new ArrayList<>();
 
-    Map<Field, Integer> fieldToIndex = Stream.of(cls.getDeclaredFields())
+    Map<Field, Integer> fieldToIndex = getAllDeclaredFields(cls).stream()
         //skip surefire jacoco fields
         .filter(f -> !f.getName().startsWith("$"))
         .collect(Collectors.toMap(k -> k,
@@ -158,10 +157,26 @@ public class ExcelToObjectMapper {
 
   private boolean isAllBlanks(Object obj) {
     // Note the inversions in the operations and return, done to avoid processing all elements.
-    return !Arrays.stream(obj.getClass().getDeclaredFields())
+    return !getAllDeclaredFields((Class<? extends TemplateXLS>) obj.getClass()).stream()
         //skip surefire jacoco fields
         .filter(f -> !f.getName().startsWith("$"))
         .anyMatch(o -> !ObjectUtils.isEmpty(o));
+  }
+
+  /**
+   * Collects all declared fields from the given class and its superclasses, up to (but not
+   * including) {@link TemplateXLS}.
+   *
+   * @param clazz The class to collect fields from.
+   * @return A list of all declared fields.
+   */
+  private List<Field> getAllDeclaredFields(Class<? extends TemplateXLS> clazz) {
+    if (clazz == null || TemplateXLS.class.equals(clazz)) {
+      return new ArrayList<>();
+    }
+    List<Field> fields = getAllDeclaredFields((Class<? extends TemplateXLS>) clazz.getSuperclass());
+    fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
+    return fields;
   }
 
   /**
