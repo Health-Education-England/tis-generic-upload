@@ -33,14 +33,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -103,6 +101,15 @@ public class AssessmentUpdateTransformerService {
   private final AssessmentTransformerService assessmentTransformerService;
   private final AcademicOutcomeAssessmentValidator academicOutcomeAssessmentValidator;
 
+  /**
+   * Constructor for AssessmentUpdateTransformerService.
+   *
+   * @param tcsService                       The TCS service implementation
+   * @param referenceService                 The Reference service implementation
+   * @param assessmentService                The Assessment service implementation
+   * @param assessmentTransformerService     The Assessment transformer service
+   * @param academicOutcomeAssessmentValidator The Academic outcome assessment validator
+   */
   public AssessmentUpdateTransformerService(TcsServiceImpl tcsService,
       ReferenceServiceImpl referenceService, AssessmentServiceImpl assessmentService,
       AssessmentTransformerService assessmentTransformerService,
@@ -227,7 +234,7 @@ public class AssessmentUpdateTransformerService {
     AcademicOutcomeValidationResult result = academicOutcomeAssessmentValidator
         .validate(assessmentDetailDto, xls.getAcademicOutcome());
 
-    if (result.hasError()) {
+    if (result.hasError() && result.getError().isPresent()) {
       xls.addErrorMessage(result.getError().get());
     } else {
       assessmentOutcomeDto.setAcademicOutcome(xls.getAcademicOutcome());

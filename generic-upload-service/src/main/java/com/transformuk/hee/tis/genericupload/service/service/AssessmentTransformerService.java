@@ -49,7 +49,6 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -118,6 +117,14 @@ public class AssessmentTransformerService {
   private Set<Outcome> allOutcomes;
   private ObjectMapper objectMapper = new ObjectMapper();
 
+  /**
+   * Constructor for AssessmentTransformerService.
+   *
+   * @param tcsServiceImpl          the TCS service implementation
+   * @param referenceServiceImpl    the reference service implementation
+   * @param assessmentServiceImpl   the assessment service implementation
+   * @param academicOutcomeValidator the academic outcome validator
+   */
   public AssessmentTransformerService(TcsServiceImpl tcsServiceImpl,
       ReferenceServiceImpl referenceServiceImpl, AssessmentServiceImpl assessmentServiceImpl,
       AcademicOutcomeAssessmentValidator academicOutcomeValidator) {
@@ -403,7 +410,7 @@ public class AssessmentTransformerService {
             .setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXls.getUnderAppeal()));
         AcademicOutcomeValidationResult academicOutcomeResult = academicOutcomeValidator
             .validate(assessmentDetailDTO, assessmentXls.getAcademicOutcome());
-        if (academicOutcomeResult.hasError()) {
+        if (academicOutcomeResult.hasError() && academicOutcomeResult.getError().isPresent()) {
           assessmentXls.addErrorMessage(academicOutcomeResult.getError().get());
         } else {
           assessmentOutcomeDTO.setAcademicOutcome(assessmentXls.getAcademicOutcome());

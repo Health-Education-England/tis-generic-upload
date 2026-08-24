@@ -4,8 +4,8 @@ import java.util.Optional;
 
 /**
  * Contains the result of academic outcome validation:
- * - the curriculum name to set on the DTO if the curriculum is an assessed academic curriculum
- * - an error message if validation failed
+ * - the curriculum name to set on the DTO if the curriculum is an assessed academic curriculum.
+ * - an error message if validation failed.
  */
 public class AcademicOutcomeValidationResult {
 

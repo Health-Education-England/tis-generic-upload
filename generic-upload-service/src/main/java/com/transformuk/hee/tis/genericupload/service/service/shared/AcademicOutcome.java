@@ -13,9 +13,7 @@ public enum AcademicOutcome {
   DO_NOT_CONTINUE_ON_ACADEMIC_COMPONENT("Do not continue on academic component"),
   SUCCESSFULLY_COMPLETED_ACADEMIC_COMPONENT("Successfully completed academic component");
 
-  public static final List<AcademicOutcome> ALL_VALUES =
-      List.of(values());
-  public static final Set<String> ALL_LABELS = Arrays.stream(values())
+  private static final Set<String> ALL_LABELS = Arrays.stream(values())
       .map(AcademicOutcome::getLabel)
       .collect(Collectors.toSet());
 
