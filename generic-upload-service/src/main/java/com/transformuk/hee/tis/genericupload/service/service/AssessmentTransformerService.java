@@ -20,6 +20,8 @@ import com.transformuk.hee.tis.genericupload.service.service.fetcher.GDCDTOFetch
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.GMCDTOFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PeopleByPHNFetcher;
 import com.transformuk.hee.tis.genericupload.service.service.fetcher.PersonBasicDetailsDTOFetcher;
+import com.transformuk.hee.tis.genericupload.service.service.shared.validator.AcademicOutcomeAssessmentValidator;
+import com.transformuk.hee.tis.genericupload.service.service.shared.validator.AcademicOutcomeValidationResult;
 import com.transformuk.hee.tis.genericupload.service.util.BooleanUtil;
 import com.transformuk.hee.tis.reference.api.dto.AssessmentTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
@@ -103,12 +105,12 @@ public class AssessmentTransformerService {
   Function<AssessmentXLS, String> getPhNumber = AssessmentXLS::getPublicHealthNumber;
   Function<AssessmentXLS, String> getGdcNumber = AssessmentXLS::getGdcNumber;
   Function<AssessmentXLS, String> getGmcNumber = AssessmentXLS::getGmcNumber;
-  @Autowired
-  private TcsServiceImpl tcsServiceImpl;
-  @Autowired
-  private ReferenceServiceImpl referenceServiceImpl;
-  @Autowired
-  private AssessmentServiceImpl assessmentServiceImpl;
+
+  private final TcsServiceImpl tcsServiceImpl;
+  private final ReferenceServiceImpl referenceServiceImpl;
+  private final AssessmentServiceImpl assessmentServiceImpl;
+  private final AcademicOutcomeAssessmentValidator academicOutcomeValidator;
+
   private GMCDTOFetcher gmcDtoFetcher;
   private GDCDTOFetcher gdcDtoFetcher;
   private PersonBasicDetailsDTOFetcher pbdDtoFetcher;
@@ -116,6 +118,14 @@ public class AssessmentTransformerService {
   private Set<Outcome> allOutcomes;
   private ObjectMapper objectMapper = new ObjectMapper();
 
+  public AssessmentTransformerService(TcsServiceImpl tcsServiceImpl,
+      ReferenceServiceImpl referenceServiceImpl, AssessmentServiceImpl assessmentServiceImpl,
+      AcademicOutcomeAssessmentValidator academicOutcomeValidator) {
+    this.tcsServiceImpl = tcsServiceImpl;
+    this.referenceServiceImpl = referenceServiceImpl;
+    this.assessmentServiceImpl = assessmentServiceImpl;
+    this.academicOutcomeValidator = academicOutcomeValidator;
+  }
 
   @PostConstruct
   public void initialiseFetchers() {
@@ -391,7 +401,15 @@ public class AssessmentTransformerService {
         }
         assessmentOutcomeDTO
             .setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXls.getUnderAppeal()));
-        assessmentOutcomeDTO.setAcademicOutcome(assessmentXls.getAcademicOutcome());
+        AcademicOutcomeValidationResult academicOutcomeResult = academicOutcomeValidator
+            .validate(assessmentDetailDTO, assessmentXls.getAcademicOutcome());
+        if (academicOutcomeResult.hasError()) {
+          assessmentXls.addErrorMessage(academicOutcomeResult.getError().get());
+        } else {
+          assessmentOutcomeDTO.setAcademicOutcome(assessmentXls.getAcademicOutcome());
+          academicOutcomeResult.getAcademicCurriculumAssessed()
+              .ifPresent(assessmentOutcomeDTO::setAcademicCurriculumAssessed);
+        }
         assessmentOutcomeDTO
             .setExternalTrainer(BooleanUtil.parseBooleanObject(assessmentXls.getExternalTrainer()));
         // Assessment outcome reasons

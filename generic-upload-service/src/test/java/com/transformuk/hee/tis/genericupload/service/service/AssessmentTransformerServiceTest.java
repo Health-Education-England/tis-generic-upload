@@ -19,6 +19,7 @@ import com.transformuk.hee.tis.assessment.api.dto.AssessmentListDTO;
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentOutcomeDTO;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentXLS;
+import com.transformuk.hee.tis.genericupload.service.service.shared.validator.AcademicOutcomeAssessmentValidator;
 import com.transformuk.hee.tis.reference.api.dto.AssessmentTypeDto;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.CurriculumDTO;
@@ -44,6 +45,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
@@ -64,6 +66,8 @@ public class AssessmentTransformerServiceTest {
   private static final String nextRotationGradeName = "grade name";
   @InjectMocks
   private AssessmentTransformerService assessmentTransformerService;
+  @Spy
+  private AcademicOutcomeAssessmentValidator academicOutcomeValidator;
   @Mock
   private TcsServiceImpl tcsServiceMock;
   @Mock
@@ -381,6 +385,86 @@ public class AssessmentTransformerServiceTest {
 
     assertThat("Should get an error", xlsList.get(0).getErrorMessage(),
         is(AssessmentTransformerService.ASSESSMENT_TYPE_NOT_MATCH));
+  }
+
+  @Test
+  public void testProcessAssessments_invalidAcademicOutcome() {
+    AssessmentXLS xls = new AssessmentXLS();
+    xls.setSurname(lastName);
+    xls.setProgrammeName(programmeName);
+    xls.setProgrammeNumber(programmeNumber);
+    xls.setCurriculumName(curriculumName);
+    xls.setGmcNumber(gmcNumber);
+    xls.setReviewDate(new Date());
+    xls.setType(assessmentType);
+    xls.setOutcome(realOutcome);
+    xls.setAcademicOutcome("invalid academic outcome");
+
+    List<AssessmentXLS> xlsList = Collections.singletonList(xls);
+
+    SpecialtyDTO specialtyDto = new SpecialtyDTO();
+    specialtyDto.setId(1L);
+    specialtyDto.setName("specialty");
+    CurriculumDTO curriculumDto = new CurriculumDTO();
+    curriculumDto.setId(1L);
+    curriculumDto.setName(curriculumName);
+    curriculumDto.setCurriculumSubType(CurriculumSubType.AFT);
+    curriculumDto.setSpecialty(specialtyDto);
+    CurriculumMembershipDTO curriculumMembershipDto = new CurriculumMembershipDTO();
+    curriculumMembershipDto.setId(1L);
+    curriculumMembershipDto.setCurriculumStartDate(LocalDate.parse("2021-01-01"));
+    curriculumMembershipDto.setCurriculumEndDate(LocalDate.parse("2021-01-02"));
+    ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDto = new ProgrammeMembershipCurriculaDTO();
+    programmeMembershipCurriculaDto.setProgrammeName(programmeName);
+    programmeMembershipCurriculaDto.setProgrammeNumber(programmeNumber);
+    programmeMembershipCurriculaDto.setId(1L);
+    programmeMembershipCurriculaDto.setCurriculumDTO(curriculumDto);
+    programmeMembershipCurriculaDto.setCurriculumMemberships(
+        Collections.singletonList(curriculumMembershipDto));
+    when(tcsServiceMock.getProgrammeMembershipForTrainee(any())).thenReturn(
+        Collections.singletonList(programmeMembershipCurriculaDto));
+
+    when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
+        .thenReturn(Collections.emptyList());
+
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(
+        Collections.singletonList(assessmentTypeDto1));
+
+    assessmentTransformerService.initialiseFetchers();
+    assessmentTransformerService.processAssessmentsUpload(xlsList);
+
+    assertThat("Should get academic outcome validation error", xlsList.get(0).getErrorMessage(),
+        containsString(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID));
+  }
+
+  @Test
+  public void testProcessAssessments_academicOutcomeShouldBeEmptyForNonAcademicCurriculum() {
+    AssessmentXLS xls = new AssessmentXLS();
+    xls.setSurname(lastName);
+    xls.setProgrammeName(programmeName);
+    xls.setProgrammeNumber(programmeNumber);
+    xls.setCurriculumName(curriculumName);
+    xls.setGmcNumber(gmcNumber);
+    xls.setReviewDate(new Date());
+    xls.setType(assessmentType);
+    xls.setOutcome(realOutcome);
+    xls.setAcademicOutcome("Continue on academic component");
+
+    List<AssessmentXLS> xlsList = Collections.singletonList(xls);
+
+    when(assessmentServiceMock.findAssessments(any(), any(), any(), any()))
+        .thenReturn(Collections.emptyList());
+
+    when(referenceServiceMock.findAllAssessmentTypes()).thenReturn(
+        Collections.singletonList(assessmentTypeDto1));
+
+    assessmentTransformerService.initialiseFetchers();
+    assessmentTransformerService.processAssessmentsUpload(xlsList);
+
+    assertThat("Should get non-academic curriculum validation error",
+        xlsList.get(0).getErrorMessage(),
+        containsString(
+            AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_EMPTY_FOR_NON_ACADEMIC_CURRICULUM));
   }
 
   @Test
