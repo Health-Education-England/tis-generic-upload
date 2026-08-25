@@ -21,11 +21,7 @@ public class PlacementDeleteService {
     placementDeleteXLSS.forEach(placementDeleteXLS -> {
       if ("DELETE".equalsIgnoreCase(placementDeleteXLS.getPlacementStatus())) {
         try {
-          logger.info("Sending delete placement request to TCS: placementId={}",
-              placementDeleteXLS.getPlacementId());
           tcsServiceImpl.deletePlacement(Long.valueOf(placementDeleteXLS.getPlacementId()));
-          logger.info("Delete placement request completed successfully in TCS: placementId={}",
-              placementDeleteXLS.getPlacementId());
           placementDeleteXLS.setSuccessfullyImported(true);
         } catch (ResourceAccessException rae) {
           new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(placementDeleteXLS, rae);

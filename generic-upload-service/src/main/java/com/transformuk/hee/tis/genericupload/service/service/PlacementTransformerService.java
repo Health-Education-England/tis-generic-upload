@@ -453,17 +453,12 @@ public class PlacementTransformerService {
     if (!placementXls.hasErrors()) {
       placementDto.setLifecycleState(LifecycleState.APPROVED);
       setCommentInPlacementDto(placementDto, placementXls, username);
-      logger.info("Sending placement bulk create/update request to TCS: placementId={}",
-          placementDto.getId());
       try {
         if (updatePlacement) {
           tcsServiceImpl.updatePlacement(placementDto);
         } else {
           tcsServiceImpl.createPlacement(placementDto);
         }
-        logger.info(
-            "Placement bulk create/update request completed successfully in TCS: placementId={}",
-            placementDto.getId());
         placementXls.setSuccessfullyImported(true);
       } catch (ResourceAccessException rae) {
         new ErrorHandler().recordErrorMessageOnTemplateOrLogUnknown(placementXls, rae);

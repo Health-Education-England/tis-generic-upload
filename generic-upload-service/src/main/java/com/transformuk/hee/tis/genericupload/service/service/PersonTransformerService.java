@@ -321,10 +321,7 @@ public class PersonTransformerService {
   private void updateOrRecordError(PersonDTO personDTOFromDB, PersonDTO personDTOFromXLS,
       PersonXLS personXLS) {
     try {
-      logger.info("Sending People bulk update request to TCS: personId={}", personDTOFromDB.getId());
       personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
-      logger.info("People bulk update request completed successfully in TCS: personId={}",
-          personDTOFromDB.getId());
       addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTOFromXLS,
           personDTOFromDB);
       // update TrainerApproval when the roles are merged
@@ -484,9 +481,7 @@ public class PersonTransformerService {
     PersonDTO personDTO = getPersonDTO(personXLS);
     if (personDTO != null) {
       try {
-        logger.info("Sending create person request to TCS: personId={}", personDTO.getId());
         PersonDTO savedPersonDTO = tcsServiceImpl.createPerson(personDTO);
-        logger.info("Create person request completed successfully in TCS: personId={}", savedPersonDTO.getId());
         addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTO, savedPersonDTO);
         addTrainerApproval(savedPersonDTO);
       } catch (ResourceAccessException rae) {

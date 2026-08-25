@@ -92,9 +92,7 @@ public class PersonUpdateTransformerService {
     }
 
     try {
-      logger.info("Sending bulk people update to TCS service: recordCount={}", personDtos.size());
       List<PersonDTO> patchedPersonDtos = tcsService.patchPeople(personDtos);
-      logger.info("Bulk people update response received from TCS: recordCount={}", patchedPersonDtos.size());
 
       for (PersonDTO patchedPersonDto : patchedPersonDtos) {
         // Get the source XLS for the DTO and add error messages or success.
