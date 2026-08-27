@@ -410,8 +410,8 @@ public class AssessmentTransformerService {
             .setUnderAppeal(BooleanUtil.parseBooleanObject(assessmentXls.getUnderAppeal()));
         AcademicOutcomeValidationResult academicOutcomeResult = academicOutcomeValidator
             .validate(assessmentDetailDTO, assessmentXls.getAcademicOutcome());
-        if (academicOutcomeResult.hasError() && academicOutcomeResult.getError().isPresent()) {
-          assessmentXls.addErrorMessage(academicOutcomeResult.getError().get());
+        if (academicOutcomeResult.hasError()) {
+          academicOutcomeResult.getError().ifPresent(assessmentXls::addErrorMessage);
         } else {
           assessmentOutcomeDTO.setAcademicOutcome(assessmentXls.getAcademicOutcome());
           academicOutcomeResult.getAcademicCurriculumAssessed()

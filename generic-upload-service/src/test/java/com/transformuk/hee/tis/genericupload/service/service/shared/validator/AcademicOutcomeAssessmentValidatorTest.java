@@ -63,11 +63,11 @@ class AcademicOutcomeAssessmentValidatorTest {
 
     if (outcome == null || outcome.trim().isEmpty()) {
       assertThat("Should have error for missing outcome",
-          result.getError().get(),
+          result.getError().orElse(null),
           is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED));
     } else {
       assertThat("Should have error for invalid outcome",
-          result.getError().get(),
+          result.getError().orElse(null),
           is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID));
     }
   }
@@ -81,7 +81,7 @@ class AcademicOutcomeAssessmentValidatorTest {
 
     AcademicOutcomeValidationResult result = validator.validate(dto, null);
 
-    assertThat(result.getError().get(),
+    assertThat(result.getError().orElse(null),
         is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED));
   }
 
@@ -94,7 +94,7 @@ class AcademicOutcomeAssessmentValidatorTest {
     AcademicOutcomeValidationResult result = validator.validate(dto,
         "Continue on academic component");
 
-    assertThat(result.getError().get(),
+    assertThat(result.getError().orElse(null),
         is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_EMPTY_FOR_NON_ACADEMIC_CURRICULUM));
   }
 
@@ -238,7 +238,7 @@ class AcademicOutcomeAssessmentValidatorTest {
     AcademicOutcomeValidationResult result = validator.validate(dto, null);
 
     assertTrue(result.hasError());
-    assertThat(result.getError().get(),
+    assertThat(result.getError().orElse(null),
         is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED));
   }
 
@@ -250,7 +250,7 @@ class AcademicOutcomeAssessmentValidatorTest {
     AcademicOutcomeValidationResult result = validator.validate(dto, "BadOutcome");
 
     assertTrue(result.hasError());
-    assertThat(result.getError().get(),
+    assertThat(result.getError().orElse(null),
         is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID));
   }
 
@@ -261,7 +261,7 @@ class AcademicOutcomeAssessmentValidatorTest {
 
     AcademicOutcomeValidationResult result = validator.validate(dto, null);
 
-    assertThat(result.getError().get(),
+    assertThat(result.getError().orElse(null),
         is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED));
   }
 
@@ -273,7 +273,7 @@ class AcademicOutcomeAssessmentValidatorTest {
     AcademicOutcomeValidationResult result = validator.validate(dto,
         "Continue on academic component");
 
-    assertThat(result.getError().get(),
+    assertThat(result.getError().orElse(null),
         is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_EMPTY_FOR_NON_ACADEMIC_CURRICULUM));
   }
 
@@ -284,7 +284,7 @@ class AcademicOutcomeAssessmentValidatorTest {
 
     AcademicOutcomeValidationResult result = validator.validate(dto, "NotAValidOutcome");
 
-    assertThat(result.getError().get(),
+    assertThat(result.getError().orElse(null),
         is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID));
   }
 

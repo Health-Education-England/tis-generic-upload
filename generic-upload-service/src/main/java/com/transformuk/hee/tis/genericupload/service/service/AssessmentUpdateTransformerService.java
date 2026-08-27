@@ -234,8 +234,8 @@ public class AssessmentUpdateTransformerService {
     AcademicOutcomeValidationResult result = academicOutcomeAssessmentValidator
         .validate(assessmentDetailDto, xls.getAcademicOutcome());
 
-    if (result.hasError() && result.getError().isPresent()) {
-      xls.addErrorMessage(result.getError().get());
+    if (result.hasError()) {
+      result.getError().ifPresent(xls::addErrorMessage);
     } else {
       assessmentOutcomeDto.setAcademicOutcome(xls.getAcademicOutcome());
       result.getAcademicCurriculumAssessed()
