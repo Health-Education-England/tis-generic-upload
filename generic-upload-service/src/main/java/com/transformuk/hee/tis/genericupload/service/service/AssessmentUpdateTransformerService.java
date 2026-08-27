@@ -238,7 +238,8 @@ public class AssessmentUpdateTransformerService {
       xls.addErrorMessage(result.getError().get());
     } else {
       assessmentOutcomeDto.setAcademicOutcome(xls.getAcademicOutcome());
-      assessmentOutcomeDto.setAcademicCurriculumAssessed(assessmentDetailDto.getCurriculumName());
+      result.getAcademicCurriculumAssessed()
+          .ifPresent(assessmentOutcomeDto::setAcademicCurriculumAssessed);
     }
   }
 
