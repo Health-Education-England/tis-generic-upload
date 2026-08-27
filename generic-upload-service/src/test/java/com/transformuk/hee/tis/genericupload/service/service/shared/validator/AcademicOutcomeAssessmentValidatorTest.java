@@ -133,8 +133,6 @@ class AcademicOutcomeAssessmentValidatorTest {
         CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
     assertThat(result.hasError(), is(false));
-    assertTrue(result.getAcademicCurriculumAssessed().isPresent(),
-        "Curriculum name should be present for assessed academic curriculum");
   }
 
   @ParameterizedTest(name = "No overlap test: curriculum [{0}, {1}], period [{2}, {3}]")
@@ -154,7 +152,6 @@ class AcademicOutcomeAssessmentValidatorTest {
     AcademicOutcomeValidationResult result = validator.validate(dto,
         CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
     assertThat(result.hasError(), is(false));
   }
 
@@ -166,7 +163,7 @@ class AcademicOutcomeAssessmentValidatorTest {
     AcademicOutcomeValidationResult result = validator.validate(dto,
         CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
+    assertThat(result.hasError(), is(false));
   }
 
   @Test
@@ -177,7 +174,7 @@ class AcademicOutcomeAssessmentValidatorTest {
     AcademicOutcomeValidationResult result = validator.validate(dto,
         CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
+    assertThat(result.hasError(), is(false));
   }
 
   @Test
@@ -188,7 +185,7 @@ class AcademicOutcomeAssessmentValidatorTest {
     AcademicOutcomeValidationResult result = validator.validate(dto,
         CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
+    assertThat(result.hasError(), is(false));
   }
 
   @Test
@@ -199,7 +196,7 @@ class AcademicOutcomeAssessmentValidatorTest {
     AcademicOutcomeValidationResult result = validator.validate(dto,
         CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
+    assertThat(result.hasError(), is(false));
   }
 
   @Test
@@ -211,9 +208,6 @@ class AcademicOutcomeAssessmentValidatorTest {
         SUCCESSFULLY_COMPLETED_ACADEMIC_COMPONENT.getLabel());
 
     assertFalse(result.hasError());
-    assertTrue(result.getAcademicCurriculumAssessed().isPresent());
-    assertThat(result.getAcademicCurriculumAssessed().get(),
-        is(CURRICULUM_NAME));
   }
 
   @Test
@@ -227,7 +221,6 @@ class AcademicOutcomeAssessmentValidatorTest {
         DO_NOT_CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
     assertFalse(result.hasError());
-    assertTrue(result.getAcademicCurriculumAssessed().isEmpty());
   }
 
   @Test

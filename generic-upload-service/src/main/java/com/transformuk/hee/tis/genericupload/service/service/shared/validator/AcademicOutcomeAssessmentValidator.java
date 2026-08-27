@@ -22,12 +22,11 @@ public class AcademicOutcomeAssessmentValidator {
 
   /**
    * Validates the academic outcome for an assessment, returning a result that describes:
-   * - the curriculum name to record if the curriculum is an assessed academic curriculum.
    * - an error message if validation failed.
    *
    * @param assessmentDetailDto The assessment detail dto containing curriculum and period dates
    * @param academicOutcome     The academic outcome value supplied by the user
-   * @return AcademicOutcomeValidationResult carrying the curriculum name or an error
+   * @return AcademicOutcomeValidationResult carrying an error if validation failed
    */
   public AcademicOutcomeValidationResult validate(
       AssessmentDetailDTO assessmentDetailDto,
@@ -45,8 +44,7 @@ public class AcademicOutcomeAssessmentValidator {
 
     return validateAcademicOutcome(
         curriculumSubType,
-        academicOutcome,
-        isAssessedAcademicCurriculum ? assessmentDetailDto.getCurriculumName() : null
+        academicOutcome
     );
   }
 
@@ -87,27 +85,26 @@ public class AcademicOutcomeAssessmentValidator {
 
   private AcademicOutcomeValidationResult validateAcademicOutcome(
       String curriculumSubType,
-      String academicOutcome,
-      String academicCurriculumAssessed
+      String academicOutcome
   ) {
     boolean isAcademicCurriculum = AcademicCurriculumSubType.isAcademic(curriculumSubType);
 
     //1. If the curriculum is an academic curriculum, the academic outcome must be provided.
     if (isAcademicCurriculum && StringUtils.isEmpty(academicOutcome)) {
-      return new AcademicOutcomeValidationResult(null, ACADEMIC_OUTCOME_IS_REQUIRED);
+      return new AcademicOutcomeValidationResult(ACADEMIC_OUTCOME_IS_REQUIRED);
     }
 
     //2. If the curriculum is not an academic curriculum, the academic outcome must be empty.
     if (!isAcademicCurriculum && !StringUtils.isEmpty(academicOutcome)) {
-      return new AcademicOutcomeValidationResult(null,
+      return new AcademicOutcomeValidationResult(
           ACADEMIC_OUTCOME_MUST_BE_EMPTY_FOR_NON_ACADEMIC_CURRICULUM);
     }
 
     //3. If the curriculum is an academic curriculum, the academic outcome must be valid.
     if (!StringUtils.isEmpty(academicOutcome) && !AcademicOutcome.isValid(academicOutcome)) {
-      return new AcademicOutcomeValidationResult(null, ACADEMIC_OUTCOME_MUST_BE_VALID);
+      return new AcademicOutcomeValidationResult(ACADEMIC_OUTCOME_MUST_BE_VALID);
     }
 
-    return new AcademicOutcomeValidationResult(academicCurriculumAssessed, null);
+    return new AcademicOutcomeValidationResult(null);
   }
 }

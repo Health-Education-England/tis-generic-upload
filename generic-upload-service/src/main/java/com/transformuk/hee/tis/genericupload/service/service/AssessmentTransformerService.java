@@ -414,8 +414,7 @@ public class AssessmentTransformerService {
           assessmentXls.addErrorMessage(academicOutcomeResult.getError().get());
         } else {
           assessmentOutcomeDTO.setAcademicOutcome(assessmentXls.getAcademicOutcome());
-          academicOutcomeResult.getAcademicCurriculumAssessed()
-              .ifPresent(assessmentOutcomeDTO::setAcademicCurriculumAssessed);
+          assessmentOutcomeDTO.setAcademicCurriculumAssessed(assessmentDetailDTO.getCurriculumName());
         }
         assessmentOutcomeDTO
             .setExternalTrainer(BooleanUtil.parseBooleanObject(assessmentXls.getExternalTrainer()));
