@@ -1,7 +1,5 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
-import static org.slf4j.LoggerFactory.getLogger;
-
 import com.transformuk.hee.tis.genericupload.api.dto.PersonUpdateXls;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
 import com.transformuk.hee.tis.genericupload.service.service.mapper.PersonMapper;
@@ -17,14 +15,11 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 
 @Component
 public class PersonUpdateTransformerService {
-
-  private static final Logger logger = getLogger(PersonUpdateTransformerService.class);
 
   public static final String PERSON_ID_DUPLICATE = "Duplicate Tis_Person_ID: %s.";
   public static final String TRAINER_APPROVAL_STATUS_NOT_EXISTS = "Trainer Approval Status '%s' does not exist.";
