@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Validates academic outcome assessment by checking whether the academic outcome value is valid for
- * the curriculum type, provided it is an assessed academic curriculum.
+ * the curriculum type, and whether the curriculum is an assessed academic curriculum based on the
+ * curriculum subtype and period dates.
  */
 @Component
 public class AcademicOutcomeAssessmentValidator {
