@@ -8,9 +8,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 /**
- * Validates academic outcome assessment including:
- * 1. Whether the curriculum is an assessed academic curriculum (type + date overlap).
- * 2. Whether the academic outcome value is valid for the curriculum type.
+ * Validates academic outcome assessment by checking whether the academic outcome value is valid for
+ * the curriculum type, provided it is an assessed academic curriculum.
  */
 @Component
 public class AcademicOutcomeAssessmentValidator {
@@ -21,9 +20,9 @@ public class AcademicOutcomeAssessmentValidator {
       "Academic outcome should be empty for non-academic curriculum subtype.";
 
   /**
-   * Validates the academic outcome for an assessment, returning a result that describes:
-   * - the curriculum name to record if the curriculum is an assessed academic curriculum.
-   * - an error message if validation failed.
+   * Validates the academic outcome for an assessment, returning a result that describes: - the
+   * curriculum name to record if the curriculum is an assessed academic curriculum. - an error
+   * message if validation failed.
    *
    * @param assessmentDetailDto The assessment detail dto containing curriculum and period dates
    * @param academicOutcome     The academic outcome value supplied by the user
