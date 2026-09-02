@@ -154,8 +154,6 @@ public class AssessmentTransformerServiceTest {
     List<AssessmentListDTO> duplicateAssessmentsSpecificOutcome =
         Lists.newArrayList(realOutcomeAssessmentListDTO);
 
-    when(tcsServiceMock.getProgrammeMembershipForTrainee(traineeId))
-        .thenReturn(pmcList);
     when(assessmentServiceMock.getAllOutcomes()).thenReturn("[{" +
         "\"id\": 2, " +
         "\"uuid\": \"30386130-6132-3466-2d33-6566622d3131\", " +
@@ -163,8 +161,6 @@ public class AssessmentTransformerServiceTest {
         "\"label\": \"1\", " +
         "\"reasons\": [ ]" +
         "}]");
-    when(tcsServiceMock.findPeopleByPublicHealthNumbersIn(publicHealthNumberList))
-        .thenReturn(personDTOList);
     when(tcsServiceMock.findGmcDetailsIn(anyList()))
         .thenReturn(gmcDetailsDTOList);
     when(tcsServiceMock.findPersonBasicDetailsIn(anyList()))
