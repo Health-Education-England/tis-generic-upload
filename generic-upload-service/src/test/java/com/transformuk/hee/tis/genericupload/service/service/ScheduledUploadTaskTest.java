@@ -76,7 +76,7 @@ import org.springframework.web.client.HttpClientErrorException;
 @RunWith(MockitoJUnitRunner.class)
 public class ScheduledUploadTaskTest {
 
-  ApplicationType applicationType = new ApplicationType();
+  ApplicationType applicationType;
   @Mock
   private FileStorageRepository fileStorageRepository;
   @Mock
@@ -117,6 +117,9 @@ public class ScheduledUploadTaskTest {
 
   @Before
   public void setUp() {
+    applicationType = new ApplicationType();
+    applicationType.setUsername("test-user");
+
     scheduledUploadTask = new ScheduledUploadTask(fileStorageRepository, applicationTypeRepository,
         azureProperties);
 
@@ -151,6 +154,8 @@ public class ScheduledUploadTaskTest {
     ReflectionTestUtils.setField(scheduledUploadTask, "cmUpdateTransformerService",
         cmUpdateTransformerService);
 
+    when(azureProperties.getContainerName()).thenReturn("test-container");
+
     when(applicationTypeRepository.findByFileStatusOrderByUploadedDate(
         FileStatus.IN_PROGRESS)).thenReturn(Collections.emptyList());
   }
@@ -158,9 +163,6 @@ public class ScheduledUploadTaskTest {
   @Test
   public void shouldProcessPeopleUpload() throws Exception {
     setApplicationTypeRepository(12345L, "people create.xlsx", FileType.PEOPLE, FileStatus.PENDING);
-
-    when(azureProperties.getContainerName())
-        .thenReturn("test-container");
 
     byte[] excelFile = createExcelFile("People", new String[]{"Surname *", "Forenames *", "Role *"},
         new String[]{"Smith", "John", "Consultant"});
@@ -200,8 +202,6 @@ public class ScheduledUploadTaskTest {
     setApplicationTypeRepository(12345L, "people update.xlsx", FileType.PEOPLE_UPDATE,
         FileStatus.PENDING);
 
-    when(azureProperties.getContainerName()).thenReturn("test-container");
-
     byte[] excelFile = createExcelFile("People Update",
         new String[]{"TIS_Person_ID*", "GMC Number", "Surname"},
         new String[]{"2345", "1234567", "Smith"});
@@ -240,9 +240,6 @@ public class ScheduledUploadTaskTest {
   public void shouldProcessPlacementsCreateUpload() throws Exception {
     setApplicationTypeRepository(12345L, "placements create.xlsx", FileType.PLACEMENTS,
         FileStatus.PENDING);
-    applicationType.setUsername("test-user");
-
-    when(azureProperties.getContainerName()).thenReturn("test-container");
 
     byte[] excelFile = createExcelFile("Placements", new String[]{"National Post Number*"},
         new String[]{"ABC/123/001"});
@@ -274,10 +271,6 @@ public class ScheduledUploadTaskTest {
   public void shouldProcessPlacementsUpdateUpload() throws Exception {
     setApplicationTypeRepository(12345L, "placements update.xlsx",
         FileType.PLACEMENTS_UPDATE, FileStatus.PENDING);
-
-    applicationType.setUsername("test-user");
-
-    when(azureProperties.getContainerName()).thenReturn("test-container");
 
     byte[] excelFile = createExcelFile("Placements Update",
         new String[]{"TIS_Placement_ID*"},
@@ -312,8 +305,6 @@ public class ScheduledUploadTaskTest {
     setApplicationTypeRepository(12345L, "placements delete.xlsx", FileType.PLACEMENTS_DELETE,
         FileStatus.PENDING);
 
-    when(azureProperties.getContainerName()).thenReturn("test-container");
-
     byte[] excelFile = createExcelFile("Placements Delete",
         new String[]{"Placement Id*"}, new String[]{"98765"});
 
@@ -343,8 +334,6 @@ public class ScheduledUploadTaskTest {
   public void shouldProcessAssessmentsCreateUpload() throws Exception {
     setApplicationTypeRepository(12345L, "assessments.xlsx", FileType.ASSESSMENTS,
         FileStatus.PENDING);
-
-    when(azureProperties.getContainerName()).thenReturn("test-container");
 
     byte[] excelFile = createExcelFile("Assessments",
         new String[]{"Trainee Surname*"},
@@ -377,8 +366,6 @@ public class ScheduledUploadTaskTest {
     setApplicationTypeRepository(12345L, "post create.xlsx", FileType.POSTS_CREATE,
         FileStatus.PENDING);
 
-    when(azureProperties.getContainerName()).thenReturn("test-container");
-
     byte[] excelFile = createExcelFile("Post Create",
         new String[]{"National Post Number*"},
         new String[]{"POST/001"});
@@ -409,10 +396,6 @@ public class ScheduledUploadTaskTest {
   public void shouldProcessPostUpdateUpload() throws Exception {
     setApplicationTypeRepository(12345L, "post update.xlsx", FileType.POSTS_UPDATE,
         FileStatus.PENDING);
-
-    applicationType.setUsername("test-user");
-
-    when(azureProperties.getContainerName()).thenReturn("test-container");
 
     byte[] excelFile = createExcelFile("Post Update",
         new String[]{"TIS_Post_ID*"},
@@ -445,8 +428,6 @@ public class ScheduledUploadTaskTest {
     setApplicationTypeRepository(12345L, "post funding create.xlsx", FileType.POSTS_FUNDING_CREATE,
         FileStatus.PENDING);
 
-    when(azureProperties.getContainerName()).thenReturn("test-container");
-
     byte[] excelFile = createExcelFile("Post Funding Create",
         new String[]{"TIS_Post_ID*"},
         new String[]{"10001"});
@@ -476,8 +457,6 @@ public class ScheduledUploadTaskTest {
   public void shouldProcessPostFundingUpdateUpload() throws Exception {
     setApplicationTypeRepository(12345L, "post funding update.xlsx", FileType.POSTS_FUNDING_UPDATE,
         FileStatus.PENDING);
-
-    when(azureProperties.getContainerName()).thenReturn("test-container");
 
     byte[] excelFile = createExcelFile("Post Funding Update",
         new String[]{"TIS_PostFunding_ID*"},
@@ -511,8 +490,6 @@ public class ScheduledUploadTaskTest {
     setApplicationTypeRepository(12345L, "assessment update.xlsx", FileType.ASSESSMENTS_UPDATE,
         FileStatus.PENDING);
 
-    when(azureProperties.getContainerName()).thenReturn("test-container");
-
     byte[] excelFile = createExcelFile("Assessment Update", new String[]{"TIS_Assessment_ID*"},
         new String[]{"30001"});
 
@@ -542,8 +519,6 @@ public class ScheduledUploadTaskTest {
   public void shouldProcessAssessmentsDeleteUpload() throws Exception {
     setApplicationTypeRepository(12345L, "assessments delete.xlsx", FileType.ASSESSMENTS_DELETE,
         FileStatus.PENDING);
-
-    when(azureProperties.getContainerName()).thenReturn("test-container");
 
     byte[] excelFile = createExcelFile("Assessments Delete", new String[]{"TIS_Assessment_ID*"},
         new String[]{"70001"});
@@ -579,8 +554,6 @@ public class ScheduledUploadTaskTest {
     setApplicationTypeRepository(12345L, "programme membership update.xlsx",
         FileType.PROGRAMME_MEMBERSHIP_UPDATE, FileStatus.PENDING);
 
-    when(azureProperties.getContainerName()).thenReturn("test-container");
-
     byte[] excelFile = createExcelFile("Programme Membership Update",
         new String[]{"TIS_ProgrammeMembership_ID*"},
         new String[]{"40001"});
@@ -611,8 +584,6 @@ public class ScheduledUploadTaskTest {
   public void shouldProcessCurriculumMembershipCreateUpload() throws Exception {
     setApplicationTypeRepository(12345L, "curriculum-membership-create.xlsx",
         FileType.CURRICULUM_MEMBERSHIP_CREATE, FileStatus.PENDING);
-
-    when(azureProperties.getContainerName()).thenReturn("test-container");
 
     byte[] excelFile = createExcelFile("Curriculum Membership Create",
         new String[]{"TIS_ProgrammeMembership_ID*"}, new String[]{"50001"});
@@ -645,8 +616,6 @@ public class ScheduledUploadTaskTest {
     setApplicationTypeRepository(12345L, "curriculum-membership-update.xlsx",
         FileType.CURRICULUM_MEMBERSHIP_UPDATE, FileStatus.PENDING);
 
-    when(azureProperties.getContainerName()).thenReturn("test-container");
-
     byte[] excelFile = createExcelFile("Curriculum Membership Update",
         new String[]{"TIS_CurriculumMembership_ID*"}, new String[]{"60001"});
 
@@ -678,8 +647,6 @@ public class ScheduledUploadTaskTest {
   public void shouldSetInvalidFileFormatWhenInvalidFormatExceptionOccurs() throws Exception {
     setApplicationTypeRepository(12345L, "people.xlsx", FileType.PEOPLE, FileStatus.PENDING);
 
-    when(azureProperties.getContainerName()).thenReturn("test-container");
-
     byte[] excelFile = createExcelFile("People",
         new String[]{"Surname *", "Forenames *", "Role *"},
         new String[]{"Smith", "John", "Consultant"});
@@ -706,8 +673,6 @@ public class ScheduledUploadTaskTest {
   public void shouldSetPendingWhenHttpClientErrorExceptionOccurs() throws Exception {
     setApplicationTypeRepository(12345L, "people.xlsx", FileType.PEOPLE, FileStatus.PENDING);
 
-    when(azureProperties.getContainerName()).thenReturn("test-container");
-
     byte[] excelFile = createExcelFile("People",
         new String[]{"Surname *", "Forenames *", "Role *"},
         new String[]{"Smith", "John", "Consultant"});
@@ -724,14 +689,12 @@ public class ScheduledUploadTaskTest {
 
     assertEquals(FileStatus.PENDING, applicationType.getFileStatus());
 
-    verify(applicationTypeRepository, org.mockito.Mockito.atLeastOnce()).save(applicationType);
+    verify(applicationTypeRepository, atLeastOnce()).save(applicationType);
   }
 
   @Test
   public void shouldSetUnexpectedErrorWhenUnexpectedExceptionOccurs() throws Exception {
     setApplicationTypeRepository(12345L, "people.xlsx", FileType.PEOPLE, FileStatus.PENDING);
-
-    when(azureProperties.getContainerName()).thenReturn("test-container");
 
     byte[] excelFile = createExcelFile("People",
         new String[]{"Surname *", "Forenames *", "Role *"},

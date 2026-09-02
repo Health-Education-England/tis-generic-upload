@@ -59,6 +59,9 @@ public class ScheduledUploadTask {
       "Error while processing excel file : logId={}, fileName={}, fileType={}, error={}";
   private static final String UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE =
       "Unknown Error while processing excel file : logId={}, fileName={}, fileType={}, error={}";
+  private static final String BULK_UPLOAD_JOB_STARTED =
+      "Bulk upload job started: logId={}, fileName={}, fileType={}, "
+          + "userFirstName={}, userLastName={}, uploadedDate={}";
   private final ApplicationTypeRepository applicationTypeRepository;
   private final AzureProperties azureProperties;
   private final FileStorageRepository fileStorageRepository;
@@ -118,8 +121,7 @@ public class ScheduledUploadTask {
       applicationType.setJobStartTime(LocalDateTime.now());
       applicationTypeRepository.save(applicationType);
       logger.info(
-          "Bulk upload job started: logId={}, fileName={}, fileType={}, "
-              + "userFirstName={}, userLastName={}, uploadedDate={}",
+          BULK_UPLOAD_JOB_STARTED,
           applicationType.getLogId(), applicationType.getFileName(), applicationType.getFileType(),
           applicationType.getFirstName(), applicationType.getLastName(),
           applicationType.getUploadedDate());
