@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service.shared.validator;
 
+import static com.transformuk.hee.tis.genericupload.service.service.shared.AcademicCurriculumSubType.AFT;
 import static com.transformuk.hee.tis.genericupload.service.service.shared.AcademicOutcome.CONTINUE_ON_ACADEMIC_COMPONENT;
 import static com.transformuk.hee.tis.genericupload.service.service.shared.AcademicOutcome.DO_NOT_CONTINUE_ON_ACADEMIC_COMPONENT;
 import static com.transformuk.hee.tis.genericupload.service.service.shared.AcademicOutcome.SUCCESSFULLY_COMPLETED_ACADEMIC_COMPONENT;
@@ -9,11 +10,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.transformuk.hee.tis.assessment.api.dto.AssessmentDetailDTO;
+import com.transformuk.hee.tis.genericupload.service.service.shared.AcademicCurriculumSubType;
+import com.transformuk.hee.tis.genericupload.service.service.shared.AcademicOutcome;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -33,19 +39,18 @@ class AcademicOutcomeAssessmentValidatorTest {
       new AcademicOutcomeAssessmentValidator();
 
   @ParameterizedTest(name = "Academic outcome: {0}")
-  @ValueSource(strings = {
-      "Continue on academic component",
-      "Do not continue on academic component",
-      "Successfully completed academic component"
+  @EnumSource(value = AcademicOutcome.class, names = {
+      "CONTINUE_ON_ACADEMIC_COMPONENT",
+      "DO_NOT_CONTINUE_ON_ACADEMIC_COMPONENT",
+      "SUCCESSFULLY_COMPLETED_ACADEMIC_COMPONENT"
   })
-  void testValidAcademicOutcomeValues(String validOutcome) {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
+  void testValidAcademicOutcomeValues(AcademicOutcome validOutcome) {
+    AssessmentDetailDTO dto = createAssessmentDetailDTO(AFT.name(),
         CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
 
-    AcademicOutcomeValidationResult result = validator.validate(dto, validOutcome);
+    AcademicOutcomeValidationResult result = validator.validate(dto, validOutcome.getLabel());
 
-    assertThat(result.hasError(), is(false));
-    assertTrue(result.getError().isEmpty(), "Error should be empty");
+    assertFalse(result.hasError());
   }
 
   @ParameterizedTest(name = "Invalid outcome: {0}")
@@ -56,12 +61,12 @@ class AcademicOutcomeAssessmentValidatorTest {
   })
   void testInvalidAcademicOutcomeValues(String invalidOutcome) {
     String outcome = invalidOutcome.trim().isEmpty() ? null : invalidOutcome;
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
+    AssessmentDetailDTO dto = createAssessmentDetailDTO(AFT.name(),
         CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
 
     AcademicOutcomeValidationResult result = validator.validate(dto, outcome);
 
-    if (outcome == null || outcome.trim().isEmpty()) {
+    if (outcome == null) {
       assertThat("Should have error for missing outcome",
           result.getError().orElse(null),
           is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED));
@@ -73,10 +78,9 @@ class AcademicOutcomeAssessmentValidatorTest {
   }
 
   @ParameterizedTest(name = "Academic curriculum subtype: {0}")
-  @ValueSource(strings = {"AFT", "ACLNIHR_FUNDING", "ACL_OTHER_FUNDING",
-      "ACFNIHR_FUNDING", "ACF_OTHER_FUNDING"})
-  void testAcademicCurriculumRequiresOutcome(String academicSubType) {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO(academicSubType,
+  @EnumSource(AcademicCurriculumSubType.class)
+  void testAcademicCurriculumRequiresOutcome(AcademicCurriculumSubType academicSubType) {
+    AssessmentDetailDTO dto = createAssessmentDetailDTO(academicSubType.name(),
         CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
 
     AcademicOutcomeValidationResult result = validator.validate(dto, null);
@@ -92,7 +96,7 @@ class AcademicOutcomeAssessmentValidatorTest {
         CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
 
     AcademicOutcomeValidationResult result = validator.validate(dto,
-        "Continue on academic component");
+        CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
     assertThat(result.getError().orElse(null),
         is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_EMPTY_FOR_NON_ACADEMIC_CURRICULUM));
@@ -106,7 +110,7 @@ class AcademicOutcomeAssessmentValidatorTest {
 
     AcademicOutcomeValidationResult result = validator.validate(dto, null);
 
-    assertThat(result.hasError(), is(false));
+    assertFalse(result.hasError());
   }
 
   @ParameterizedTest(name = "Overlap test: curriculum [{0}, {1}], period [{2}, {3}]")
@@ -126,85 +130,45 @@ class AcademicOutcomeAssessmentValidatorTest {
   })
   void testValidDateOverlaps(LocalDate currStart, LocalDate currEnd,
       LocalDate periodFrom, LocalDate periodTo) {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
+    AssessmentDetailDTO dto = createAssessmentDetailDTO(AFT.name(),
         currStart, currEnd, periodFrom, periodTo);
 
     AcademicOutcomeValidationResult result = validator.validate(dto,
         CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
-    assertThat(result.hasError(), is(false));
-    assertTrue(result.getAcademicCurriculumAssessed().isPresent(),
-        "Curriculum name should be present for assessed academic curriculum");
+    assertFalse(result.hasError());
+    assertTrue(result.getAcademicCurriculumAssessed().isPresent());
   }
 
   @ParameterizedTest(name = "No overlap test: curriculum [{0}, {1}], period [{2}, {3}]")
-  @CsvSource({
+  @CsvSource(value = {
       // Period ends before curriculum starts
       "2020-06-01,2020-12-31,2020-01-01,2020-05-31",
       // Curriculum ends before period starts
       "2020-01-01,2020-05-31,2020-06-01,2020-12-31",
       // Far apart
-      "2020-01-01,2020-06-30,2021-01-01,2021-12-31"
-  })
+      "2020-01-01,2020-06-30,2021-01-01,2021-12-31",
+      // Missing one of the required date boundaries
+      "NULL,2026-12-31,2026-06-01,2026-12-31",
+      "2026-01-01,NULL,2026-06-01,2026-12-31",
+      "2026-01-01,2026-12-31,NULL,2026-12-31",
+      "2026-01-01,2026-12-31,2026-06-01,NULL"
+  }, nullValues = "NULL")
   void testNoDateOverlaps(LocalDate currStart, LocalDate currEnd,
       LocalDate periodFrom, LocalDate periodTo) {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
+    AssessmentDetailDTO dto = createAssessmentDetailDTO(AFT.name(),
         currStart, currEnd, periodFrom, periodTo);
 
     AcademicOutcomeValidationResult result = validator.validate(dto,
         CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
 
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
-    assertThat(result.hasError(), is(false));
-  }
-
-  @Test
-  void testNullCurriculumStartDateNoOverlap() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
-        null, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
-
-    AcademicOutcomeValidationResult result = validator.validate(dto,
-        CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
-
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
-  }
-
-  @Test
-  void testNullCurriculumEndDateNoOverlap() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
-        CURRICULUM_START, null, PERIOD_FROM, PERIOD_TO);
-
-    AcademicOutcomeValidationResult result = validator.validate(dto,
-        CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
-
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
-  }
-
-  @Test
-  void testNullPeriodFromDateNoOverlap() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
-        CURRICULUM_START, CURRICULUM_END, null, PERIOD_TO);
-
-    AcademicOutcomeValidationResult result = validator.validate(dto,
-        CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
-
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
-  }
-
-  @Test
-  void testNullPeriodToDateNoOverlap() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
-        CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, null);
-
-    AcademicOutcomeValidationResult result = validator.validate(dto,
-        CONTINUE_ON_ACADEMIC_COMPONENT.getLabel());
-
-    assertThat(result.getAcademicCurriculumAssessed().isEmpty(), is(true));
+    assertTrue(result.getAcademicCurriculumAssessed().isEmpty());
+    assertFalse(result.hasError());
   }
 
   @Test
   void testValidAcademicCurriculumWithValidOutcomeAndOverlappingDates() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
+    AssessmentDetailDTO dto = createAssessmentDetailDTO(AFT.name(),
         CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
 
     AcademicOutcomeValidationResult result = validator.validate(dto,
@@ -219,7 +183,7 @@ class AcademicOutcomeAssessmentValidatorTest {
   @Test
   void testValidAcademicCurriculumWithValidOutcomeButNoDateOverlap() {
     // Dates don't overlap
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
+    AssessmentDetailDTO dto = createAssessmentDetailDTO(AFT.name(),
         LocalDate.of(2020, 1, 1), LocalDate.of(2020, 5, 31),
         LocalDate.of(2020, 6, 1), LocalDate.of(2020, 12, 31));
 
@@ -230,62 +194,28 @@ class AcademicOutcomeAssessmentValidatorTest {
     assertTrue(result.getAcademicCurriculumAssessed().isEmpty());
   }
 
-  @Test
-  void testAcademicCurriculumWithMissingOutcome() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
+  @ParameterizedTest(name = "Subtype: {0}, Outcome: {1}, Expected: {2}")
+  @MethodSource("academicCurriculumValidationCases")
+  void testAcademicCurriculumValidationErrors(AcademicCurriculumSubType subType,
+      String outcome, String expectedError) {
+    AssessmentDetailDTO dto = createAssessmentDetailDTO(subType.name(),
         CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
 
-    AcademicOutcomeValidationResult result = validator.validate(dto, null);
+    AcademicOutcomeValidationResult result = validator.validate(dto, outcome);
 
     assertTrue(result.hasError());
-    assertThat(result.getError().orElse(null),
-        is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED));
+    assertThat(result.getError().orElse(null), is(expectedError));
   }
 
-  @Test
-  void testAcademicCurriculumWithInvalidOutcome() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("ACLNIHR_FUNDING",
-        CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
-
-    AcademicOutcomeValidationResult result = validator.validate(dto, "BadOutcome");
-
-    assertTrue(result.hasError());
-    assertThat(result.getError().orElse(null),
-        is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID));
-  }
-
-  @Test
-  void testAcademicOutcomeIsRequiredErrorMessage() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("ACF_OTHER_FUNDING",
-        CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
-
-    AcademicOutcomeValidationResult result = validator.validate(dto, null);
-
-    assertThat(result.getError().orElse(null),
-        is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED));
-  }
-
-  @Test
-  void testAcademicOutcomeMustBeEmptyErrorMessage() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("GENERIC",
-        CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
-
-    AcademicOutcomeValidationResult result = validator.validate(dto,
-        "Continue on academic component");
-
-    assertThat(result.getError().orElse(null),
-        is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_EMPTY_FOR_NON_ACADEMIC_CURRICULUM));
-  }
-
-  @Test
-  void testAcademicOutcomeMustBeValidErrorMessage() {
-    AssessmentDetailDTO dto = createAssessmentDetailDTO("AFT",
-        CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
-
-    AcademicOutcomeValidationResult result = validator.validate(dto, "NotAValidOutcome");
-
-    assertThat(result.getError().orElse(null),
-        is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID));
+  private static java.util.stream.Stream<Arguments> academicCurriculumValidationCases() {
+    return java.util.stream.Stream.of(
+        Arguments.of(AFT, null,
+            AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED),
+        Arguments.of(AcademicCurriculumSubType.ACLNIHR_FUNDING, "BadOutcome",
+            AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID),
+        Arguments.of(AcademicCurriculumSubType.ACF_OTHER_FUNDING, null,
+            AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED)
+    );
   }
 
   private AssessmentDetailDTO createAssessmentDetailDTO(
@@ -304,5 +234,3 @@ class AcademicOutcomeAssessmentValidatorTest {
     return dto;
   }
 }
-
-

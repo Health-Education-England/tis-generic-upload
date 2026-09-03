@@ -35,32 +35,25 @@ public class AcademicOutcomeAssessmentValidator {
   ) {
     String curriculumSubType = assessmentDetailDto.getCurriculumSubType();
 
+    boolean isAcademicCurriculum = AcademicCurriculumSubType.isAcademic(curriculumSubType);
+
     boolean isAssessedAcademicCurriculum = isAssessedAcademicCurriculum(
-        curriculumSubType,
-        assessmentDetailDto.getCurriculumStartDate(),
-        assessmentDetailDto.getCurriculumEndDate(),
-        assessmentDetailDto.getPeriodCoveredFrom(),
-        assessmentDetailDto.getPeriodCoveredTo()
+        assessmentDetailDto,
+        isAcademicCurriculum
     );
 
     return validateAcademicOutcome(
-        curriculumSubType,
+        isAcademicCurriculum,
         academicOutcome,
         isAssessedAcademicCurriculum ? assessmentDetailDto.getCurriculumName() : null
     );
   }
 
-
   private boolean isAssessedAcademicCurriculum(
-      String curriculumSubType,
-      LocalDate curriculumStartDate,
-      LocalDate curriculumEndDate,
-      LocalDate periodCoveredFrom,
-      LocalDate periodCoveredTo
+      AssessmentDetailDTO assessmentDetailDto,
+      boolean isAcademicCurriculum
   ) {
-    return AcademicCurriculumSubType.isAcademic(curriculumSubType)
-        && academicCurriculumOverlaps(curriculumStartDate, curriculumEndDate,
-        periodCoveredFrom, periodCoveredTo);
+    return isAcademicCurriculum && academicCurriculumOverlaps(assessmentDetailDto);
   }
 
   /*
@@ -70,11 +63,13 @@ public class AcademicOutcomeAssessmentValidator {
    * 2. The assessment period start date is within the curriculum period.
    */
   private boolean academicCurriculumOverlaps(
-      LocalDate curriculumStartDate,
-      LocalDate curriculumEndDate,
-      LocalDate periodCoveredFrom,
-      LocalDate periodCoveredTo
+      AssessmentDetailDTO assessmentDetailDTO
   ) {
+    LocalDate curriculumStartDate = assessmentDetailDTO.getCurriculumStartDate();
+    LocalDate curriculumEndDate = assessmentDetailDTO.getCurriculumEndDate();
+    LocalDate periodCoveredFrom = assessmentDetailDTO.getPeriodCoveredFrom();
+    LocalDate periodCoveredTo = assessmentDetailDTO.getPeriodCoveredTo();
+
     if (curriculumStartDate != null && curriculumEndDate != null && periodCoveredFrom != null
         && periodCoveredTo != null) {
       return (!curriculumStartDate.isBefore(periodCoveredFrom)
@@ -86,11 +81,10 @@ public class AcademicOutcomeAssessmentValidator {
   }
 
   private AcademicOutcomeValidationResult validateAcademicOutcome(
-      String curriculumSubType,
+      boolean isAcademicCurriculum,
       String academicOutcome,
       String academicCurriculumAssessed
   ) {
-    boolean isAcademicCurriculum = AcademicCurriculumSubType.isAcademic(curriculumSubType);
 
     //1. If the curriculum is an academic curriculum, the academic outcome must be provided.
     if (isAcademicCurriculum && StringUtils.isEmpty(academicOutcome)) {
