@@ -102,7 +102,7 @@ public class PersonTransformerService {
       "A valid programme membership is needed to add a rotation";
   private static final String ADDRESS_FIELD_REQUIRED = "%1$s is required when %2$s is populated.";
   private static final String VALIDATE_EMAIL_ERROR = "Valid email address required.";
-  private static final Logger log = LoggerFactory.getLogger(PersonTransformerService.class);
+  private static final Logger logger = LoggerFactory.getLogger(PersonTransformerService.class);
 
   @Autowired
   private TcsServiceImpl tcsServiceImpl;
@@ -324,7 +324,7 @@ public class PersonTransformerService {
       personDTOFromDB = tcsServiceImpl.updatePersonForBulkWithAssociatedDTOs(personDTOFromDB);
       addQualificationsRotationsAndProgrammeMemberships(personXLS, personDTOFromXLS,
           personDTOFromDB);
-      // update TrainerApprvoal when the roles are merged
+      // update TrainerApproval when the roles are merged
       updateTrainerApproval(personDTOFromDB);
       if (StringUtils.isEmpty(personXLS.getErrorMessage())) {
         personXLS.setSuccessfullyImported(true);
@@ -510,7 +510,7 @@ public class PersonTransformerService {
         CurriculumDTO tcsCurriculum1 = getCurriculumDtoFromTcs(personXLS.getCurriculum1());
         CurriculumDTO tcsCurriculum2 = getCurriculumDtoFromTcs(personXLS.getCurriculum2());
         CurriculumDTO tcsCurriculum3 = getCurriculumDtoFromTcs(personXLS.getCurriculum3());
-        log.debug(
+        logger.debug(
             "Evaluating pathway for Programme={}, curriculum1={}, curriculum2={}, curriculum3={}",
             programmeMembershipDTO, tcsCurriculum1, tcsCurriculum2, tcsCurriculum3);
         evaluateTrainingPathway(programmeMembershipDTO, tcsCurriculum1, tcsCurriculum2,

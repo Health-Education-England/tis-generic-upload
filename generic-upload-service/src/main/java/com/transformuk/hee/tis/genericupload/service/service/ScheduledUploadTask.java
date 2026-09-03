@@ -56,9 +56,12 @@ public class ScheduledUploadTask {
   private static final String ERROR_WHILE_READING_EXCEL_FILE =
       "Error while reading excel file : {}";
   private static final String ERROR_WHILE_PROCESSING_EXCEL_FILE =
-      "Error while processing excel file : {}";
+      "Error while processing excel file : logId={}, fileName={}, fileType={}, error={}";
   private static final String UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE =
-      "Unknown Error while processing excel file : {}";
+      "Unknown Error while processing excel file : logId={}, fileName={}, fileType={}, error={}";
+  private static final String BULK_UPLOAD_JOB_STARTED =
+      "Bulk upload job started: logId={}, fileName={}, fileType={}, "
+          + "userFirstName={}, userLastName={}, uploadedDate={}";
   private final ApplicationTypeRepository applicationTypeRepository;
   private final AzureProperties azureProperties;
   private final FileStorageRepository fileStorageRepository;
@@ -117,6 +120,11 @@ public class ScheduledUploadTask {
       applicationType.setFileStatus(FileStatus.IN_PROGRESS);
       applicationType.setJobStartTime(LocalDateTime.now());
       applicationTypeRepository.save(applicationType);
+      logger.info(
+          BULK_UPLOAD_JOB_STARTED,
+          applicationType.getLogId(), applicationType.getFileName(), applicationType.getFileType(),
+          applicationType.getFirstName(), applicationType.getLastName(),
+          applicationType.getUploadedDate());
 
       try (InputStream bis = new ByteArrayInputStream(fileStorageRepository
           .download(applicationType.getLogId(), azureProperties.getContainerName(),
@@ -251,10 +259,12 @@ public class ScheduledUploadTask {
         logger.error(ERROR_WHILE_READING_EXCEL_FILE, e.getMessage(), e);
         applicationType.setFileStatus(FileStatus.INVALID_FILE_FORMAT);
       } catch (HttpServerErrorException | HttpClientErrorException e) { //thrown connecting to TCS
-        logger.error(ERROR_WHILE_PROCESSING_EXCEL_FILE, e.getMessage(), e);
+        logger.error(ERROR_WHILE_PROCESSING_EXCEL_FILE, applicationType.getLogId(),
+            applicationType.getFileName(), applicationType.getFileType(), e.getMessage(), e);
         applicationType.setFileStatus(FileStatus.PENDING);
       } catch (Exception e) {
-        logger.error(UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE, e.getMessage(), e);
+        logger.error(UNKNOWN_ERROR_WHILE_PROCESSING_EXCEL_FILE, applicationType.getLogId(),
+            applicationType.getFileName(), applicationType.getFileType(), e.getMessage(), e);
         applicationType.setFileStatus(FileStatus.UNEXPECTED_ERROR);
       } finally {
         applicationTypeRepository.save(applicationType);
@@ -274,8 +284,11 @@ public class ScheduledUploadTask {
         .findByFileStatusOrderByUploadedDate(FileStatus.IN_PROGRESS)) {
       if (inProgressApplicationType.getJobStartTime().plusHours(hours)
           .isBefore(LocalDateTime.now())) {
-        logger.info("Resetting status on job for file {} with log id {}",
-            inProgressApplicationType.getFileName(), inProgressApplicationType.getLogId());
+        logger.warn(
+            "Bulk upload exceeded processing threshold; resetting job: logId={}, fileName={}, "
+                + "jobStartTime={}, status=PENDING",
+            inProgressApplicationType.getLogId(), inProgressApplicationType.getFileName(),
+            inProgressApplicationType.getJobStartTime());
         inProgressApplicationType.setFileStatus(FileStatus.PENDING);
         applicationTypeRepository.save(inProgressApplicationType);
       }
@@ -305,7 +318,7 @@ public class ScheduledUploadTask {
     applicationType.setErrorJson(fir.toJson());
     applicationType.setProcessedDate(LocalDateTime.now());
     applicationType.setFileStatus(FileStatus.COMPLETED);
-    logger.info("Job completed for file {} with log id {}", applicationType.getFileName(),
-        applicationType.getLogId());
+    logger.info("Bulk upload job completed: logId={}, fileName={}, successCount={}, errorCount={}",
+        applicationType.getLogId(), applicationType.getFileName(), successCount, errorCount);
   }
 }
