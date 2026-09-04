@@ -63,12 +63,12 @@ public class AcademicOutcomeAssessmentValidator {
    * 2. The assessment period start date is within the curriculum period.
    */
   private boolean academicCurriculumOverlaps(
-      AssessmentDetailDTO assessmentDetailDTO
+      AssessmentDetailDTO assessmentDetailDto
   ) {
-    LocalDate curriculumStartDate = assessmentDetailDTO.getCurriculumStartDate();
-    LocalDate curriculumEndDate = assessmentDetailDTO.getCurriculumEndDate();
-    LocalDate periodCoveredFrom = assessmentDetailDTO.getPeriodCoveredFrom();
-    LocalDate periodCoveredTo = assessmentDetailDTO.getPeriodCoveredTo();
+    LocalDate curriculumStartDate = assessmentDetailDto.getCurriculumStartDate();
+    LocalDate curriculumEndDate = assessmentDetailDto.getCurriculumEndDate();
+    LocalDate periodCoveredFrom = assessmentDetailDto.getPeriodCoveredFrom();
+    LocalDate periodCoveredTo = assessmentDetailDto.getPeriodCoveredTo();
 
     if (curriculumStartDate != null && curriculumEndDate != null && periodCoveredFrom != null
         && periodCoveredTo != null) {
