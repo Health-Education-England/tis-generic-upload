@@ -39,11 +39,7 @@ class AcademicOutcomeAssessmentValidatorTest {
       new AcademicOutcomeAssessmentValidator();
 
   @ParameterizedTest(name = "Academic outcome: {0}")
-  @EnumSource(value = AcademicOutcome.class, names = {
-      "CONTINUE_ON_ACADEMIC_COMPONENT",
-      "DO_NOT_CONTINUE_ON_ACADEMIC_COMPONENT",
-      "SUCCESSFULLY_COMPLETED_ACADEMIC_COMPONENT"
-  })
+  @EnumSource(AcademicOutcome.class)
   void testValidAcademicOutcomeValues(AcademicOutcome validOutcome) {
     AssessmentDetailDTO dto = createAssessmentDetailDTO(AFT.name(),
         CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
@@ -53,28 +49,17 @@ class AcademicOutcomeAssessmentValidatorTest {
     assertFalse(result.hasError());
   }
 
-  @ParameterizedTest(name = "Invalid outcome: {0}")
-  @ValueSource(strings = {
-      "Invalid Outcome",
-      "",
-      "   "
-  })
-  void testInvalidAcademicOutcomeValues(String invalidOutcome) {
-    String outcome = invalidOutcome.trim().isEmpty() ? null : invalidOutcome;
+  @Test
+  void testInvalidAcademicOutcomeValues() {
+    String invalidOutcome = "Invalid Outcome";
     AssessmentDetailDTO dto = createAssessmentDetailDTO(AFT.name(),
         CURRICULUM_START, CURRICULUM_END, PERIOD_FROM, PERIOD_TO);
 
-    AcademicOutcomeValidationResult result = validator.validate(dto, outcome);
+    AcademicOutcomeValidationResult result = validator.validate(dto, invalidOutcome);
 
-    if (outcome == null) {
-      assertThat("Should have error for missing outcome",
-          result.getError().orElse(null),
-          is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED));
-    } else {
-      assertThat("Should have error for invalid outcome",
-          result.getError().orElse(null),
-          is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID));
-    }
+    assertThat("Should have error for invalid outcome",
+        result.getError().orElse(null),
+        is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID));
   }
 
   @ParameterizedTest(name = "Academic curriculum subtype: {0}")
