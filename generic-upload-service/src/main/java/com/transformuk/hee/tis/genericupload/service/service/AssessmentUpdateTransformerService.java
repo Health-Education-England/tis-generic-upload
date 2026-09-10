@@ -11,6 +11,8 @@ import com.transformuk.hee.tis.assessment.api.dto.RevalidationDTO;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
 import com.transformuk.hee.tis.genericupload.api.dto.TemplateXLS;
+import com.transformuk.hee.tis.genericupload.service.service.shared.validator.AcademicOutcomeAssessmentValidator;
+import com.transformuk.hee.tis.genericupload.service.service.shared.validator.AcademicOutcomeValidationResult;
 import com.transformuk.hee.tis.genericupload.service.util.BooleanUtil;
 import com.transformuk.hee.tis.reference.api.dto.AssessmentTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
@@ -37,7 +39,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -84,8 +85,7 @@ public class AssessmentUpdateTransformerService {
       "Unsatisfactory Outcome/Not Assessed Reason is required when Other reason is updating";
   public static final String NOT_ASSESSED_REASONS_SHOULD_BE_EMPTY_FOR_OUTCOME =
       "Not assessed reason should be empty for outcome: %s";
-  public static final String ACADEMIC_OUTCOME_IS_REQUIRED = "Academic outcome is required.";
-  public static final String ACADEMIC_OUTCOME_NOT_EXISTS = "Academic outcome value does not exist.";
+
   public static final String PYA_SHOULD_BE_BOOLEAN = "Pya should be YES/NO.";
   public static final String UNDER_APPEAL_SHOULD_BE_BOOLEAN = "Under appeal should be YES/NO.";
   public static final String EXTERNAL_TRAINER_SHOULD_BE_BOOLEAN =
@@ -93,21 +93,33 @@ public class AssessmentUpdateTransformerService {
   public static final String TEN_PERCENT_AUDIT_SHOULD_BE_BOOLEAN =
       "Set 10% audit - lay member should be YES/NO.";
   public static final String KNOWN_CONCERNS_SHOULD_BE_BOOLEAN = "Known concerns should be YES/NO.";
-  protected static final String[] academicCurricula = {"AFT", "ACLNIHR_FUNDING",
-      "ACL_OTHER_FUNDING", "ACFNIHR_FUNDING", "ACF_OTHER_FUNDING"};
-  protected static final String[] academicOutcomes = {"Continue on academic component",
-      "Do not continue on academic component", "Successfully completed academic component"};
-
   private static final Logger logger = getLogger(AssessmentUpdateTransformerService.class);
 
-  @Autowired
-  private TcsServiceImpl tcsService;
-  @Autowired
-  private ReferenceServiceImpl referenceService;
-  @Autowired
-  private AssessmentServiceImpl assessmentService;
-  @Autowired
-  private AssessmentTransformerService assessmentTransformerService;
+  private final TcsServiceImpl tcsService;
+  private final ReferenceServiceImpl referenceService;
+  private final AssessmentServiceImpl assessmentService;
+  private final AssessmentTransformerService assessmentTransformerService;
+  private final AcademicOutcomeAssessmentValidator academicOutcomeAssessmentValidator;
+
+  /**
+   * Constructor for AssessmentUpdateTransformerService.
+   *
+   * @param tcsService                       The TCS service implementation
+   * @param referenceService                 The Reference service implementation
+   * @param assessmentService                The Assessment service implementation
+   * @param assessmentTransformerService     The Assessment transformer service
+   * @param academicOutcomeAssessmentValidator The Academic outcome assessment validator
+   */
+  public AssessmentUpdateTransformerService(TcsServiceImpl tcsService,
+      ReferenceServiceImpl referenceService, AssessmentServiceImpl assessmentService,
+      AssessmentTransformerService assessmentTransformerService,
+      AcademicOutcomeAssessmentValidator academicOutcomeAssessmentValidator) {
+    this.tcsService = tcsService;
+    this.referenceService = referenceService;
+    this.assessmentService = assessmentService;
+    this.assessmentTransformerService = assessmentTransformerService;
+    this.academicOutcomeAssessmentValidator = academicOutcomeAssessmentValidator;
+  }
 
   /**
    * Validate the data from Excel and update the valid ones into the DB.
@@ -219,41 +231,15 @@ public class AssessmentUpdateTransformerService {
 
   private void validateAndUpdateAcademicOutcome(AssessmentDetailDTO assessmentDetailDto,
       AssessmentOutcomeDTO assessmentOutcomeDto, AssessmentUpdateXLS xls) {
-    // Academic curriculum assessed
-    LocalDate periodCoveredFrom = assessmentDetailDto.getPeriodCoveredFrom();
-    LocalDate periodCoveredTo = assessmentDetailDto.getPeriodCoveredTo();
-    LocalDate curriculumStartDate = assessmentDetailDto.getCurriculumStartDate();
-    LocalDate curriculumEndDate = assessmentDetailDto.getCurriculumEndDate();
-    String curriculumSubType = assessmentDetailDto.getCurriculumSubType();
-    boolean academicCurriculumAssessed = false;
+    AcademicOutcomeValidationResult result = academicOutcomeAssessmentValidator
+        .validate(assessmentDetailDto, xls.getAcademicOutcome());
 
-    if (!StringUtils.isEmpty(curriculumSubType)) {
-      String academicType = Arrays.stream(academicCurricula)
-          .filter(c -> StringUtils.equals(c, curriculumSubType)).findAny().orElse(null);
-      if (!StringUtils.isEmpty(academicType)) {
-        boolean academicCurriculumHasOverlaps = academicCurriculumOverlaps(curriculumStartDate,
-            curriculumEndDate, periodCoveredFrom, periodCoveredTo);
-        if (academicCurriculumHasOverlaps) {
-          assessmentOutcomeDto.setAcademicCurriculumAssessed(
-              assessmentDetailDto.getCurriculumName());
-          academicCurriculumAssessed = true;
-        }
-      }
-    }
-
-    String academicOutcome = xls.getAcademicOutcome();
-    if (academicCurriculumAssessed) {
-      if (StringUtils.isEmpty(academicOutcome)) {
-        xls.addErrorMessage(ACADEMIC_OUTCOME_IS_REQUIRED);
-      } else {
-        String outcome = Arrays.stream(academicOutcomes)
-            .filter(o -> StringUtils.equals(o, academicOutcome)).findAny().orElse(null);
-        if (StringUtils.isEmpty(outcome)) {
-          xls.addErrorMessage(ACADEMIC_OUTCOME_NOT_EXISTS);
-        } else {
-          assessmentOutcomeDto.setAcademicOutcome(academicOutcome);
-        }
-      }
+    if (result.hasError()) {
+      result.getError().ifPresent(xls::addErrorMessage);
+    } else {
+      assessmentOutcomeDto.setAcademicOutcome(xls.getAcademicOutcome());
+      result.getAcademicCurriculumAssessed()
+          .ifPresent(assessmentOutcomeDto::setAcademicCurriculumAssessed);
     }
   }
 
@@ -435,18 +421,6 @@ public class AssessmentUpdateTransformerService {
     }
     assessmentDetailDto.setCurriculumStartDate(curriculumMembershipDto.getCurriculumStartDate());
     assessmentDetailDto.setCurriculumEndDate(curriculumMembershipDto.getCurriculumEndDate());
-  }
-
-  private boolean academicCurriculumOverlaps(LocalDate curriculumStartDate,
-      LocalDate curriculumEndDate, LocalDate periodCoveredFrom, LocalDate periodCoveredTo) {
-    if (curriculumStartDate != null && curriculumEndDate != null && periodCoveredFrom != null
-        && periodCoveredTo != null) {
-      return (curriculumStartDate.compareTo(periodCoveredFrom) >= 0
-          && curriculumStartDate.compareTo(periodCoveredTo) <= 0) || (
-          periodCoveredFrom.compareTo(curriculumStartDate) >= 0
-              && periodCoveredFrom.compareTo(curriculumEndDate) <= 0);
-    }
-    return false;
   }
 
   private void validateAndUpdateGrades(Map<String, GradeDTO> gradeAtTimesMap,
@@ -671,7 +645,7 @@ public class AssessmentUpdateTransformerService {
   /**
    * Patch all the Assessment data which pass the validation and updated.
    *
-   * @param xlsList The Xls linked with the data users input
+   * @param xlsList           The Xls linked with the data users input
    * @param assessmentDtoList The updated DTO list
    */
   public void patchUpdateAssessments(List<AssessmentUpdateXLS> xlsList,

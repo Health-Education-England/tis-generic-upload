@@ -17,6 +17,7 @@ import com.transformuk.hee.tis.assessment.api.dto.AssessmentOutcomeReasonDTO;
 import com.transformuk.hee.tis.assessment.api.dto.RevalidationDTO;
 import com.transformuk.hee.tis.assessment.client.service.impl.AssessmentServiceImpl;
 import com.transformuk.hee.tis.genericupload.api.dto.AssessmentUpdateXLS;
+import com.transformuk.hee.tis.genericupload.service.service.shared.validator.AcademicOutcomeAssessmentValidator;
 import com.transformuk.hee.tis.genericupload.service.util.BooleanUtil;
 import com.transformuk.hee.tis.reference.api.dto.AssessmentTypeDto;
 import com.transformuk.hee.tis.reference.api.dto.GradeDTO;
@@ -43,13 +44,16 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(SpringRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class AssessmentUpdateTransformerServiceTest {
 
   @InjectMocks
   private AssessmentUpdateTransformerService assessmentUpdateTransformerService;
+  @Spy
+  private AcademicOutcomeAssessmentValidator academicOutcomeAssessmentValidator;
   @Mock
   private TcsServiceImpl tcsServiceMock;
   @Mock
@@ -537,7 +541,7 @@ public class AssessmentUpdateTransformerServiceTest {
 
     assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
     assertThat("Should get error", xlsList.get(0).getErrorMessage(),
-        is(AssessmentUpdateTransformerService.ACADEMIC_OUTCOME_IS_REQUIRED));
+        is(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_IS_REQUIRED));
   }
 
   @Test
@@ -589,7 +593,57 @@ public class AssessmentUpdateTransformerServiceTest {
     assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
 
     assertThat("Should get error", xlsList.get(0).getErrorMessage(),
-        containsString(AssessmentUpdateTransformerService.ACADEMIC_OUTCOME_NOT_EXISTS));
+        containsString(AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_VALID));
+  }
+
+  @Test
+  public void testProcessAssessmentsUpdateUpload_AcademicOutcomeShouldBeEmptyForNonAcademic() {
+    // Existing Assessment
+    String id = "1";
+    AssessmentDTO assessmentDto = new AssessmentDTO();
+    assessmentDto.id(Long.valueOf(id));
+    assessmentDto.setTraineeId(1L);
+    Set<String> idSet = Collections.singleton(id);
+    when(assessmentServiceMock.findAssessmentByIds(idSet)).thenReturn(
+        Collections.singletonList(assessmentDto));
+
+    // AssessmentUpdateXLS to update
+    Calendar cal1 = Calendar.getInstance();
+    cal1.set(2020, Calendar.SEPTEMBER, 3);
+    Date date1 = cal1.getTime();
+    Calendar cal2 = Calendar.getInstance();
+    cal2.set(2020, Calendar.SEPTEMBER, 15);
+    Date date2 = cal2.getTime();
+    AssessmentUpdateXLS xls = new AssessmentUpdateXLS();
+    xls.setAssessmentId(id);
+    xls.setAcademicOutcome("Continue on academic component");
+    xls.setCurriculumMembershipId("1");
+    xls.setPeriodCoveredFrom(date1);
+    xls.setPeriodCoveredTo(date2);
+    List<AssessmentUpdateXLS> xlsList = Collections.singletonList(xls);
+
+    ProgrammeMembershipCurriculaDTO programmeMembershipCurriculaDto =
+        new ProgrammeMembershipCurriculaDTO();
+    programmeMembershipCurriculaDto.setId(1L);
+    PersonDTO personDto = new PersonDTO();
+    personDto.setId(1L);
+    programmeMembershipCurriculaDto.setPerson(personDto);
+    CurriculumDTO curriculumDto = new CurriculumDTO();
+    curriculumDto.setCurriculumSubType(CurriculumSubType.ACL);
+    programmeMembershipCurriculaDto.setCurriculumDTO(curriculumDto);
+    CurriculumMembershipDTO curriculumMembershipDto = new CurriculumMembershipDTO();
+    curriculumMembershipDto.setCurriculumStartDate(LocalDate.of(2020, 9, 1));
+    curriculumMembershipDto.setCurriculumEndDate(LocalDate.of(2020, 10, 30));
+    programmeMembershipCurriculaDto.setCurriculumMemberships(
+        Collections.singletonList(curriculumMembershipDto));
+    when(tcsServiceMock.getProgrammeMembershipDetailsByIds(idSet)).thenReturn(
+        Collections.singletonList(programmeMembershipCurriculaDto));
+
+    assessmentUpdateTransformerService.processAssessmentsUpdateUpload(xlsList);
+
+    assertThat("Should get error", xlsList.get(0).getErrorMessage(),
+        containsString(
+            AcademicOutcomeAssessmentValidator.ACADEMIC_OUTCOME_MUST_BE_EMPTY_FOR_NON_ACADEMIC_CURRICULUM));
   }
 
   @Test
