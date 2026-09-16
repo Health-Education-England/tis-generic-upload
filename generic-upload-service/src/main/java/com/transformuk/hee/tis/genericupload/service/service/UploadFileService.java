@@ -1,6 +1,8 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.microsoft.azure.storage.StorageException;
+import com.transformuk.hee.tis.genericupload.api.dto.ResetUploadStatusRequestDto;
+import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import java.io.OutputStream;
@@ -33,4 +35,14 @@ public interface UploadFileService {
   Page<ApplicationType> searchUploads(String text, Pageable pageable);
 
   String findErrorsByLogId(Long logId, OutputStream outputStream);
+
+  /**
+   * Reset the status of a bulk upload job to a target status.
+   *
+   * @param resetUploadStatusRequestDto the request containing the job id and target status
+   * @param requester the user requesting the reset
+   * @return the updated ApplicationType of the job
+   */
+  ApplicationType resetUploadStatus(ResetUploadStatusRequestDto resetUploadStatusRequestDto,
+      String requester);
 }
