@@ -5,7 +5,6 @@ import static uk.nhs.tis.StringConverter.getConverter;
 
 import com.microsoft.azure.storage.StorageException;
 import com.transformuk.hee.tis.genericupload.api.dto.ResetUploadStatusRequestDto;
-import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.api.validation.ValidationException;
@@ -212,6 +211,12 @@ public class UploadFileResource {
     }
   }
 
+  /**
+   * Reset the status of a bulk upload job to a target status.
+   *
+   * @param resetUploadStatusRequestDto the request containing the job id and target status
+   * @return the updated ApplicationType of the job
+   */
   @ApiOperation(value = "Reset status of a bulk upload job",
       notes = "Restricted to authorised users. Current status must be PENDING or "
           + "IN_PROGRESS. Target status must be PENDING or UNEXPECTED_ERROR and differ from "

@@ -2,7 +2,6 @@ package com.transformuk.hee.tis.genericupload.service.service;
 
 import com.microsoft.azure.storage.StorageException;
 import com.transformuk.hee.tis.genericupload.api.dto.ResetUploadStatusRequestDto;
-import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import java.io.OutputStream;
