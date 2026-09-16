@@ -7,7 +7,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -141,7 +140,7 @@ class UploadFileResourceStatusTest {
     mockMvc.perform(put("/api/status/reset", JOB_ID)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(requestDto)))
-        .andExpect(status().isOk()).andDo(print());
+        .andExpect(status().isOk());
 
     verify(uploadFileService).resetUploadStatus(requestDto, REQUESTER);
   }
@@ -160,7 +159,7 @@ class UploadFileResourceStatusTest {
     mockMvc.perform(put("/api/status/reset", JOB_ID)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(requestDto)))
-        .andExpect(status().isBadRequest()).andDo(print());
+        .andExpect(status().isBadRequest());
 
     verify(uploadFileService, never())
         .resetUploadStatus(any(), any());
