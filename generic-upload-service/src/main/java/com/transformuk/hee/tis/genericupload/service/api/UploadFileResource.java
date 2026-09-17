@@ -228,7 +228,7 @@ public class UploadFileResource {
           response = String.class),
       @ApiResponse(code = 403, message = "Reset is restricted to authorised users",
           response = String.class)})
-  @PutMapping("/status/reset")
+  @PutMapping("/status")
   @PreAuthorize("hasAuthority('sync:run:jobs')")
   public ResponseEntity<ApplicationType> resetBulkUploadStatus(
       @ApiParam(value = "The bulk upload job id", required = true)

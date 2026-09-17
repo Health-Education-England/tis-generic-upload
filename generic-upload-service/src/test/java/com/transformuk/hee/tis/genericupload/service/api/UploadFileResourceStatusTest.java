@@ -137,7 +137,7 @@ class UploadFileResourceStatusTest {
     when(uploadFileService.resetUploadStatus(requestDto, REQUESTER))
         .thenReturn(applicationType);
 
-    mockMvc.perform(put("/api/status/reset", JOB_ID)
+    mockMvc.perform(put("/api/status", JOB_ID)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(requestDto)))
         .andExpect(status().isOk());
@@ -156,7 +156,7 @@ class UploadFileResourceStatusTest {
     requestDto.setJobId(JOB_ID);
     requestDto.setFileName(FILE_NAME);
 
-    mockMvc.perform(put("/api/status/reset", JOB_ID)
+    mockMvc.perform(put("/api/status", JOB_ID)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(requestDto)))
         .andExpect(status().isBadRequest());
