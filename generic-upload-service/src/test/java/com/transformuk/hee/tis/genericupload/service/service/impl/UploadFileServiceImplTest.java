@@ -1,5 +1,6 @@
 package com.transformuk.hee.tis.genericupload.service.service.impl;
 
+import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,10 +16,12 @@ import com.transformuk.hee.tis.genericupload.service.repository.ApplicationTypeR
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -28,8 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
@@ -41,8 +43,9 @@ class UploadFileServiceImplTest {
   private static final String JOB_STATUS_RESET_REQUESTER = "AAA";
   private static final String FILE_NAME = "test.xlsx";
   private static final Long LOG_ID = 1111111L;
-  private static final Long LOG_ID2 = 2222222L;
-  private static final String FILE_NAME2 = "test2.xlsx";
+  private static final LocalDateTime CURRENT_DATE_TIME = LocalDateTime.of(2026, Month.SEPTEMBER, 1,
+      12, 0, 0);
+  private static final Clock CLOCK = Clock.fixed(CURRENT_DATE_TIME.toInstant(UTC), UTC);
 
   private ResetUploadStatusRequestDto resetUploadStatusRequestDto;
   private ApplicationType applicationType;
@@ -61,7 +64,23 @@ class UploadFileServiceImplTest {
   @BeforeEach
   void setUp() {
     uploadFileService = new UploadFileServiceImpl(fileStorageRepository, applicationTypeRepository,
-        azureProperties);
+        azureProperties, CLOCK);
+  }
+
+  void initResetUploadStatusRequestDto(FileStatus fileStatus) {
+    resetUploadStatusRequestDto = new ResetUploadStatusRequestDto();
+    resetUploadStatusRequestDto.setTargetStatus(fileStatus);
+    resetUploadStatusRequestDto.setJobId(JOB_ID);
+    resetUploadStatusRequestDto.setFileName(FILE_NAME);
+    resetUploadStatusRequestDto.setLogId(LOG_ID);
+  }
+
+  void initApplicationType(FileStatus fileStatus) {
+    applicationType = new ApplicationType();
+    applicationType.setId(JOB_ID);
+    applicationType.setFileStatus(fileStatus);
+    applicationType.setLogId(LOG_ID);
+    applicationType.setFileName(FILE_NAME);
   }
 
   @Test
@@ -120,32 +139,12 @@ class UploadFileServiceImplTest {
     }
   }
 
-  void initResetUploadStatusRequestDto(FileStatus fileStatus) {
-    resetUploadStatusRequestDto = new ResetUploadStatusRequestDto();
-    resetUploadStatusRequestDto.setTargetStatus(fileStatus);
-    resetUploadStatusRequestDto.setJobId(JOB_ID);
-    resetUploadStatusRequestDto.setFileName(FILE_NAME);
-    resetUploadStatusRequestDto.setLogId(LOG_ID);
-  }
-
-  void initApplicationType(FileStatus fileStatus) {
-    applicationType = new ApplicationType();
-    applicationType.setId(JOB_ID);
-    applicationType.setFileStatus(fileStatus);
-    applicationType.setLogId(LOG_ID);
-    applicationType.setFileName(FILE_NAME);
-  }
-
-  private static Stream<Arguments> resetUploadStatusSuccessCases() {
-    return Stream.of(
-        Arguments.of(FileStatus.PENDING, FileStatus.UNEXPECTED_ERROR),
-        Arguments.of(FileStatus.IN_PROGRESS, FileStatus.PENDING),
-        Arguments.of(FileStatus.IN_PROGRESS, FileStatus.UNEXPECTED_ERROR)
-    );
-  }
-
   @ParameterizedTest
-  @MethodSource("resetUploadStatusSuccessCases")
+  @CsvSource({
+      "PENDING,UNEXPECTED_ERROR",
+      "IN_PROGRESS,PENDING",
+      "IN_PROGRESS,UNEXPECTED_ERROR"
+  })
   void shouldResetJobToAllowedTargetStatus(FileStatus currentStatus, FileStatus targetStatus) {
     initApplicationType(currentStatus);
     when(applicationTypeRepository.findById(JOB_ID)).thenReturn(
@@ -157,51 +156,29 @@ class UploadFileServiceImplTest {
         JOB_STATUS_RESET_REQUESTER);
 
     assertThat(updated.getFileStatus()).isEqualTo(targetStatus);
+    assertThat(updated.getProcessedDate()).isEqualTo(CURRENT_DATE_TIME);
+    assertThat(updated.getErrorJson()).contains("Job status reset");
     verify(applicationTypeRepository).save(applicationType);
   }
 
-  @Test
-  void shouldRejectResetWhenCurrentStatusIsNotResettable() {
-    initApplicationType(FileStatus.COMPLETED);
+  @ParameterizedTest
+  @CsvSource({
+      "COMPLETED,PENDING,Allowed current statuses are",
+      "PENDING,COMPLETED,Invalid target status",
+      "PENDING,PENDING,Please provide a different target status"
+  })
+  void shouldRejectResetWhenStatusValidationFails(FileStatus currentStatus, FileStatus targetStatus,
+      String expectedMessage) {
+    initApplicationType(currentStatus);
     when(applicationTypeRepository.findById(JOB_ID)).thenReturn(
         Optional.of(applicationType));
 
-    initResetUploadStatusRequestDto(FileStatus.PENDING);
+    initResetUploadStatusRequestDto(targetStatus);
     IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
         () -> uploadFileService.resetUploadStatus(resetUploadStatusRequestDto,
             JOB_STATUS_RESET_REQUESTER));
 
-    assertThat(exception.getMessage()).contains("Allowed current statuses are");
-    verify(applicationTypeRepository, never()).save(any());
-  }
-
-  @Test
-  void shouldRejectResetWhenTargetStatusIsNotAllowed() {
-    initApplicationType(FileStatus.PENDING);
-    when(applicationTypeRepository.findById(JOB_ID)).thenReturn(
-        Optional.of(applicationType));
-
-    initResetUploadStatusRequestDto(FileStatus.COMPLETED);
-    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-        () -> uploadFileService.resetUploadStatus(resetUploadStatusRequestDto,
-            JOB_STATUS_RESET_REQUESTER));
-
-    assertThat(exception.getMessage()).contains("Invalid target status");
-    verify(applicationTypeRepository, never()).save(any());
-  }
-
-  @Test
-  void shouldRejectResetWhenTargetStatusMatchesCurrentStatus() {
-    initApplicationType(FileStatus.PENDING);
-    when(applicationTypeRepository.findById(JOB_ID)).thenReturn(
-        Optional.of(applicationType));
-
-    initResetUploadStatusRequestDto(FileStatus.PENDING);
-    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-        () -> uploadFileService.resetUploadStatus(resetUploadStatusRequestDto,
-            JOB_STATUS_RESET_REQUESTER));
-
-    assertThat(exception.getMessage()).contains("Please provide a different target status");
+    assertThat(exception.getMessage()).contains(expectedMessage);
     verify(applicationTypeRepository, never()).save(any());
   }
 
@@ -221,7 +198,7 @@ class UploadFileServiceImplTest {
   @Test
   void shouldRejectResetWhenLogIdDoesNotMatch() {
     initApplicationType(FileStatus.PENDING);
-    applicationType.setLogId(LOG_ID2); // Set a different log ID
+    applicationType.setLogId(2222222L); // Set a different log ID
     when(applicationTypeRepository.findById(JOB_ID)).thenReturn(
         Optional.of(applicationType));
 
@@ -237,7 +214,7 @@ class UploadFileServiceImplTest {
   @Test
   void shouldRejectResetWhenFileNameDoesNotMatch() {
     initApplicationType(FileStatus.PENDING);
-    applicationType.setFileName(FILE_NAME2); // Set a different file name
+    applicationType.setFileName("test2.xlsx"); // Set a different file name
     when(applicationTypeRepository.findById(JOB_ID)).thenReturn(
         Optional.of(applicationType));
 

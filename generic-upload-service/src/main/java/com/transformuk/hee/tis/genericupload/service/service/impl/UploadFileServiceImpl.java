@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -68,15 +69,17 @@ public class UploadFileServiceImpl implements UploadFileService {
   private final FileStorageRepository fileStorageRepository;
   private final ApplicationTypeRepository applicationTypeRepository;
   private final AzureProperties azureProperties;
+  private final Clock clock;
 
   @Autowired
   public UploadFileServiceImpl(
       @Qualifier("awsFileStorageRepository") FileStorageRepository fileStorageRepository,
       ApplicationTypeRepository applicationTypeRepository,
-      AzureProperties azureProperties) {
+      AzureProperties azureProperties, Clock clock) {
     this.fileStorageRepository = fileStorageRepository;
     this.applicationTypeRepository = applicationTypeRepository;
     this.azureProperties = azureProperties;
+    this.clock = clock;
   }
 
   static void removeCommentsForRemovedRows(Sheet sheet,
@@ -122,7 +125,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 
     ApplicationType applicationType = new ApplicationType();
     applicationType.setFileName(fileName);
-    applicationType.setUploadedDate(LocalDateTime.now());
+    applicationType.setUploadedDate(LocalDateTime.now(clock));
     applicationType.setFileType(fileType);
     applicationType.setFileStatus(FileStatus.PENDING);
     applicationType.setLogId(logId);
@@ -263,12 +266,19 @@ public class UploadFileServiceImpl implements UploadFileService {
     validateResetRequest(resetUploadStatusRequestDto, applicationType);
 
     final FileStatus previousStatus = applicationType.getFileStatus();
+    final FileStatus targetStatus = resetUploadStatusRequestDto.getTargetStatus();
 
-    applicationType.setFileStatus(resetUploadStatusRequestDto.getTargetStatus());
+    FileImportResults fileImportResults = new FileImportResults();
+    fileImportResults.addError(1,
+        String.format("Job status reset from %s to %s by an internal user.",
+            previousStatus, targetStatus));
+    applicationType.setErrorJson(fileImportResults.toJson());
+    applicationType.setFileStatus(targetStatus);
+    applicationType.setProcessedDate(LocalDateTime.now(clock));
+
     ApplicationType updatedApplicationType = applicationTypeRepository.save(applicationType);
     logger.info("Bulk upload job status reset Done: jobId={}, previousStatus={}, newStatus={}, "
-            + "requesterUserName={}.", jobId, previousStatus,
-        resetUploadStatusRequestDto.getTargetStatus(), requesterUserName);
+            + "requesterUserName={}.", jobId, previousStatus, targetStatus, requesterUserName);
     return updatedApplicationType;
   }
 
@@ -283,8 +293,7 @@ public class UploadFileServiceImpl implements UploadFileService {
   private void validateStoredUploadMatchesRequest(
       ResetUploadStatusRequestDto resetUploadStatusRequestDto,
       ApplicationType applicationType) {
-    if (!Objects.equals(applicationType.getLogId(),
-        resetUploadStatusRequestDto.getLogId())) {
+    if (!Objects.equals(applicationType.getLogId(), resetUploadStatusRequestDto.getLogId())) {
       throw new IllegalArgumentException(String.format(
           "Bulk upload job %d logId mismatch.", resetUploadStatusRequestDto.getJobId()));
     }
