@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -252,7 +253,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 
   @Override
   public ApplicationType resetUploadStatus(ResetUploadStatusRequestDto resetUploadStatusRequestDto,
-      String requester) {
+      String requesterUserName) {
     Long jobId = resetUploadStatusRequestDto.getJobId();
 
     ApplicationType applicationType = applicationTypeRepository.findById(jobId)
@@ -266,8 +267,8 @@ public class UploadFileServiceImpl implements UploadFileService {
     applicationType.setFileStatus(resetUploadStatusRequestDto.getTargetStatus());
     ApplicationType updatedApplicationType = applicationTypeRepository.save(applicationType);
     logger.info("Bulk upload job status reset Done: jobId={}, previousStatus={}, newStatus={}, "
-            + "requester={}.", jobId, previousStatus,
-        resetUploadStatusRequestDto.getTargetStatus(), requester);
+            + "requesterUserName={}.", jobId, previousStatus,
+        resetUploadStatusRequestDto.getTargetStatus(), requesterUserName);
     return updatedApplicationType;
   }
 
@@ -282,7 +283,7 @@ public class UploadFileServiceImpl implements UploadFileService {
   private void validateStoredUploadMatchesRequest(
       ResetUploadStatusRequestDto resetUploadStatusRequestDto,
       ApplicationType applicationType) {
-    if (!java.util.Objects.equals(applicationType.getLogId(),
+    if (!Objects.equals(applicationType.getLogId(),
         resetUploadStatusRequestDto.getLogId())) {
       throw new IllegalArgumentException(String.format(
           "Bulk upload job %d logId mismatch.", resetUploadStatusRequestDto.getJobId()));

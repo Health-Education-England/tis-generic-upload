@@ -39,9 +39,9 @@ public interface UploadFileService {
    * Reset the status of a bulk upload job to a target status.
    *
    * @param resetUploadStatusRequestDto the request containing the job id and target status
-   * @param requester the user requesting the reset
+   * @param requesterUserName the username requesting the reset
    * @return the updated ApplicationType of the job
    */
   ApplicationType resetUploadStatus(ResetUploadStatusRequestDto resetUploadStatusRequestDto,
-      String requester);
+      String requesterUserName);
 }

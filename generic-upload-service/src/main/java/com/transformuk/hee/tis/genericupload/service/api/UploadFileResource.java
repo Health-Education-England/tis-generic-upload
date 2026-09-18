@@ -235,14 +235,15 @@ public class UploadFileResource {
       @Valid @RequestBody ResetUploadStatusRequestDto resetUploadStatusRequestDto) {
 
     UserProfile userProfile = TisSecurityHelper.getProfileFromContext();
-    String requester = userProfile.getUserName();
+    String requesterUserName = userProfile.getUserName();
 
-    log.info("Bulk upload status reset request Received: jobId={}, targetStatus={}, requester={}.",
-        resetUploadStatusRequestDto.getJobId(), resetUploadStatusRequestDto.getTargetStatus(),
-        requester);
+    log.info("Bulk upload status reset request Received: jobId={}, targetStatus={}, "
+            + "requesterUserName={}.", resetUploadStatusRequestDto.getJobId(),
+        resetUploadStatusRequestDto.getTargetStatus(),
+        requesterUserName);
 
     ApplicationType applicationType = uploadFileService
-        .resetUploadStatus(resetUploadStatusRequestDto, requester);
+        .resetUploadStatus(resetUploadStatusRequestDto, requesterUserName);
     return ResponseEntity.ok(applicationType);
   }
 }
