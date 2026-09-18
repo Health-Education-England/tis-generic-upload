@@ -5,6 +5,7 @@ import static com.transformuk.hee.tis.genericupload.service.service.impl.Specifi
 import com.google.gson.Gson;
 import com.microsoft.azure.storage.StorageException;
 import com.transformuk.hee.tis.filestorage.repository.FileStorageRepository;
+import com.transformuk.hee.tis.genericupload.api.dto.ResetUploadStatusRequestDto;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.config.AzureProperties;
@@ -19,10 +20,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -55,20 +59,27 @@ public class UploadFileServiceImpl implements UploadFileService {
 
   public static final String REASON_FOR_IMPORT_FAILURE = "Reason for import failure";
 
+  private static final Set<FileStatus> RESETTABLE_SOURCE_STATUSES =
+      EnumSet.of(FileStatus.PENDING, FileStatus.IN_PROGRESS);
+  private static final Set<FileStatus> RESETTABLE_TARGET_STATUSES =
+      EnumSet.of(FileStatus.PENDING, FileStatus.UNEXPECTED_ERROR);
+
   private final Logger logger = LoggerFactory.getLogger(UploadFileServiceImpl.class);
 
   private final FileStorageRepository fileStorageRepository;
   private final ApplicationTypeRepository applicationTypeRepository;
   private final AzureProperties azureProperties;
+  private final Clock clock;
 
   @Autowired
   public UploadFileServiceImpl(
       @Qualifier("awsFileStorageRepository") FileStorageRepository fileStorageRepository,
       ApplicationTypeRepository applicationTypeRepository,
-      AzureProperties azureProperties) {
+      AzureProperties azureProperties, Clock clock) {
     this.fileStorageRepository = fileStorageRepository;
     this.applicationTypeRepository = applicationTypeRepository;
     this.azureProperties = azureProperties;
+    this.clock = clock;
   }
 
   static void removeCommentsForRemovedRows(Sheet sheet,
@@ -114,7 +125,7 @@ public class UploadFileServiceImpl implements UploadFileService {
 
     ApplicationType applicationType = new ApplicationType();
     applicationType.setFileName(fileName);
-    applicationType.setUploadedDate(LocalDateTime.now());
+    applicationType.setUploadedDate(LocalDateTime.now(clock));
     applicationType.setFileType(fileType);
     applicationType.setFileStatus(FileStatus.PENDING);
     applicationType.setLogId(logId);
@@ -241,5 +252,83 @@ public class UploadFileServiceImpl implements UploadFileService {
   @Override
   public Page<ApplicationType> searchUploads(String text, Pageable pageable) {
     return applicationTypeRepository.fullTextSearch(text, pageable);
+  }
+
+  @Override
+  public ApplicationType resetUploadStatus(ResetUploadStatusRequestDto resetUploadStatusRequestDto,
+      String requesterUserName) {
+    Long jobId = resetUploadStatusRequestDto.getJobId();
+
+    ApplicationType applicationType = applicationTypeRepository.findById(jobId)
+        .orElseThrow(() -> new IllegalArgumentException(
+            String.format("Bulk upload job with id %d does not exist.", jobId)));
+
+    validateResetRequest(resetUploadStatusRequestDto, applicationType);
+
+    final FileStatus previousStatus = applicationType.getFileStatus();
+    final FileStatus targetStatus = resetUploadStatusRequestDto.getTargetStatus();
+
+    FileImportResults fileImportResults = new FileImportResults();
+    fileImportResults.addError(1,
+        String.format("Job status reset from %s to %s by an internal user.",
+            previousStatus, targetStatus));
+    applicationType.setErrorJson(fileImportResults.toJson());
+    applicationType.setFileStatus(targetStatus);
+    applicationType.setProcessedDate(LocalDateTime.now(clock));
+
+    ApplicationType updatedApplicationType = applicationTypeRepository.save(applicationType);
+    logger.info("Bulk upload job status reset Done: jobId={}, previousStatus={}, newStatus={}, "
+            + "requesterUserName={}.", jobId, previousStatus, targetStatus, requesterUserName);
+    return updatedApplicationType;
+  }
+
+  private void validateResetRequest(
+      ResetUploadStatusRequestDto resetUploadStatusRequestDto,
+      ApplicationType applicationType) {
+    validateResetTargetStatus(resetUploadStatusRequestDto.getTargetStatus());
+    validateStoredUploadMatchesRequest(resetUploadStatusRequestDto, applicationType);
+    validateStatusTransition(resetUploadStatusRequestDto, applicationType);
+  }
+
+  private void validateStoredUploadMatchesRequest(
+      ResetUploadStatusRequestDto resetUploadStatusRequestDto,
+      ApplicationType applicationType) {
+    if (!Objects.equals(applicationType.getLogId(), resetUploadStatusRequestDto.getLogId())) {
+      throw new IllegalArgumentException(String.format(
+          "Bulk upload job %d logId mismatch.", resetUploadStatusRequestDto.getJobId()));
+    }
+
+    if (!StringUtils.equals(applicationType.getFileName(),
+        resetUploadStatusRequestDto.getFileName())) {
+      throw new IllegalArgumentException(String.format(
+          "Bulk upload job %d fileName mismatch.", resetUploadStatusRequestDto.getJobId()));
+    }
+  }
+
+  private void validateStatusTransition(
+      ResetUploadStatusRequestDto resetUploadStatusRequestDto,
+      ApplicationType applicationType) {
+    Long jobId = resetUploadStatusRequestDto.getJobId();
+    FileStatus targetStatus = resetUploadStatusRequestDto.getTargetStatus();
+    FileStatus previousStatus = applicationType.getFileStatus();
+    if (!RESETTABLE_SOURCE_STATUSES.contains(previousStatus)) {
+      throw new IllegalArgumentException(String.format(
+          "Bulk upload job %d with status %s cannot be reset. Allowed current statuses are %s.",
+          jobId, previousStatus, RESETTABLE_SOURCE_STATUSES));
+    }
+
+    if (previousStatus == targetStatus) {
+      throw new IllegalArgumentException(String.format(
+          "Bulk upload job %d is already in status %s. Please provide a different target "
+              + "status.", jobId, targetStatus));
+    }
+  }
+
+  private void validateResetTargetStatus(FileStatus targetStatus) {
+    if (!RESETTABLE_TARGET_STATUSES.contains(targetStatus)) {
+      throw new IllegalArgumentException(String.format(
+          "Invalid target status %s. Allowed target statuses are %s.", targetStatus,
+          RESETTABLE_TARGET_STATUSES));
+    }
   }
 }

@@ -10,7 +10,7 @@ public class FileImportResults {
 
   private Map<Integer, String> lineNumberErrors;
 
-  FileImportResults() {
+  public FileImportResults() {
     gson = new Gson();
     lineNumberErrors = new HashMap<>();
   }
