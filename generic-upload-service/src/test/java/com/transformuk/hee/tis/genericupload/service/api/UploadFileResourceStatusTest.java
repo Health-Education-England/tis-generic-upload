@@ -2,12 +2,19 @@ package com.transformuk.hee.tis.genericupload.service.api;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import com.transformuk.hee.tis.genericupload.api.dto.ResetUploadStatusRequestDto;
+import com.transformuk.hee.tis.genericupload.api.enumeration.FileStatus;
 import com.transformuk.hee.tis.genericupload.service.Application;
+import com.transformuk.hee.tis.genericupload.service.TestUtils;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.exception.ExceptionTranslator;
 import com.transformuk.hee.tis.genericupload.service.repository.model.ApplicationType;
@@ -18,7 +25,6 @@ import java.time.format.DateTimeFormatter;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
@@ -29,16 +35,20 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.util.UriComponentsBuilder;
 
-@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Application.class)
 @AutoConfigureMockMvc
-public class UploadFileResourceStatusTest {
+class UploadFileResourceStatusTest {
+
+  private static final Long JOB_ID = 111L;
+  private static final String REQUESTER = "test user";
+  private static final Long LOG_ID = 1111111L;
+  private static final String FILE_NAME = "test.xlsx";
 
   @Autowired
   FileValidator fileValidator;
@@ -56,8 +66,11 @@ public class UploadFileResourceStatusTest {
   @Autowired
   private ExceptionTranslator exceptionTranslator;
 
+  @Autowired
+  ObjectMapper objectMapper;
+
   @BeforeEach
-  public void setup() {
+  void setup() {
     MockitoAnnotations.openMocks(this);
     UploadFileResource uploadFileResource = new UploadFileResource(uploadFileService,
         fileValidator);
@@ -68,7 +81,7 @@ public class UploadFileResourceStatusTest {
   }
 
   @Test
-  public void shouldSanitizeWhenGetBulkUploadStatus() throws Exception {
+  void shouldSanitizeWhenGetBulkUploadStatus() throws Exception {
     ApplicationType at = new ApplicationType();
     at.setFirstName("James\\\"");
     at.setFileName("TIS Placement Import.xls");
@@ -104,5 +117,51 @@ public class UploadFileResourceStatusTest {
     assertThat("should sanitize file", converted_file,
         CoreMatchers.is("TIS Placement Import.xls"));
     assertThat("should sanitize user", converted_user, CoreMatchers.is("James\\\\\\\""));
+  }
+
+  @Test
+  void shouldResetBulkUploadStatus() throws Exception {
+
+    TestUtils.mockUserprofile(REQUESTER);
+
+    ResetUploadStatusRequestDto requestDto = new ResetUploadStatusRequestDto();
+    requestDto.setTargetStatus(FileStatus.IN_PROGRESS);
+    requestDto.setJobId(JOB_ID);
+    requestDto.setLogId(LOG_ID);
+    requestDto.setFileName(FILE_NAME);
+
+    ApplicationType applicationType = new ApplicationType();
+    applicationType.setId(JOB_ID);
+    applicationType.setFileStatus(FileStatus.UNEXPECTED_ERROR);
+
+    when(uploadFileService.resetUploadStatus(requestDto, REQUESTER))
+        .thenReturn(applicationType);
+
+    mockMvc.perform(put("/api/status", JOB_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(requestDto)))
+        .andExpect(status().isOk());
+
+    verify(uploadFileService).resetUploadStatus(requestDto, REQUESTER);
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenResetBulkUploadStatusRequestIsInvalid()
+      throws Exception {
+
+    TestUtils.mockUserprofile(REQUESTER);
+
+    ResetUploadStatusRequestDto requestDto = new ResetUploadStatusRequestDto();
+    requestDto.setTargetStatus(FileStatus.COMPLETED);
+    requestDto.setJobId(JOB_ID);
+    requestDto.setFileName(FILE_NAME);
+
+    mockMvc.perform(put("/api/status", JOB_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(requestDto)))
+        .andExpect(status().isBadRequest());
+
+    verify(uploadFileService, never())
+        .resetUploadStatus(any(), any());
   }
 }

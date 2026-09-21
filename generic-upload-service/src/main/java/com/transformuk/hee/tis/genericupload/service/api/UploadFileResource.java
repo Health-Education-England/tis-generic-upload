@@ -4,6 +4,7 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 import static uk.nhs.tis.StringConverter.getConverter;
 
 import com.microsoft.azure.storage.StorageException;
+import com.transformuk.hee.tis.genericupload.api.dto.ResetUploadStatusRequestDto;
 import com.transformuk.hee.tis.genericupload.api.enumeration.FileType;
 import com.transformuk.hee.tis.genericupload.service.api.validation.FileValidator;
 import com.transformuk.hee.tis.genericupload.service.api.validation.ValidationException;
@@ -26,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -36,10 +38,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -204,5 +209,41 @@ public class UploadFileResource {
       log.error(String.format(messageTemplate, logId), e);
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  /**
+   * Reset the status of a bulk upload job to a target status.
+   *
+   * @param resetUploadStatusRequestDto the request containing the job id and target status
+   * @return the updated ApplicationType of the job
+   */
+  @ApiOperation(value = "Reset status of a bulk upload job",
+      notes = "Restricted to authorised users. Current status must be PENDING or "
+          + "IN_PROGRESS. Target status must be PENDING or UNEXPECTED_ERROR and differ from "
+          + "the current status.", response = ApplicationType.class)
+  @ApiResponses(value = {
+      @ApiResponse(code = 200, message = "Bulk upload status reset successfully",
+          response = ApplicationType.class),
+      @ApiResponse(code = 400, message = "Invalid request",
+          response = String.class),
+      @ApiResponse(code = 403, message = "Reset is restricted to authorised users",
+          response = String.class)})
+  @PutMapping("/status")
+  @PreAuthorize("hasAuthority('sync:run:jobs')")
+  public ResponseEntity<ApplicationType> resetBulkUploadStatus(
+      @ApiParam(value = "The bulk upload job id", required = true)
+      @Valid @RequestBody ResetUploadStatusRequestDto resetUploadStatusRequestDto) {
+
+    UserProfile userProfile = TisSecurityHelper.getProfileFromContext();
+    String requesterUserName = userProfile.getUserName();
+
+    log.info("Bulk upload status reset request Received: jobId={}, targetStatus={}, "
+            + "requesterUserName={}.", resetUploadStatusRequestDto.getJobId(),
+        resetUploadStatusRequestDto.getTargetStatus(),
+        requesterUserName);
+
+    ApplicationType applicationType = uploadFileService
+        .resetUploadStatus(resetUploadStatusRequestDto, requesterUserName);
+    return ResponseEntity.ok(applicationType);
   }
 }
