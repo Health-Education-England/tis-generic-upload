@@ -4,3 +4,6 @@
 # --- DevOps owned ---
 /.github/workflows/ @Health-Education-England/internal-admin-devops
 /.aws/ @Health-Education-England/internal-admin-devops
+/generic-upload-service/Dockerfile @Health-Education-England/internal-admin-devops
+/generic-upload-service/mvnw* @Health-Education-England/internal-admin-devops
+/generic-upload-service/.mvn/ @Health-Education-England/internal-admin-devops
