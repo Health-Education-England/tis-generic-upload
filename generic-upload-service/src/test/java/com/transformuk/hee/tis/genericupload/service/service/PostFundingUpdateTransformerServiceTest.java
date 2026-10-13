@@ -1,8 +1,16 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
-import static com.transformuk.hee.tis.genericupload.service.service.PostFundingCreateTransformerService.ERROR_INVALID_FUNDING_REASON;
-import static com.transformuk.hee.tis.genericupload.service.service.PostFundingCreateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.DID_NOT_FIND_POST_FUNDING_FOR_ID;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_BODY_NAME;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_REASON;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_TYPE;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.FUNDING_END_DATE_VALIDATION_MSG;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE;
+import static com.transformuk.hee.tis.genericupload.service.service.PostFundingUpdateTransformerService.POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -119,7 +127,7 @@ class PostFundingUpdateTransformerServiceTest {
 
     assertThat("Can handle unknown post funding id", postFundingUpdateRow.getErrorMessage(),
         containsString(String
-            .format(PostFundingUpdateTransformerService.DID_NOT_FIND_POST_FUNDING_FOR_ID, id)));
+            .format(DID_NOT_FIND_POST_FUNDING_FOR_ID, id)));
   }
 
   @Test
@@ -132,7 +140,7 @@ class PostFundingUpdateTransformerServiceTest {
     assertThat("Can handle non-number post funding id", postFundingUpdateRow.getErrorMessage(),
         containsString(
             String
-                .format(PostFundingUpdateTransformerService.DID_NOT_FIND_POST_FUNDING_FOR_ID, id)));
+                .format(DID_NOT_FIND_POST_FUNDING_FOR_ID, id)));
   }
 
   @Test
@@ -140,12 +148,15 @@ class PostFundingUpdateTransformerServiceTest {
     String fundingBodyName = "Unknown";
     postFundingUpdateRow.setFundingBody(fundingBodyName);
     when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
+        Collections.singleton(FUNDING_TYPE_NEW)))
+        .thenReturn(Collections.singletonList(fundingTypeDto));
 
     transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
 
     assertThat("Can handle unknown funding body", postFundingUpdateRow.getErrorMessage(),
         containsString(
-            String.format(PostFundingUpdateTransformerService.ERROR_INVALID_FUNDING_BODY_NAME,
+            String.format(ERROR_INVALID_FUNDING_BODY_NAME,
                 fundingBodyName)));
   }
 
@@ -161,8 +172,8 @@ class PostFundingUpdateTransformerServiceTest {
 
     transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
     assertThat("should throw error when fundingType is empty but fundingDetails is filled",
-        postFundingUpdateRow.getErrorMessage(), containsString(
-            PostFundingUpdateTransformerService.FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS));
+        postFundingUpdateRow.getErrorMessage(),
+        containsString(FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS));
   }
 
   @Test
@@ -172,6 +183,9 @@ class PostFundingUpdateTransformerServiceTest {
     when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
         Collections.singleton(FUNDING_REASON)))
         .thenReturn(Collections.emptyList());
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
+        Collections.singleton(FUNDING_TYPE_NEW)))
+        .thenReturn(Collections.singletonList(fundingTypeDto));
 
     transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
     assertThat("should throw error when fundingReason does not exist in reference",
@@ -190,6 +204,9 @@ class PostFundingUpdateTransformerServiceTest {
         Collections.singleton(FUNDING_BODY_VALID)))
         .thenReturn(Collections.singletonList(trustDto));
     when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
+        Collections.singleton(FUNDING_TYPE_NEW)))
+        .thenReturn(Collections.singletonList(fundingTypeDto));
     when(referenceServiceImpl.findCurrentFundingSubTypesByLabels(
         Collections.singleton(FUNDING_SUBTYPE)))
         .thenReturn(Collections.singletonList(fundingSubTypeDto));
@@ -205,6 +222,8 @@ class PostFundingUpdateTransformerServiceTest {
 
     assertThat("Should update fundingType", postFundingDtoArgumentCaptorValue.getFundingType(),
         equalTo(postFundingUpdateRow.getFundingType()));
+    assertThat("Should update fundingTypeId", postFundingDtoArgumentCaptorValue.getFundingTypeId(),
+        equalTo(fundingTypeDto.getId()));
     assertThat("Should update fundingTypeOther", postFundingDtoArgumentCaptorValue.getInfo(),
         equalTo(FUNDING_TYPE_OTHER));
     assertThat("Should update fundingBody", postFundingDtoArgumentCaptorValue.getFundingBodyId(),
@@ -269,6 +288,9 @@ class PostFundingUpdateTransformerServiceTest {
     postFundingUpdateRow.setFundingType(FUNDING_TYPE_NEW);
     postFundingUpdateRow.setFundingTypeOther(null);
 
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
+        Collections.singleton(FUNDING_TYPE_NEW)))
+        .thenReturn(Collections.singletonList(fundingTypeDto));
     when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
         Collections.singleton(FUNDING_REASON)))
         .thenReturn(Collections.singletonList(fundingReasonDto));
@@ -292,8 +314,21 @@ class PostFundingUpdateTransformerServiceTest {
     transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
 
     assertThat(postFundingUpdateRow.getErrorMessage(), containsString(
-        String.format(PostFundingUpdateTransformerService.POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING,
+        String.format(POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING,
             postId)));
+  }
+
+  @Test
+  void shouldErrorWhenFundingTypeNotFound() {
+    postFundingUpdateRow.setFundingType("invalidFundingType");
+    when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+
+    transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
+    assertThat(
+        "should throw error when fundingType is not found in reference",
+        postFundingUpdateRow.getErrorMessage(),
+        containsString(
+            String.format(ERROR_INVALID_FUNDING_TYPE, "invalidFundingType")));
   }
 
   @Test
@@ -307,8 +342,7 @@ class PostFundingUpdateTransformerServiceTest {
     assertThat(
         "should throw error when fundingType is empty but fundingSubtype is filled",
         postFundingUpdateRow.getErrorMessage(),
-        containsString(
-            PostFundingUpdateTransformerService.FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE));
+        containsString(FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE));
   }
 
   @Test
@@ -393,6 +427,9 @@ class PostFundingUpdateTransformerServiceTest {
     when(referenceServiceImpl.findCurrentTrustsByTrustKnownAsIn(
         Collections.singleton(FUNDING_BODY_VALID)))
         .thenReturn(Collections.singletonList(trustDto));
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
+        Collections.singleton(FUNDING_TYPE_NEW)))
+        .thenReturn(Collections.singletonList(fundingTypeDto));
     when(tcsServiceImpl.updateFunding(postFundingDtoArgumentCaptor.capture()))
         .thenReturn(postFundingDto);
     when(referenceServiceImpl.findCurrentFundingReasonsByReasonIn(
@@ -416,6 +453,9 @@ class PostFundingUpdateTransformerServiceTest {
     when(referenceServiceImpl.findCurrentFundingSubTypesByLabels(
         Collections.singleton(FUNDING_SUBTYPE)))
         .thenReturn(Collections.emptyList());
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
+        Collections.singleton(FUNDING_TYPE_NEW)))
+        .thenReturn(Collections.singletonList(fundingTypeDto));
 
     transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
 
@@ -423,8 +463,7 @@ class PostFundingUpdateTransformerServiceTest {
         "should throw error when fundingSubtype not found",
         postFundingUpdateRow.getErrorMessage(),
         containsString(
-            String.format(
-                PostFundingUpdateTransformerService.FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE,
+            String.format(FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE,
                 FUNDING_SUBTYPE, FUNDING_TYPE_NEW)));
   }
 
@@ -435,12 +474,14 @@ class PostFundingUpdateTransformerServiceTest {
     postFundingUpdateRow.setDateTo(cTo.getTime());
 
     when(tcsServiceImpl.getPostFundingById(POST_FUNDING_ID)).thenReturn(postFundingDto);
+    when(referenceServiceImpl.findCurrentFundingTypesByLabelIn(
+        Collections.singleton(FUNDING_TYPE_NEW)))
+        .thenReturn(Collections.singletonList(fundingTypeDto));
 
     transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
 
     assertThat("should throw error when funding end date is before start date",
         postFundingUpdateRow.getErrorMessage(),
-        containsString(
-            String.format(PostFundingUpdateTransformerService.FUNDING_END_DATE_VALIDATION_MSG)));
+        containsString(String.format(FUNDING_END_DATE_VALIDATION_MSG)));
   }
 }
