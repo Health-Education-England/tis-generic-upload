@@ -248,7 +248,6 @@ public class PostFundingUpdateTransformerService {
     // Validate and set funding type
     FundingTypeDTO matchedFundingTypeDto = fundingTypeLabelToDto.get(fundingType);
     if (matchedFundingTypeDto != null) {
-      postFundingDto.setFundingType(fundingType);
       postFundingDto.setFundingTypeId(matchedFundingTypeDto.getId());
     } else {
       postFundingUpdateRow.addErrorMessage(String.format(ERROR_INVALID_FUNDING_TYPE, fundingType));

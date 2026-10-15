@@ -48,10 +48,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class PostFundingUpdateTransformerServiceTest {
 
   private static final Long POST_FUNDING_ID = 1L;
-  private static final String FUNDING_TYPE_ORIGINAL = "originalType";
   private static final String FUNDING_TYPE_NEW = "newType";
+  private static final Long FUNDING_TYPE_ID_NEW = 3L;
   private static final String FUNDING_TYPE_OTHER = "Other";
-  private static final String FUNDING_TYPE_ACADEMIC = "academicType";
   private static final String FUNDING_BODY_VALID = "validFundingBody";
   private static final Long TRUST_ID = 1L;
   private static final String FUNDING_SUBTYPE = "fundingSubtype";
@@ -94,13 +93,12 @@ class PostFundingUpdateTransformerServiceTest {
     postFundingUpdateRow.setDateTo(cTo.getTime());
 
     fundingTypeDto = new FundingTypeDTO();
-    fundingTypeDto.setId(3L);
+    fundingTypeDto.setId(FUNDING_TYPE_ID_NEW);
     fundingTypeDto.setLabel(FUNDING_TYPE_NEW);
     fundingTypeDto.setAllowDetails(false);
 
     postFundingDto = new PostFundingDTO();
     postFundingDto.setFundingBodyId("2");
-    postFundingDto.setFundingType(FUNDING_TYPE_ORIGINAL);
     postFundingDto.setInfo(null);
     postFundingDto.setStartDate(LocalDate.now());
     postFundingDto.setEndDate(LocalDate.now().plusDays(1));
@@ -220,8 +218,6 @@ class PostFundingUpdateTransformerServiceTest {
 
     PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
 
-    assertThat("Should update fundingType", postFundingDtoArgumentCaptorValue.getFundingType(),
-        equalTo(postFundingUpdateRow.getFundingType()));
     assertThat("Should update fundingTypeId", postFundingDtoArgumentCaptorValue.getFundingTypeId(),
         equalTo(fundingTypeDto.getId()));
     assertThat("Should update fundingTypeOther", postFundingDtoArgumentCaptorValue.getInfo(),
@@ -253,8 +249,8 @@ class PostFundingUpdateTransformerServiceTest {
     transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
 
     PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
-    assertThat("Should not update fundingType", postFundingDtoArgumentCaptorValue.getFundingType(),
-        equalTo(postFundingDto.getFundingType()));
+    assertThat("Should not update fundingType", postFundingDtoArgumentCaptorValue.getFundingTypeId(),
+        equalTo(postFundingDto.getFundingTypeId()));
     assertThat("Should not update fundingTypeOther", postFundingDtoArgumentCaptorValue.getInfo(),
         equalTo(postFundingDto.getInfo()));
     assertThat("Should not update fundingBody",
@@ -273,7 +269,6 @@ class PostFundingUpdateTransformerServiceTest {
   void shouldUpdateInfoToNullWhenFundingDetailsAreEmpty() {
 
     postFundingDto.setFundingBodyId("2");
-    postFundingDto.setFundingType(FUNDING_TYPE_ACADEMIC);
     postFundingDto.setInfo("info");
     postFundingDto.setId(2L);
     TrustDTO trustDto = new TrustDTO();
@@ -300,8 +295,8 @@ class PostFundingUpdateTransformerServiceTest {
 
     PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
 
-    assertThat("Should update fundingType", postFundingDtoArgumentCaptorValue.getFundingType(),
-        equalTo(FUNDING_TYPE_NEW));
+    assertThat("Should update fundingTypeId", postFundingDtoArgumentCaptorValue.getFundingTypeId(),
+        equalTo(FUNDING_TYPE_ID_NEW));
     assertThat("Should update fundingTypeOther", postFundingDtoArgumentCaptorValue.getInfo(),
         nullValue());
   }
@@ -398,8 +393,8 @@ class PostFundingUpdateTransformerServiceTest {
     transformerService.processRows(Collections.singletonList(postFundingUpdateRow));
     PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
 
-    assertThat(postFundingDtoArgumentCaptorValue.getFundingType(),
-        equalTo(postFundingUpdateRow.getFundingType()));
+    assertThat(postFundingDtoArgumentCaptorValue.getFundingTypeId(),
+        equalTo(fundingTypeDto.getId()));
     assertThat(postFundingDtoArgumentCaptorValue.getInfo(), equalTo(FUNDING_TYPE_OTHER));
     assertThat(postFundingDtoArgumentCaptorValue.getFundingBodyId(), equalTo("1"));
     assertThat(postFundingDtoArgumentCaptorValue.getStartDate(),
@@ -413,7 +408,6 @@ class PostFundingUpdateTransformerServiceTest {
   @Test
   void shouldUpdateFundingSubtypeIdToNullWhenFundingFundingSubtypeLabelIsEmpty() {
 
-    postFundingDto.setFundingType(FUNDING_TYPE_ACADEMIC);
     postFundingDto.setFundingSubTypeId(FUNDING_SUBTYPE_ID);
     postFundingDto.setId(2L);
     when(tcsServiceImpl.getPostFundingById(2L)).thenReturn(postFundingDto);
@@ -440,8 +434,8 @@ class PostFundingUpdateTransformerServiceTest {
     PostFundingDTO postFundingDtoArgumentCaptorValue = postFundingDtoArgumentCaptor.getValue();
 
     assertThat("Should update fundingType",
-        postFundingDtoArgumentCaptorValue.getFundingType(),
-        equalTo(FUNDING_TYPE_NEW));
+        postFundingDtoArgumentCaptorValue.getFundingTypeId(),
+        equalTo(fundingTypeDto.getId()));
     assertThat("Should update fundingSubtype",
         postFundingDtoArgumentCaptorValue.getFundingSubTypeId(), nullValue()); // value is null
   }

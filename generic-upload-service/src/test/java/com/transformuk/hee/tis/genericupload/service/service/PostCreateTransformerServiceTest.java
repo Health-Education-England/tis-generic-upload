@@ -882,7 +882,6 @@ class PostCreateTransformerServiceTest {
         new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.SUB_SPECIALTY)
     ).collect(Collectors.toSet()));
     PostFundingDTO expectedFunding1 = new PostFundingDTO();
-    expectedFunding1.setFundingType("funding1");
     expectedFunding1.setFundingTypeId(1L);
     expectedFunding1.setStartDate(LocalDate.of(1970, Month.JANUARY, 1));
     expectedFunding1.setInfo("included");
@@ -902,7 +901,6 @@ class PostCreateTransformerServiceTest {
     expected2.specialties(
         Collections.singleton(new PostSpecialtyDTO(null, specialty2, PostSpecialtyType.PRIMARY)));
     PostFundingDTO expectedFunding2 = new PostFundingDTO();
-    expectedFunding2.setFundingType("funding2");
     expectedFunding2.setFundingTypeId(2L);
     expectedFunding2.setStartDate(LocalDate.of(1970, Month.JANUARY, 1));
     expectedFunding2.setEndDate(LocalDate.of(1970, Month.OCTOBER, 7));

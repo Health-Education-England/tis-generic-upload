@@ -219,7 +219,6 @@ public class PostFundingCreateTransformerService {
         continue;
       }
       PostFundingDTO postFundingDto = new PostFundingDTO();
-      postFundingDto.setFundingType(fundingType);
       postFundingDto.setFundingTypeId(fundingTypeLabelToDto.get(fundingType).getId());
       postFundingDto.setInfo(postFundingCreateRow.getFundingTypeOther());
 

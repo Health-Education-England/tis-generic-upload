@@ -457,7 +457,6 @@ public class PostCreateTransformerService {
     if (fundingTypeDto == null) {
       validationError(String.format("No current funding type found for '%s'.", fundingType));
     } else {
-      fundingDto.setFundingType(fundingTypeDto.getLabel());
       fundingDto.setFundingTypeId(fundingTypeDto.getId());
     }
 

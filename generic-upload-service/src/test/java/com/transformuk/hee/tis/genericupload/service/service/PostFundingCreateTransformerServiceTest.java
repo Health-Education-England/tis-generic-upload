@@ -341,7 +341,7 @@ class PostFundingCreateTransformerServiceTest {
     Set<PostFundingDTO> fundings = postDtoCaptor.getValue().getFundings();
     assertEquals(1, fundings.size());
     fundings.forEach(funding -> {
-      assertEquals(FUNDING_TYPE_LABEL, funding.getFundingType());
+      assertEquals(FUNDING_TYPE_ID, funding.getFundingTypeId());
       assertNull(funding.getFundingSubTypeId());
     });
   }
@@ -366,7 +366,7 @@ class PostFundingCreateTransformerServiceTest {
     Set<PostFundingDTO> fundings = postDtoCaptor.getValue().getFundings();
     assertEquals(1, fundings.size());
     fundings.forEach(funding -> {
-      assertEquals(FUNDING_TYPE_LABEL, funding.getFundingType());
+      assertEquals(FUNDING_TYPE_ID, funding.getFundingTypeId());
       assertNull(funding.getFundingSubTypeId());
     });
   }
