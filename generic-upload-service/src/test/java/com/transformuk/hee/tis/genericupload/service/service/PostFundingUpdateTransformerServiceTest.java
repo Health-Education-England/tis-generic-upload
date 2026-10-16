@@ -76,7 +76,7 @@ class PostFundingUpdateTransformerServiceTest {
   private FundingReasonDto fundingReasonDto;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
 
     postFundingUpdateRow = new PostFundingUpdateRow();
     postFundingUpdateRow.setPostFundingTisId(POST_FUNDING_ID.toString());

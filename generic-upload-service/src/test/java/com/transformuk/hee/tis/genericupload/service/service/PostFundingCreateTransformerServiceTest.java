@@ -124,7 +124,7 @@ class PostFundingCreateTransformerServiceTest {
   }
 
   @Test
-  void shouldThrowErrorWhenFundingTypeIsNotFound() {
+  void shouldAddErrorWhenFundingTypeIsNotFound() {
     when(postFundingCreateRow.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
     when(postFundingCreateRow.getErrorMessage()).thenReturn(ERROR_INVALID_FUNDING_TYPE);
 
@@ -200,7 +200,7 @@ class PostFundingCreateTransformerServiceTest {
   }
 
   @Test
-  void shouldLogErrorsForInvalidReasons() {
+  void shouldAddErrorsForInvalidReasons() {
     when(postFundingCreateRow.getFundingReason()).thenReturn(INVALID_FUNDING_REASON);
     when(postFundingCreateRow.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);
     when(postFundingCreateRow.getFundingSubtype()).thenReturn(FUNDING_SUBTYPE_LABEL);
@@ -372,7 +372,7 @@ class PostFundingCreateTransformerServiceTest {
   }
 
   @Test
-  void shouldThrowErrorWhenFundingEndDateIsBeforeStartDate() {
+  void shouldAddErrorWhenFundingEndDateIsBeforeStartDate() {
     Calendar calendar = Calendar.getInstance();
     calendar.set(2023, Calendar.JANUARY, 2);
     Date startDate = calendar.getTime();
@@ -394,7 +394,7 @@ class PostFundingCreateTransformerServiceTest {
   }
 
   @Test
-  void shouldNotThrowErrorWhenFundingEndDateIsAfterStartDate() {
+  void shouldNotAddErrorWhenFundingEndDateIsAfterStartDate() {
     Calendar calendar = Calendar.getInstance();
     calendar.set(2023, Calendar.JANUARY, 2);
     Date startDate = calendar.getTime();
@@ -427,7 +427,7 @@ class PostFundingCreateTransformerServiceTest {
   }
 
   @Test
-  void shouldThrowErrorWhenFundingStartDateIsNull() {
+  void shouldAddErrorWhenFundingStartDateIsNull() {
     when(postFundingCreateRow.getPostTisId()).thenReturn(POST_TIS_ID);
     when(postFundingCreateRow.getDateFrom()).thenReturn(null);
     when(postFundingCreateRow.getFundingType()).thenReturn(FUNDING_TYPE_LABEL);

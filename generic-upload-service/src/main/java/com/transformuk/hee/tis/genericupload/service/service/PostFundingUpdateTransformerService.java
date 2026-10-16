@@ -240,7 +240,8 @@ public class PostFundingUpdateTransformerService {
     }
 
     // Check if subtype is required for this funding type
-    if (isSubtypeRequired(postFundingUpdateRow, postFundingDto, fundingType, fundingTypeToSubtypes)) {
+    if (isSubtypeRequired(postFundingDto, fundingTypeToSubtypes.get(fundingType))
+        && postFundingUpdateRow.getFundingSubtype() == null) {
       postFundingUpdateRow.addErrorMessage(FUNDING_TYPE_REQUIRES_SUBTYPE);
       return;
     }
@@ -254,9 +255,8 @@ public class PostFundingUpdateTransformerService {
     }
   }
 
-  private boolean isSubtypeRequired(PostFundingUpdateRow postFundingUpdateRow,
-      PostFundingDTO postFundingDto, String fundingType,
-      Map<String, List<FundingSubTypeDto>> fundingTypeToSubtypes) {
+  private boolean isSubtypeRequired(PostFundingDTO postFundingDto,
+      List<FundingSubTypeDto> providedFundingSubtypes) {
     /*
       Rather than using "FundingStatus = CURRENT", the requirement is a subtype is required when:
       - The funding has not expired (i.e. the end date is null or no earlier than today)
@@ -267,9 +267,7 @@ public class PostFundingUpdateTransformerService {
        */
     boolean expired = postFundingDto.getEndDate() != null
         && postFundingDto.getEndDate().isBefore(LocalDate.now(clock));
-    return !expired
-        && postFundingUpdateRow.getFundingSubtype() == null
-        && CollectionUtils.isNotEmpty(fundingTypeToSubtypes.get(fundingType));
+    return !expired && CollectionUtils.isNotEmpty(providedFundingSubtypes);
   }
 
   private void validateAndUpdateFundingDetails(PostFundingUpdateRow postFundingUpdateRow,
