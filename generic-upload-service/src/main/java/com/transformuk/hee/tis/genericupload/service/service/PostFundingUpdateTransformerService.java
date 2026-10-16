@@ -1,11 +1,11 @@
 package com.transformuk.hee.tis.genericupload.service.service;
 
 import static com.transformuk.hee.tis.genericupload.service.config.MapperConfiguration.convertDate;
-import static com.transformuk.hee.tis.genericupload.service.service.PostFundingCreateTransformerService.FUNDING_TYPE_REQUIRES_SUBTYPE;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingUpdateRow;
 import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
+import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostFundingDTO;
@@ -38,6 +38,8 @@ public class PostFundingUpdateTransformerService {
       "Did not find the postFunding for id \"%s\".";
   protected static final String ERROR_INVALID_FUNDING_BODY_NAME =
       "Funding body could not be found for the name \"%s\".";
+  protected static final String ERROR_INVALID_FUNDING_TYPE =
+      "Funding type could not be found for the name \"%s\".";
   protected static final String FUNDING_TYPE_IS_REQUIRED_FOR_DETAILS =
       "Funding type is required when funding details is filled.";
   protected static final String FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE =
@@ -48,6 +50,8 @@ public class PostFundingUpdateTransformerService {
       "Post funding start date cannot be null or empty";
   protected static final String FUNDING_END_DATE_VALIDATION_MSG =
       "Post funding end date must not be equal to or before start date if included.";
+  protected static final String FUNDING_TYPE_REQUIRES_SUBTYPE =
+      "One of the appropriate funding subtypes must be included for this type of funding.";
   protected static final String ERROR_INVALID_FUNDING_REASON =
       "Funding reason could not be found for the name \"%s\".";
   protected static final String UPDATE_FAILED = "Update failed.";
@@ -96,9 +100,19 @@ public class PostFundingUpdateTransformerService {
                 dto -> ImmutablePair.of(dto.getFundingType().getLabel().toLowerCase(),
                     dto.getLabel().toLowerCase()),
                 FundingSubTypeDto::getId));
+
+    Map<String, FundingTypeDTO> fundingTypeLabelToDto = referenceService
+        .findCurrentFundingTypesByLabelIn(fundingTypeLabels).stream()
+        .collect(Collectors.toMap(
+            FundingTypeDTO::getLabel,
+            dto -> dto,
+            (a, b) -> a,
+            () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)
+        ));
+
     Map<String, List<FundingSubTypeDto>> fundingTypeToSubtypes =
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    referenceService.findCurrentFundingTypesByLabelIn(fundingTypeLabels)
+    fundingTypeLabelToDto.values()
         .forEach(t -> {
           List<FundingSubTypeDto> subtypes =
               referenceService.findCurrentFundingSubTypesForFundingTypeId(t.getId());
@@ -107,7 +121,7 @@ public class PostFundingUpdateTransformerService {
 
     for (PostFundingUpdateRow postFundingUpdateRow : postFundingUpdateRows) {
       useMatchingCriteriaToUpdatePostFunding(postFundingUpdateRow, fundingBodyNameToId,
-          fundingSubTypeLabelToId, fundingTypeToSubtypes);
+          fundingTypeLabelToDto, fundingSubTypeLabelToId, fundingTypeToSubtypes);
     }
   }
 
@@ -123,6 +137,7 @@ public class PostFundingUpdateTransformerService {
    */
   private void useMatchingCriteriaToUpdatePostFunding(PostFundingUpdateRow postFundingUpdateRow,
       Map<String, String> fundingBodyNameToId,
+      Map<String, FundingTypeDTO> fundingTypeLabelToDto,
       Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId,
       Map<String, List<FundingSubTypeDto>> fundingTypeToSubtypes) {
 
@@ -137,7 +152,7 @@ public class PostFundingUpdateTransformerService {
         } else if (postFundingDto.getPostId().toString()
             .equals(postFundingUpdateRow.getPostTisId())) {
           validateAndUpdatePostFundingDto(postFundingUpdateRow, postFundingDto, fundingBodyNameToId,
-              fundingSubTypeLabelToId, fundingTypeToSubtypes);
+              fundingTypeLabelToDto, fundingSubTypeLabelToId, fundingTypeToSubtypes);
         } else {
           postFundingUpdateRow.addErrorMessage(
               String.format(POST_FUNDING_ID_AND_POST_ID_NOT_MATCHING,
@@ -167,6 +182,7 @@ public class PostFundingUpdateTransformerService {
       PostFundingUpdateRow postFundingUpdateRow,
       PostFundingDTO postFundingDto,
       Map<String, String> fundingBodyNameToId,
+      Map<String, FundingTypeDTO> fundingTypeLabelToDto,
       Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId,
       Map<String, List<FundingSubTypeDto>> fundingTypeToSubtypes) {
 
@@ -179,7 +195,7 @@ public class PostFundingUpdateTransformerService {
     validateFundingStartAndEndDate(postFundingUpdateRow, postFundingDto);
 
     // Validation of type relies on the target DTO containing the updated dates.
-    updateFundingType(postFundingUpdateRow, postFundingDto, fundingTypeToSubtypes);
+    updateFundingType(postFundingUpdateRow, postFundingDto, fundingTypeLabelToDto, fundingTypeToSubtypes);
 
     validateAndCacheFundingReasons(postFundingUpdateRow, postFundingDto);
 
@@ -216,10 +232,32 @@ public class PostFundingUpdateTransformerService {
   }
 
   private void updateFundingType(PostFundingUpdateRow postFundingUpdateRow,
-      PostFundingDTO postFundingDto, Map<String, List<FundingSubTypeDto>> fundingTypeToSubtypes) {
+      PostFundingDTO postFundingDto, Map<String, FundingTypeDTO> fundingTypeLabelToDto,
+      Map<String, List<FundingSubTypeDto>> fundingTypeToSubtypes) {
     final String fundingType = postFundingUpdateRow.getFundingType();
-    if (StringUtils.isNotEmpty(fundingType)) {
-      /*
+    if (StringUtils.isEmpty(fundingType)) {
+      return;
+    }
+
+    // Check if subtype is required for this funding type
+    if (isSubtypeRequired(postFundingDto, fundingTypeToSubtypes.get(fundingType))
+        && postFundingUpdateRow.getFundingSubtype() == null) {
+      postFundingUpdateRow.addErrorMessage(FUNDING_TYPE_REQUIRES_SUBTYPE);
+      return;
+    }
+
+    // Validate and set funding type
+    FundingTypeDTO matchedFundingTypeDto = fundingTypeLabelToDto.get(fundingType);
+    if (matchedFundingTypeDto != null) {
+      postFundingDto.setFundingTypeId(matchedFundingTypeDto.getId());
+    } else {
+      postFundingUpdateRow.addErrorMessage(String.format(ERROR_INVALID_FUNDING_TYPE, fundingType));
+    }
+  }
+
+  private boolean isSubtypeRequired(PostFundingDTO postFundingDto,
+      List<FundingSubTypeDto> providedFundingSubtypes) {
+    /*
       Rather than using "FundingStatus = CURRENT", the requirement is a subtype is required when:
       - The funding has not expired (i.e. the end date is null or no earlier than today)
       - A funding type has been provided
@@ -227,16 +265,9 @@ public class PostFundingUpdateTransformerService {
       - The funding type has subtypes (i.e. the list of subtypes for the funding type is not empty)
         - A non-existent funding type is treated as having no subtypes
        */
-      boolean expired = postFundingDto.getEndDate() != null
-          && postFundingDto.getEndDate().isBefore(LocalDate.now(clock));
-      if (!expired
-          && postFundingUpdateRow.getFundingSubtype() == null
-          && CollectionUtils.isNotEmpty(fundingTypeToSubtypes.get(fundingType))) {
-        postFundingUpdateRow.addErrorMessage(FUNDING_TYPE_REQUIRES_SUBTYPE);
-      } else {
-        postFundingDto.setFundingType(fundingType);
-      }
-    }
+    boolean expired = postFundingDto.getEndDate() != null
+        && postFundingDto.getEndDate().isBefore(LocalDate.now(clock));
+    return !expired && CollectionUtils.isNotEmpty(providedFundingSubtypes);
   }
 
   private void validateAndUpdateFundingDetails(PostFundingUpdateRow postFundingUpdateRow,
