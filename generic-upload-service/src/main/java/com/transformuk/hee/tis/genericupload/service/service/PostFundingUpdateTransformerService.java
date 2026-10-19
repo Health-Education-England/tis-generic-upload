@@ -195,7 +195,8 @@ public class PostFundingUpdateTransformerService {
     validateFundingStartAndEndDate(postFundingUpdateRow, postFundingDto);
 
     // Validation of type relies on the target DTO containing the updated dates.
-    updateFundingType(postFundingUpdateRow, postFundingDto, fundingTypeLabelToDto, fundingTypeToSubtypes);
+    updateFundingType(postFundingUpdateRow, postFundingDto, fundingTypeLabelToDto,
+        fundingTypeToSubtypes);
 
     validateAndCacheFundingReasons(postFundingUpdateRow, postFundingDto);
 

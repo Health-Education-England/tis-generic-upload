@@ -52,10 +52,9 @@ public class PostFundingCreateTransformerService {
       "Funding reason could not be found for the name \"%s\".";
 
   private final Map<String, UUID> fundingReasonToIdMap = new HashMap<>();
-  private Clock clock = Clock.systemDefaultZone();
-
   private final ReferenceServiceImpl referenceService;
   private final TcsServiceImpl tcsService;
+  private Clock clock = Clock.systemDefaultZone();
 
   public PostFundingCreateTransformerService(ReferenceServiceImpl referenceService,
       TcsServiceImpl tcsService) {
@@ -107,10 +106,10 @@ public class PostFundingCreateTransformerService {
     Map<String, List<FundingSubTypeDto>> fundingTypeToSubtypes =
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     fundingTypeLabelToDto.values().forEach(t -> {
-          List<FundingSubTypeDto> subtypes =
-              referenceService.findCurrentFundingSubTypesForFundingTypeId(t.getId());
-          fundingTypeToSubtypes.put(t.getLabel(), subtypes);
-        });
+      List<FundingSubTypeDto> subtypes =
+          referenceService.findCurrentFundingSubTypesForFundingTypeId(t.getId());
+      fundingTypeToSubtypes.put(t.getLabel(), subtypes);
+    });
     // Get all fundingSubType and retrieve matching fundingSubType IDs.
     // As fundingSubtype label is not unique for all fundingSubtypes,
     // use (fundingType label, fundingSubtype label) from reference service as key.
