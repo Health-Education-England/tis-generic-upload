@@ -4,6 +4,7 @@ import static com.transformuk.hee.tis.genericupload.service.config.MapperConfigu
 
 import com.transformuk.hee.tis.genericupload.api.dto.PostFundingCreateRow;
 import com.transformuk.hee.tis.reference.api.dto.FundingSubTypeDto;
+import com.transformuk.hee.tis.reference.api.dto.FundingTypeDTO;
 import com.transformuk.hee.tis.reference.api.dto.TrustDTO;
 import com.transformuk.hee.tis.reference.client.impl.ReferenceServiceImpl;
 import com.transformuk.hee.tis.tcs.api.dto.PostDTO;
@@ -35,6 +36,8 @@ public class PostFundingCreateTransformerService {
 
   protected static final String ERROR_INVALID_FUNDING_BODY_NAME =
       "Funding body could not be found for the name \"%s\".";
+  protected static final String ERROR_INVALID_FUNDING_TYPE =
+      "Funding type could not be found for the name \"%s\".";
   protected static final String ERROR_FUNDING_TYPE_IS_REQUIRED_FOR_SUB_TYPE =
       "Funding type is required when funding subtype is filled.";
   protected static final String ERROR_FUNDING_SUB_TYPE_NOT_MATCH_FUNDING_TYPE =
@@ -49,10 +52,9 @@ public class PostFundingCreateTransformerService {
       "Funding reason could not be found for the name \"%s\".";
 
   private final Map<String, UUID> fundingReasonToIdMap = new HashMap<>();
-  private Clock clock = Clock.systemDefaultZone();
-
   private final ReferenceServiceImpl referenceService;
   private final TcsServiceImpl tcsService;
+  private Clock clock = Clock.systemDefaultZone();
 
   public PostFundingCreateTransformerService(ReferenceServiceImpl referenceService,
       TcsServiceImpl tcsService) {
@@ -92,14 +94,22 @@ public class PostFundingCreateTransformerService {
         .findCurrentTrustsByTrustKnownAsIn(fundingBodies).stream()
         .collect(Collectors.toMap(TrustDTO::getTrustKnownAs, dto -> String.valueOf(dto.getId())));
 
+    Map<String, FundingTypeDTO> fundingTypeLabelToDto = referenceService
+        .findCurrentFundingTypesByLabelIn(fundingTypeLabels).stream()
+        .collect(Collectors.toMap(
+            FundingTypeDTO::getLabel,
+            dto -> dto,
+            (a, b) -> a,
+            () -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)
+        ));
+
     Map<String, List<FundingSubTypeDto>> fundingTypeToSubtypes =
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    referenceService
-        .findCurrentFundingTypesByLabelIn(fundingTypeLabels).forEach(t -> {
-          List<FundingSubTypeDto> subtypes =
-              referenceService.findCurrentFundingSubTypesForFundingTypeId(t.getId());
-          fundingTypeToSubtypes.put(t.getLabel(), subtypes);
-        });
+    fundingTypeLabelToDto.values().forEach(t -> {
+      List<FundingSubTypeDto> subtypes =
+          referenceService.findCurrentFundingSubTypesForFundingTypeId(t.getId());
+      fundingTypeToSubtypes.put(t.getLabel(), subtypes);
+    });
     // Get all fundingSubType and retrieve matching fundingSubType IDs.
     // As fundingSubtype label is not unique for all fundingSubtypes,
     // use (fundingType label, fundingSubtype label) from reference service as key.
@@ -118,8 +128,8 @@ public class PostFundingCreateTransformerService {
       String postId = postIdToInputRows.getKey();
 
       Map<PostFundingDTO, PostFundingCreateRow> fundingDtosToSource = buildFundingDtos(
-          postIdToInputRows.getValue(), fundingBodyNameToId, fundingSubTypeLabelToId,
-          fundingTypeToSubtypes, fundingReasonToIdMap);
+          postIdToInputRows.getValue(), fundingBodyNameToId, fundingTypeLabelToDto,
+          fundingSubTypeLabelToId, fundingTypeToSubtypes, fundingReasonToIdMap);
       Set<PostFundingDTO> builtPostFundingDtos = fundingDtosToSource.keySet();
       if (builtPostFundingDtos.isEmpty()) {
         continue;
@@ -165,6 +175,7 @@ public class PostFundingCreateTransformerService {
   private Map<PostFundingDTO, PostFundingCreateRow> buildFundingDtos(
       Collection<PostFundingCreateRow> postFundingCreateRows,
       Map<String, String> fundingBodyNameToId,
+      Map<String, FundingTypeDTO> fundingTypeLabelToDto,
       Map<ImmutablePair<String, String>, UUID> fundingSubTypeLabelToId,
       Map<String, List<FundingSubTypeDto>> fundingTypeToSubtypes,
       Map<String, UUID> fundingReasonToIdMap) {
@@ -180,6 +191,10 @@ public class PostFundingCreateTransformerService {
       }
 
       final String fundingType = postFundingCreateRow.getFundingType();
+      if (fundingTypeLabelToDto.get(fundingType) == null) {
+        postFundingCreateRow.addErrorMessage(
+            String.format(ERROR_INVALID_FUNDING_TYPE, fundingType));
+      }
       final UUID fundingSubTypeId = checkAndGetFundingSubtype(postFundingCreateRow,
           fundingSubTypeLabelToId);
       boolean expired = postFundingCreateRow.getDateTo() != null
@@ -203,7 +218,7 @@ public class PostFundingCreateTransformerService {
         continue;
       }
       PostFundingDTO postFundingDto = new PostFundingDTO();
-      postFundingDto.setFundingType(fundingType);
+      postFundingDto.setFundingTypeId(fundingTypeLabelToDto.get(fundingType).getId());
       postFundingDto.setInfo(postFundingCreateRow.getFundingTypeOther());
 
       validateFundingStartAndEndDate(postFundingCreateRow, postFundingDto);
